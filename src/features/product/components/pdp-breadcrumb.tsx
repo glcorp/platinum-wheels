@@ -22,6 +22,11 @@ import { ROUTES } from "@/lib/routes";
    Copy: `Home / Results / Antarctica Sport` — the leaf drops the brand
    (`product.md` §2.2).
 
+   The middle crumb's label and target are per-category (D58): `view.config.crumb`
+   is `Results` on a tire — artboard-verbatim, unchanged — `Wheels` on a wheel,
+   `Accessories` on an accessory; `view.backHref` (`view.config.route` plus the
+   inbound query) already routes correctly for all three.
+
    Both widths render in one pass rather than two breadcrumbs, so there is one
    element in the a11y tree at every width: the leaf is `view.fullName` with
    the brand half wrapped in a `sm:`-only span, which disappears below `sm:`
@@ -59,7 +64,7 @@ export function PdpBreadcrumb({ view, className }: PdpBreadcrumbProps) {
         </li>
         <li className="inline">
           <Link href={view.backHref} className="tap-extend-lg hover:text-ink-muted">
-            Results
+            {view.config.crumb}
           </Link>
         </li>
         <li aria-hidden="true" className="inline">

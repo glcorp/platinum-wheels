@@ -113,9 +113,13 @@ export function SiteHeader({
 
         <div className="flex items-center gap-2">
           {/* Phone CTA — accent Button, compact size, visible from sm: (720px).
-              Artboard icon-to-text gap is 10px; buttonBase's compact gap is
-              gap-2.5 sm:gap-3 (12px from 720px), so sm:gap-2.5 holds 10px —
-              flagged for emission verification in the build report. */}
+              No gap override: the `compact` size's own `gap-2.5 sm:gap-3` is
+              what ships. An earlier `sm:gap-2.5` here (meant to hold the
+              artboard's 10px icon gap past 720px) was removed when the
+              override proved unreliable — same-specificity classes resolve by
+              emission order, not JSX order (`HANDOFF.md` §8.3). This comment
+              described that class for a while after it was gone; corrected
+              2026-09-21 (D61, audit finding S4). */}
           <div className="hidden sm:block">
             <Button href={`tel:${PRIMARY_CONTACT.tel}`} variant="accent" size="compact">
               <svg

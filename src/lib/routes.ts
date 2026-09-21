@@ -4,9 +4,11 @@
  * No route is drawn anywhere — every `href` in all seven exports is `"#"`
  * (design/inventory/home.md:731). The shape below is this build's (D18), and
  * links point at planned routes before those routes exist (D26: "assume they
- * will exists, you can just link them"). Undesigned targets (`/wheels`,
- * `/accessories`, `/about`, `/privacy`, `/terms`) get minimal stub pages so
- * nothing 404s (D39). Anchors (`/#contact`, `/#how-it-works`) resolve to the
+ * will exists, you can just link them"). Undesigned targets got minimal stub
+ * pages so nothing 404s (D39). **`/wheels` and `/accessories` are no longer
+ * stubs** — they are full results pages as of 2026-09-21 (D58), sharing the
+ * `/results` composition with a different category. `/about`, `/privacy` and
+ * `/terms` are still stubs. Anchors (`/#contact`, `/#how-it-works`) resolve to the
  * home sections of the same name (design/manifest.md §1 rows 6 and 9).
  *
  * Components import from here, never write a path literal. Changing a route
@@ -15,10 +17,14 @@
 
 export const ROUTES = {
   home: "/",
-  /** The designed results page. "Tires" in the nav and the finder submit here. */
+  /** The designed results page. "Tires" in the nav and the finder submit here.
+   *  It is the TIRES category of a three-category results engine (D58); the
+   *  two siblings below are the same page with a different category. */
   results: "/results",
   tires: "/results",
+  /** Results, category `wheels` (D58). */
   wheels: "/wheels",
+  /** Results, category `accessories` (D58). */
   accessories: "/accessories",
   /** Footer "Winter <year>" and the promo's "Shop winter tires". */
   winter: "/results?season=winter",

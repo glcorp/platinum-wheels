@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import type { Product } from "@/features/catalog/types";
 import { clearFilters, resultsHref, withShowAll } from "@/features/results/query";
@@ -83,17 +84,25 @@ export interface ResultsEmptyProps {
   /** `resultsHref(clearFilters(query))` — the page with every filter dropped. */
   clearHref: string;
   as?: "h1" | "h2";
+  /** The body line. Defaults to the tire copy so the `/styleguide` call site
+   *  (`<ResultsEmpty clearHref={…} as="h2" />`, no other props) stays
+   *  untouched; `ResultsGrid` passes `CATEGORY_CONFIG[category].copy.empty`
+   *  for `/wheels` and `/accessories` (D58). */
+  body?: string;
 }
 
-export function ResultsEmpty({ clearHref, as = "h1" }: ResultsEmptyProps) {
+export function ResultsEmpty({
+  clearHref,
+  as = "h1",
+  body = "Nothing fits those filters yet. Clear them, or call us and we will check your size.",
+}: ResultsEmptyProps) {
   const Heading = as;
   return (
     <section data-probe="empty" className={`${SECTION} pt-10`}>
       <div className="flex flex-col gap-2.5 md:gap-3">
         <Heading className={HEADING}>No matches</Heading>
         <p className="text-ink-muted text-15 leading-body max-w-measure">
-          Nothing fits those filters yet. Clear them, or call us and we will
-          check your size.
+          {body}
         </p>
       </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -113,9 +122,14 @@ export function ResultsEmpty({ clearHref, as = "h1" }: ResultsEmptyProps) {
 }
 
 export function ResultsGrid({ view }: ResultsGridProps) {
+  const copy = CATEGORY_CONFIG[view.query.category].copy;
+
   if (view.total === 0) {
     return (
-      <ResultsEmpty clearHref={resultsHref(clearFilters(view.query))} />
+      <ResultsEmpty
+        clearHref={resultsHref(clearFilters(view.query))}
+        body={copy.empty}
+      />
     );
   }
 
@@ -156,14 +170,18 @@ export function ResultsGrid({ view }: ResultsGridProps) {
              page `<h1>` (D47(6)) — and this line replaces the empty grid.
              Undrawn, so new copy under `.claude/rules/ui.md` "Copy": short,
              declarative, no em dash, no exclamation. Type is the same
-             `400 15px/1.5 --text-muted` as the empty state's line. */
+             `400 15px/1.5 --text-muted` as the empty state's line.
+             The noun is `copy.nearMiss` — `size` on tires, `fitment` on
+             wheels (D58, `categories.ts`) — so the tire sentence comes out
+             character-for-character what it was: "No exact size match
+             yet. Similar sizes are below." */
           <p
             data-probe="best-none"
             className="text-ink-muted text-15 leading-body max-w-measure"
           >
             {view.query.vehicle === null
-              ? "No exact size match yet. Similar sizes are below."
-              : `No exact size match for your ${view.query.vehicle.year} ${view.query.vehicle.make} ${view.query.vehicle.model} yet. Similar sizes are below.`}
+              ? `No exact ${copy.nearMiss} match yet. Similar ${copy.nearMiss}s are below.`
+              : `No exact ${copy.nearMiss} match for your ${view.query.vehicle.year} ${view.query.vehicle.make} ${view.query.vehicle.model} yet. Similar ${copy.nearMiss}s are below.`}
           </p>
         ) : (
           <CardGrid products={best} probe="best-grid" priorityCount={3} />

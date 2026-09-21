@@ -4,7 +4,12 @@ import Link from "next/link";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
-import type { Product, ProductBadge } from "@/features/catalog/types";
+import { configFor } from "@/features/catalog/categories";
+import {
+  productImageSrc,
+  type Product,
+  type ProductBadge,
+} from "@/features/catalog/types";
 import { productRoute, quoteRoute } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
@@ -74,6 +79,7 @@ const MAX_BADGES = 2;
  * below 400 it is 1-up.
  */
 const IMAGE_SIZES = "(min-width: 720px) 348px, (min-width: 400px) 50vw, 100vw";
+
 
  /* The radial vignette sits *above* the photo — the badge row and brand stamp
   * render over it (`design/inventory/results.md:294`). The declaration lives in
@@ -196,7 +202,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             SKUs, exactly as the artboards reuse them (D43,
             `design/inventory/results.md` §7.2). */}
         <Image
-          src={`/images/products/${product.image ?? slug}.webp`}
+          src={productImageSrc(product)}
           alt={`${brand} ${model}`}
           width={1000}
           height={1000}
@@ -338,6 +344,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           currency={currency}
           context="card"
           unavailable={!available}
+          unit={configFor(product).unit.card}
           className="mt-1"
         />
 

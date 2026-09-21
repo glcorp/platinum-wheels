@@ -2,6 +2,10 @@
 
 ## Purpose
 The `/products/[slug]` page: gallery, buy panel, spec table, quote band and the similar-products row.
+Since **D58** (2026-09-21) it serves **all three catalogue categories** from one route — a tire, a wheel
+and an accessory are the same page, and everything that differs (the spec rows, the price unit, the
+quantity wording, the breadcrumb crumb and back link, the similar list) is derived from the product's own
+`CategoryConfig` rather than branched in a component.
 It is the only page in the build where a visitor converts — every `Request a quote` CTA on `/` and
 `/results` lands on the `#quote` anchor here (`src/lib/routes.ts` `quoteRoute()`), so this folder owns
 the one form the storefront has. Delete it and the whole quote-first premise
@@ -11,10 +15,16 @@ the one form the storefront has. Delete it and the whole quote-first premise
 - [`types.ts`](types.ts) — the contract, written before any component (D25). `ProductView` is what the
   page hands every section; `QuantityKey` / `QUANTITY_OPTIONS` are the buy panel's four cells (D50);
   `QuoteFormState` / `QUOTE_FIELD` / `CONTACT_METHODS` are the form half (D51); `PdpBadge` and
-  `ProductSpecRow` are the two shapes derived from `Product` (D53).
-- `view.ts` — `productView(product, searchParams)`, pure. Splits `Product.size` on ` · ` into
-  `sizeCode` + `loadSpeed`, builds the six spec rows, the three badges, `backHref`, `inquiryContext`
-  and the similar list. The only place any of that is computed.
+  `ProductSpecRow` are the two shapes derived from `Product` (D53). **D58 added** `ProductView.config`
+  (the product's `CategoryConfig`) and replaced `QUANTITY_OPTIONS[].quoteLabel` with
+  `quantityQuoteLabel(value, unit)` — the four cells are category-independent, only the wording is not.
+- `view.ts` — `productView(product, searchParams)`, pure. The only place any PDP value is computed.
+  Per category (D58): a **tire** splits `Product.size` on ` · ` into `sizeCode` + `loadSpeed` and builds
+  the six drawn spec rows, the three badges and the season-grouped similar list, exactly as before; a
+  **wheel** keeps its whole size string intact and builds Brand / Model / Size / Bolt pattern / Offset /
+  Finish from `product.wheel`; an **accessory** builds Brand / Model / Type / Fits. Wheels and
+  accessories carry **no badges** (D59(4)). `backHref` points at the product's own category route, and
+  `buildSimilar` never leaves the product's own category, ranking by shared chip value (D59(6)).
 - `actions.ts` — `submitQuote`, the `"use server"` action (D51). Validates, returns `QuoteFormState`.
   **It does not send anything** — the delivery call is a marked TODO until the client supplies a
   destination (root `llm.md` §7).
@@ -42,6 +52,13 @@ the one form the storefront has. Delete it and the whole quote-first premise
 - **The split is 55/45, not 60/40.** `grid-template-columns:55fr 45fr; gap:64px` inside 1344px →
   gallery 704, panel 576 (`product.md` §1.3). DESIGN.md §5's 60/40 is superseded here
   (`DEVIATIONS.md:16`). The quote band is `5fr 7fr` — a *different* split, deliberately flipped.
+- **Nothing here branches on the category.** Components read `view.config` (the unit copy, the crumb,
+  the route) and `view.specs` (already shaped per category by `view.ts`); the one place that knows a
+  wheel from a tire is `view.ts`, and the copy it reads lives in `catalog/categories.ts` (D58). A
+  `if (category === …)` in a component is the thing this rule exists to prevent.
+- **A tire PDP is parity-measured and byte-identical.** The tire branch of every D58 change is the
+  original code path: the six drawn spec rows, `per tire · before tax`, `1 tire` / `4 tires`, the
+  `Results` crumb, and both artboard-verbatim quote-form strings. Verified in the browser 2026-09-21.
 - **Buy panel is `position:sticky; top:96px` on desktop only** (`product.md` §3). Never on mobile.
 - **No sticky mobile buy bar** — D6, and confirmed by measurement: zero `position:fixed`/`sticky`
   matches in `product-mobile.html` (`product.md` §1.3). The mobile footer's 120px bottom reserve is
@@ -76,7 +93,8 @@ same season, self excluded), **D53** (the derived-rulings bundle), **D6** (no st
 **D47(2)** (no trust line here), **D32** (computed year).
 
 ## Connects to
-- **Depends on:** `src/features/catalog/` — `Product`, `findProduct`, `PRODUCTS`, `ProductCard` (D37);
+- **Depends on:** `src/features/catalog/` — `Product`, `findProduct`, `productsIn`, `ProductCard`,
+  `configFor` / `CategoryConfig`, `productImageSrc` (D37);
   `src/components/ui/` — `Badge`, `Button`, `Price`, `Input`, `Textarea`, `Select`, `FieldLabel`,
   `FieldError`, `Checkbox`; `src/components/site/` — `SiteHeader`, `SiteFooter`;
   `src/lib/{site,routes}.ts`; `src/app/globals.css` for `pdp-split`, `quote-grid`, `qty-grid`,
@@ -98,6 +116,11 @@ same season, self excluded), **D53** (the derived-rulings bundle), **D6** (no st
   return the current product." D52.
 - **Don't add `Michroma` or `Manrope`.** Both are in the export's font link and referenced by nothing
   (`product.md` §5.2); D20 self-hosts Barlow + Barlow Condensed only.
+- **Don't import `CATEGORY_CONFIG` into `quote-form.tsx`.** It is this folder's one client island; the
+  unit pair and the two copy strings arrive as plain props from `quote-band.tsx` so the category table
+  never reaches the browser bundle (D58).
+- **Don't let a wheel or accessory PDP recommend a tire.** `buildSimilar` stays inside the product's own
+  category (D59(6)).
 - **Don't widen `Product` to carry spec strings.** Derive them (D53); the catalog type stays the list
   of things *cards* vary on (`src/features/catalog/llm.md`).
 
@@ -110,5 +133,11 @@ same season, self excluded), **D53** (the derived-rulings bundle), **D6** (no st
    consumer means it belongs in `src/lib/`. Coordinator or **owner** (root `llm.md` §7).
 3. **`M+S` is derived from the winter badge**, not a fact `Product` carries (`types.ts` `PdpBadge`).
    Real sidewall markings come with real catalogue data (D48). **Client.**
-4. **One photo per SKU.** The gallery shows the same cut-out the card does, and four cut-outs cover
-   nine SKUs (D43). A real gallery needs per-SKU photography — `HANDOFF.md` §7. **Client.**
+4. **One photo per SKU.** The gallery shows the same cut-out the card does; four cut-outs cover nine
+   tire SKUs (D43), three cover nine wheel SKUs, and **one lifestyle photograph covers all nine
+   accessory SKUs** via `productImageSrc()`'s absolute-path branch (D58, `DEVIATIONS.md` #51). A real
+   gallery needs per-SKU photography — `HANDOFF.md` §7. **Client.**
+5. **`How many?` reads oddly on an accessory** whose `size` already says `Set of 20`, so the cells offer
+   one, two or four *sets*. The four cells are drawn (D50) and the owner asked for everything but the
+   filters and SKUs to stay as it is, so nothing was changed; `Custom` and the free-text message cover
+   the real case. **Owner**, if the wording should change.

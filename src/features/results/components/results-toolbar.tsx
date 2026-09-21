@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import { SortSelect } from "@/features/results/components/sort-select";
 import type { ResultsView } from "@/features/results/types";
@@ -96,7 +97,17 @@ function countCopy(best: number, similar: number): string {
 }
 
 export function ResultsToolbar({ view }: ResultsToolbarProps) {
-  const { vehicle } = view.query;
+  const { vehicle, category } = view.query;
+  /* `Results` on tires, artboard-verbatim and unchanged; `Wheels` /
+     `Accessories` are new copy (D58, `categories.ts` "crumb"). */
+  const config = CATEGORY_CONFIG[category];
+  const crumb = config.crumb;
+  /* `null` on accessories: an accessory derives nothing from a vehicle
+     (`search.ts` `fitmentSize()`), so neither the chip nor the disclosure
+     renders there — a `Change vehicle` control that changes no result would be
+     an affordance the data cannot honour (D59(2), vetoable). Tires and wheels
+     both render it, each submitting to its own route. */
+  const finder = config.finder;
   const vehicleLabel =
     vehicle === null
       ? null
@@ -122,10 +133,12 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
               the artboard writes `Home <span style="margin:0 6px">/</span>
               <span>Results</span>` (results-desktop.html:112) with a space
               text node either side of the separator — ~3.6px each at 12px, so
-              the whole breadcrumb measures 118.6px, not 111.4px. A flex
-              container discards whitespace-only text nodes, so the span has to
-              stay an inline formatting context at every width and the flexing
-              moves out one level. */}
+              the whole breadcrumb measures 118.6px, not 111.4px on `/results`
+              (`Results`; `Wheels` / `Accessories` on the other two routes,
+              D58 — `CATEGORY_CONFIG[category].crumb`). A flex container
+              discards whitespace-only text nodes, so the span has to stay an
+              inline formatting context at every width and the flexing moves
+              out one level. */}
           <div className="md:flex md:min-h-11 md:shrink-0 md:items-center">
             <span
               data-probe="breadcrumb"
@@ -140,10 +153,11 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
               <span className="mx-1.5" aria-hidden="true">
                 /
               </span>{" "}
-              <span className="text-ink">Results</span>
+              <span className="text-ink">{crumb}</span>
             </span>
           </div>
 
+          {finder === null ? null : (
           <details className="min-w-0">
             <summary
               data-probe="change-vehicle"
@@ -179,9 +193,18 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
                 {disclosureCopy}
               </span>
             </summary>
-            {/* The open panel: in flow, full width of the disclosure (D45). */}
-            <VehicleFinder variant="inline" />
+            {/* The open panel: in flow, full width of the disclosure (D45).
+                It submits to THIS category's route, not the hard-coded
+                `/results` — otherwise `Change vehicle` on `/wheels` would
+                land the visitor back in tires (D58). Tires keep the drawn
+                target and the drawn `Find my tires` CTA, unchanged. */}
+            <VehicleFinder
+              variant="inline"
+              action={config.route}
+              cta={finder.cta}
+            />
           </details>
+          )}
 
           {/* Count — `400 14px/1 tabular --text-muted` M, 15px D
               (`results.md` §2.2 row 6). */}

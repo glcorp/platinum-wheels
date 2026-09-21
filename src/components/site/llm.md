@@ -30,6 +30,16 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   (D31). The only client island in this folder.
 
 - [`page-stub.tsx`](page-stub.tsx) — `PageStub`, props `{ title; active?; children? }`. Solid header + one `h1` + one line + footer, behind every planned-but-undesigned route (D26, D39). Replace each stub with its designed page.
+- [`route-error.tsx`](route-error.tsx) — `"use client"`. `RouteError({ error, retry })`, the storefront's
+  route error boundary (**D62**), plus `RouteErrorPanel({ digest?, retry?, as? })`, its contents without
+  the `<main>` wrapper so `/styleguide` §11 can render the real component instead of a copy that drifts
+  (the `ResultsEmpty` / `QuoteErrorSummary` precedent). `src/app/(storefront)/error.tsx` is the directive
+  plus a one-line re-export of `RouteError` and holds no component code — Next requires the directive in
+  that file and rejects a bare re-export, which is why the `"use client"`-under-`src/app/` ban has one
+  named exception. **Renders no `SiteHeader` or `SiteFooter`**, deliberately: importing them into a
+  client module would pull both into every route's client bundle, and a boundary should not re-render
+  what may have just failed. Read the file header before changing either point. Props are `error` and
+  **`retry`** — renamed from `reset` in this canary.
 
 ## Rules
 - **Header composition is the artboards as drawn** — D7 / DEVIATIONS #11: 64px badge image, **no text
@@ -89,17 +99,13 @@ all widths, hide rather than remove).
    results section and lives at `src/features/results/components/call-cta-panel.tsx`. No site-wide call
    bar exists or is drawn; the only call affordance here is the header's 44×44 circular button.
    `docs/decisions.md:64` keeps the superseded assignment (root `llm.md` §7.9, now closed).
-2. **Solid-header background measures `--scrim-strong`, not `--bg`.** `results-desktop.html:86`
-   (and `home-desktop.html:95` / `home-mobile.html:77` for `over-hero`) all declare
-   `background:var(--scrim-strong)` — there is no second, `--bg`-background nav bar drawn anywhere
-   in the export. This contradicts `design/DESIGN.md` §4 "Nav" ("on every other page it is `--bg`")
-   and this folder's own former `Owns` note. `site-header.tsx` was built to the measured artboard
-   value for both variants, per the authority chain (root `llm.md` §4, "artboards win on any
-   number"). Needs a `design/DEVIATIONS.md` row from whoever owns that file — not added here
-   (out of scope for this folder's agent).
-3. **Two Tailwind v4 emission risks in `site-header.tsx`**, flagged for browser verification (this
-   agent could not run `next dev`): the inactive nav link colour `text-on-photo/68` (an opacity
-   modifier on a custom `--color-*` token, standing in for the artboard's untokenised
-   `rgba(244,244,245,.68)` — `design/inventory/home.md:139`/`:393`), and the phone-CTA
-   `className="sm:gap-2.5"` meant to override `ui/button.tsx`'s `compact` size `sm:gap-3` and hold
-   the artboard's 10px icon gap.
+2. ~~**Solid-header background measures `--scrim-strong`, not `--bg`.**~~ Closed 2026-09-21 by **D61**
+   (audit finding S3): the divergence from `design/DESIGN.md` §4 is now recorded as
+   `design/DEVIATIONS.md` **#54**, citing `home-desktop.html:95`, `home-mobile.html:77` and
+   `results-desktop.html:86`. The code was always right per the authority chain; only the audit trail
+   had a hole.
+3. ~~**Two Tailwind v4 emission risks in `site-header.tsx`.**~~ Closed 2026-09-21 by **D61** (audit
+   finding S4). Both were verified in the browser during the D56 audit. The `sm:gap-2.5` override no
+   longer exists — the phone CTA ships the `compact` size's own gap — and the comment that still
+   described it has been corrected. The inactive nav link keeps `text-on-photo/68`, which emits
+   correctly.

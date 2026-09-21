@@ -26,6 +26,16 @@ export interface PriceProps {
   context?: PriceContext;
   /** Currently-unavailable product: the amount drops to `--text-dim`. */
   unavailable?: boolean;
+  /**
+   * Unit copy for this product's category — `CategoryConfig.unit.card` or
+   * `.unit.pdp` (`@/features/catalog/categories`, D58). Defaults to the tire
+   * strings the artboards draw, so an un-passed caller is unchanged.
+   *
+   * A plain string, not a category lookup: `src/components/*` must never
+   * import a feature (D37), so the caller resolves the copy and hands it down
+   * instead of this component reaching into `catalog/categories` itself.
+   */
+  unit?: string;
   className?: string;
 }
 
@@ -100,6 +110,7 @@ export function Price({
   currency,
   context = "card",
   unavailable = false,
+  unit,
   className,
 }: PriceProps) {
   const style = PRESENTATION[context];
@@ -127,7 +138,7 @@ export function Price({
           style.suffixBreak,
         )}
       >
-        {style.suffixCopy}
+        {unit ?? style.suffixCopy}
       </span>
     </div>
   );

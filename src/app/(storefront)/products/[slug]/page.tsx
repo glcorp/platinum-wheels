@@ -22,7 +22,10 @@ import { productView } from "@/features/product/view";
    the route is the quote form island (D51).
 
    Chrome is composed per page, not hoisted into a group layout (D38): `solid`
-   header here, `tires` active, as the artboards draw it.
+   header here, as the artboards draw it. The active nav item follows the
+   product's own category (D58) — `tires` on every artboard-drawn product, and
+   `wheels` / `accessories` on the two new lines, so a wheel PDP does not mark
+   Tires active in the nav.
 
    Layout: mobile stacks — breadcrumb, full-bleed gallery, buy panel. From
    `md:` 1100 the two become the drawn split, `grid-template-columns:55fr 45fr;
@@ -35,10 +38,16 @@ import { productView } from "@/features/product/view";
    cannot hold an 88px display title. Type still crosses at `sm:` 720, which is
    where the ratified `Price context="pdp"` already crosses.
 
-   The breadcrumb renders ONCE. The artboards place it above the gallery on
-   mobile and inside the buy panel on desktop (`product.md` §1.2); rather than
-   render it twice and hide one, the mobile instance is the real one and the
-   desktop instance is passed into `BuyPanel`, which shows it only from `md:`.
+   The breadcrumb is INSTANTIATED once and PLACED twice. The artboards put it
+   above the gallery on mobile and inside the buy panel on desktop
+   (`product.md` §1.2); one `<PdpBreadcrumb>` element is built here and handed
+   to both positions, so there is one source of truth for its markup — but two
+   subtrees do mount, one `md:hidden` and one `hidden md:block`.
+   Hit-tested during the D56 audit: the hidden copy is `display:none`, so it is
+   not focusable and not in the accessibility tree, and exactly one breadcrumb
+   is announced at any width. This comment previously claimed the breadcrumb
+   "renders ONCE", which is true of the source and false of the DOM; corrected
+   2026-09-21 (D61, audit taste item T1).
    --------------------------------------------------------------------------- */
 
 /* No `generateStaticParams` here, deliberately. Reading `searchParams` for
@@ -79,7 +88,7 @@ export default async function ProductPage({
 
   return (
     <>
-      <SiteHeader variant="solid" active="tires" />
+      <SiteHeader variant="solid" active={view.config.nav} />
       <main id="main" tabIndex={-1} className="flex-1">
         {/* Mobile only: `padding:16px 16px 0` above the gallery
             (`product-mobile.html:90`). Desktop's copy lives in the buy panel. */}

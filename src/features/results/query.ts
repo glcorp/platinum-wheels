@@ -1,24 +1,40 @@
 /**
  * URL half of the results contract — pure and client-safe (no seed import).
- * Signatures fixed by the coordinator; bodies implemented by the data agent.
- * See `types.ts` for the shapes and `llm.md` for the rules.
  *
  * State is the URL (D44), so this file is the whole state machine: a
  * `ResultsQuery` is what the query string says, `resultsHref()` is its one
  * canonical spelling, and the transforms below are the only ways a control
  * changes it. Nothing here throws — a hand-typed URL degrades to defaults
  * rather than to an error page.
+ *
+ * **Category is an argument, not a param (D58).** The category IS the route —
+ * `/results` is tires, `/wheels` is wheels, `/accessories` is accessories —
+ * so `parseResultsQuery` takes it from the caller (the page, which knows its
+ * own route) rather than reading it off the query string, and `resultsHref`
+ * serialises against `CATEGORY_CONFIG[query.category].route` instead of a
+ * hard-coded `/results`. Everything category-specific — which size fields
+ * exist, their param names and `strip` regexes, the chip group's param and
+ * option order — comes from `@/features/catalog/categories`, which (like this
+ * file) imports no seed data and stays safe for `filter-panel.tsx`, a
+ * `"use client"` island, to import.
+ *
+ * **Tires are unchanged.** The tires row of `CATEGORY_CONFIG` reproduces the
+ * measured param names (`width` / `profile` / `rim` / `season`) and the
+ * measured serialisation order, so every URL, probe and parity row on the
+ * built `/results` still holds byte-for-byte.
  */
 
-import { ROUTES } from "@/lib/routes";
+import {
+  CATEGORY_CONFIG,
+  type SizeFieldConfig,
+} from "@/features/catalog/categories";
+import type { ProductCategory } from "@/features/catalog/types";
 import {
   DEFAULT_SORT,
   RESULTS_PARAM,
-  SEASON_OPTIONS,
   SORT_OPTIONS,
   type RawSearchParams,
   type ResultsQuery,
-  type SeasonKey,
   type SortKey,
 } from "./types";
 
@@ -62,19 +78,31 @@ function parsePrice(raw: string | null): number | null {
   return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
-/** The seed writes rims bare (`16`), the rail labels them `R16`
- *  (results-desktop.html:131), so a URL may carry either spelling. */
-function parseRim(raw: string | null): string | null {
+/** One size field's value off the URL: `field.strip` (tires' rim: `R16` and
+ *  `16` both resolve to `16`) applied to the raw trimmed value, blank → `null`.
+ *  Fields without a `strip` regex (everything but tires' rim) pass through. */
+function parseSizeField(
+  params: RawSearchParams,
+  field: SizeFieldConfig,
+): string | null {
+  const raw = firstValue(params, field.param);
   if (raw === null) return null;
-  const stripped = raw.replace(/^[Rr]/, "").trim();
+  const stripped = field.strip ? raw.replace(field.strip, "").trim() : raw;
   return stripped === "" ? null : stripped;
 }
 
-/* --- Parse --------------------------------------------------------------- */
+/* --- Parse ----------------------------------------------------------------
+ */
 
-/** Parse `PageProps` search params (or a `URLSearchParams`) into a `ResultsQuery`.
- *  Unknown or malformed values fall back to the default; never throws. */
-export function parseResultsQuery(params: RawSearchParams): ResultsQuery {
+/** Parse `PageProps` search params (or a `URLSearchParams`) into a
+ *  `ResultsQuery` for `category`. Unknown or malformed values fall back to
+ *  the default; never throws. */
+export function parseResultsQuery(
+  category: ProductCategory,
+  params: RawSearchParams,
+): ResultsQuery {
+  const config = CATEGORY_CONFIG[category];
+
   const year = firstValue(params, RESULTS_PARAM.year);
   const make = firstValue(params, RESULTS_PARAM.make);
   const model = firstValue(params, RESULTS_PARAM.model);
@@ -86,12 +114,20 @@ export function parseResultsQuery(params: RawSearchParams): ResultsQuery {
       ? { year, make, model }
       : null;
 
-  /* Seasons in `SEASON_OPTIONS` order, not URL order, so two spellings of the
-     same filter serialise identically and the chip row never reorders. */
-  const selectedSeasons = new Set(uniqueValues(params, RESULTS_PARAM.season));
-  const seasons: SeasonKey[] = SEASON_OPTIONS.filter((option) =>
-    selectedSeasons.has(option.value),
-  ).map((option) => option.value);
+  /* One key per `config.size.fields[].param`, in field order. Empty for
+     accessories, whose `config.size` is `null`. */
+  const size: Record<string, string | null> = {};
+  for (const field of config.size?.fields ?? []) {
+    size[field.param] = parseSizeField(params, field);
+  }
+
+  /* Selected chip values, filtered and ordered by `config.chips.options`, not
+     URL order — so two spellings of the same filter serialise identically and
+     the chip row never reorders (today's season mechanism, generalised). */
+  const selected = new Set(uniqueValues(params, config.chips.param));
+  const chips = config.chips.options
+    .filter((option) => selected.has(option.value))
+    .map((option) => option.value);
 
   /* Brands keep URL order: they come from the seed (D42), not a fixed list. */
   const brands = uniqueValues(params, RESULTS_PARAM.brand);
@@ -110,11 +146,10 @@ export function parseResultsQuery(params: RawSearchParams): ResultsQuery {
     DEFAULT_SORT;
 
   return {
+    category,
     vehicle,
-    width: firstValue(params, RESULTS_PARAM.width),
-    profile: firstValue(params, RESULTS_PARAM.profile),
-    rim: parseRim(firstValue(params, RESULTS_PARAM.rim)),
-    seasons,
+    size,
+    chips,
     brands,
     priceMin,
     priceMax,
@@ -124,27 +159,34 @@ export function parseResultsQuery(params: RawSearchParams): ResultsQuery {
   };
 }
 
-/* --- Serialise ----------------------------------------------------------- */
+/* --- Serialise ------------------------------------------------------------
+ */
 
-/** Canonical `/results?...` for a query. Params in `RESULTS_PARAM` order,
- *  defaults omitted (`sort=best`, `show`), so equal queries give equal hrefs. */
+/** Canonical `<category route>?...` for a query. Param order: year, make,
+ *  model, then each size field in `config.size.fields` order, then the chip
+ *  param (repeated), then brand (repeated), min, max, `sort` (omitted at the
+ *  default) and `show` (omitted when false) — defaults omitted throughout, so
+ *  equal queries give equal hrefs. For tires this is exactly today's order:
+ *  year, make, model, width, profile, rim, season, brand, min, max, sort, show. */
 export function resultsHref(query: ResultsQuery): string {
+  const config = CATEGORY_CONFIG[query.category];
   const search = new URLSearchParams();
 
   const append = (key: string, value: string | null) => {
     if (value !== null && value !== "") search.append(key, value);
   };
 
-  /* `RESULTS_PARAM` key order, so a href never depends on how the query was
-     built — the rail, the sheet and a no-JS GET submit all land on one URL. */
   append(RESULTS_PARAM.year, query.vehicle?.year ?? null);
   append(RESULTS_PARAM.make, query.vehicle?.make ?? null);
   append(RESULTS_PARAM.model, query.vehicle?.model ?? null);
-  append(RESULTS_PARAM.width, query.width);
-  append(RESULTS_PARAM.profile, query.profile);
-  append(RESULTS_PARAM.rim, query.rim);
-  for (const season of query.seasons) search.append(RESULTS_PARAM.season, season);
+
+  for (const field of config.size?.fields ?? []) {
+    append(field.param, query.size[field.param] ?? null);
+  }
+
+  for (const chip of query.chips) search.append(config.chips.param, chip);
   for (const brand of query.brands) search.append(RESULTS_PARAM.brand, brand);
+
   append(
     RESULTS_PARAM.min,
     query.priceMin === null ? null : String(query.priceMin),
@@ -153,23 +195,28 @@ export function resultsHref(query: ResultsQuery): string {
     RESULTS_PARAM.max,
     query.priceMax === null ? null : String(query.priceMax),
   );
+
   if (query.sort !== DEFAULT_SORT) search.append(RESULTS_PARAM.sort, query.sort);
   if (query.showAll) search.append(RESULTS_PARAM.show, "all");
 
   const serialised = search.toString();
-  return serialised === "" ? ROUTES.results : `${ROUTES.results}?${serialised}`;
+  return serialised === "" ? config.route : `${config.route}?${serialised}`;
 }
 
-/* --- Transforms ---------------------------------------------------------- */
+/* --- Transforms -------------------------------------------------------- */
 
-/** Same query with every filter cleared; keeps `vehicle` and `sort`. `Clear all`. */
+/** Same query with every filter cleared; keeps `category`, `vehicle` and
+ *  `sort`. `Clear all`. Size keys stay present, all set to `null` — the
+ *  selects still have something to read `Any` off of. */
 export function clearFilters(query: ResultsQuery): ResultsQuery {
+  const clearedSize: Record<string, string | null> = {};
+  for (const key of Object.keys(query.size)) clearedSize[key] = null;
+
   return {
+    category: query.category,
     vehicle: query.vehicle,
-    width: null,
-    profile: null,
-    rim: null,
-    seasons: [],
+    size: clearedSize,
+    chips: [],
     brands: [],
     priceMin: null,
     priceMax: null,

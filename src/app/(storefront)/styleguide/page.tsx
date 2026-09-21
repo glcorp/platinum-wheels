@@ -13,6 +13,7 @@ import { ProductCard } from "@/features/catalog/components/product-card";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import { ResultsEmpty } from "@/features/results/components/results-grid";
 import { QuoteErrorSummary } from "@/features/product/components/quote-error-summary";
+import { RouteErrorPanel } from "@/components/site/route-error";
 import { QuoteSuccess } from "@/features/product/components/quote-success";
 import type { Product } from "@/features/catalog/types";
 import { Select } from "@/components/ui/select";
@@ -432,8 +433,9 @@ export default function StyleguidePage() {
           <code className="text-ink">:hover</code>. Focus, active and disabled are
           authored above from DESIGN.md §4. Form success and form error are
           authored below with the PDP quote band (D51, D57), together with the
-          skip link the artboards never drew (D57). Loading and route error
-          still need authoring, and land here when they exist.
+          skip link the artboards never drew (D57). Loading and route error are
+          authored below (D62), which closes the set: every state the design
+          never drew now has a home here.
         </p>
 
         {/* Empty results — `/results` with a filter set that matches nothing.
@@ -517,6 +519,64 @@ export default function StyleguidePage() {
             <a href="#main" className="skip-link">
               Skip to content
             </a>
+          </div>
+        </div>
+
+        {/* Route error. No artboard draws one (D62). Rendered from the real
+            component so it cannot drift — the same rule that put `QuoteSuccess`
+            and `QuoteErrorSummary` here rather than a copy.
+
+            Two things are faked and both are deliberate: `retry` is a no-op,
+            because the real one re-renders the boundary's children and there
+            are none here; and the component is given a `digest`, so the
+            reference shows the branch a production error actually takes (the
+            `Reference …` line is omitted when there is no digest).
+
+            `RouteErrorPanel` is the boundary's contents without its `<main>`
+            wrapper, and takes `as="h2"` — this page already owns an `<h1>` and
+            an `<main id="main">`, and a second of either would be a defect the
+            audit checks for. Same split as `ResultsEmpty` (D47(6)). */}
+        <div className="mt-10">
+          <p className="numeral text-12 text-ink-dim mb-4">
+            Route error · src/components/site/route-error.tsx
+          </p>
+          <div className="border-border-strong border p-4">
+            {/* No `retry`: this page is a Server Component and RSC refuses to
+                serialise a function across the client boundary — the build
+                fails outright, which is how this was caught. The button is
+                therefore inert here, like `QuoteSuccess` and
+                `QuoteErrorSummary` above it. A `digest` IS supplied, so the
+                reference shows the branch a production error takes; the
+                `Reference …` line is omitted when there is none. */}
+            <RouteErrorPanel as="h2" digest="1234567890" />
+          </div>
+        </div>
+
+        {/* Loading. No artboard draws one (D62). Not rendered from
+            `src/app/(storefront)/loading.tsx` itself — that file renders the
+            real `SiteHeader` and `SiteFooter`, and a second header and footer
+            inside this page would be wrong in the DOM and in the a11y tree.
+            The blocks below are the same recipe that file uses, at the same
+            tokens, which is the one place in §11 where a copy is the right
+            call rather than the wrong one. If the recipe there changes, change
+            it here. */}
+        <div className="mt-10">
+          <p className="numeral text-12 text-ink-dim mb-4">
+            Loading · src/app/(storefront)/loading.tsx · body only, without its chrome
+          </p>
+          <div aria-hidden="true" className="border-border-strong border p-4">
+            <div className="flex flex-col gap-4">
+              <div className="bg-surface border-border h-14 w-2/3 max-w-measure border sm:h-22" />
+              <div className="bg-surface border-border h-4 w-1/3 max-w-measure border" />
+            </div>
+            <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3">
+              {Array.from({ length: 6 }, (_, index) => (
+                <div
+                  key={index}
+                  className="bg-surface border-border aspect-square border"
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>

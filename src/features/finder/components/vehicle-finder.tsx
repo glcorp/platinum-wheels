@@ -11,6 +11,13 @@ import { FINDER_MAKES, FINDER_YEARS } from "@/features/finder/data";
  * (D28); the artboard pre-fill `2021 / Honda / Civic` is sample data and does
  * not ship. No JS required to submit — plain GET to ROUTES.results.
  *
+ * Submit target and CTA copy are per category (D58). The home hero and
+ * `/results` keep the drawn `ROUTES.results` + `Find my tires`, byte for byte;
+ * `/wheels` submits to `/wheels` and reads `Find my wheels`, so the disclosure
+ * never throws a visitor back to tires. `/accessories` does not render a
+ * finder at all — an accessory derives nothing from a vehicle, so a control
+ * that changes no result would be a lie (coordinator, 2026-09-21, D58).
+ *
  * Two placements, one form:
  * - `hero` (default, unchanged) — the home page panel that overlaps the hero
  *   photo: negative top margin plus its own side margins and container cap.
@@ -21,13 +28,29 @@ import { FINDER_MAKES, FINDER_YEARS } from "@/features/finder/data";
  */
 export interface VehicleFinderProps {
   variant?: "hero" | "inline";
+  /**
+   * Where the GET submit lands. Defaults to `ROUTES.results`, the drawn
+   * target, so the home hero and `/results` are unchanged; `/wheels` passes
+   * its own route (D58).
+   */
+  action?: string;
+  /**
+   * CTA copy. Defaults to the artboard-verbatim `Find my tires`
+   * (home-desktop.html:161); `/wheels` passes `Find my wheels`, which is new
+   * copy under `.claude/rules/ui.md` and keeps the same two-word shape.
+   */
+  cta?: string;
 }
 
-export function VehicleFinder({ variant = "hero" }: VehicleFinderProps) {
+export function VehicleFinder({
+  variant = "hero",
+  action = ROUTES.results,
+  cta = "Find my tires",
+}: VehicleFinderProps) {
   return (
     <form
       method="get"
-      action={ROUTES.results}
+      action={action}
       data-probe="finder"
       className={[
         "bg-surface border border-border-strong",
@@ -115,7 +138,7 @@ export function VehicleFinder({ variant = "hero" }: VehicleFinderProps) {
           // (home.md:161,164). Mobile adds `margin-top:4px` (home.md:164).
           className="mt-1 sm:mt-0"
         >
-          Find my tires <span aria-hidden="true">→</span>
+          {cta} <span aria-hidden="true">→</span>
         </Button>
       </div>
     </form>

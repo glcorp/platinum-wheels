@@ -230,7 +230,11 @@
   --container-*: initial;
   --container-content: 1344px;
   --container-measure: 420px;
-  --container-rail: 280px;
+  /* `--container-rail: 280px` was here and had ZERO references (audit S5,
+     `design/reports/audit.md` §4). The 280px filter rail is the first track of
+     the `results-grid` utility below, which is where the artboard declares it
+     (results-desktop.html:119) — a second spelling of the same number could
+     only ever drift from it. Removed 2026-09-21 (D61). */
   /* Home-page measures, each declared once in the exports:
      hero text block `max-width:1100px` (home-desktop.html:119, inventory
      home.md:21), hero lede `max-width:560px` (home.md:121), winter-promo body

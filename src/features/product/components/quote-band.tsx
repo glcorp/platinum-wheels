@@ -25,6 +25,13 @@ export function QuoteBand({ view }: QuoteBandProps) {
   // (`product-desktop.html:135` "against your Civic" -> "your <model>");
   // without one it genericises — new copy under `.claude/rules/ui.md`, since
   // no artboard draws this state (D28 precedent).
+  //
+  // D58 check: neither this clause nor the paragraph it feeds below
+  // ("We check the fitment against …, confirm stock, and reply with a firm
+  // price and a secure payment link.", `product-desktop.html:135` verbatim
+  // minus the vehicle swap already made under D53(6)) names "tire" anywhere,
+  // so both already read correctly for a wheel or an accessory PDP with no
+  // further change.
   const vehicleClause = vehicle !== null ? `your ${vehicle.model}` : "your vehicle";
 
   return (
@@ -105,7 +112,18 @@ export function QuoteBand({ view }: QuoteBandProps) {
             own (product-mobile.html:106 wraps the whole band at `gap:24px`),
             so the extra desktop gap is `md:` only. */}
         <div className="flex flex-col gap-6 md:gap-8">
-          <QuoteForm slug={product.slug} quantity={quantity} />
+          <QuoteForm
+            slug={product.slug}
+            quantity={quantity}
+            unit={view.config.unit}
+            /* Placeholder + consent copy, per category. A tire gets the
+               artboard string verbatim; the other two get the variant
+               (D59(7), `categories.ts` `copy.quotePlaceholder`). Passed as
+               props because `QuoteForm` is the folder's one client island and
+               has no business importing the category table. */
+            placeholder={view.config.copy.quotePlaceholder}
+            consent={view.config.copy.quoteConsent}
+          />
         </div>
       </div>
     </section>

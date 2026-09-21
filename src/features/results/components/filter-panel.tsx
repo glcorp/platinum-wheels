@@ -36,6 +36,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChipCheckbox, chipBox, chipRestClass } from "@/components/ui/chip";
+import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import {
   clearFilters,
   parseResultsQuery,
@@ -49,7 +50,6 @@ import {
   type ResultsView,
   type SizeOption,
 } from "@/features/results/types";
-import { ROUTES } from "@/lib/routes";
 
 /* --- Shared bits ---------------------------------------------------------- */
 
@@ -392,7 +392,9 @@ export function FilterPanel({
       const target = event.target;
       refocusRef.current =
         target instanceof HTMLElement && target.id !== "" ? target.id : null;
-      const next = resultsHref(parseResultsQuery(readForm(form)));
+      const next = resultsHref(
+        parseResultsQuery(query.category, readForm(form)),
+      );
       startTransition(() => {
         router.replace(next, { scroll: false });
       });
@@ -402,7 +404,7 @@ export function FilterPanel({
     return () => {
       form.removeEventListener("change", handleChange);
     };
-  }, [href, router, startTransition]);
+  }, [href, query.category, router, startTransition]);
 
   /* The href has changed, so the keyed form has just re-mounted: put focus back
      on the control the user operated, and only then tell the sheet to close. */
@@ -434,21 +436,25 @@ export function FilterPanel({
     : "flex flex-col gap-4 py-4";
 
   /* Category rows, rail: `height:40px; padding:0 12px; font:500 15px/1`,
-     selected `background:var(--text); color:var(--on-accent)`, the rest
+     current `background:var(--text); color:var(--on-accent)`, the rest
      `background:transparent; color:var(--text-muted)`
      (results-desktop.html:125). 40px is a desktop-only row — the rail is
      `md:` and up (D46), i.e. pointer devices, so the 44px touch floor in
      docs/decisions.md §5 does not apply to it.
      No hover: results.md §2.4 ends "No hover rules exist on any rail control",
      and DESIGN.md §4's row-hover value (`--bg-alt`) is a token this theme does
-     not have (results.md §6 #2, #24), so there is nothing to author from. */
+     not have (results.md §6 #2, #24), so there is nothing to author from.
+     Rows come from `facets.categories` (D58): on `/results` this reproduces
+     the built page byte for byte — `Tires` is `current`, `Wheels` and
+     `Accessories` are the plain rest treatment — and the same markup now also
+     renders on `/wheels` and `/accessories` with a different row current. */
   const categoryRow =
     "flex h-10 items-center justify-between px-3 text-15 font-medium leading-flat focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0";
 
   /* Sheet Category chips, 44px, `padding:0 16px; font:500 14px/1` — the `Chip`
      primitive's own box (src/components/ui/chip.tsx), reused as a class recipe
      because these two are `<Link>`s and `Chip` renders a `<button>`. The
-     selected `Tires` chip keeps `border:1px solid var(--border-strong)` rather
+     current `Tires` chip keeps `border:1px solid var(--border-strong)` rather
      than the `--text` border the Season chips get — an inconsistency the
      artboard draws on purpose-or-not (results.md §4.4 group 1, §6 "Internal
      inconsistencies" #4) and that ships as drawn. */
@@ -463,10 +469,16 @@ export function FilterPanel({
       ref={formRef}
       id={formId}
       method="get"
-      action={ROUTES.results}
+      /* This category's own route (D58) — `CATEGORY_CONFIG[query.category].route`,
+         not `resultsHref(clearFilters(query))`, so a no-JS submit posts to the
+         plain route even mid-edit, before the rest of the query is known to be
+         valid. Tires' route is still the measured `/results` (D39). */
+      action={CATEGORY_CONFIG[query.category].route}
       onSubmit={(event) => {
         event.preventDefault();
-        const next = resultsHref(parseResultsQuery(readForm(event.currentTarget)));
+        const next = resultsHref(
+          parseResultsQuery(query.category, readForm(event.currentTarget)),
+        );
         if (next === href) {
           /* Nothing moved, so no navigation will arrive to close on. */
           onNavigate?.();
@@ -534,129 +546,145 @@ export function FilterPanel({
         </GroupLabel>
 
         {rail ? (
-          /* List `gap:4px` (results-desktop.html:124). */
+          /* List `gap:4px` (results-desktop.html:124). One row per
+             `facets.categories` entry, drawn order (D58). On `/results` this
+             is exactly the old markup: `Tires` current with its count,
+             `Wheels` / `Accessories` the rest treatment with none — only the
+             source of the three rows moved. */
           <div className="flex flex-col gap-1">
-            <span aria-current="true" className={cx(categoryRow, "bg-ink text-on-accent")}>
-              Tires
-              {/* Count `font:400 13px/1; color:var(--text-dim); tabular`.
-                  Computed from the seed, never typed (D42). */}
-              <span className="text-13 leading-flat font-normal text-ink-dim tabular-nums">
-                {facets.tireCount}
-              </span>
-            </span>
-            {/* Wheels and Accessories carry no count — no data exists for them
-                (D42); they link to their stub routes (D26, D39). */}
-            <Link
-              href={ROUTES.wheels}
-              className={cx(categoryRow, "bg-transparent text-ink-muted")}
-            >
-              Wheels
-            </Link>
-            <Link
-              href={ROUTES.accessories}
-              className={cx(categoryRow, "bg-transparent text-ink-muted")}
-            >
-              Accessories
-            </Link>
+            {facets.categories.map((row) =>
+              row.current ? (
+                <span
+                  key={row.category}
+                  aria-current="true"
+                  className={cx(categoryRow, "bg-ink text-on-accent")}
+                >
+                  {row.label}
+                  {/* Count `font:400 13px/1; color:var(--text-dim); tabular`.
+                      Computed from the seed, never typed (D42). Only the
+                      current row ever carries one (`Facets.categories`). */}
+                  {row.count !== null ? (
+                    <span className="text-13 leading-flat font-normal text-ink-dim tabular-nums">
+                      {row.count}
+                    </span>
+                  ) : null}
+                </span>
+              ) : (
+                <Link
+                  key={row.category}
+                  href={row.href}
+                  className={cx(categoryRow, "bg-transparent text-ink-muted")}
+                >
+                  {row.label}
+                </Link>
+              ),
+            )}
           </div>
         ) : (
           <div className="flex gap-2">
-            <span
-              aria-current="true"
-              className={cx(chipBox, "border-border-strong bg-ink text-on-accent")}
-            >
-              Tires
-            </span>
-            <Link
-              href={ROUTES.wheels}
-              className={cx(chipBox, chipRestClass, chipFocus)}
-            >
-              Wheels
-            </Link>
-            <Link
-              href={ROUTES.accessories}
-              className={cx(chipBox, chipRestClass, chipFocus)}
-            >
-              Accessories
-            </Link>
+            {facets.categories.map((row) =>
+              row.current ? (
+                <span
+                  key={row.category}
+                  aria-current="true"
+                  className={cx(chipBox, "border-border-strong bg-ink text-on-accent")}
+                >
+                  {row.label}
+                </span>
+              ) : (
+                <Link
+                  key={row.category}
+                  href={row.href}
+                  className={cx(chipBox, chipRestClass, chipFocus)}
+                >
+                  {row.label}
+                </Link>
+              ),
+            )}
           </div>
         )}
       </div>
 
-      {/* 2 — Tire size --------------------------------------------------- */}
-      <div
-        data-probe="group-size"
-        role="group"
-        aria-labelledby={`${idPrefix}-size-label`}
-        className={shell}
-      >
-        <GroupLabel id={`${idPrefix}-size-label`} mark>
-          Tire size
-        </GroupLabel>
+      {/* 2 — Size (tires only draw a group; accessories draw none) -------- */}
+      {/* `facets.sizeGroup` is `null` for accessories (D58) — the group is
+          omitted entirely and the rail draws four groups instead of five,
+          owner-ruled. Where it exists it is always exactly three fields
+          (`categories.ts` "The group is drawn as a three-track grid ... a
+          category gets exactly three fields or none at all"), so the 3-track
+          grid below is unchanged. */}
+      {facets.sizeGroup !== null ? (
+        <div
+          data-probe="group-size"
+          role="group"
+          aria-labelledby={`${idPrefix}-size-label`}
+          className={shell}
+        >
+          <GroupLabel id={`${idPrefix}-size-label`} mark>
+            {facets.sizeGroup.label}
+          </GroupLabel>
 
-        {/* Rail `grid-template-columns:1fr 1fr 1fr; gap:8px` with `Apply` on its
-            own full-width row below (results-desktop.html:129,133).
-            Sheet `1fr 1fr 1fr 88px; gap:8px; align-items:end` with `Apply`
-            inline (results-mobile-filters.html:78) — the fourth track is a
-            fixed 88px, so it is the `size-grid-sheet` utility rather than four
-            equal columns (globals.css). */}
-        <div className={rail ? "grid grid-cols-3 gap-2" : "size-grid-sheet gap-2"}>
-          <SizeField
-            id={`${idPrefix}-width`}
-            name={RESULTS_PARAM.width}
-            caption="Width"
-            options={facets.sizes.widths}
-            value={query.width}
-            probe="size-width"
-          />
-          <SizeField
-            id={`${idPrefix}-profile`}
-            name={RESULTS_PARAM.profile}
-            caption="Profile"
-            options={facets.sizes.profiles}
-            value={query.profile}
-          />
-          <SizeField
-            id={`${idPrefix}-rim`}
-            name={RESULTS_PARAM.rim}
-            caption="Rim"
-            options={facets.sizes.rims}
-            value={query.rim}
-          />
-          {rail ? null : (
+          {/* Rail `grid-template-columns:1fr 1fr 1fr; gap:8px` with `Apply` on its
+              own full-width row below (results-desktop.html:129,133).
+              Sheet `1fr 1fr 1fr 88px; gap:8px; align-items:end` with `Apply`
+              inline (results-mobile-filters.html:78) — the fourth track is a
+              fixed 88px, so it is the `size-grid-sheet` utility rather than four
+              equal columns (globals.css). */}
+          <div className={rail ? "grid grid-cols-3 gap-2" : "size-grid-sheet gap-2"}>
+            {facets.sizeGroup.fields.map((field, index) => (
+              <SizeField
+                key={field.param}
+                id={`${idPrefix}-${field.param}`}
+                name={field.param}
+                caption={field.caption}
+                options={field.options}
+                value={field.value}
+                /* `size-width` is the tire rail's own probe id
+                   (results-desktop.html:131); kept on the first field
+                   generically so it still resolves on every category. */
+                probe={index === 0 ? "size-width" : undefined}
+              />
+            ))}
+            {rail ? null : (
+              <Button type="submit" variant="secondary" size="compact" fullWidth data-probe="apply">
+                Apply
+              </Button>
+            )}
+          </div>
+
+          {rail ? (
             <Button type="submit" variant="secondary" size="compact" fullWidth data-probe="apply">
               Apply
             </Button>
-          )}
+          ) : null}
         </div>
+      ) : null}
 
-        {rail ? (
-          <Button type="submit" variant="secondary" size="compact" fullWidth data-probe="apply">
-            Apply
-          </Button>
-        ) : null}
-      </div>
-
-      {/* 3 — Season ------------------------------------------------------ */}
+      {/* 3 — Chip group: Season / Finish / Type --------------------------- */}
       {/* Rail label carries the collapse mark, the sheet's is bare
           (results.md §4.6 "Collapse chevrons | all 5 groups | Category and Tire
           size only"). */}
       <div
-        data-probe="group-season"
+        /* `group-${param}` resolves to the measured `group-season` on tires,
+           so every existing probe in `design/reports/results.md` still hits;
+           on the other two it reads `group-finish` / `group-type` rather than
+           naming a group that is not there (D58). */
+        data-probe={`group-${facets.chipGroup.param}`}
         role="group"
         aria-labelledby={`${idPrefix}-season-label`}
         className={shell}
       >
         <GroupLabel id={`${idPrefix}-season-label`} mark={rail}>
-          Season
+          {facets.chipGroup.label}
         </GroupLabel>
         {/* `display:flex;gap:8px;flex-wrap:wrap` (results-desktop.html:134). */}
         <div className="flex flex-wrap gap-2">
-          {facets.seasons.map((option: FacetOption) => (
+          {facets.chipGroup.options.map((option: FacetOption) => (
             <ChipCheckbox
               key={option.value}
-              id={`${idPrefix}-season-${option.value}`}
-              name={RESULTS_PARAM.season}
+              /* Tires still emit `rail-season-winter`, unchanged; the param
+                 keeps the id honest on the other two categories. */
+              id={`${idPrefix}-${facets.chipGroup.param}-${option.value}`}
+              name={facets.chipGroup.param}
               value={option.value}
               defaultChecked={option.selected}
               /* The sheet is in use to 1099px (D46) and draws 44px chips, so it
@@ -665,8 +693,10 @@ export function FilterPanel({
               size={rail ? "auto" : "touch"}
               data-probe={option.value === "winter" ? "chip-winter" : undefined}
             >
-              {/* Copy verbatim, `All-season` with a lowercase s — unlike the
-                  card badge (results.md §6 "Internal inconsistencies" #1). */}
+              {/* Copy verbatim, `All-season` with a lowercase s on tires —
+                  unlike the card badge (results.md §6 "Internal
+                  inconsistencies" #1). Wheels/accessories options are new
+                  copy (`.claude/rules/ui.md` "Copy", `categories.ts`). */}
               {option.label}
             </ChipCheckbox>
           ))}
@@ -721,7 +751,7 @@ export function FilterPanel({
         </div>
       </div>
 
-      {/* 5 — Price per tire ---------------------------------------------- */}
+      {/* 5 — Price per tire / wheel / item -------------------------------- */}
       <div
         data-probe="group-price"
         role="group"
@@ -729,7 +759,7 @@ export function FilterPanel({
         className={shellPrice}
       >
         <GroupLabel id={`${idPrefix}-price-label`} mark={rail}>
-          Price per tire
+          {facets.priceLabel}
         </GroupLabel>
         <PriceGroup
           idPrefix={idPrefix}

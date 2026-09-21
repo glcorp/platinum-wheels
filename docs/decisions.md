@@ -75,6 +75,13 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
 - Server Components by default. `"use client"` only on leaf islands (filter sheet, quantity stepper,
   gallery controls, mobile nav drawer, motion wrappers). **Never at page level** — a `'use client'` inside
   `src/app/` is a build failure by policy.
+  **One exception, `src/app/(storefront)/error.tsx` (D62).** Next 16 requires an error boundary to carry
+  the directive in the file itself and rejects a re-export from a module that carries it — verified by
+  building both. The exception is scoped as narrowly as the framework allows: the file is the directive
+  plus a one-line re-export and contains **no component code**, which lives at
+  `src/components/site/route-error.tsx` with the other islands. `global-error.tsx` would fall under the
+  same exception if it is ever added. Nothing else under `src/app/` may carry the directive, and the
+  slop grep should treat any other occurrence as the failure it was always meant to catch.
 - All SEO-relevant content is server-rendered.
 - `next/image` only, always with `sizes` and a reserved aspect box; the hero carries `priority`.
 - `next/link` for every internal link.

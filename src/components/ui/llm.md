@@ -42,7 +42,12 @@ One line each; measurements and per-variant tables live in each file's header co
   that `Select` reuses so "same box as Input" is one string. `InputProps`: `id` (required), `density?`,
   `invalid?`.
 - [`price.tsx`](price.tsx) — `Price` and `formatPrice()`. `PriceProps`: `amount: number`,
-  `currency: string`, `context?: "card" | "pdp"`, `unavailable?`. Takes a number, never a string.
+  `currency: string`, `context?: "card" | "pdp"`, `unit?: string`, `unavailable?`. Takes a number, never
+  a string. `unit` (**D58**) is the suffix copy — `/ tire`, `/ wheel`, `/ each`, `per tire · before tax`
+  — and **defaults to the drawn tire string for each context**, so every pre-D58 call site renders
+  identically. It is a plain string, not a category lookup, precisely because `src/components/*` never
+  imports a feature (D37): the caller in `catalog/` or `product/` reads
+  `CategoryConfig.unit` and passes the result down.
 - [`section-heading.tsx`](section-heading.tsx) — `SectionHeading`, the `01 — Shop by category` pattern.
   `SectionHeadingProps`: `eyebrow`, `index?`, `title`, `as?: "h1" | "h2" | "h3"`, `action?`.
 - [`select.tsx`](select.tsx) — `Select`, a native `<select>` plus the 16px chevron. `SelectProps`:
@@ -87,7 +92,7 @@ One line each; measurements and per-variant tables live in each file's header co
 | — | — | None folder-scoped. | Every ruling here is already global. | — |
 
 Referenced: **D12** (chip radius 0), **D13** (button tracking .08/.04em), **D14**, **D15** (mobile
-textarea 16px), **D16**, **D17**, **D21** (price suffix per context). Authored states — focus, active,
+textarea 16px), **D16**, **D17**, **D21** (price suffix per context, extended per category by **D58**). Authored states — focus, active,
 disabled — come from `design/DESIGN.md` §4 under DEVIATIONS #9, because the exports contain no such rule.
 
 ## Connects to
@@ -109,6 +114,8 @@ disabled — come from `design/DESIGN.md` §4 under DEVIATIONS #9, because the e
 - **Don't add `rounded-*` to `Badge` or `Chip`.** Radius is an exact-match parity property; 2px fails
   (D12, `badge.tsx:6-10`).
 - **Don't add a transition to a button or chip.** See Rules.
+- **Don't import `@/features/…` into a primitive** to resolve a per-category value. Take a prop with a
+  drawn default instead — that is what `Price`'s `unit` is (D37, D58).
 - **Don't let `Price` accept a pre-formatted string.** The number-in/format-here shape is what makes
   cents, a shrunken `$` and superscript unrepresentable (`price.tsx:1-10`, `docs/decisions.md:112`).
 - **Don't replace `<select>` or `<input type="checkbox">` with a custom widget.** Hard rule
@@ -125,11 +132,9 @@ disabled — come from `design/DESIGN.md` §4 under DEVIATIONS #9, because the e
    rules whether one helper moves to `src/lib/`; **nobody may refactor it in passing**, and any
    consolidation must not change a single emitted class string — several of these files carry
    parity-measured class output.
-2. **`chip.tsx:30-43` contradicts itself.** The paragraph rules radius 0 because "Artboards win on a
-   measured value", then a stranded fragment beginning mid-sentence ("and globals.css's rule that…")
-   concludes the opposite, that this is "the spec filling a silence". D12 settles the outcome; the
-   comment needs the dead half deleted. Whoever next edits the file. **The D56 audit (finding S4) reports
-   this contradiction is no longer present in the current `chip.tsx`** — re-read before acting, and if it
-   is genuinely gone, delete this item. Not verified by the coordinator.
+2. ~~**`chip.tsx` contradicts itself.**~~ **Deleted 2026-09-21 (D61, audit finding S4): re-read and the
+   contradiction is genuinely gone.** The radius paragraph now argues one thing only — the exports
+   declare no `border-radius` on any chip while the Sort select and the tire-size `Apply` button beside
+   them carry `--radius-ctl`, so square chips next to 2px controls are deliberate. D12, DEVIATIONS #5.
 3. **Stale line citations in header comments** — see the discrepancy list; they need re-pointing, and
    nothing enforces it but root `llm.md` §1.2.

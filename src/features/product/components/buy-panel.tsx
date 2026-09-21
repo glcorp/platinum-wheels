@@ -133,9 +133,17 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
       </div>
 
       {/* Price — built for this exact element already; do not restyle it
-          (`product.md` §3.3). Wrapper `padding-top:8px`. */}
+          (`product.md` §3.3). Wrapper `padding-top:8px`. `unit` is the
+          category's PDP suffix (D58, `CategoryConfig.unit.pdp`) — a tire's is
+          `per tire · before tax`, `Price`'s own default, so this is a no-op
+          for the built page; a wheel renders `per wheel · before tax`. */}
       <div className="pt-2">
-        <Price amount={product.price} currency={product.currency} context="pdp" />
+        <Price
+          amount={product.price}
+          currency={product.currency}
+          context="pdp"
+          unit={view.config.unit.pdp}
+        />
       </div>
 
       <QuantityControl quantity={view.quantity} searchParams={searchParams} />

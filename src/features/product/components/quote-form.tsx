@@ -32,6 +32,7 @@ import {
   QUANTITY_OPTIONS,
   QUOTE_FIELD,
   QUOTE_INITIAL_STATE,
+  quantityQuoteLabel,
   type QuantityKey,
 } from "@/features/product/types";
 import { QuoteErrorSummary } from "./quote-error-summary";
@@ -46,9 +47,32 @@ export interface QuoteFormProps {
   slug: string;
   /** The buy panel's current selection (D50), the Quantity select's default. */
   quantity: QuantityKey;
+  /**
+   * The category's unit pair (D58, `CategoryConfig.unit`), passed as a plain
+   * `{ one, many }` prop rather than importing `CATEGORY_CONFIG` into this
+   * `"use client"` island — the table stays out of the client bundle, and the
+   * server parent (`quote-band.tsx`) is the one place that already resolves
+   * `view.config`. Feeds `quantityQuoteLabel()` below.
+   */
+  unit: { one: string; many: string };
+  /**
+   * Message-field placeholder, per category (`CategoryConfig.copy`, D59(7)).
+   * A tire renders the artboard string verbatim; wheels and accessories render
+   * a variant of it, because no artboard draws their PDP and the drawn wording
+   * names tires specifically.
+   */
+  placeholder: string;
+  /** CASL consent line, per category, same reasoning as `placeholder`. */
+  consent: string;
 }
 
-export function QuoteForm({ slug, quantity }: QuoteFormProps) {
+export function QuoteForm({
+  slug,
+  quantity,
+  unit,
+  placeholder,
+  consent,
+}: QuoteFormProps) {
   const [state, formAction, isPending] = useActionState(submitQuote, QUOTE_INITIAL_STATE);
   const successRef = useRef<HTMLDivElement>(null);
   const errorSummaryRef = useRef<HTMLParagraphElement>(null);
@@ -209,7 +233,7 @@ export function QuoteForm({ slug, quantity }: QuoteFormProps) {
             >
               {QUANTITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.quoteLabel}
+                  {quantityQuoteLabel(option.value, unit)}
                 </option>
               ))}
             </Select>
@@ -280,7 +304,7 @@ export function QuoteForm({ slug, quantity }: QuoteFormProps) {
             id="quote-message"
             name={QUOTE_FIELD.message}
             ref={messageRef}
-            placeholder="Anything we should know — current tires, storage, install timing…"
+            placeholder={placeholder}
             defaultValue={values?.message}
             invalid={Boolean(errors?.message)}
             aria-describedby={errors?.message ? "quote-message-error" : undefined}
@@ -293,8 +317,7 @@ export function QuoteForm({ slug, quantity }: QuoteFormProps) {
         {/* CASL consent: renders unticked, always — `Checkbox` never accepts
             `checked`/`defaultChecked` from this call site (docs/decisions.md:118). */}
         <Checkbox id="quote-consent" name={QUOTE_FIELD.consent} variant="consent">
-          Yes, send me seasonal offers and tire tips from Platinum Wheels. You can
-          unsubscribe anytime.
+          {consent}
         </Checkbox>
       </div>
 

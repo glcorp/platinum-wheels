@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import { productImageSrc } from "@/features/catalog/types";
+
 import { Badge } from "@/components/ui/badge";
 import type { PdpBadge } from "@/features/product/types";
 
@@ -35,7 +37,8 @@ export interface PdpGalleryProps {
   brand: string;
   model: string;
   slug: string;
-  /** Cut-out basename when it differs from `slug` (`Product.image`, D43). */
+  /** Cut-out basename when it differs from `slug`, or an absolute path for
+   *  the accessories escape hatch (`Product.image`, D43, D58). */
   image?: string;
   /** Mobile-only badge overlay (`product.md` §3.1). Omit to render no
    *  overlay — the desktop caller never passes it (badges live in the buy
@@ -60,7 +63,10 @@ export function PdpGallery({ brand, model, slug, image, badges }: PdpGalleryProp
           (the same crossover the split itself takes — see `page.tsx`). */}
       <div className="relative mt-4 aspect-square overflow-hidden md:mt-0 md:border md:border-border md:bg-bg">
         <Image
-          src={`/images/products/${image ?? slug}.webp`}
+          /* One resolver for the card and the gallery, so an accessory
+             cannot render its photo in the grid and a 404 on its own page
+             (`productImageSrc`, D58). */
+          src={productImageSrc({ image, slug })}
           alt={`${brand} ${model}`}
           width={1000}
           height={1000}

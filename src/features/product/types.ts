@@ -13,6 +13,7 @@
  * data beyond the one `studdable` flag.
  */
 
+import type { CategoryConfig } from "@/features/catalog/categories";
 import type { Product } from "@/features/catalog/types";
 
 /* --- Quantity (D50) ------------------------------------------------------ */
@@ -23,18 +24,34 @@ export type QuantityKey = "1" | "2" | "4" | "custom";
 
 export const QUANTITY_OPTIONS: ReadonlyArray<{
   value: QuantityKey;
-  /** Cell label, artboard-verbatim. */
+  /** Cell label, artboard-verbatim. Category-independent: the four cells are
+   *  `1`, `2`, `4`, `Custom` on every product (D58). */
   label: string;
-  /** How the quote form's Quantity select spells the same choice. The
-   *  artboard shows `4 tires` (`product-desktop.html:146`); the other three
-   *  are new copy under `.claude/rules/ui.md` "Copy". */
-  quoteLabel: string;
 }> = [
-  { value: "1", label: "1", quoteLabel: "1 tire" },
-  { value: "2", label: "2", quoteLabel: "2 tires" },
-  { value: "4", label: "4", quoteLabel: "4 tires" },
-  { value: "custom", label: "Custom", quoteLabel: "Another quantity" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "4", label: "4" },
+  { value: "custom", label: "Custom" },
 ];
+
+/**
+ * How the quote form's Quantity select spells one cell. The artboard shows
+ * `4 tires` (`product-desktop.html:146`) — that string is reproduced exactly
+ * for a tire; the singular, the other counts and the two new categories are
+ * new copy under `.claude/rules/ui.md` "Copy".
+ *
+ * Takes the unit pair rather than the category so the copy lives once, in
+ * `CategoryConfig.unit` (`@/features/catalog/categories`), beside the card and
+ * PDP price suffixes it has to agree with.
+ */
+export function quantityQuoteLabel(
+  value: QuantityKey,
+  unit: { one: string; many: string },
+): string {
+  if (value === "custom") return "Another quantity";
+  if (value === "1") return unit.one;
+  return `${value} ${unit.many}`;
+}
 
 /** `4` is the cell the artboards draw selected (`product-desktop.html:114`).
  *  It is the default because the artboard chose it, not because a set of four
@@ -100,6 +117,14 @@ export interface ProductSpecRow {
  */
 export interface ProductView {
   product: Product;
+  /**
+   * The product's category table row (`@/features/catalog/categories`, D58).
+   * Every section reads its copy from here rather than switching on the
+   * category itself: the breadcrumb takes `crumb` and `route`, the buy panel's
+   * `Price` takes `unit.pdp`, the quote form's Quantity select takes
+   * `unit.one` / `unit.many`. A tire's row reproduces the built page exactly.
+   */
+  config: CategoryConfig;
   /** `215/55R16` — the half of `Product.size` before the ` · `. Spec row 3. */
   sizeCode: string;
   /** `97T XL` — the half after it. Spec row 5. */
@@ -117,13 +142,19 @@ export interface ProductView {
    *  quote chip's second half and the quote paragraph's vehicle clause. Absent
    *  → both genericise, they never invent a vehicle (D47(5) precedent). */
   vehicle: Vehicle | null;
-  /** `/results` carrying every inbound param except `qty`, so the breadcrumb
-   *  returns to the search the visitor came from (`design/manifest.md` §3). */
+  /** The product's own category route — `/results`, `/wheels` or
+   *  `/accessories` (D58) — carrying every inbound param except `qty`, so the
+   *  breadcrumb returns to the search the visitor came from
+   *  (`design/manifest.md` §3). */
   backHref: string;
   /** `Zeta Antarctica Sport 215/55R16 · 2021 Honda Civic`, or just the first
    *  half when no vehicle is in the URL. The quote band's chip value. */
   inquiryContext: string;
-  /** Four cards: same season first, current slug excluded, capped at 4 (D52). */
+  /**
+   * Four cards: same category always, then same chip value (season / finish /
+   * type) first, current slug excluded, capped at 4 (D52, extended by D58 —
+   * a wheel PDP never recommends a tire).
+   */
   similar: readonly Product[];
 }
 

@@ -34,7 +34,83 @@ export type ProductBadge =
   | "oem"
   | "studdable";
 
+/* --- Category (D58) -------------------------------------------------------
+   The storefront sells three things. Tires are the designed case: every
+   artboard draws a tire, so `category` is OPTIONAL and absent means `"tires"`
+   — the nine tire SKUs, every measured card and every parity row are
+   byte-identical to what they were before wheels existed.
+
+   Wheels and accessories are owner scope added 2026-09-21: "add wheels and
+   accessories to scope. keep them same as tires. only filters and skus change
+   but everything else remains as it is." Same card, same grid, same PDP; the
+   facets and the seed are what differ (D58).
+   -------------------------------------------------------------------------- */
+
+export type ProductCategory = "tires" | "wheels" | "accessories";
+
+/** Absent `category` means tires — see the block above. */
+export function productCategory(product: Product): ProductCategory {
+  return product.category ?? "tires";
+}
+
+/**
+ * Wheel finish. Values are the `finish` filter's param values and the spec
+ * table's `Finish` row; labels live in `src/features/results/categories.ts`
+ * so the filter chips and the spec row cannot disagree.
+ *
+ * SAMPLE (D48): the three client cut-outs are one finish each in reality. The
+ * finish spread across the nine seed SKUs is authored, not photographed, and
+ * is a client blocker alongside per-SKU wheel photography.
+ */
+export type WheelFinish = "gloss-black" | "machined" | "bronze" | "silver";
+
+/**
+ * Accessory type. Values are the `type` filter's param values and the spec
+ * table's `Type` row; labels live beside the finish labels.
+ */
+export type AccessoryType =
+  | "tpms"
+  | "lug-nuts"
+  | "valve-stems"
+  | "hub-rings"
+  | "wheel-locks";
+
+/**
+ * The four wheel facts the PDP spec table draws and the three the rail filters
+ * on. Present on `category: "wheels"` products and on no other.
+ *
+ * Strings, not numbers, for the same reason `Product.size` is pre-joined: the
+ * rail's selects compare against param values, and `8.5` round-tripping
+ * through `Number` would render `8.5` but `9.0` as `9`. The seed writes the
+ * display spelling once and everything reads it.
+ *
+ * `offset` carries its own sign (`+35`, `-12`): it is a spec row, never a
+ * filter, so nothing parses it (owner's ruling, 2026-09-21 — offset is a
+ * continuous range and a select of discrete values reads wrong; bolt pattern
+ * is what a buyer filters on).
+ */
+export interface WheelSpec {
+  /** `18` — rim diameter in inches, the `diameter` filter's value. */
+  diameter: string;
+  /** `8.5` — rim width in inches, the `width` filter's value. */
+  width: string;
+  /** `5x114.3` — the `bolt` filter's value. Rendered `5×114.3` (U+00D7) by
+   *  the label in `categories.ts`; the value stays ASCII so a hand-typed URL
+   *  and a form submit spell it the same way. */
+  bolt: string;
+  /** `+35`. Spec row only; never filtered. */
+  offset: string;
+  finish: WheelFinish;
+}
+
 export interface Product {
+  /**
+   * Which of the three catalogue lines this SKU belongs to. **Absent means
+   * `"tires"`** (D58) — see `productCategory()` above. Never write
+   * `category: "tires"` into the seed: the tire rows are parity-measured and
+   * stay exactly as they were.
+   */
+  category?: ProductCategory;
   /**
    * URL segment and image basename. The optimised cut-out lives at
    * `/images/products/<slug>.webp` (1000×1000, transparent).
@@ -50,6 +126,13 @@ export interface Product {
    * SKUs — the same photo appears on two or three cards because the extra SKUs
    * are other sizes of the same tire (D43). A real per-SKU photo set removes
    * every `image` and leaves `slug` doing the work again.
+   */
+  /**
+   * An absolute path (leading `/`) is used verbatim instead of the
+   * `/images/products/<name>.webp` convention. **Accessories only**, and a
+   * client blocker: no accessory cut-outs exist, so all nine accessory SKUs
+   * point at the lifestyle photo `/images/photos/accessories.webp` (D58).
+   * Replace with real per-SKU cut-outs when the client supplies them.
    */
   image?: string;
   /**
@@ -67,6 +150,13 @@ export interface Product {
    * (`design/inventory/results.md:737`). Pre-joined, because the artboards
    * render the whole thing as one tabular string in one span
    * (`design/assets/results-desktop.html:175`).
+   *
+   * **Per category (D58)** — the card renders this string unchanged in all
+   * three cases, and `productView()` is what knows how to split it:
+   *   tires        `215/55R16 · 97T XL`   → `Size` + `Load / speed`
+   *   wheels       `18×8.5 · 5×114.3`     → never split; the spec rows come
+   *                                         from `wheel` instead
+   *   accessories  `Set of 4 · 12×1.5`    → never split; a short descriptor
    */
   size: string;
   /**
@@ -97,6 +187,18 @@ export interface Product {
    */
   available: boolean;
   /**
+   * Wheel-only facts: diameter, width, bolt pattern, offset, finish.
+   * Present iff `category === "wheels"` (D58). The rail filters on the first
+   * three; `offset` and `finish` reach the spec table only.
+   */
+  wheel?: WheelSpec;
+  /**
+   * Accessory-only fact: which of the five types this is. Present iff
+   * `category === "accessories"` (D58). It drives the `Type` chip filter and
+   * the spec table's `Type` row.
+   */
+  accessoryType?: AccessoryType;
+  /**
    * Studdable winter tire. The PDP spec table draws `Season` as
    * `Winter (studdable)` (`design/inventory/product.md` §2.5), which no other
    * field can reproduce.
@@ -107,4 +209,25 @@ export interface Product {
    * the cards compete for (D53(2)).
    */
   studdable?: boolean;
+}
+
+/**
+ * Resolves a product's photo `src`. An `image` beginning with `/` is used
+ * verbatim — this is the accessories escape hatch (D58): no accessory cut-outs
+ * exist, so every accessory SKU points `image` at the single lifestyle photo
+ * `/images/photos/accessories.webp` instead of a basename under
+ * `/images/products/`. Every other product (every tire, every wheel) keeps the
+ * `/images/products/<image ?? slug>.webp` convention.
+ *
+ * Shared by `ProductCard` and `PdpGallery` so one SKU cannot render one photo
+ * on a card and a 404 on its own page. Removing this branch is exactly what
+ * real per-SKU accessory photography would allow: drop the absolute path, give
+ * each SKU its own cut-out basename, and every product resolves through the
+ * one convention again.
+ */
+export function productImageSrc(
+  product: Pick<Product, "image" | "slug">,
+): string {
+  if (product.image?.startsWith("/")) return product.image;
+  return `/images/products/${product.image ?? product.slug}.webp`;
 }

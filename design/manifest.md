@@ -13,10 +13,22 @@ parity baseline — every number in a `design/reports/*.md` table traces to one 
 | `home-desktop.html` · `home-mobile.html` | `/` | `src/app/(storefront)/page.tsx` |
 | `results-desktop.html` · `results-mobile.html` · `results-mobile-filters.html` | `/results` | `src/app/(storefront)/results/page.tsx` |
 | `product-desktop.html` · `product-mobile.html` | `/products/[slug]` | `src/app/(storefront)/products/[slug]/page.tsx` |
+| — (not designed) | `/wheels` | `src/app/(storefront)/wheels/page.tsx` — the `/results` artboards, category `wheels` (D58) |
+| — (not designed) | `/accessories` | `src/app/(storefront)/accessories/page.tsx` — the `/results` artboards, category `accessories` (D58) |
 | — (not designed) | `/styleguide` | `src/app/(storefront)/styleguide/page.tsx`, `noindex`, excluded from the sitemap |
 
 Breadcrumb on the PDP reads `Home / Results / <product name>`, so `Results` links back to `/results`
-carrying the active query.
+carrying the active query. On a wheel or accessory the middle crumb reads `Wheels` / `Accessories` and
+links to that route instead (D58).
+
+**`/wheels` and `/accessories` have no artboards of their own** and are not parity rows. The owner put
+them in scope on 2026-09-21 with the instruction to keep them "same as tires … only filters and skus
+change but everything else remains as it is", so they render the *same* composition
+(`src/features/results/components/results-page.tsx`) from the same measured sections: whatever parity the
+`/results` artboards certify, these two inherit by construction rather than by measurement. What differs
+is data-shaped and listed in `src/features/catalog/categories.ts` — the filter groups, the seed, the unit
+copy. The one structural difference, accessories drawing four filter groups instead of five, is
+`design/DEVIATIONS.md`.
 
 ---
 
@@ -103,6 +115,11 @@ DESIGN.md §4 and go on `/styleguide`:
 - Focus ring (2px `--accent`, no offset; white on an accent fill, since accent-on-accent is invisible)
 - Button active / disabled
 - Empty results, loading skeleton, error, form success, 404
+
+**All of them are authored and on `/styleguide` §11 as of 2026-09-21** — focus / active / disabled in §5,
+the rest in §11: 404 (`PageStub`), empty results (D47), open `Change vehicle` (D45), quote-form success
+(D51) and error summary (D57), the skip link (D57), and the **loading skeleton** and **route error**
+(D62). The set is closed; a new undrawn state goes here and on `/styleguide` in the same change.
 
 ## Shared components (build once, in `src/components/site/`)
 

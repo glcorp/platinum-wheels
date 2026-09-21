@@ -1,11 +1,14 @@
 # src/features/catalog
 
 ## Purpose
-The product domain: what a tire *is* in this build, and the card that renders it. `ProductCard` is "the
+The product domain: what a product *is* in this build, and the card that renders it. Since **D58**
+(2026-09-21) that means three categories, not one — tires, wheels and accessories — and this folder also
+owns the table that tells the rest of the build how they differ. `ProductCard` is "the
 storefront's most reused component" (`product-card.tsx:10`) — one shell with three homes, the home
 `featured-tires` row, the `/results` grid and the PDP `similar-products` row, all three of which measure
 byte-identically, so there is one component and no per-context variant (`product-card.tsx:12-18`).
-Delete this folder and all three designed routes lose their product surface.
+Delete this folder and every route loses its product surface, and `/results`, `/wheels` and
+`/accessories` lose the config that distinguishes them.
 
 ## Owns
 - [`types.ts`](types.ts) — `Product` and `ProductBadge`. The field list is **measured, not designed**:
@@ -22,6 +25,17 @@ Delete this folder and all three designed routes lose their product surface.
   `Winter (studdable)` row (D53(2)); it is deliberately **not** pushed into `badges`, which would give
   that card a second badge and move a measured `/results` parity row. Carried by
   `zeta-antarctica-sport` and its 235/40R18 sibling — the drawn PDP subject.
+  **D58 added** `ProductCategory`, `WheelFinish`, `AccessoryType`, `WheelSpec`, the optional
+  `category` / `wheel` / `accessoryType` fields, `productCategory()` (absent `category` = tires) and
+  `productImageSrc()` (shared by `ProductCard` and `PdpGallery`).
+- [`categories.ts`](categories.ts) — `CATEGORY_CONFIG`, the per-category table (**D58**): route, nav
+  item, Category-row label, breadcrumb crumb, the three size fields (param, caption, label prefix, strip
+  regex, `read`), the chip group (label, param, options, `match`), the finder, the price label, the unit
+  copy and the two authored copy strings. `categoryConfig()`, `configFor(product)`, `sizeParams()` and
+  `parseTireSize()`. **It lives here, not in `results/`,** because three features need it —
+  `results/` for facets, `product/` for the spec table and units, `ProductCard` for the price suffix —
+  and D37 routes every cross-feature import through `catalog/`. It imports **no seed data**, so
+  `filter-panel.tsx` (a `"use client"` island) can import it.
 - [`components/product-card.tsx`](components/product-card.tsx) — `ProductCard`, props
   `{ product: Product }`. A Server Component: hover is pure CSS (`product-card.tsx:29-30`). Composes
   `Badge`, `Button` and `Price` (`:4-6`). The photo src is `/images/products/` + `product.image ?? slug`
@@ -31,8 +45,12 @@ Delete this folder and all three designed routes lose their product surface.
   featured objects spread first (`data.ts:84-85`) so seed order is artboard order, then
   `zeta-antarctica-sport-235-40r18`, `zmax-landgema-235-40r18`, `mazzini-snowleopard-225-50r17`,
   `zmax-winterhawk-215-50r17` (`available: false`, the drawn unavailable card — `data.ts:126-139`) and
-  `zmax-landgema-225-45r17` (`data.ts:88-152`). Each of the five carries a size-suffixed slug and an
-  `image` pointing at its base SKU's cut-out. `findProduct(slug)` searches all nine (`data.ts:156-159`).
+  `zmax-landgema-225-45r17`. Each of the five carries a size-suffixed slug and an `image` pointing at
+  its base SKU's cut-out. **D58 added** `WHEELS` (nine SKUs, three cut-outs, brands Touren and Spec-1,
+  one unavailable) and `ACCESSORIES` (nine SKUs, five types, brands Schrader / Gorilla / Coyote, one
+  unavailable), plus `ALL_PRODUCTS` and `productsIn(category)`. `findProduct(slug)` searches
+  `ALL_PRODUCTS`. All of it is placeholder data (D48) — the tire rows are untouched and carry no
+  `category` field, which is what keeps every measured card byte-identical.
 
 ## Rules
 - **Nothing enters `Product` that the cards do not vary on.** The field list traces to
@@ -57,7 +75,15 @@ Delete this folder and all three designed routes lose their product surface.
   does not zoom.
 - **The whole card is not an anchor** — wrapping it would nest the CTA link inside it
   (`product-card.tsx:229-230`).
-- **Price suffix is per context**: cards read `/ tire` — D21. The card passes `context="card"`.
+- **Price suffix is per context AND per category**: cards read `/ tire`, `/ wheel`, `/ each` — D21
+  extended by D58. The card passes `context="card"` plus `unit={configFor(product).unit.card}`; the
+  default keeps the tire string, so an un-passed caller is unchanged.
+- **`category` is optional and absent means tires.** Never write `category: "tires"` into the seed —
+  every tire row is parity-measured and stays exactly as it was (D58).
+- **A wheel or accessory carries no badge and no 3PMSF.** No artboard draws one for them, so none is
+  invented (D59(4), the D7 precedent).
+- **`categories.ts` never imports seed data.** A `"use client"` island imports it; a seed import there
+  would pull the whole catalogue into the browser bundle.
 
 ## Decisions
 | ID | Date | Decision | Why | Authority |
@@ -66,17 +92,20 @@ Delete this folder and all three designed routes lose their product surface.
 
 Referenced: **D18** (routes, and the one-pair-of-constants derivation), **D19** (cut-outs normalised to
 one 1000×1000 square canvas, never upscaled), **D21** (price suffix), **D29** (planned seed data),
-**D9** (the wheel CSV contributes nothing to `Product`). DEVIATIONS #15 and #16 above.
+**D9** (the wheel CSV contributes nothing to `Product` — the D58 wheel seed is authored here, **not**
+derived from that feed), **D58** (three categories, `categories.ts`, the two new seeds), **D59**
+(the seven derived rulings). DEVIATIONS #15 and #16 above.
 
 ## Connects to
 - **Depends on:** `src/components/ui/badge.tsx`, `button.tsx`, `price.tsx` (`product-card.tsx:4-6`);
   `src/features/catalog/types.ts` (`:7`); `next/image`, `next/link` (`:1-2`); `src/app/globals.css` for
   `photo-inset-card`, `photo-vignette`, `transition-card`, `tap-extend`, `display`, `numeral`;
   `public/images/products/<slug>.webp`.
-- **Depended on by:** `src/app/(storefront)/styleguide/page.tsx:12-13`; `src/features/home/` (featured
-  row, D29); `src/features/results/search.ts`, which filters, sorts and splits `PRODUCTS` and is the only
-  place results are computed (D44), and the `/results` grid, which renders `ProductCard`. The PDP
-  `similar-products` row will join them (`design/manifest.md` §3).
+- **Depended on by:** `src/app/(storefront)/styleguide/page.tsx`; `src/features/home/` (featured row,
+  D29); `src/features/results/` — `search.ts` filters, sorts and splits `productsIn(category)` and is the
+  only place results are computed (D44), `query.ts` and `filter-panel.tsx` read `CATEGORY_CONFIG`, and
+  the grid renders `ProductCard`; `src/features/product/` — `view.ts` reads `configFor()` for the spec
+  table, the back href, the units and the similar list, and `pdp-gallery.tsx` reads `productImageSrc()`.
 
 ## Don't
 - **Don't add a second card variant per context.** All three homes measure identically
@@ -95,8 +124,16 @@ one 1000×1000 square canvas, never upscaled), **D21** (price suffix), **D29** (
 1. ~~**`data.ts` is not written.**~~ Written: `FEATURED_PRODUCTS` (D29) and the nine-SKU `PRODUCTS`
    (D43). All four featured SKUs still share `215/55R16` — the home row is "a staged result for that
    vehicle, not a real merchandising selection" (`design/DEVIATIONS.md`, Sample data).
-2. **Four product images cover nine SKUs**, and two cut-outs are too low-resolution to normalise —
+2. **Four product images cover nine tire SKUs**, and two cut-outs are too low-resolution to normalise —
    client blockers, `HANDOFF.md` §7. Needs the client, not code.
+4. **Wheel and accessory imagery (D58).** Three wheel cut-outs cover nine wheel SKUs, the same
+   reuse pattern as the tires. Accessories are worse: **no accessory cut-out exists at all**, so all nine
+   accessory SKUs point `image` at the one lifestyle photograph `/images/photos/accessories.webp` via the
+   absolute-path branch in `productImageSrc()`. That branch exists only to carry the placeholder and
+   should be deleted when real per-SKU accessory photography arrives. Client, via owner.
+5. **Nobody has confirmed the shop stocks Touren, Spec-1, Schrader, Gorilla or Coyote.** They are real
+   brand names used as sample data, on the same footing as the artboards' Zeta / ZMAX / Mazzini. Joins
+   the existing brand-confirmation blocker in `HANDOFF.md` §7. Client, via owner.
 3. ~~**Facet counts do not reconcile.**~~ Answered by **D42**: every facet count, the result count,
    `Filters (n)` and the price bounds are computed from this seed, never typed
    (`design/DEVIATIONS.md` #25). The drawn numbers stay unreconciled and unused.

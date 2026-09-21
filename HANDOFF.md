@@ -1,9 +1,13 @@
 # Platinum Wheels — session handoff
 
-**Last updated 2026-09-21 (session 5).** All three designed routes are built and audited. The
-`/design-to-code audit` pass is **done** (D56) and **six of its findings are applied and verified**
-(D57). Scope is **UI only** (D54). **Next: the two remaining undrawn states, `loading` and route
-`error`** — nothing else is owed before them. Start at §6.
+**Last updated 2026-09-21 (session 6).** All three designed routes are built and audited; the catalogue
+now has **three categories, not one** (`/wheels` and `/accessories` are full results pages sharing the
+`/results` composition — **D58**, **D59**); the safe half of the audit fix list is applied (**D61**); and
+**the last two undrawn states, `loading` and route `error`, are authored (**D62**)**, which completes
+`/styleguide` §11. Scope is still **UI only** (D54).
+
+**Nothing is owed by a session right now.** What is left needs the owner (one reserved refactor) or the
+client (data and photography). Start at §6.
 
 **How to use this file.** It is the single current record of how to work in this repo. **Cite it by
 section (`HANDOFF.md §7`), never by line number** — sections are stable, line numbers are not (D55).
@@ -53,7 +57,7 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 ## §2. Read in this order
 
 1. **`llm.md` (root)** — §1 library rules, §4 authority chain, §5b register **D23–D57**, §6 folder map,
-   §7 open items (20 of them; §7.17–§7.20 are the live audit questions).
+   §7 open items; §7.17–§7.20 are the live audit questions and §7.21 the D58 follow-ups.
 2. The `llm.md` of every folder you will touch. Rule §1.1: read before write. Rule §1.2: update it in the
    same change.
 3. **`design/manifest.md`** — artboards → routes → sections. The build queue for `page` and `section`.
@@ -62,8 +66,8 @@ session 5 and invalidated several readings before it was spotted (§8.17).
    still open, and the pass's coverage limits. Read this before "fixing" anything.
 5. **`design/reports/{home,results,product}.md`** — the three parity baselines. `product.md` shows the
    shape to copy, including a *Behaviour verified* section.
-6. **`design/DEVIATIONS.md`** — **48 rows**. #1–#24 shared and home, #25–#35 `/results`, #36–#43 the PDP,
-   #44–#48 the D57 accessibility fixes. Nearly all of it is deliberate and sourced.
+6. **`design/DEVIATIONS.md`** — **56 rows**. #1–#24 shared and home, #25–#35 `/results`, #36–#43 the PDP,
+   #44–#48 the D57 accessibility fixes, #49–#53 the D58 wheels/accessories scope, #54 the header background (D61), #55–#56 loading and route error (D62). Nearly all of it is deliberate and sourced.
 7. `design/inventory/{home,results,product}.md` — the measured baseline, only if re-measuring.
 
 ---
@@ -101,30 +105,62 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 |---|---|
 | Library | 26 `llm.md` files. Root = register (D1–D57) + template + folder map + 20 open items. |
 | `/` | `SiteHeader over-hero`, 8 home sections, `SiteFooter` (D38). Parity `design/reports/home.md`. |
-| `/results` | URL-driven search over the seed (D44): `ResultsToolbar`, `FilterSortBar`, `md:results-grid` (rail + grid), `CallCtaPanel`. Parity `design/reports/results.md`. |
+| `/results` · `/wheels` · `/accessories` | **One** composition, `results/components/results-page.tsx`, called by three thin `page.tsx` with a `category` (D58). URL-driven search over that category's seed (D44): `ResultsToolbar`, `FilterSortBar`, `md:results-grid` (rail + grid), `CallCtaPanel`. Parity `design/reports/results.md` covers `/results`; the other two are **not parity rows** and inherit it by rendering the same tree (`DEVIATIONS.md` #49). |
 | `/products/[slug]` | `productView(product, searchParams)` → one `ProductView`; breadcrumb, `pdp-split` gallery + sticky buy panel, specs, quote band, similar row. Parity `design/reports/product.md`. |
 | `src/features/product/` | `types.ts`, `view.ts` (all derivation), `actions.ts` (`"use server"`), **10** components; one island `quote-form.tsx`. Two authored states in their own modules so `/styleguide` renders the real thing: `quote-success.tsx` (D51) and `quote-error-summary.tsx` (D57). |
-| `src/features/results/` | `types.ts`, `query.ts`, `search.ts`, 8 components; islands `sort-select`, `filter-panel`, `filter-sheet`. D42–D49. |
-| Finder | `src/features/finder/` — native selects, GET to `/results` (D27/D28); `variant="inline"` for `Change vehicle` (D45); **placeholder `FITMENT` map** (D48). |
-| Catalog | `FEATURED_PRODUCTS` (4) and `PRODUCTS` (9 SKUs, one unavailable, D43); optional `Product.image` and `studdable` (D53). `ProductCard` is the most reused component in the build. |
+| `src/features/results/` | `types.ts`, `query.ts`, `search.ts`, 9 components (D58 added `results-page.tsx`); islands `sort-select`, `filter-panel`, `filter-sheet`. D42–D49, D58, D59. **Nothing here branches on the category** — components read `view.facets`, and what differs is data in `catalog/categories.ts`. |
+| Finder | `src/features/finder/` — native selects, GET to `ROUTES.results` by default with `action`/`cta` overrides (D27/D28/D58); `variant="inline"` for `Change vehicle` (D45); **placeholder `FITMENT` map** now carrying a **bolt pattern** as well as a tire size (D48, D58). `/wheels` submits to `/wheels`; `/accessories` renders no finder at all (D59(2)). |
+| Catalog | `FEATURED_PRODUCTS` (4), `PRODUCTS` (9 tires), **`WHEELS` (9)** and **`ACCESSORIES` (9)**, one unavailable each, plus `ALL_PRODUCTS` / `productsIn()` (D43, D58). `Product` gained optional `category` (**absent = tires**, which is what keeps every measured tire row byte-identical), `wheel`, `accessoryType`; plus `productCategory()` and `productImageSrc()`. **`categories.ts` is the per-category table** (`CATEGORY_CONFIG`) read by `results/`, `product/` and `ProductCard` — it lives in `catalog/` because D37 routes cross-feature imports through there, and it imports no seed so a client island can use it. `ProductCard` is the most reused component in the build and is unchanged on all three categories. |
 | Chrome | `site-header`, `site-nav-drawer`, `site-footer` (no social row, D34), `page-stub`. Skip link in `layout.tsx` (D57). |
-| Primitives | **Ten**, hand-built and token-only in `src/components/ui/`. Every variant and state is on `/styleguide`. Neither the PDP nor D57 needed a new primitive. |
-| `globals.css` | **715 ln**: tokens, role utilities, the home/results/product layout utilities, and the three D57 accessibility utilities (`tap-extend-lg`, `hide-scrollbar`, `skip-link`). **Single writer: the coordinator.** See §9. |
-| `/styleguide` | §11 carries the undrawn states: empty results, open `Change vehicle`, quote-form **success** and **error**, and the **skip link** (Tab into its demo box to reveal it). |
+| Primitives | **Ten**, hand-built and token-only in `src/components/ui/`. Every variant and state is on `/styleguide`. Neither the PDP, nor D57, nor D58 needed a new primitive — D58 added exactly one optional prop, `Price.unit`, defaulting to the drawn tire string. |
+| `globals.css` | **719 ln**: tokens, role utilities, the home/results/product layout utilities, and the three D57 accessibility utilities (`tap-extend-lg`, `hide-scrollbar`, `skip-link`). The dead `--container-rail` token was removed 2026-09-21 (D61, audit S5). **Single writer: the coordinator.** See §9. |
+| `/styleguide` | §11 carries the undrawn states, now **complete** (D62): empty results, open `Change vehicle`, quote-form **success** and **error**, the **skip link** (Tab into its demo box to reveal it), the **route error** and the **loading** skeleton. |
+| Undrawn states | `loading.tsx` and `error.tsx` at `(storefront)/` (D62). The boundary component is `src/components/site/route-error.tsx`; `error.tsx` is the directive plus a re-export and is the **only** `"use client"` under `src/app/` — a framework requirement, named as an exception in `.claude/rules/ui.md` and `docs/decisions.md` §4. `loading.tsx` renders a `<div>`, not a second `<main id="main">`. |
 | `design/reports/` | 10 files: `README.md` (protocol), three `<page>.md` parity baselines, `audit.md` + four `*-audit.md`, and `llm.md`. |
 | `.claude/rules/ui.md` | Taste dials + JSX non-negotiables. **Auto-loads on every `src/**/*.tsx` edit.** Nothing imports it; it loads by glob, and its length is paid on every UI edit. |
-| Stubs left | `/wheels`, `/accessories`, `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). |
+| Stubs left | `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). `/wheels` and `/accessories` left this list on 2026-09-21 (D58). |
 
 ---
 
 ## §5. Verification state
 
-Everything below was measured, not asserted. Re-verified after D57.
+Everything below was measured, not asserted. Re-verified after D57 and again after **D58** (2026-09-21).
+
+**D58 verification, measured in the browser, not claimed:**
+- **Tires unchanged.** `/results?year=2021&make=Honda&model=Civic` still reads `4 matches · 5 similar`,
+  Tires count `9`, `Tire size` W/P/R with `R16/R17/R18`, `Season`, `Price per tire` `$90–$150`, brands
+  Zeta 2 / ZMAX 5 / Mazzini 2 — identical to this file's pre-D58 text. The rail's selected `Tires` row
+  probes **40×280, `rgb(244,244,245)` on `rgb(11,11,13)`, 15px/500, line-height 15px, padding 12px,
+  radius 0** against the `:4000` artboard's identical values, and the `Filters` `<h2>` measures
+  **78.9×28** against the baseline's 78.9×28. A tire PDP still renders all six drawn spec rows
+  (`Winter (studdable)`, `Load / speed`), `per tire · before tax`, `1 tire`/`4 tires` and both
+  artboard-verbatim quote-form strings.
+- **Gotcha, cost a reading:** `document.querySelector('[data-probe="filters-title"]')` returns the copy
+  inside the **closed `<dialog>`**, which measures 0×0. Scope every results probe (§8.9).
+- **New routes.** `/wheels` renders five rail groups (`group-category`, `group-size`, `group-finish`,
+  `group-brand`, `group-price`), crumb `Home / Wheels`, `/ wheel`, finder CTA `Find my wheels`, all three
+  forms posting to `/wheels`. `/accessories` renders **four** (no size group), crumb
+  `Home / Accessories`, `/ each`, **no vehicle chip and no finder**, two forms posting to
+  `/accessories`.
+- **Search behaves.** `/wheels?finish=bronze` → 2; `?diameter=18` → 3 best + 6 similar;
+  `?min=200` → 3 with `Filters (1)`; `finish=bronze&finish=silver&brand=Touren` → `Filters (2)`.
+  Subaru Impreza (`5x100`) → `1 match · 8 similar`. Volkswagen Jetta (`5x112`, a pattern no seed wheel
+  carries) → `0 matches · 9 similar` with the near-miss line, exactly D49's semantics.
+  `/results?rim=R17` still strips to `17` → `3 matches · 6 similar`.
+- **The island works on the new routes:** clicking `Bronze` on `/wheels` pushed
+  `/wheels?finish=bronze&min=130&max=270`, the count went to `2 matches` and the chip rendered selected.
+- **No horizontal overflow** at 375 / 768 / 1280 / 1440 on `/wheels` and `/accessories`.
+- `npm run check` clean, `npx next build` clean (`/wheels` and `/accessories` are `ƒ`, like `/results`),
+  slop grep zero new hits, still exactly **six** `"use client"` and **one** `"use server"`, none under
+  `src/app/`.
 
 - `npm run check` clean; `npx next build` clean; slop grep **zero**.
-- **Six** `"use client"` files and **one** `"use server"`; none under `src/app/`. D57 added no client
-  boundary. Count with `rg -l '^"use client"' src/ --glob '*.tsx' --glob '*.ts'` — an **unglobbed** `rg -l`
-  also matches the `llm.md` files that merely *mention* the directive, and reports 19.
+- **Eight** `"use client"` files and **one** `"use server"` (D62 added two: the boundary component and
+  the `error.tsx` that re-exports it). **Exactly one is under `src/app/`** —
+  `(storefront)/error.tsx`, which Next requires (D62) and which holds no component code. Any *other*
+  occurrence under `src/app/` is still the failure the slop grep was written to catch. Count with
+  `rg -l '^"use client"' src/ --glob '*.tsx' --glob '*.ts'` — an **unglobbed** `rg -l` also matches the
+  `llm.md` files that merely *mention* the directive.
 - **Parity: no drift.** Every row on all three pages is exact at 1440 and 390 or linked to a
   `DEVIATIONS.md` row; home `h1` at 1440 re-measured identical to the `:4000` baseline on all seven
   properties after the `globals.css` changes.
@@ -157,27 +193,27 @@ Everything below was measured, not asserted. Re-verified after D57.
 and do not quietly implement it. A page is done when the `docs/decisions.md` §9 gates are green *except* a
 parked row.
 
-1. **Author the two remaining undrawn states: `loading` and route `error`.** No `loading.tsx` or
-   `error.tsx` exists anywhere in `src/app/` — verified. Build them from existing tokens and primitives
-   at the same finish as the happy path, and **add both to `/styleguide` §11 in the same change**
-   (`.claude/rules/ui.md` "States the design doesn't show"; the D57 additions are the pattern to copy).
-   **`error.tsx` must be a Client Component** — verified in this version's own docs, not assumed:
-   `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md:21` reads
-   *"Error boundaries must be Client Components"*. It would therefore be the **seventh** `"use client"`
-   file and the **first under `src/app/`**, which `.claude/rules/ui.md` ("never inside `src/app/`") and
-   the slop grep both forbid. **Raise this with the owner before writing it** — it breaks a stated
-   invariant, and the grep in §7 of the skill treats a client directive under `src/app/` as a failure.
-   `loading.tsx` has no such constraint. Related newer API in this canary worth reading first:
-   `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/catchError.md`.
-2. **The unapplied audit items, only if the owner names one.** From `design/reports/audit.md` §4:
-   **S2** the 13 class-merge helpers (reserved to the owner, root `llm.md` §7.10), **S3** the missing
-   DEVIATIONS row for the solid-header background, **S4** three stale in-repo comments, **S5** the dead
-   `--container-rail` token, and taste items **T1–T4**.
-3. **Finish the `DEVIATIONS.md` sweep.** The audit traced 18 of the then-43 rows; the rest are untested,
-   not certified clean (`design/reports/audit.md` §6).
-4. **Push.** `origin/main` is at `0a4a3aa`; the handoff commit on top of it is local only.
+1. ~~**Author the two remaining undrawn states.**~~ **Done 2026-09-21 (D62).** `loading.tsx` and
+   `error.tsx` exist at `(storefront)/`, both are on `/styleguide` §11, and the `"use client"` conflict
+   that this item flagged for the owner was delegated and ruled: Next rejects every alternative, so
+   `error.tsx` carries the directive as the single named exception and holds no component code. Read
+   `src/components/site/route-error.tsx`'s header before touching either.
+2. **The one item reserved to the owner: S2**, the 13 class-merge helpers (root `llm.md` §7.10).
+   **No session may do this in passing** — the prohibition is written and still stands. 10 files,
+   several carrying parity-measured class output; any consolidation must not change one emitted class
+   string. `design/reports/audit.md` §4 S2.
+3. **D58 follow-ups the owner may want to rule on.** None blocks anything. (a) The **accessory
+   imagery** — all nine cards share one lifestyle photograph (`DEVIATIONS.md` #51); it is the most
+   visible placeholder in the build. (b) The seven **derived D59 rulings**, each vetoable, especially
+   (2) omitting the vehicle finder from `/accessories` and (7) the non-tire quote-form copy variant.
+   (c) Whether `How many? 1 / 2 / 4` should reword on an accessory already sold as a `Set of 20`
+   (`src/features/product/llm.md` Open #5).
+4. **Finish the `DEVIATIONS.md` sweep.** The audit traced 18 of the then-43 rows; there are now **56**,
+   and the rest are untested, not certified clean (`design/reports/audit.md` §6). A session can do this
+   unprompted — it is measurement, not change.
+5. **Push.** `origin/main` is at `0a4a3aa`; the handoff commit on top of it is local only.
    Confirm with `git status -sb` — the owner may already have pushed it.
-5. Replace the five stub routes when the client supplies copy — undesigned, so they need the owner before
+6. Replace the **three** remaining stub routes when the client supplies copy — undesigned, so they need the owner before
    they need a session.
 
 ---
@@ -191,15 +227,22 @@ parked row.
 2. **No unavailable state on the PDP.** No artboard draws one, so none was authored. (§7.16)
 3. **The LCP gate**, 3.0–3.5 s against 2.5 s on all three routes, one build-wide cause. (§7.12)
 
-**Awaiting an owner decision (root `llm.md` §7.17–§7.19):**
+**Awaiting an owner decision:**
 
-- The **unapplied audit items** S2–S5 and T1–T4, item by item (§7.17).
-- **Two register rows are both numbered `D55`** — the git ruling and the `HANDOFF.md`-shape ruling. Rule
-  §1.5 forbids renumbering and D24 cites "D55" for the HANDOFF half, so this was deliberately **not**
-  fixed unilaterally (§7.18).
+- **S2**, the 13 class-merge helpers — the one audit item still open, and the only thing a session is
+  forbidden to do on its own (root `llm.md` §7.10). S3, S4, S5 and T1 were applied 2026-09-21 (D61);
+  T2, T3 and T4 are recorded as no-action, which is what the audit recommended.
 - **Category-tile imagery**: both home artboards use product cut-outs where `tires-tile.png` /
   `wheels-tile.png` exist unused on disk. The code correctly matches the artboard; the owner decides
   whether the artboard is right (§7.19).
+- The **D58 follow-ups** in §6 item 3.
+- ~~Two register rows both numbered `D55`~~ — closed 2026-09-21 by D61: the `HANDOFF.md`-shape row is
+  now `D55b`. Nothing renumbered, so rule §1.5 holds.
+
+**Settled in session 6 (D58/D59), do not reopen:** three category routes rather than a `?category=`
+param · wheels filter on Diameter / Width / Bolt pattern with Finish chips, offset being a spec row not a
+filter · accessories drop the size group entirely (four rail groups) · one `Product` type with an
+optional `category` rather than a discriminated union. All four were the owner's explicit choice.
 
 **Settled in session 5, do not reopen:** whether `sort` needs a no-JS path (**no** — D57, a D44
 addendum) · the home carousel's scrollbar (**hidden**, shared `hide-scrollbar`, D57) · whether live
@@ -209,10 +252,13 @@ regions are wanted (**yes** — D57, now on the results count and the quote form
 confirmation · which contact receives call taps · **13** class-merge helpers, not six (§7.10, corrected by
 the audit) · `skills-lock.json` provenance · stale citations in the inventories.
 
-**Owed by the client (D48):** real year-specific fitment data · per-SKU photography · higher-resolution
-originals for `touren-tr79` (470×439) and `zmax-landgema` (546×757), which `scripts/prepare-assets.mjs`
-refuses to upscale · `M+S` sidewall data · monochrome white brand logos, plus confirmation those brands
-are stocked.
+**Owed by the client (D48):** real year-specific fitment data (now a size **and** a bolt pattern per
+vehicle) · per-SKU photography · higher-resolution originals for `touren-tr79` (470×439) and
+`zmax-landgema` (546×757), which `scripts/prepare-assets.mjs` refuses to upscale · `M+S` sidewall data ·
+monochrome white brand logos, plus confirmation those brands are stocked — **now including Touren,
+Spec-1, Schrader, Gorilla and Coyote** (D58). **New and worst: there is no accessory imagery at all**, so
+all nine accessory SKUs share one lifestyle photograph (`DEVIATIONS.md` #51). Every wheel and accessory
+SKU, price and finish is authored placeholder data, **not** derived from the wheel CSV — D9 still holds.
 
 ---
 
