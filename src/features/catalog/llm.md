@@ -1,0 +1,102 @@
+# src/features/catalog
+
+## Purpose
+The product domain: what a tire *is* in this build, and the card that renders it. `ProductCard` is "the
+storefront's most reused component" (`product-card.tsx:10`) — one shell with three homes, the home
+`featured-tires` row, the `/results` grid and the PDP `similar-products` row, all three of which measure
+byte-identically, so there is one component and no per-context variant (`product-card.tsx:12-18`).
+Delete this folder and all three designed routes lose their product surface.
+
+## Owns
+- [`types.ts`](types.ts) — `Product` and `ProductBadge`. The field list is **measured, not designed**:
+  `design/inventory/results.md:363` (§3.10 "Variation between card instances") is the exhaustive list of
+  what differs across the 14 card instances — image + alt, badge slot, brand, model, size, 3PMSF
+  presence, price, CTA variant — and everything else is byte-identical, so nothing else belongs in the
+  type (`types.ts:4-8`). `ProductBadge` is `winter | all-season | summer | oem | studdable`;
+  `Currently unavailable` is deliberately **not** a member — the artboards use it as a *replacement* for
+  the season badge, so it derives from `available` (`types.ts:25-28`). Optional `image?: string`
+  (`types.ts:43-54`) is the cut-out basename when it differs from `slug` — measured variation, not
+  design: `design/inventory/results.md:363` (§3.10) lists "image src + alt" among what differs between
+  card instances, and four cut-outs cover the nine SKUs (D43). A per-SKU photo set removes every `image`
+  and leaves `slug` doing the work again. Optional `studdable?: boolean` is the PDP spec table's
+  `Winter (studdable)` row (D53(2)); it is deliberately **not** pushed into `badges`, which would give
+  that card a second badge and move a measured `/results` parity row. Carried by
+  `zeta-antarctica-sport` and its 235/40R18 sibling — the drawn PDP subject.
+- [`components/product-card.tsx`](components/product-card.tsx) — `ProductCard`, props
+  `{ product: Product }`. A Server Component: hover is pure CSS (`product-card.tsx:29-30`). Composes
+  `Badge`, `Button` and `Price` (`:4-6`). The photo src is `/images/products/` + `product.image ?? slug`
+  + `.webp` (`product-card.tsx:160`). Per-value sources are in the inline comments.
+- [`data.ts`](data.ts) — `FEATURED_PRODUCTS`, the four artboard SKUs of the home row, flagged sample
+  (D29, `design/inventory/home.md:278-285`), and `PRODUCTS`, the nine-SKU `/results` seed (D43): the four
+  featured objects spread first (`data.ts:84-85`) so seed order is artboard order, then
+  `zeta-antarctica-sport-235-40r18`, `zmax-landgema-235-40r18`, `mazzini-snowleopard-225-50r17`,
+  `zmax-winterhawk-215-50r17` (`available: false`, the drawn unavailable card — `data.ts:126-139`) and
+  `zmax-landgema-225-45r17` (`data.ts:88-152`). Each of the five carries a size-suffixed slug and an
+  `image` pointing at its base SKU's cut-out. `findProduct(slug)` searches all nine (`data.ts:156-159`).
+
+## Rules
+- **Nothing enters `Product` that the cards do not vary on.** The field list traces to
+  `design/inventory/results.md:363`; adding a field means measuring it first.
+- **Deliberately absent, and must stay absent:** stock counts, shipping, ratings, invented specs
+  (`docs/decisions.md:107`), and — because there is no cart — quantity, availability counts and any
+  add-to-cart affordance (`docs/decisions.md:105`, `types.ts:10-13`).
+- **Route shape comes from `src/lib/routes.ts`** (`productRoute()`, `quoteRoute()`, D39); the card owns no
+  path literal — D18.
+  Every `href` in all seven exports is `"#"` (`design/inventory/results.md:716`), so the shape is ours.
+- **Badges: WINTER first, at most two** (`design/DESIGN.md:201`, implemented `product-card.tsx:121-131`).
+  On the unavailable card the dim badge takes the slot instead of a season badge and the 3PMSF mark is
+  dropped (`design/inventory/results.md:355`, `:367`).
+- **Unavailable = dimmed card, `Currently unavailable` badge, price in `--text-dim`, ghost
+  `Inquire about restock` CTA; the page still returns HTTP 200** (`docs/decisions.md:116`).
+- **The model link uses `tap-extend`** — DEVIATIONS #16. Display type at 24px/0.92 is 22.1px tall and
+  fails both the 44px floor and WCAG 2.5.8; `tap-extend` adds a transparent band, no padding, no height,
+  no layout shift, so every parity row is unchanged.
+- **Card hover is `border-color` + `translate`, 150ms `cubic-bezier(.2,0,0,1)`** — DEVIATIONS #15.
+  Tailwind v4 lifts with the `translate` property, not `transform`, so a computed-style parity table
+  reading `translate` where the artboard reads `transform` is **expected, not a failure**. The photo
+  does not zoom.
+- **The whole card is not an anchor** — wrapping it would nest the CTA link inside it
+  (`product-card.tsx:229-230`).
+- **Price suffix is per context**: cards read `/ tire` — D21. The card passes `context="card"`.
+
+## Decisions
+| ID | Date | Decision | Why | Authority |
+|---|---|---|---|---|
+| — | — | None folder-scoped. | Every ruling that shapes this folder is global. | — |
+
+Referenced: **D18** (routes, and the one-pair-of-constants derivation), **D19** (cut-outs normalised to
+one 1000×1000 square canvas, never upscaled), **D21** (price suffix), **D29** (planned seed data),
+**D9** (the wheel CSV contributes nothing to `Product`). DEVIATIONS #15 and #16 above.
+
+## Connects to
+- **Depends on:** `src/components/ui/badge.tsx`, `button.tsx`, `price.tsx` (`product-card.tsx:4-6`);
+  `src/features/catalog/types.ts` (`:7`); `next/image`, `next/link` (`:1-2`); `src/app/globals.css` for
+  `photo-inset-card`, `photo-vignette`, `transition-card`, `tap-extend`, `display`, `numeral`;
+  `public/images/products/<slug>.webp`.
+- **Depended on by:** `src/app/(storefront)/styleguide/page.tsx:12-13`; `src/features/home/` (featured
+  row, D29); `src/features/results/search.ts`, which filters, sorts and splits `PRODUCTS` and is the only
+  place results are computed (D44), and the `/results` grid, which renders `ProductCard`. The PDP
+  `similar-products` row will join them (`design/manifest.md` §3).
+
+## Don't
+- **Don't add a second card variant per context.** All three homes measure identically
+  (`product-card.tsx:12-18`); a variant would be three parity baselines instead of one.
+- **Don't hardcode `/products/…` at a call site.** Use `productRoute()` from `src/lib/routes.ts` (D18, D39).
+- **Don't add `stock`, `rating`, `reviewCount`, `inStock: number` or `quantity` to `Product`**
+  (`docs/decisions.md:105-107`).
+- **Don't upscale a product cut-out to fix the two low-res SKUs.** `scripts/prepare-assets.mjs` refuses
+  by design; it is a client blocker (D19, `HANDOFF.md` §7).
+- **Don't change the CTA copy.** `Request a quote` / `Inquire about restock` are artboard-verbatim
+  (`product-card.tsx:330`, `docs/decisions.md:105`).
+- **Don't list `transform` in the hover transition** to match the artboard string — it would be inert
+  (DEVIATIONS #15).
+
+## Open
+1. ~~**`data.ts` is not written.**~~ Written: `FEATURED_PRODUCTS` (D29) and the nine-SKU `PRODUCTS`
+   (D43). All four featured SKUs still share `215/55R16` — the home row is "a staged result for that
+   vehicle, not a real merchandising selection" (`design/DEVIATIONS.md`, Sample data).
+2. **Four product images cover nine SKUs**, and two cut-outs are too low-resolution to normalise —
+   client blockers, `HANDOFF.md` §7. Needs the client, not code.
+3. ~~**Facet counts do not reconcile.**~~ Answered by **D42**: every facet count, the result count,
+   `Filters (n)` and the price bounds are computed from this seed, never typed
+   (`design/DEVIATIONS.md` #25). The drawn numbers stay unreconciled and unused.

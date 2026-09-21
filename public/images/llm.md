@@ -1,0 +1,63 @@
+# public/images/
+
+## Purpose
+The shipped image set — the only images the site serves. Every file here is webp and (with one
+documented exception) is **build output**: `npm run assets` reads `design/assets/` and writes this
+folder (`scripts/prepare-assets.mjs:25-26`, `package.json:13`). The frozen PNG export weighs ~29MB and
+cannot meet the Lighthouse LCP gate in `docs/decisions.md` §9; this folder is 1.7MB
+(`HANDOFF.md` §4: client PNGs `28.94MB → 1.24MB (−95.7%)`). Delete it and every card, tile and hero
+renders empty until the pipeline is re-run.
+
+## Owns
+- `products/*.webp` — 7 tire cut-outs, one per `design/assets/products/*.png`. Each is trimmed to its
+  content box, scaled to 88% of a **1000px square canvas** and centred, so a grid of mixed-source
+  cut-outs reads at one optical size (`scripts/prepare-assets.mjs:29-30,60-97`; **D19**).
+- `photos/hero-tread.webp` — 2400×1600, 480KB; served by `next/image` at **13.0KB / 390px**. Licensed
+  Unsplash `CTwQiFlpgrM`, Rob Wingate (**D4**, `design/ASSET-CREDITS.md:10`). It replaces the artboard's
+  hotlinked Vossen/Ferrari photo (`design/DEVIATIONS.md` #1).
+- `photos/{accessories,tires-tile,wheels-tile,winter-tacoma}.webp` — client-supplied, from
+  `design/assets/photos/`, long edge capped at 1600 (`scripts/prepare-assets.mjs:33-34`).
+- `logo/platinum-wheels-logo-transparent.webp` — **the working file**, used everywhere in the UI.
+- `logo/platinum-wheels-logo.webp` — the white-plate original; **print/invoice only**
+  (`design/ASSET-CREDITS.md:38`, DESIGN.md §0). 512px cap covers the 64px nav and 120px footer at 4×
+  (`scripts/prepare-assets.mjs:35-36`).
+
+## Rules
+- **Nothing lands here without a row in `design/ASSET-CREDITS.md`** — licence recorded *before* the file
+  exists (`design/ASSET-CREDITS.md:42-50`).
+- webp only, quality 82 / effort 6 (`scripts/prepare-assets.mjs:38`).
+- The pipeline **refuses to upscale**: `Math.min(scale, 1)` caps it and it prints a per-file warning
+  instead of shipping a blurry cut-out (`scripts/prepare-assets.mjs:69-79`; **D19**).
+- Product filenames are the product `slug` (`src/features/catalog/types.ts:40`). Renaming one renames
+  a route under `/products/[slug]`.
+- Any new photo is looked at and measured before use, not trusted from its caption
+  (`design/ASSET-CREDITS.md:46-47`, `HANDOFF.md` §8).
+
+## Decisions
+| ID | Date | Decision | Why | Authority |
+|---|---|---|---|---|
+| — | — | No folder-scoped rows. | Governed by **D4** (hero source) and **D19** (square canvas, never upscale). | root `llm.md` §5 |
+
+## Connects to
+- Depends on: `scripts/prepare-assets.mjs` (the writer), `design/assets/{products,photos,logo}/*.png`
+  (the inputs), `design/ASSET-CREDITS.md` (the gate).
+- Depended on by: `src/features/catalog/components/product-card.tsx:166`; every home/results/PDP section
+  that renders a photo (`design/manifest.md` §1); `public/llm.md` (parent).
+
+## Don't
+- **Don't hand-edit or hand-replace a file here.** Put the new source in `design/assets/` and re-run
+  `npm run assets`, or the next run silently overwrites the edit.
+- Don't upscale the two low-res cut-outs to make them match. `touren-tr79` trims to 470×439 and
+  `zmax-landgema` to 546×757 against an 880px subject target; they render optically smaller than the
+  rest of the set and that is deliberate, visible evidence of a client blocker
+  (`HANDOFF.md` §7, `design/DEVIATIONS.md` bottom).
+- Don't use `logo/platinum-wheels-logo.webp` (white plate) in the UI — transparent is the working file.
+- Don't assume `npm run assets` regenerates the hero: `hero-tread.webp` has **no source** in
+  `design/assets/photos/` and is placed by hand under **D4**. The pipeline never touches it.
+
+## Open
+1. **Two product photos are too low-resolution** — client must supply higher-res originals
+   (`HANDOFF.md` §7). Client, via the owner.
+2. **Coverage.** `HANDOFF.md` §7 records "four product images cover nine SKUs"; seven files exist
+   here and seven PNGs in `design/assets/products/`. Which number is current, and whether per-SKU
+   photography is coming, needs the owner.

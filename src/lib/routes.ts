@@ -1,0 +1,43 @@
+/**
+ * Every internal href in one place.
+ *
+ * No route is drawn anywhere — every `href` in all seven exports is `"#"`
+ * (design/inventory/home.md:731). The shape below is this build's (D18), and
+ * links point at planned routes before those routes exist (D26: "assume they
+ * will exists, you can just link them"). Undesigned targets (`/wheels`,
+ * `/accessories`, `/about`, `/privacy`, `/terms`) get minimal stub pages so
+ * nothing 404s (D39). Anchors (`/#contact`, `/#how-it-works`) resolve to the
+ * home sections of the same name (design/manifest.md §1 rows 6 and 9).
+ *
+ * Components import from here, never write a path literal. Changing a route
+ * is a one-line edit.
+ */
+
+export const ROUTES = {
+  home: "/",
+  /** The designed results page. "Tires" in the nav and the finder submit here. */
+  results: "/results",
+  tires: "/results",
+  wheels: "/wheels",
+  accessories: "/accessories",
+  /** Footer "Winter <year>" and the promo's "Shop winter tires". */
+  winter: "/results?season=winter",
+  contact: "/#contact",
+  howItWorks: "/#how-it-works",
+  about: "/about",
+  privacy: "/privacy",
+  terms: "/terms",
+  styleguide: "/styleguide",
+} as const;
+
+/** `/products/<slug>`; the `#quote` anchor is the PDP's own quote band
+ *  (design/inventory/product.md:121) — quote-first, no cart. */
+export const PRODUCT_PATH = "/products";
+
+export function productRoute(slug: string): string {
+  return `${PRODUCT_PATH}/${slug}`;
+}
+
+export function quoteRoute(slug: string): string {
+  return `${PRODUCT_PATH}/${slug}#quote`;
+}

@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/assets/index.html" },
+    { "source": "/home-desktop", "destination": "/assets/home-desktop.html" },
+    { "source": "/home-mobile", "destination": "/assets/home-mobile.html" },
+    { "source": "/results-desktop", "destination": "/assets/results-desktop.html" },
+    { "source": "/results-mobile", "destination": "/assets/results-mobile.html" },
+    { "source": "/results-mobile-filters", "destination": "/assets/results-mobile-filters.html" },
+    { "source": "/product-desktop", "destination": "/assets/product-desktop.html" },
+    { "source": "/product-mobile", "destination": "/assets/product-mobile.html" }
+  ]
+}

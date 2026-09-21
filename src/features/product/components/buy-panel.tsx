@@ -1,0 +1,171 @@
+import type { ReactNode } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Price } from "@/components/ui/price";
+import { QuantityControl } from "@/features/product/components/quantity-control";
+import type { ProductView } from "@/features/product/types";
+import { PRIMARY_CONTACT } from "@/lib/site";
+
+/* ---------------------------------------------------------------------------
+   BuyPanel — the right column of the split (D "3": gallery 55 / panel 45).
+
+   Drawn order (`product.md` §3 "Element order"): breadcrumb (desktop only,
+   passed in — the page decides placement, `pdp-breadcrumb.tsx`), badge row
+   (desktop only — mobile's overlay the gallery, `pdp-gallery.tsx`), brand
+   label, `<h1>`, size numeral, price, quantity control, CTA pair.
+   Explicitly absent, both artboards (`product.md` §3.6): an install/fitment/
+   stock/shipping trust line — "Do not synthesise a trust line into the
+   panel" (D47(2)). No sticky mobile bar (D6).
+
+   Container — desktop `position:sticky;top:96px;display:flex;
+   flex-direction:column;gap:20px`, no padding of its own: the split's 64px
+   gap and the page's own padding do that job (`product-desktop.html:106`).
+   Mobile `padding:32px 16px 0;display:flex;flex-direction:column;gap:16px`,
+   not sticky (`product-mobile.html:92`). Tablet band keeps the mobile
+   padding (D41 "page padding 32" from `sm:`) until the split activates at
+   `md:` (1100, `product.md` §1.5/1.6), where padding hands off to the split
+   wrapper and `md:sticky md:top-24` (96px, the same token name
+   `filter-rail.tsx` uses for its own 96px offset) takes over.
+   --------------------------------------------------------------------------- */
+
+export interface BuyPanelProps {
+  view: ProductView;
+  /** Rendered first, desktop only — the caller supplies the element and its
+   *  visibility classes (`pdp-breadcrumb.tsx` "the page decides placement").
+   *  Omitted entirely on a mobile-only render path. */
+  breadcrumb?: ReactNode;
+  /** Every other current search param, so `QuantityControl`'s links change
+   *  only `qty` (D50). */
+  searchParams: Record<string, string | string[] | undefined>;
+}
+
+/* `<svg width="14" height="14" … stroke-width="1.5" stroke-linejoin="round">`
+   — `product-desktop.html:109`, the 3PMSF mark. Desktop only: the buy
+   panel's badge row never renders below `sm:` (`types.ts` `PdpBadge` doc). */
+function ThreePeakIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 20L8 9l3 5 3-6 8 12z" />
+      <path
+        d="M17 3v5M14.5 5.5h5M15.2 3.8l3.6 3.6M18.8 3.8l-3.6 3.6"
+        strokeWidth="1.2"
+      />
+    </svg>
+  );
+}
+
+/* Phone svg on the secondary CTA — `product-desktop.html:120`
+   (`width="18" height="18" stroke-width="1.6"`), 16×16 on mobile
+   (`product-mobile.html:100`). Two sized instances toggled by breakpoint,
+   the same pattern `quantity-control.tsx`'s chevron uses. */
+function PhoneIcon({ size }: { size: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
+    </svg>
+  );
+}
+
+export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
+  const { product } = view;
+
+  return (
+    <div className="flex flex-col gap-4 px-4 pt-8 sm:gap-5 sm:px-8 sm:pt-8 md:sticky md:top-24 md:gap-5 md:px-0 md:pt-0">
+      {breadcrumb}
+
+      {/* Badge row — desktop only (`product-desktop.html:108`); mobile's
+          equivalent overlays the gallery image (`pdp-gallery.tsx`).
+          `display:flex;gap:8px;align-items:center`. */}
+      {view.badges.length > 0 ? (
+        <div className="hidden items-center gap-2 sm:flex">
+          {view.badges.map((badge) => (
+            <Badge key={badge.label} variant={badge.variant}>
+              {badge.mark === "three-peak" ? <ThreePeakIcon /> : null}
+              {badge.label}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+
+      {/* Title block — `display:flex;flex-direction:column;gap:8px`
+          (mobile `gap:6px`) (`product.md` §3.2). */}
+      <div className="flex flex-col gap-1.5 sm:gap-2">
+        {/* Brand label — `font:500 12px/1;letter-spacing:.14em;
+            text-transform:uppercase;color:var(--text-muted)` mobile,
+            `13px` desktop (`product-mobile.html:94`,
+            `product-desktop.html:109`). */}
+        <span className="label text-ink-muted text-12 tracking-14 sm:text-13">
+          {product.brand}
+        </span>
+
+        {/* `<h1>` — the page's only h1. `700 calc(56px)/0.92` mobile →
+            `700 calc(88px)/0.92` desktop (`product.md` §3.2). */}
+        <h1 className="display text-display-56 sm:text-display-88">
+          {product.model}
+        </h1>
+
+        {/* Size numeral — `font:700 18px/1;tabular-nums;color:var(--text-muted)`
+            mobile, `22px` desktop (`product-mobile.html:94`,
+            `product-desktop.html:109`). */}
+        <span className="numeral text-ink-muted text-18 sm:text-22">
+          {view.sizeLine}
+        </span>
+      </div>
+
+      {/* Price — built for this exact element already; do not restyle it
+          (`product.md` §3.3). Wrapper `padding-top:8px`. */}
+      <div className="pt-2">
+        <Price amount={product.price} currency={product.currency} context="pdp" />
+      </div>
+
+      <QuantityControl quantity={view.quantity} searchParams={searchParams} />
+
+      {/* CTA pair — `flex flex-col;gap:8px;padding-top:8px` mobile,
+          `gap:10px` desktop (`product.md` §3.5). `panel` size (`h-14 sm:h-15`
+          = 56→60px) already reproduces the drawn pair unchanged. */}
+      <div className="flex flex-col gap-2 pt-2 sm:gap-2.5">
+        {/* `#quote` is this page's own quote band anchor
+            (`src/lib/routes.ts` `quoteRoute()` doc: "the PDP's own quote
+            band") — an in-page fragment, not a routed path, so it is not a
+            `ROUTES` entry. */}
+        <Button variant="primary" size="panel" fullWidth href="#quote">
+          Request a quote
+        </Button>
+        <Button
+          variant="secondary"
+          size="panel"
+          fullWidth
+          href={`tel:${PRIMARY_CONTACT.tel}`}
+        >
+          <span className="sm:hidden">
+            <PhoneIcon size={16} />
+          </span>
+          <span className="hidden sm:inline">
+            <PhoneIcon size={18} />
+          </span>
+          Call us
+        </Button>
+      </div>
+    </div>
+  );
+}

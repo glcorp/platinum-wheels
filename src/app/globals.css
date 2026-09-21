@@ -1,0 +1,658 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens — theme "Track Night"
+   Copied verbatim from the :root block shared by every artboard export in
+   design/assets/*.html. These keep the design's own names so a value in the
+   browser can be traced straight back to the artboard.
+   DESIGN.md §2 (Cinematic Dark / racing red) is superseded — see
+   docs/decisions.md §1 and design/DEVIATIONS.md #1.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Ground — tonal steps */
+  --bg: #0b0b0d; /* page, hero slabs, nav */
+  --surface: #16161a; /* cards, panels, drawers, table header */
+  --surface-2: #1f1f24; /* input fill, nested panel, row hover */
+  --canvas-bg: #050505; /* product photo ground, darker than the page */
+
+  /* Hairlines */
+  --border: #1f1f24; /* card edges, hairlines on --surface */
+  --border-strong: #35353b; /* panel edges, dividers on --bg, card hairlines */
+
+  /* Control boundaries only — the one token not taken from the artboards.
+     WCAG 1.4.11 wants 3:1 against every ADJACENT colour, and a field's
+     neighbours are the fill it encloses (--surface-2) as well as the panel
+     behind it. --border-strong manages 1.35:1 against that fill, 1.48 against
+     --surface and 1.61 against --bg; the fill is itself only 1.10:1 against the
+     panel, so nothing else identifies the control. #69696F is the lowest value
+     clearing 3:1 against all three (3.01 / 3.31 / 3.61).
+     Applied to inputs, selects and textareas ONLY. Card edges, panel hairlines
+     and dividers are decoration rather than controls and stay exactly as drawn.
+     See design/DEVIATIONS.md #14. */
+  --border-control: #69696f;
+
+  /* Ink */
+  --text: #f4f4f5; /* headlines, prices */
+  --text-muted: #a7a7ae; /* body copy, labels */
+  --text-dim: #8b909a; /* meta, placeholders, disabled */
+  --on-photo: #f4f4f5; /* ink over hero photography */
+
+  /* Accent — acid lime */
+  --accent: #c9f23a; /* primary CTA fill, nav underline, the one accent */
+  --accent-hover: #ddff6b; /* CTA hover fill (instant) */
+  --accent-subtle: rgba(201, 242, 58, 0.12);
+  --on-accent: #0b0b0d; /* ink on accent fill */
+
+  /* Seasonal ink — DESIGN.md §2 "spec tables, legends — never large areas".
+     Referenced zero times in the current artboards; the WINTER badge is an
+     --accent fill and every other badge a 1px --text-muted outline. Kept
+     because the spec gives them a defined role, not because a screen uses them
+     yet. If no screen ever does, delete them. */
+  --winter: #8fc9f2;
+  --all-season: #d9c29a;
+
+  /* Display scale ramp — DESIGN.md §3. All three are 1 in Track Night; they
+     exist so a theme can retune the display ramp without touching markup.
+     The artboards bind them as:
+       --scale-hero → 120        (1 use)
+       --scale-h2   → 32 36 40 48 56 88
+       --scale-h3   → 20 24 26 28                                             */
+  --scale-hero: 1;
+  --scale-h2: 1;
+  --scale-h3: 1;
+
+  /* Hero scrims — the only gradients allowed, alongside the card image's
+     radial --scrim-mid vignette (DESIGN.md §4 Card, §6) */
+  --scrim-strong: rgba(11, 11, 13, 0.92);
+  --scrim-mid: rgba(11, 11, 13, 0.68);
+  --scrim-soft: rgba(11, 11, 13, 0.38);
+
+  /* Shape */
+  --radius-ctl: 2px; /* interactive elements; cards/images/badges stay 0 */
+}
+
+/* ---------------------------------------------------------------------------
+   Tailwind theme
+   --color-*, --text-*, --font-*, --radius-*, --shadow-* and --breakpoint-* are
+   reset to `initial` first so no off-palette utility exists: `bg-slate-900`,
+   `text-sm`, `shadow-lg` and `rounded-xl` simply do not compile.
+   --------------------------------------------------------------------------- */
+
+@theme inline {
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --blur-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --tracking-*: initial;
+  --leading-*: initial;
+  --breakpoint-*: initial;
+
+  /* Colour — design name → utility name
+     --bg            → bg-bg
+     --surface       → bg-surface
+     --surface-2     → bg-surface-2
+     --canvas-bg     → bg-canvas
+     --border        → border-border
+     --border-strong → border-border-strong
+     --text          → text-ink
+     --text-muted    → text-ink-muted
+     --text-dim      → text-ink-dim
+     --accent        → bg-accent / text-accent / border-accent            */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-canvas: var(--canvas-bg);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-control: var(--border-control);
+
+  --color-ink: var(--text);
+  --color-ink-muted: var(--text-muted);
+  --color-ink-dim: var(--text-dim);
+  --color-on-photo: var(--on-photo);
+  /* Inactive desktop nav item: the one colour literal in the exports with no
+     token, `rgba(244,244,245,.68)` (home-desktop.html:104,106,108; inventory
+     home.md:393). A Tailwind opacity modifier (`text-on-photo/68`) would
+     compute to an oklab colour-mix and fail an exact-match parity read. */
+  --color-on-photo-muted: rgba(244, 244, 245, 0.68);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-on-accent: var(--on-accent);
+
+  --color-winter: var(--winter);
+  --color-all-season: var(--all-season);
+
+  --color-scrim-strong: var(--scrim-strong);
+  --color-scrim-mid: var(--scrim-mid);
+  --color-scrim-soft: var(--scrim-soft);
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Type families — DESIGN.md §3. No third family, no serif, never Inter. */
+  --font-display: var(--font-display-face);
+  --font-sans: var(--font-body-face);
+
+  /* Shape — DESIGN.md §4: all radii 0–4px, nothing is a pill. */
+  --radius-ctl: var(--radius-ctl);
+
+  /* ---- Type scale -------------------------------------------------------
+     The exact union of every font-size used across the seven artboards,
+     counted from the exports:
+       10×10  11×131  12×101  13×98  14×68  15×130  16×31  17×13  18×3
+       20×13  22×14   24×82   26×12  28×42  32×3    36×1   40×15  48×3
+       56×13  64×1    88×4    120×1
+     Named by pixel value so a utility greps straight back to the artboard:
+     `text-88` is the desktop PDP h1, `text-120` the home hero. The artboards
+     are not built on DESIGN.md's tidy 40/56/88/120 display scale, so the scale
+     is measured, not idealised.                                              */
+  --text-10: 10px;
+  --text-11: 11px;
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-14: 14px;
+  --text-15: 15px;
+  --text-16: 16px;
+  --text-17: 17px;
+  --text-18: 18px;
+  --text-20: 20px;
+  --text-22: 22px;
+  --text-24: 24px;
+  --text-28: 28px;
+  --text-48: 48px;
+  --text-64: 64px;
+
+  /* ---- Display ramp -----------------------------------------------------
+     DESIGN.md §3: "Headline sizes are written as calc(120px * var(--scale-hero))
+     … never as bare pixels." Paired with the `display` utility:
+       <h1 className="display text-display-120">
+     Which ramp each size belongs to was measured from the exports, not assumed.
+     Sizes that appear ONLY inside a calc() are display-only and have no bare
+     twin (120, 88, 56, 40, 36, 32, 26). Sizes that appear both ways keep both:
+     48 is also the mobile PDP price, 28 the desktop card price, 24 is 65×
+     non-display, 20 the hero supporting line.                                */
+  --text-display-120: calc(120px * var(--scale-hero));
+  --text-display-88: calc(88px * var(--scale-h2));
+  --text-display-56: calc(56px * var(--scale-h2));
+  --text-display-48: calc(48px * var(--scale-h2));
+  --text-display-40: calc(40px * var(--scale-h2));
+  --text-display-36: calc(36px * var(--scale-h2));
+  --text-display-32: calc(32px * var(--scale-h2));
+  --text-display-28: calc(28px * var(--scale-h3));
+  --text-display-26: calc(26px * var(--scale-h3));
+  --text-display-24: calc(24px * var(--scale-h3));
+  --text-display-20: calc(20px * var(--scale-h3));
+
+  /* ---- Line height ------------------------------------------------------
+     `display` is the artboards' --display-leading. `badge`/`badge-outline` are
+     the two fixed px leadings that make a badge exactly 24px tall: the filled
+     badge uses 24px, the outlined one 22px + its 1px top and bottom borders. */
+  --leading-display: 0.92;
+  --leading-flat: 1;
+  --leading-snug: 1.1;
+  --leading-tight: 1.2;
+  --leading-normal: 1.3;
+  --leading-relaxed: 1.4;
+  --leading-body: 1.5;
+  --leading-badge: 24px;
+  --leading-badge-outline: 22px;
+
+  /* ---- Tracking ---------------------------------------------------------
+     Numeric names are the value in percent, the way DESIGN.md §3 writes it
+     ("+10% tracking"). `display` is the artboards' --display-tracking.        */
+  --tracking-display: -0.015em;
+  --tracking-price: -0.02em;
+  --tracking-2: 0.02em;
+  --tracking-4: 0.04em;
+  --tracking-6: 0.06em;
+  --tracking-8: 0.08em;
+  --tracking-10: 0.1em;
+  --tracking-12: 0.12em;
+  --tracking-14: 0.14em;
+  --tracking-16: 0.16em;
+
+  /* ---- Containers -------------------------------------------------------
+     The artboards have NO max-width: the 1440 export is flush with 48px side
+     padding, so its content measures exactly 1344px. Capping at 1344 centred
+     reproduces the artboard byte-for-byte at 1440 and stays sane above it —
+     the one extension the fixed-width exports cannot tell us themselves.
+     `measure` is the 420px cap on the quote-band paragraph, the only
+     max-width declared anywhere in the exports.                              */
+  --container-*: initial;
+  --container-content: 1344px;
+  --container-measure: 420px;
+  --container-rail: 280px;
+  /* Home-page measures, each declared once in the exports:
+     hero text block `max-width:1100px` (home-desktop.html:119, inventory
+     home.md:21), hero lede `max-width:560px` (home.md:121), winter-promo body
+     `max-width:440px` (home.md:201). */
+  --container-hero: 1100px;
+  --container-hero-lede: 560px;
+  --container-promo-body: 440px;
+
+  /* ---- Motion -----------------------------------------------------------
+     The exports contain exactly 30 transition declarations and all 30 are
+     byte-identical:
+       border-color 150ms cubic-bezier(.2,0,0,1), transform 150ms cubic-bezier(.2,0,0,1)
+     They belong to card hover only. Buttons declare no transition at all —
+     an instant fill swap, exactly as DESIGN.md §4 requires. Do not add one.  */
+  --ease-card: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Breakpoints — DESIGN.md §8. Mobile-first: these are min-widths.
+     400  single-column product grid → two-up
+     720  mobile → tablet (nav drawer → inline, stacks → splits)
+     1100 tablet → desktop (3-up → 4-up grid, full display scale)
+     1320 container caps                                                   */
+  --breakpoint-xs: 400px;
+  --breakpoint-sm: 720px;
+  --breakpoint-md: 1100px;
+  --breakpoint-lg: 1320px;
+}
+
+/* ---------------------------------------------------------------------------
+   Role utilities
+   Every artboard display heading shares the same four properties and only the
+   size varies, so the role carries them and the size stays an explicit token:
+   `<h1 className="display text-120">`. Same for labels and numerals.
+   Spacing needs no tokens: the artboards sit on a 2px grid whose every value
+   (1,2,4,6,8,10,12,14,16,20,24,32,40,44,48,52,56,60,64,68,80,88,96,100,112,120)
+   is reachable from Tailwind's default 4px step — `p-px`, `p-0.5`, `p-1.5`,
+   `p-2.5`, `p-3.5` cover the odd ones. No arbitrary values required.
+   --------------------------------------------------------------------------- */
+
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+}
+
+@utility label {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  line-height: var(--leading-flat);
+  text-transform: uppercase;
+}
+
+/* Prices and tyre sizes: Barlow 700, always tabular (DESIGN.md §3). */
+@utility numeral {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Product photos sit on a percentage inset so the object scales with the card.
+   34 elements use 6% (cards), 2 use 8% (the PDP gallery). */
+@utility photo-inset-card {
+  padding: 6%;
+}
+
+/* The card image's vignette, written exactly as the 9 artboard instances
+   declare it. Tailwind's `bg-radial` would emit
+   `radial-gradient(in oklab, …)` — a different interpolation space, which a
+   computed-style parity read of `background-image` would catch — and the exact
+   form as a utility would need an arbitrary value. This is the third sanctioned
+   gradient alongside the hero scrims (DESIGN.md §4 Card, §6). */
+@utility photo-vignette {
+  background-image: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    var(--scrim-mid) 100%
+  );
+}
+
+/* Extends a short text link's touch target to the 44px floor WITHOUT changing
+   any measured property — no padding, no height, no layout shift, so a parity
+   table still reads the artboard's values. The card's product-name link is
+   display type at 24px/0.92 ≈ 22px tall, which fails both the HLD's 44px rule
+   and WCAG 2.5.8's 24px AA floor; the transparent ::after band fixes the hit
+   area only. Use it on short inline links inside cards and rows, never on
+   something already 44px. */
+@utility tap-extend {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: -12px;
+    bottom: -12px;
+  }
+}
+
+/* Card hover transitions exactly two properties, for 150ms, on --ease-card.
+   No Tailwind utility expresses this pair: `transition-colors` drags in
+   background-color, which must stay an instant swap (DESIGN.md §4), and
+   `transition-transform` drops border-color.
+   NOTE: the artboards name `transform`, but v4 implements the −2px lift with
+   the `translate` property, so `translate` is what actually animates. A
+   computed-style parity table will read `translate` where the artboard reads
+   `transform`; the rendered motion is identical. See DEVIATIONS #15. */
+@utility transition-card {
+  transition-property: border-color, translate;
+}
+
+@utility photo-inset-gallery {
+  padding: 8%;
+}
+
+/* ---------------------------------------------------------------------------
+   Home-page gradients and grids — written exactly as the artboards declare
+   them (design/inventory/home.md §3.1 "Gradients"). Tailwind's gradient
+   utilities interpolate in oklab and cannot carry four token stops without an
+   arbitrary value, so each one is a utility. Every stop is a token; the one
+   literal the mobile artboard used, `rgba(13,2,2,0)`, is `transparent` here —
+   identical at alpha 0 (D35).
+   --------------------------------------------------------------------------- */
+
+/* Hero scrim: mobile stops home-mobile.html:75, desktop home-desktop.html:93. */
+@utility hero-scrim {
+  background-image: linear-gradient(
+    to top,
+    var(--bg) 0%,
+    var(--scrim-strong) 28%,
+    var(--scrim-mid) 60%,
+    var(--scrim-soft) 100%
+  );
+}
+@utility hero-scrim-desktop {
+  background-image: linear-gradient(
+    to top,
+    var(--bg) 0%,
+    var(--scrim-strong) 22%,
+    var(--scrim-soft) 55%,
+    var(--scrim-soft) 100%
+  );
+}
+
+/* Category tiles: 35/75 on every tile (home.md:401); the tall desktop tile
+   alone uses 30/70 (home.md:400). */
+@utility tile-scrim {
+  background-image: linear-gradient(
+    to top,
+    var(--bg) 0%,
+    var(--scrim-mid) 35%,
+    transparent 75%
+  );
+}
+@utility tile-scrim-tall {
+  background-image: linear-gradient(
+    to top,
+    var(--bg) 0%,
+    var(--scrim-mid) 30%,
+    transparent 70%
+  );
+}
+
+/* Winter promo photo wash: vertical on mobile (home.md:403), a right-edge
+   wash into the copy panel on desktop (home.md:402). */
+@utility promo-wash {
+  background-image: linear-gradient(
+    to top,
+    var(--accent-subtle) 0%,
+    transparent 50%
+  );
+}
+@utility promo-wash-desktop {
+  background-image: linear-gradient(
+    to right,
+    transparent 60%,
+    var(--accent-subtle) 100%
+  );
+}
+
+/* Mobile carousel right fade (home.md:406). */
+@utility fade-right {
+  background-image: linear-gradient(to right, transparent, var(--bg));
+}
+
+/* Contact photo panel caption scrim (home.md:405). */
+@utility photo-caption-scrim {
+  background-image: linear-gradient(
+    to top,
+    var(--scrim-strong) 0%,
+    transparent 65%
+  );
+}
+
+/* Finder row at 1440: `1fr 1.2fr 1.2fr 300px; gap:16px` (home.md:35). A
+   12-column grid would give 4 × 307.5px and miss the measured 273.5 / 328.2 /
+   328.2 / 300 by more than the ±4px tolerance. */
+@utility finder-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.2fr 300px;
+  align-items: end;
+}
+
+/* Contact section at 1440: `5fr 7fr; gap:48px` (home.md:77) → 540 / 756.
+   A 12-column grid with a 48px gap gives 532 / 764 — outside the ±4px band. */
+@utility contact-grid {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  column-gap: 48px;
+}
+
+/* Category tile grid at 1440: `2fr 1fr` over two 320px rows (home.md:42). */
+@utility category-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 320px 320px;
+}
+
+/* ---------------------------------------------------------------------------
+   Results-page utilities — written exactly as the artboards declare them
+   (design/inventory/results.md §1.4–1.5, §2.4, §4.2).
+   --------------------------------------------------------------------------- */
+
+/* Results main grid at 1440: `grid-template-columns:280px 1fr;gap:48px;
+   align-items:start` (results-desktop.html:119). 280 + 48 leaves the 1016px
+   results column → 3-up at 16px = 328px cards (results.md:76). `minmax(0,1fr)`
+   keeps a long product name from widening the column. */
+@utility results-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  column-gap: 48px;
+  align-items: start;
+}
+
+/* Native `<input type="range">` wearing the artboard's price-slider handle:
+   track box `height:20px`, rail `top:9px;height:2px`, handle `16×16` at
+   `top:2px`, `--text` fill, `--radius-ctl` (results-desktop.html:146). Two of
+   these overlap for the min/max pair; the track is painted by siblings, so the
+   input's own track is transparent and only the thumb takes pointer events.
+   Thumb margin −7px centres 16px on the 2px rail at y=9–11. */
+@utility range-input {
+  appearance: none;
+  background: transparent;
+  height: 20px;
+  width: 100%;
+  margin: 0;
+  pointer-events: none;
+
+  &::-webkit-slider-runnable-track {
+    height: 2px;
+    background: transparent;
+  }
+  &::-moz-range-track {
+    height: 2px;
+    background: transparent;
+  }
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -7px;
+    background: var(--text);
+    border: 0;
+    border-radius: var(--radius-ctl);
+    pointer-events: auto;
+  }
+  &::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--text);
+    border: 0;
+    border-radius: var(--radius-ctl);
+    pointer-events: auto;
+  }
+  &:focus-visible {
+    outline: none;
+  }
+  &:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
+  }
+  &:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
+  }
+}
+
+/* Filter sheet panel: `height:700px` on the 844px artboard
+   (results-mobile-filters.html:74) = the viewport less 144px (68px header +
+   76px of page). Expressed in dvh so it is 700px at 844 and never taller than
+   the viewport (docs/decisions.md §5: dvh, never vh). */
+@utility sheet-panel {
+  height: calc(100dvh - 144px);
+  max-height: 100dvh;
+}
+
+/* Sheet tire-size row: `grid-template-columns:1fr 1fr 1fr 88px;gap:8px;
+   align-items:end` (results-mobile-filters.html:78) → three 82px fields and
+   the 88px `Apply` (results.md §4.4 group 2). */
+@utility size-grid-sheet {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 88px;
+  align-items: end;
+}
+
+/* Sheet footer `padding:12px 16px 20px` (results-mobile-filters.html:83) with
+   the home-indicator inset on notched phones (docs/decisions.md §5,
+   `env(safe-area-inset-bottom)`). 20px exactly on the artboard's flat viewport. */
+@utility pb-safe {
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+/* ---------------------------------------------------------------------------
+   Product-page utilities — written exactly as the artboards declare them
+   (design/inventory/product.md §1.3, §1.5, §1.6, §3.4, §4).
+   --------------------------------------------------------------------------- */
+
+/* The PDP split at 1440: `grid-template-columns:55fr 45fr;gap:64px;
+   align-items:start` (product-desktop.html:101). Inside the 1344px content row
+   the 64px gap leaves 1280px free → gallery 704, buy panel 576. This is 55/45,
+   NOT the 60/40 DESIGN.md §5 specifies — the artboard wins (DEVIATIONS.md:16).
+   `minmax(0,1fr)` is not needed: both tracks are `fr` of a fixed free space. */
+@utility pdp-split {
+  display: grid;
+  grid-template-columns: 55fr 45fr;
+  column-gap: 64px;
+  align-items: start;
+}
+
+/* The quote band's inner grid at 1440: `5fr 7fr;gap:64px;align-items:start`
+   (product-desktop.html:133) → 533.333 / 746.667, ≈42/58. Deliberately the
+   opposite weighting to `pdp-split` directly above it (product.md §1.5). */
+@utility quote-grid {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  column-gap: 64px;
+  align-items: start;
+}
+
+/* Buy-panel quantity cells. Mobile `1fr 1fr 1fr 1.5fr` inside 358px → 74.222
+   ×3 + 111.333 (product-mobile.html:98); desktop `1fr 1fr 1fr 1.6fr` inside
+   576px → 120 ×3 + 192 (product-desktop.html:112). The fourth track is wider
+   because it holds `Custom` plus a chevron, not a numeral. Two utilities
+   because the ratio itself changes, not just a gap: `md:qty-grid-wide`. */
+@utility qty-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.5fr;
+}
+
+@utility qty-grid-wide {
+  grid-template-columns: 1fr 1fr 1fr 1.6fr;
+}
+
+/* Similar-products row. Mobile is a fixed `repeat(4,260px);gap:12px` track —
+   1076px inside a 374px box (product-mobile.html:126) — which the export clips
+   with `overflow:hidden` because a static snapshot cannot scroll. It ships
+   scrollable, with snap, on the D30 precedent (the owner chose a functional
+   mobile carousel on home over a static one). No arrows: unlike the home row,
+   the PDP artboards draw none. Desktop is the fluid 4-up `repeat(4,minmax(0,1fr));
+   gap:16px` (product-desktop.html:161). */
+@utility similar-track {
+  display: grid;
+  grid-template-columns: repeat(4, 260px);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+
+  & > * {
+    scroll-snap-align: start;
+  }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility similar-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow-x: visible;
+  scroll-snap-type: none;
+}
+
+/* The gallery image's vignette. Identical in form to `photo-vignette` but the
+   transparent stop is 55%, not 50% (product-desktop.html:103,
+   product-mobile.html:91) — a wider clear centre for a 704px image than for a
+   328px card. Written out rather than parameterised for the same reason
+   `photo-vignette` is: Tailwind's `bg-radial` emits `in oklab`, which a
+   computed-style parity read catches. */
+@utility photo-vignette-gallery {
+  background-image: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    var(--scrim-mid) 100%
+  );
+}
+
+@layer base {
+  html {
+    /* Hairlines stay 1px and must not scale with DPR (DESIGN.md §8). */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text-muted);
+  }
+
+  /* Focus is the accent ring with no offset (DESIGN.md §4). */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platinum Wheels — design export</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;700&family=Michroma&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0B0D;
+  --surface:#16161A;
+  --surface-2:#1F1F24;
+  --border:#1F1F24;
+  --border-strong:#35353B;
+  --text:#F4F4F5;
+  --text-muted:#A7A7AE;
+  --text-dim:#8B909A;
+  --accent:#C9F23A;
+  --accent-hover:#DDFF6B;
+  --accent-subtle:rgba(201,242,58,0.12);
+  --on-accent:#0B0B0D;
+  --on-photo:#F4F4F5;
+  --winter:#8FC9F2;
+  --all-season:#D9C29A;
+  --font-display:'Barlow Condensed',sans-serif;
+  --font-body:'Barlow',sans-serif;
+  --radius-ctl:2px;
+  --display-tracking:-0.015em;
+  --display-leading:0.92;
+  --display-weight:700;
+  --display-transform:uppercase;
+  --scale-hero:1;
+  --scale-h2:1;
+  --scale-h3:1;
+  --canvas-bg:#050505;
+  --scrim-strong:rgba(11,11,13,.92);
+  --scrim-mid:rgba(11,11,13,.68);
+  --scrim-soft:rgba(11,11,13,.38);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+main{max-width:720px;margin:0 auto;padding:80px 24px 120px;display:flex;flex-direction:column;gap:48px}
+h1{margin:0;font:var(--display-weight) 56px/var(--display-leading) var(--font-display);letter-spacing:var(--display-tracking);text-transform:var(--display-transform)}
+p{margin:0;font:400 16px/1.6 var(--font-body);color:var(--text-muted)}
+ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--border-strong)}
+li a{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:20px 8px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--text);font:500 17px/1 var(--font-body)}
+li a:hover{background:var(--surface);color:var(--text)}
+li a span{font:500 12px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+</style>
+</head>
+<body>
+<main>
+<h1>Platinum Wheels — static export</h1>
+<p>Seven artboards exported from the design system, rendered in theme B (Track Night). Images resolve from <code>assets/</code>; the written spec is in <code>DESIGN.md</code>.</p>
+<ul>
+<li><a href="home-desktop.html">Home — Desktop<span>1440px</span></a></li>
+<li><a href="home-mobile.html">Home — Mobile<span>390px</span></a></li>
+<li><a href="results-desktop.html">Results — Desktop<span>1440px</span></a></li>
+<li><a href="results-mobile.html">Results — Mobile<span>390px</span></a></li>
+<li><a href="results-mobile-filters.html">Results — Mobile, filters open<span>390px</span></a></li>
+<li><a href="product-desktop.html">Product — Desktop<span>1440px</span></a></li>
+<li><a href="product-mobile.html">Product — Mobile<span>390px</span></a></li>
+<li><a href="DESIGN.md">DESIGN.md<span>Spec</span></a></li>
+</ul>
+</main>
+</body>
+</html>

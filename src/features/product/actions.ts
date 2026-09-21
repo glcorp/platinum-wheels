@@ -1,0 +1,133 @@
+"use server";
+
+/* ---------------------------------------------------------------------------
+   submitQuote — the quote band's Server Action (D51)
+
+   Signature matches `useActionState(submitQuote, QUOTE_INITIAL_STATE)`
+   (`src/features/product/components/quote-form.tsx`): `(prevState, formData)
+   => Promise<QuoteFormState>`. `QuoteFormState` / `QUOTE_FIELD` /
+   `CONTACT_METHODS` / `QUANTITY_OPTIONS` are the contract
+   (`src/features/product/types.ts`), written before this file (D25) — nothing
+   here invents a field name or an allowed value.
+
+   Validation only. **This action sends nothing anywhere** — see the TODO
+   below. No dependency is added, nothing is written to disk, nothing is
+   called out to the network (root task brief; `src/features/product/llm.md`
+   Open #1: "Owner, then client").
+
+   Error copy is new copy, authored under `.claude/rules/ui.md` "Copy": short,
+   specific, sentence case, no em dashes, tells the person what to do.
+   --------------------------------------------------------------------------- */
+
+import {
+  CONTACT_METHODS,
+  DEFAULT_CONTACT_METHOD,
+  DEFAULT_QUANTITY,
+  QUANTITY_OPTIONS,
+  QUOTE_FIELD,
+  type ContactMethod,
+  type QuantityKey,
+  type QuoteFormState,
+} from "@/features/product/types";
+
+/** Plain, honest email shape check — not a heroic regex. One `@`, something on
+ *  each side, a dot somewhere after the `@`. Rejects obvious typos without
+ *  pretending to validate deliverability. */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Keeps a visitor from pasting a wall of text into a field the quote email
+ *  will eventually be someone's inbox. No artboard draws a limit, so this is
+ *  a generous ceiling, not a design value. */
+const MESSAGE_MAX_LENGTH = 1000;
+
+const QUANTITY_VALUES = new Set<string>(QUANTITY_OPTIONS.map((option) => option.value));
+const CONTACT_VALUES = new Set<string>(CONTACT_METHODS.map((method) => method.value));
+
+function readString(formData: FormData, field: string): string {
+  const value = formData.get(field);
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/** Strips everything but digits, then checks for a 10-digit NANP number or an
+ *  11-digit one carrying the leading `1` country code — covers every common
+ *  Canadian formatting style ("905 000 0000", "(905) 000-0000",
+ *  "+1 905 000 0000", "1-905-000-0000") without a format-specific regex. */
+function isPlausiblePhone(raw: string): boolean {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) return true;
+  if (digits.length === 11) return digits.startsWith("1");
+  return false;
+}
+
+export async function submitQuote(
+  _prevState: QuoteFormState,
+  formData: FormData,
+): Promise<QuoteFormState> {
+  const name = readString(formData, QUOTE_FIELD.name);
+  const email = readString(formData, QUOTE_FIELD.email);
+  const phone = readString(formData, QUOTE_FIELD.phone);
+  const message = readString(formData, QUOTE_FIELD.message);
+  const rawQuantity = readString(formData, QUOTE_FIELD.quantity);
+  const rawContact = readString(formData, QUOTE_FIELD.contact);
+
+  // Quantity and Preferred contact are never wrong, only unset or tampered
+  // with — an unknown value falls back to the artboard's own default rather
+  // than failing the whole submission over an optional-group control.
+  const quantity: QuantityKey = QUANTITY_VALUES.has(rawQuantity)
+    ? (rawQuantity as QuantityKey)
+    : DEFAULT_QUANTITY;
+  const contact: ContactMethod = CONTACT_VALUES.has(rawContact)
+    ? (rawContact as ContactMethod)
+    : DEFAULT_CONTACT_METHOD;
+
+  const errors: Partial<Record<"name" | "email" | "phone" | "message", string>> = {};
+
+  if (name === "") {
+    errors.name = "Enter your name.";
+  }
+
+  if (email === "") {
+    errors.email = "Enter your email address.";
+  } else if (!EMAIL_PATTERN.test(email)) {
+    errors.email = "Enter a valid email address.";
+  }
+
+  if (phone === "") {
+    errors.phone = "Enter your phone number.";
+  } else if (!isPlausiblePhone(phone)) {
+    errors.phone = "Enter a 10-digit Canadian phone number.";
+  }
+
+  if (message.length > MESSAGE_MAX_LENGTH) {
+    errors.message = `Keep your message under ${MESSAGE_MAX_LENGTH} characters.`;
+  }
+
+  // CASL consent is opt-in (docs/decisions.md:118): the box is read only to
+  // decide what ships in a future delivery payload, never to gate success. An
+  // unticked box is never an error and its state is never echoed back on
+  // `invalid` — `Checkbox variant="consent"` must always render unticked
+  // (`src/components/ui/checkbox.tsx`), so there is nothing to restore.
+
+  if (Object.keys(errors).length > 0) {
+    return {
+      status: "invalid",
+      errors,
+      values: {
+        name,
+        email,
+        phone,
+        message,
+        quantity,
+        contact,
+      },
+    };
+  }
+
+  // TODO(delivery): this inquiry is validated and discarded. The client has
+  // supplied no destination — no inbox, no CRM, no form endpoint — to send it
+  // to (src/features/product/llm.md "Open" #1: "Owner, then client"). When one
+  // exists, this is where the email/CRM call goes; until then this action
+  // must not add a dependency, write to disk, or reach the network.
+
+  return { status: "success" };
+}
