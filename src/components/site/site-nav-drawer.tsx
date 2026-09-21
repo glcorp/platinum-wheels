@@ -75,6 +75,7 @@ export function SiteNavDrawer({
 
       <dialog
         id="site-nav-drawer"
+        aria-label="Menu"
         ref={dialogRef}
         onClose={() => setOpen(false)}
         /* Esc: `<dialog>` closes natively through the browser's close watcher,

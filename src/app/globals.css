@@ -330,6 +330,68 @@
   }
 }
 
+/* tap-extend-lg — the same transparent band at +/-16px, for lines too short for
+   `tap-extend` to rescue. Breadcrumb crumbs are 11/12px type ~13px tall, so the
+   +/-12px band reaches only 37px — measured by hit-testing, against the 44px
+   floor in docs/decisions.md §5. 13 + 32 = 45px clears it. Same mechanism and
+   the same guarantee as `tap-extend`: no padding, no height, no layout shift,
+   so every parity row is unchanged. Audit finding C4, design/reports/audit.md. */
+@utility tap-extend-lg {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: -16px;
+    bottom: -16px;
+  }
+}
+
+/* hide-scrollbar — one mechanism for both scroll-snap carousels. The home
+   featured row (D30) and the PDP similar-products track (D53(5)) are the same
+   pattern; until this utility existed only the PDP hid its scrollbar, and the
+   home carousel carried a comment claiming no such utility existed. Audit
+   finding S1, design/reports/audit.md. Scrollbar visibility appears in no
+   parity table. */
+@utility hide-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* skip-link — the first focusable element in the document, hidden until it
+   takes focus. Without it a keyboard or switch user crosses 6 tab stops of
+   header nav before reaching <main> on every route: WCAG 2.4.1 Bypass Blocks,
+   Level A. Lighthouse scored a11y 100 without it, because its `bypass` audit is
+   satisfied by a <main> landmark alone. Audit finding C1.
+   Off-screen rather than `display:none`, so it stays focusable. Colours are
+   tokens; the focus ring is the global :focus-visible rule (DESIGN.md §4). */
+@utility skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  transform: translateY(-100%);
+  background-color: var(--accent);
+  color: var(--on-accent);
+  padding: 12px 16px;
+  font-family: var(--font-body-face);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+
+  /* `:focus`, not `:focus-visible`. The link is unreachable except by Tab, so
+     there is no pointer-focus case to guard against — and `:focus-visible`
+     does not match focus moved programmatically, which would leave the link
+     invisible to anything that calls .focus() on it. */
+  &:focus {
+    transform: translateY(0);
+  }
+}
+
 /* Card hover transitions exactly two properties, for 150ms, on --ease-card.
    No Tailwind utility expresses this pair: `transition-colors` drags in
    background-color, which must stay an instant swap (DESIGN.md §4), and
@@ -596,14 +658,9 @@
   grid-template-columns: repeat(4, 260px);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scrollbar-width: none;
 
   & > * {
     scroll-snap-align: start;
-  }
-
-  &::-webkit-scrollbar {
-    display: none;
   }
 }
 

@@ -37,14 +37,18 @@ export function PdpBreadcrumb({ view, className }: PdpBreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb" className={className}>
       <ol className="label text-ink-dim tracking-10 m-0 inline list-none p-0 text-11 sm:text-12">
-        {/* `tap-extend` on both crumb links: 11/12px text is ~13px tall, which
-            fails the 44px floor (`docs/decisions.md` §5) and WCAG 2.5.8's 24px
-            AA minimum. The utility adds a transparent +/-12px band via ::after
-            and changes no measured property — no padding, no height, no layout
-            shift — so every parity row above is unchanged. Same fix, same
-            reason as the card's product-name link (DEVIATIONS #16). */}
+        {/* `tap-extend-lg` on both crumb links. The box is ~13px tall
+            (11/12px type at line-height 1), which clears WCAG 2.5.8's 24px AA
+            minimum but not this project's 44px floor (`docs/decisions.md`
+            §5) — `tap-extend`'s +/-12px band only reaches 13+24=37px here, so
+            the crumbs use the +/-16px variant instead: 13+32=45px. Audit
+            finding C4 (`design/reports/audit.md`) — not DEVIATIONS #16, which
+            covers the card's 22px product-name link (that box alone already
+            reaches 46.1px with the smaller band). Like `tap-extend`, the
+            utility changes no measured property — no padding, no height, no
+            layout shift — so every parity row above is unchanged. */}
         <li className="inline">
-          <Link href={ROUTES.home} className="tap-extend hover:text-ink-muted">
+          <Link href={ROUTES.home} className="tap-extend-lg hover:text-ink-muted">
             Home
           </Link>
         </li>
@@ -54,7 +58,7 @@ export function PdpBreadcrumb({ view, className }: PdpBreadcrumbProps) {
           <span className="sm:mx-1.5"> / </span>
         </li>
         <li className="inline">
-          <Link href={view.backHref} className="tap-extend hover:text-ink-muted">
+          <Link href={view.backHref} className="tap-extend-lg hover:text-ink-muted">
             Results
           </Link>
         </li>

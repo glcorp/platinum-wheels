@@ -37,13 +37,20 @@ entire site loses its type or its palette at once.
 - Role utilities (`:272-544`). Each exists because no Tailwind utility expresses it without an
   arbitrary value; the reason is in the comment above each one. Type and photo roles: `display` (`:272`),
   `label` (`:280`), `numeral` (`:288`), `photo-inset-card` (`:296`), `photo-vignette` (`:306`),
-  `tap-extend` (`:321`), `transition-card` (`:341`), `photo-inset-gallery` (`:345`). Home layout and
-  scrims: `hero-scrim[-desktop]` (`:359`, `:368`), `tile-scrim[-tall]` (`:380`, `:388`),
-  `promo-wash[-desktop]` (`:399`, `:406`), `fade-right` (`:415`), `photo-caption-scrim` (`:420`),
-  `finder-grid` (`:431`), `contact-grid` (`:439`), `category-grid` (`:446`). `/results` (D44):
-  - `results-grid` (`:461`) — the drawn two-column page grid, `280px minmax(0,1fr)` with a 48px column
+  `tap-extend` (`:321`), `transition-card` (`:403`), `photo-inset-gallery` (`:407`).
+  **Accessibility roles, added 2026-09-21 by D57** — each fixes a measured defect and changes no drawn
+  property, so no parity row moves: `tap-extend-lg` (`:339`) the same transparent band at ±16px, for
+  lines too short for `tap-extend` to lift over the 44px floor (13px crumbs hit-tested 37px → 45px;
+  `DEVIATIONS.md` #41); `hide-scrollbar` (`:357`) the one mechanism both scroll-snap carousels compose,
+  since `similar-track` no longer hides its own (#48); `skip-link` (`:372`) the off-screen-until-focused
+  bypass link, revealed on **`:focus`** not `:focus-visible` — the link is unreachable except by Tab, and
+  `:focus-visible` does not match programmatically moved focus (#44).
+  Home layout and scrims: `hero-scrim[-desktop]` (`:421`, `:430`), `tile-scrim[-tall]` (`:442`, `:450`),
+  `promo-wash[-desktop]` (`:461`, `:468`), `fade-right` (`:477`), `photo-caption-scrim` (`:482`),
+  `finder-grid` (`:493`), `contact-grid` (`:501`), `category-grid` (`:508`). `/results` (D44):
+  - `results-grid` (`:523`) — the drawn two-column page grid, `280px minmax(0,1fr)` with a 48px column
     gap and `align-items:start` (`results-desktop.html:119`).
-  - `range-input` (`:474`) — a native `<input type="range">` wearing the artboard's price-slider handle;
+  - `range-input` (`:536`) — a native `<input type="range">` wearing the artboard's price-slider handle;
     two overlap for the min/max pair, so only the 16px thumb takes pointer events.
   - `sheet-panel` (`:525`) — the filter sheet's height, `calc(100dvh - 144px)`, the 700px of the 844px
     artboard expressed in `dvh` (`docs/decisions.md` §5: `dvh`, never `vh`).

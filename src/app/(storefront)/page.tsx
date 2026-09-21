@@ -36,7 +36,7 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader variant="over-hero" active="tires" />
-      <main className="flex-1">
+      <main id="main" tabIndex={-1} className="flex-1">
         <Hero />
         <VehicleFinder />
         <CategoryTiles />

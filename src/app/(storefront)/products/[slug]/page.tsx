@@ -80,7 +80,7 @@ export default async function ProductPage({
   return (
     <>
       <SiteHeader variant="solid" active="tires" />
-      <main className="flex-1">
+      <main id="main" tabIndex={-1} className="flex-1">
         {/* Mobile only: `padding:16px 16px 0` above the gallery
             (`product-mobile.html:90`). Desktop's copy lives in the buy panel. */}
         <div className="px-4 pt-4 sm:px-8 md:hidden">{breadcrumb}</div>

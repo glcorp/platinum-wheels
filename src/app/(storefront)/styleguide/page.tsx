@@ -12,6 +12,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import { ResultsEmpty } from "@/features/results/components/results-grid";
+import { QuoteErrorSummary } from "@/features/product/components/quote-error-summary";
 import { QuoteSuccess } from "@/features/product/components/quote-success";
 import type { Product } from "@/features/catalog/types";
 import { Select } from "@/components/ui/select";
@@ -132,7 +133,7 @@ function Block({ id, index, eyebrow, title, children }: {
 
 export default function StyleguidePage() {
   return (
-    <main className="mx-auto w-full max-w-content px-4 pt-14 pb-20 sm:px-12 sm:pt-20 sm:pb-30">
+    <main id="main" tabIndex={-1} className="mx-auto w-full max-w-content px-4 pt-14 pb-20 sm:px-12 sm:pt-20 sm:pb-30">
       <p className="label text-12 tracking-16 text-accent">Track Night</p>
       <h1 className="display text-display-56 text-ink mt-4 sm:text-display-88">
         Styleguide
@@ -429,9 +430,10 @@ export default function StyleguidePage() {
           <code className="text-ink">:active</code> or{" "}
           <code className="text-ink">:disabled</code> rule — only{" "}
           <code className="text-ink">:hover</code>. Focus, active and disabled are
-          authored above from DESIGN.md §4. Form success is authored below with
-          the PDP quote band (D51). Loading, error and 404 still need authoring,
-          and land here when they exist.
+          authored above from DESIGN.md §4. Form success and form error are
+          authored below with the PDP quote band (D51, D57), together with the
+          skip link the artboards never drew (D57). Loading and route error
+          still need authoring, and land here when they exist.
         </p>
 
         {/* Empty results — `/results` with a filter set that matches nothing.
@@ -479,6 +481,42 @@ export default function StyleguidePage() {
           </p>
           <div className="border-border-strong border p-4">
             <QuoteSuccess />
+          </div>
+        </div>
+
+        {/* Quote form error summary. No artboard draws an error state at all
+            (DEVIATIONS #9, #46) — it is authored (D57) and rendered from the
+            real component so it cannot drift, without `role="alert"` so a
+            reference page does not announce itself on load. Shown at 2 so the
+            plural branch is the one on display; the component renders nothing
+            at 0 and switches to "1 field needs a fix" at 1. */}
+        <div className="mt-10">
+          <p className="numeral text-12 text-ink-dim mb-4">
+            Quote form error · src/features/product/components/quote-error-summary.tsx
+          </p>
+          <div className="border-border-strong border p-4">
+            <QuoteErrorSummary count={2} />
+          </div>
+        </div>
+
+        {/* Skip link. The first focusable element on every route and the only
+            thing allowed before the header (D57, DEVIATIONS #44). It is
+            `position:absolute` and parked at `translateY(-100%)` until focus,
+            so the demo box is `relative` to give it a containing block —
+            otherwise it would position against the page. Tab to it to see the
+            revealed state, the same way the focus rings in §5 are shown; it
+            reveals on `:focus`, not `:focus-visible`, because it is
+            unreachable except by Tab. `href` points at this page's own
+            `<main id="main">`, so activating it here behaves exactly as it
+            does everywhere else. */}
+        <div className="mt-10">
+          <p className="numeral text-12 text-ink-dim mb-4">
+            Skip to content · src/app/layout.tsx · Tab into the box to reveal it
+          </p>
+          <div className="border-border-strong relative h-20 border">
+            <a href="#main" className="skip-link">
+              Skip to content
+            </a>
           </div>
         </div>
       </section>

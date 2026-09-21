@@ -26,7 +26,7 @@ export function PageStub({ title, active = "tires", children }: PageStubProps) {
   return (
     <>
       <SiteHeader variant="solid" active={active} />
-      <main className="flex-1 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30">
+      <main id="main" tabIndex={-1} className="flex-1 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30">
         <div className="lg:mx-auto lg:max-w-content">
           <h1 className="display text-ink text-display-56 sm:text-display-88">
             {title}

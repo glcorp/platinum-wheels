@@ -23,6 +23,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${barlowCondensed.variable} ${barlow.variable} h-full antialiased`}
     >
       <body className="bg-bg text-ink-muted flex min-h-full flex-col font-sans">
+        {/* Skip link — the first focusable element in the document, and the
+            only thing that may precede the header. Without it a keyboard or
+            switch user crosses six tab stops of header nav before reaching
+            <main> on every route: WCAG 2.4.1 Bypass Blocks, Level A. It lives
+            here rather than in a page because every route needs it and pages
+            stay thin (`docs/decisions.md` §3).
+
+            `skip-link` (globals.css) parks it off-screen with a transform and
+            brings it back on :focus-visible — off-screen, not `display:none`,
+            so it stays focusable. Each route's <main> carries `id="main"` and
+            `tabIndex={-1}` so the jump lands focus, not just the scroll
+            position. Audit finding C1, design/reports/audit.md. */}
+        <a href="#main" className="skip-link">
+          Skip to content
+        </a>
         {children}
       </body>
     </html>

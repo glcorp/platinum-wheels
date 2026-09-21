@@ -187,16 +187,17 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
             arbitrary `grid-flow-col auto-cols-[260px]` the artboard's computed
             grid implies is banned (`.claude/rules/ui.md`), so this is the
             token-only equivalent: each wrapper is a fixed `w-65` (260px) and
-            the row scroll-snaps. Native scrollbar is left showing on
-            platforms that draw one — there is no `scrollbar-hide` utility in
-            this build's token set.
+            the row scroll-snaps. `hide-scrollbar` is the shared utility (added
+            for audit finding S1, `design/reports/audit.md` §4) used here and
+            by the PDP similar-products track to hide the native scrollbar on
+            both functional carousels.
             Tablet: `sm:grid sm:grid-cols-3 sm:gap-4` (DESIGN.md §8 "3-up");
             the 4th card wraps to a second row, which reads fine here.
             Desktop: `md:grid-cols-4 md:gap-4 md:overflow-visible`. */}
         <div
           ref={trackRef}
           data-probe="featured-track"
-          className="flex gap-3 overflow-x-auto snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible md:grid-cols-4"
+          className="hide-scrollbar flex gap-3 overflow-x-auto snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible md:grid-cols-4"
         >
           {products.map((product) => (
             <div

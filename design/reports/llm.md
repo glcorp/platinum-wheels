@@ -4,9 +4,9 @@
 The evidence folder for the parity gate in `docs/decisions.md` §9. Parity on this project is *measured,
 not eyeballed*: each built page gets a `<page>.md` holding a computed-style table at 390 and 1440,
 diffed against the artboard baseline served on :4000. All three built pages landed before the initial
-commit (D55), so for them these reports plus `design/DEVIATIONS.md` remain the rollback safety and the
-audit trail (`docs/decisions.md` §10) — no commit can show what a page looked like mid-build. Without
-this folder a page can be called "done" on an opinion, which is exactly what the protocol forbids.
+commit (D55, `60fa3e8`), so for them these reports plus `design/DEVIATIONS.md` remain the rollback safety
+and the audit trail (`docs/decisions.md` §10) — no commit can show what a page looked like mid-build.
+Without this folder a page can be called "done" on an opinion, which is exactly what the protocol forbids.
 
 ## Owns
 - [`README.md`](README.md) — 89 ln. The protocol: how to serve the baseline and the app, how to run the
@@ -21,6 +21,15 @@ this folder a page can be called "done" on an opinion, which is exactly what the
   genericisation, the unavailable SKU. The PDP is the first route whose correctness is not fully visible
   in a computed-style table, so behaviour is recorded beside the measurements. 2026-09-21.
 - `<page>.md` — one per built page. All three designed routes now have one.
+- [`audit.md`](audit.md) — the consolidated `/design-to-code audit` pass (SKILL.md §9), 2026-09-21. The
+  index over the four `*-audit.md` files, the coordinator's browser-measured gate table, a
+  **checked and cleared** list of non-defects, the merged fix list, and the pass's coverage limits.
+  **Report-only: the pass changed no file under `src/`.**
+- [`home-audit.md`](home-audit.md), [`results-audit.md`](results-audit.md),
+  [`product-audit.md`](product-audit.md), [`shared-audit.md`](shared-audit.md) — the four per-scope audit
+  reports behind `audit.md`, one per delegated agent (D25), on strictly disjoint files. `shared-audit.md`
+  is the cross-cutting one: chrome, the ten primitives, catalog, `globals.css` integrity and the
+  cross-page consistency pass.
 
 ## Rules
 - **Never write "matches" or "looks right" here. Every row is a measured number** (`README.md` header
@@ -39,6 +48,9 @@ this folder a page can be called "done" on an opinion, which is exactly what the
   list, not the source file, not a curled CSS chunk (`README.md`, "Gotcha"; `HANDOFF.md` §8).
 - **The probes are `scripts/parity-probe.js`** — `probe()`, `overflowers()`, `accentCount()`
   (`HANDOFF.md` §4).
+- **A `<page>.md` and a `<page>-audit.md` are different documents.** The first is the measured parity
+  baseline written when the page is built; the second is a §9 audit pass over existing code. An audit
+  never edits a `<page>.md` — it reports whether that report's rows still trace to source.
 - Note for future tables: `design/DEVIATIONS.md` #15 predicts a row that reads `translate` where the
   artboard reads `transform`. That row is expected, not a failure.
 
@@ -75,4 +87,8 @@ as report rows rather than failures: **D11, D12, D13, D15, D16**.
   session started in the right directory (`.claude/llm.md` Rules, D36). `README.md` should drop the note;
   not yet edited.
 - Baseline images only resolve since 2026-09-20 (D36, via `design/serve.json`). Photo comparison was impossible before that.
-- Lighthouse has not been run on `/` (no CLI Chrome). Owner.
+- ~~Lighthouse has not been run on `/` (no CLI Chrome).~~ Closed 2026-09-21: Chrome is at
+  `/Applications`, not on `PATH`; the recipe is in `README.md` and all three pages have readings. The one
+  red row everywhere is the mobile LCP gate, **parked by D54**.
+- The audit pass (`audit.md` §6) sampled 18 of the 43 `DEVIATIONS.md` rows, not all of them. The
+  remaining ~25 are untested, not certified clean. Whoever next touches `DEVIATIONS.md` should finish it.

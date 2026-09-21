@@ -27,6 +27,13 @@ the one form the storefront has. Delete it and the whole quote-first premise
   not inlined in the island, so `/styleguide` renders the real component rather than a copy that can
   drift (the `ResultsEmpty` precedent) and it stays out of that page's client bundle. `role` and
   `tabIndex` are props: the live form passes them and focuses it; the styleguide renders it inert.
+- `components/quote-error-summary.tsx` — `QuoteErrorSummary`, the authored **failed**-submit
+  announcement (D57, audit finding C2/C3, `DEVIATIONS.md` #46). Exact same shape and reasoning as
+  `quote-success.tsx` above: its own module so `/styleguide` renders the real component, `role` and
+  `tabIndex` as props so the reference page renders it inert. In the live form `role="alert"` is
+  implicitly assertive and atomic, so **mounting the node is the announcement** — the build had no live
+  region anywhere before this. Renders `null` at a count of 0, so the caller needs no guard. It borrows
+  the `FieldError` type role rather than inventing a look; no artboard draws an error state (#9).
 
 ## Rules
 - **Measured baseline is `design/inventory/product.md`** (696 lines). Every number in a component

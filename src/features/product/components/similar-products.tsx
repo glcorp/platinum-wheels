@@ -38,16 +38,20 @@ const SECTION =
    (`product-desktop.html:161`). */
 const HEADING = "display text-ink text-display-40 sm:text-display-56";
 
-/* `similar-track` (mobile, fixed `repeat(4,260px)` scroller with snap,
-   hidden scrollbar) / `md:similar-grid` (fluid 4-up) — both declared in
-   `src/app/globals.css`. Gutter `gap:12px` M (`product-mobile.html:126`) →
-   `16px` D (`product-desktop.html:161`).
+/* `similar-track` (mobile, fixed `repeat(4,260px)` scroller with snap) /
+   `md:similar-grid` (fluid 4-up) — both declared in `src/app/globals.css`.
+   Gutter `gap:12px` M (`product-mobile.html:126`) → `16px` D
+   (`product-desktop.html:161`). Scrollbar hiding is the separate
+   `hide-scrollbar` utility (audit finding S1, `design/reports/audit.md`):
+   `similar-track` no longer carries its own `scrollbar-width`/
+   `::-webkit-scrollbar` rule, now that the home featured row (D30) uses the
+   same mechanism — one utility for both carousels instead of two copies.
    The export clips cards 2-4 with `overflow:hidden` on the mobile grid div
    — a static-snapshot artefact of the same kind as the home carousel; it
    ships scrollable here on the D30 precedent, cited for the PDP row as
    D53(5). No arrows, no dots: unlike the home row, neither PDP artboard
    draws any (`product.md` §2.7). */
-const TRACK = "similar-track md:similar-grid gap-3 md:gap-4";
+const TRACK = "similar-track hide-scrollbar md:similar-grid gap-3 md:gap-4";
 
 export function SimilarProducts({ products }: SimilarProductsProps) {
   if (products.length === 0) {

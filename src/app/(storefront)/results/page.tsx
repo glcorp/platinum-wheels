@@ -43,7 +43,7 @@ export default async function ResultsPage({
   return (
     <>
       <SiteHeader variant="solid" active="tires" />
-      <main className="flex-1">
+      <main id="main" tabIndex={-1} className="flex-1">
         <ResultsToolbar view={view} />
         {/* Mobile sticky filter/sort bar — owns its own `margin-top:16px` and
             sticky offset (`results.md` §2.3). */}

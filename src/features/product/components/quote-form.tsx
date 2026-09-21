@@ -34,6 +34,7 @@ import {
   QUOTE_INITIAL_STATE,
   type QuantityKey,
 } from "@/features/product/types";
+import { QuoteErrorSummary } from "./quote-error-summary";
 import { QuoteSuccess } from "./quote-success";
 
 function cx(...parts: Array<string | false | null | undefined>): string {
@@ -50,6 +51,11 @@ export interface QuoteFormProps {
 export function QuoteForm({ slug, quantity }: QuoteFormProps) {
   const [state, formAction, isPending] = useActionState(submitQuote, QUOTE_INITIAL_STATE);
   const successRef = useRef<HTMLDivElement>(null);
+  const errorSummaryRef = useRef<HTMLParagraphElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   // Move focus to the confirmation once it replaces the form, so a screen
   // reader (and a sighted keyboard user) lands on the thing that changed.
@@ -58,6 +64,28 @@ export function QuoteForm({ slug, quantity }: QuoteFormProps) {
       successRef.current?.focus();
     }
   }, [state.status]);
+
+  // Audit C3: a rejected submit used to leave focus on <body>, so a keyboard
+  // or screen-reader user had no indication anything happened. Same pattern
+  // as the success effect above — focus the first field that actually failed
+  // validation, in drawn field order, rather than a fixed field. `errors`
+  // keys are a subset of `name`/`email`/`phone`/`message` (`actions.ts`).
+  useEffect(() => {
+    if (state.status !== "invalid" || !state.errors) {
+      return;
+    }
+    if (state.errors.name) {
+      nameRef.current?.focus();
+    } else if (state.errors.email) {
+      emailRef.current?.focus();
+    } else if (state.errors.phone) {
+      phoneRef.current?.focus();
+    } else if (state.errors.message) {
+      messageRef.current?.focus();
+    } else {
+      errorSummaryRef.current?.focus();
+    }
+  }, [state]);
 
   if (state.status === "success") {
     /* Authored state — see `quote-success.tsx` for why it has no artboard and
@@ -69,11 +97,29 @@ export function QuoteForm({ slug, quantity }: QuoteFormProps) {
   const values = state.status === "invalid" ? state.values : undefined;
   const errors = state.status === "invalid" ? state.errors : undefined;
   const selectedContact = values?.contact ?? DEFAULT_CONTACT_METHOD;
+  const errorCount = errors ? Object.keys(errors).length : 0;
 
   return (
     <form action={formAction} data-probe="quote-form" className="flex flex-col gap-8">
       {/* Hidden: which product this inquiry is about. */}
       <input type="hidden" name={QUOTE_FIELD.slug} value={slug} />
+
+      {/* Audit C2: the build had no live region anywhere, so a rejected
+          submit was as silent to a screen reader as it was to a keyboard
+          user (compounds C3 above). `role="alert"` is implicitly
+          `aria-live="assertive"` and `aria-atomic="true"`, so mounting this
+          node is itself the announcement — no extra ARIA needed, and it
+          renders nothing at a count of 0. It lives in its own module so
+          `/styleguide` can render the real component inert rather than a
+          copy that drifts (the `QuoteSuccess` precedent). `tabIndex={-1}`
+          lets the effect above focus it in the one-error-key-unknown
+          fallback case without adding it to the tab order. */}
+      <QuoteErrorSummary
+        count={errorCount}
+        role="alert"
+        tabIndex={-1}
+        ref={errorSummaryRef}
+      />
 
       {/* Field grid. Desktop `grid-template-columns:1fr 1fr;gap:16px`, Full
           name `grid-column:1/3` (product-desktop.html:140). Mobile stack
@@ -92,6 +138,7 @@ export function QuoteForm({ slug, quantity }: QuoteFormProps) {
             type="text"
             autoComplete="name"
             required
+            ref={nameRef}
             defaultValue={values?.name}
             invalid={Boolean(errors?.name)}
             aria-describedby={errors?.name ? "quote-name-error" : undefined}
@@ -109,6 +156,7 @@ export function QuoteForm({ slug, quantity }: QuoteFormProps) {
             type="email"
             autoComplete="email"
             required
+            ref={emailRef}
             defaultValue={values?.email}
             invalid={Boolean(errors?.email)}
             aria-describedby={errors?.email ? "quote-email-error" : undefined}
@@ -126,6 +174,7 @@ export function QuoteForm({ slug, quantity }: QuoteFormProps) {
             type="tel"
             autoComplete="tel"
             required
+            ref={phoneRef}
             // Placeholder attribute only, never a value (product.md §7.4).
             placeholder="(905) 000-0000"
             defaultValue={values?.phone}
@@ -230,6 +279,7 @@ export function QuoteForm({ slug, quantity }: QuoteFormProps) {
           <Textarea
             id="quote-message"
             name={QUOTE_FIELD.message}
+            ref={messageRef}
             placeholder="Anything we should know — current tires, storage, install timing…"
             defaultValue={values?.message}
             invalid={Boolean(errors?.message)}

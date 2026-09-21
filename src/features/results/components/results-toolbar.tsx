@@ -133,7 +133,7 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
             >
               {/* The exports' global `a:hover{color:var(--text-muted)}` is the
                   only hover this link has (`results.md` "Global base rules"). */}
-              <Link href={ROUTES.home} className="tap-extend hover:text-ink-muted">
+              <Link href={ROUTES.home} className="tap-extend-lg hover:text-ink-muted">
                 Home
               </Link>{" "}
               {/* `margin:0 6px` — results-desktop.html:112. */}
@@ -187,6 +187,8 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
               (`results.md` §2.2 row 6). */}
           <span
             data-probe="count"
+            aria-live="polite"
+            aria-atomic="true"
             className="text-ink-muted text-14 leading-flat tabular-nums md:flex md:min-h-11 md:shrink-0 md:items-center md:text-15"
           >
             {countCopy(view.best.length, view.similar.length)}
