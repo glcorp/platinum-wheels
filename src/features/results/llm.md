@@ -60,7 +60,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `Checkbox variant="facet"` rows; Price = two `range-input`s inside a travel box 8px wider than the drawn
   track each side (**D69**), its dim bounds row showing only once `selectedMin`/`selectedMax` narrow
   (#68). **No `Apply`** (#71, D82) — the rail's button and the sheet's inline one are both gone, so the
-  sheet's footer `Show N matches` is the panel's only submit control and the rail has none, filtering live
+  sheet's footer `Apply` is the panel's only visible submit and the rail has none, filtering live
   with JS only. Navigates on native `change`, re-focusing the changed control by `id`. Exports
   `CLEAR_ALL_CLASS`; every label/param/option comes off `view.facets`. `isPending` surfaces as `aria-busy`
   (D66/D67). Size selects take `autoComplete="off"` (D44).
@@ -72,7 +72,9 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 - [`components/filter-sheet.tsx`](components/filter-sheet.tsx) — `"use client"`. `FilterSheet({ view })`:
   the `Filters (n)` trigger (`Filters` at 0) and its `<dialog>` — `sheet-panel` height, `::backdrop`
   `--scrim-mid` over the header too (D47(3)), Esc / ✕ / backdrop close, body scroll lock, closes at
-  `md:`, `Show N matches` submits via `form=`, body scroller `overscroll-contain` (**D65**).
+  `md:`, body scroller `overscroll-contain` (**D65**). Footer submits via `form=` and reads **`Apply`**,
+  with no count (#74, **D85**, superseding #72 and D49's "keeps the total" clause) — size splits the set
+  rather than shrinking it (D47(8)), so two counts are true at once and the button carries neither.
 - [`components/results-grid.tsx`](components/results-grid.tsx) — `ResultsGrid({ view })` and
   `ResultsEmpty({ clearHref, as?, body? })`, Server. `body` defaults to the category copy so the
   `/styleguide` call site stays untouched (one sentence for all three today, D73). `Best matches` is the
@@ -155,7 +157,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 1. Vehicle params drive the best/similar split on all three routes through the **placeholder** `FITMENT`
    map (D48(4), D67 adds `thread`/`tpms`); real fitment data is owed by the client (root `llm.md` §7.13).
 2. ~~Stub links~~ (moot, **D71** removed `Category`, #60) and ~~no-JS mobile sheet~~ (D48(1): `showModal()`
-   still needs JS to open it, but its footer `Show N matches` works without JS once open — the rail's own
+   still needs JS to open it, but its footer `Apply` works without JS once open — the rail's own
    no-JS path went with `Apply`, #71, and isn't owed back).
 3. Parity: `design/reports/results.md` (its five rail and three sheet `Category` rows are annotated as
    superseded). Deviations: #25–#35, #49–#53 (#52 superseded by D67), #60, #61–#63 (D72 toolbar), #68, #71.
@@ -163,9 +165,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
    `/results`' parity by rendering the same tree, which stops the moment either diverges visually.
 5. Every wheel and accessory SKU, brand, finish and price is **placeholder data** (D58 under D48), and
    five client photos cover the nine accessory SKUs (#51). Client, via owner.
-6. ~~`wheel-size-grid`/`wheel-size-grid-sheet` not yet in `globals.css`~~ (closed: shipped fix is stock
-   `grid-cols-4`/`col-span-2` instead, #67's correction; those two plus `size-grid-sheet` are now dead
-   code owed for removal, single-writer D25). Owner.
+6. ~~`wheel-size-grid`/`wheel-size-grid-sheet`~~ (closed, #67; dead code owed for removal, D25). Owner.
 7. **`Load more` drops keyboard focus to `<body>`** — the link unmounts on arrival, D65's defect again,
    and nothing announces the three new cards (the count is unchanged by `?show=all`). `results-grid.tsx`
    is a Server Component by design, so the fix is a leaf island, not a directive on it. Owner.

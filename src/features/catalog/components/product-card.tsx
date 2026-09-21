@@ -82,7 +82,17 @@ const IMAGE_SIZES = "(min-width: 720px) 348px, (min-width: 400px) 50vw, 100vw";
   * render over it (`design/inventory/results.md:294`). The declaration lives in
   * `@utility photo-vignette` (globals.css) so the exact artboard gradient is
   * written once; Tailwind's `bg-radial` would emit a different interpolation
-  * space (`in oklab`) that a computed-style parity read would catch. */
+  * space (`in oklab`) that a computed-style parity read would catch.
+  *
+  * All three overlays in this box — this vignette, the badge row, and the
+  * brand stamp — carry `pointer-events-none`. They are `position:absolute`
+  * siblings painted *after* the image anchor below, and CSS paints positioned
+  * boxes above non-positioned in-flow ones regardless of DOM order — so
+  * without `pointer-events-none` each one sits, invisibly, on top of the
+  * anchor and swallows the click meant for it. The vignette alone covers the
+  * full `inset-0` box, which is why its missing `pointer-events-none` made
+  * the *entire* photo dead to clicks (DEVIATIONS #69, corrected). Confirmed
+  * with `elementFromPoint` before and after — see the amended row. */
 
  /* Card hover, from `design/assets/results-desktop.html:156` — the same
   * declaration appears 30× across the exports, byte-identical, and belongs to
@@ -217,7 +227,19 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             `<img>` box and adds no layout of its own; cursor and tap
             affordance come free (default anchor cursor, plus the shared `a`
             base rule for `touch-action`/`-webkit-tap-highlight-color`,
-            D65). */}
+            D65).
+
+            The anchor's box was correct from the start; it did not resolve
+            hits. It is `position:static`, and the three overlays that follow
+            it in the DOM — the vignette, the badge row, the brand stamp — are
+            all `position:absolute`. CSS paints positioned boxes above
+            non-positioned in-flow ones regardless of source order, so all
+            three sat visually on top of this anchor, and none carried
+            `pointer-events:none`; the full-box vignette alone was enough to
+            intercept every click on the photo (DEVIATIONS #69, corrected —
+            confirmed with `elementFromPoint` before and after). The three
+            overlays now carry `pointer-events-none`; this anchor is
+            unchanged. */}
         <Link
           href={productRoute(slug)}
           tabIndex={-1}
@@ -243,13 +265,16 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           />
         </Link>
 
-        <div aria-hidden="true" className="photo-vignette absolute inset-0" />
+        <div
+          aria-hidden="true"
+          className="photo-vignette pointer-events-none absolute inset-0"
+        />
 
         {/* `position:absolute;top:16px;left:16px;right:16px;display:flex;
             gap:6px;flex-wrap:wrap` — results-desktop.html:160; mobile inset
             10px — results-mobile.html:110. Rows wrap rather than overflow
             (`design/DESIGN.md:201`). */}
-        <div className="absolute top-2.5 right-2.5 left-2.5 flex flex-wrap gap-1.5 sm:top-4 sm:right-4 sm:left-4">
+        <div className="pointer-events-none absolute top-2.5 right-2.5 left-2.5 flex flex-wrap gap-1.5 sm:top-4 sm:right-4 sm:left-4">
           {available ? (
             seasonBadges.map((badge) => (
               <Badge key={badge} variant={BADGE_PRESENTATION[badge].variant}>
@@ -269,7 +294,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             other 11px label on the page (`design/inventory/results.md:310`),
             which is what the `display` role utility carries; `leading-badge`
             (24px) and `tracking-8` override its display leading and tracking. */}
-        <span className="display text-ink-muted leading-badge absolute top-2.5 right-2.5 text-11 tracking-8 sm:top-4 sm:right-4">
+        <span className="display text-ink-muted leading-badge pointer-events-none absolute top-2.5 right-2.5 text-11 tracking-8 sm:top-4 sm:right-4">
           {brand}
         </span>
       </div>

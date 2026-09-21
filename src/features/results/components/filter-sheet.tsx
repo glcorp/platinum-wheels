@@ -225,8 +225,8 @@ export function FilterSheet({ view }: FilterSheetProps) {
                 border-radius:var(--radius-ctl); font:500 14px/1;
                 letter-spacing:.08em; uppercase`, full width — which is exactly
                 `Button` primary at `promo` (52px at mobile, 14px, +0.08em).
-                The count is computed (D42); `Show 12 matches` is the artboard's
-                sample number, not a shipped string. */}
+                The artboard's `Show 12 matches` is a sample number and no
+                number ships here at all — see below. */}
             <Button
               type="submit"
               form={SHEET_FORM_ID}
@@ -234,7 +234,18 @@ export function FilterSheet({ view }: FilterSheetProps) {
               size="promo"
               fullWidth
             >
-              {view.total === 1 ? "Show 1 match" : `Show ${view.total} matches`}
+              {/* `Apply`, with no number. The drawn string is
+                  `Show 12 matches` (results-mobile-filters.html), and every
+                  number that could fill it is wrong for some URL: `total`
+                  read `Show 9 matches` over a page reading
+                  `0 matches · 9 similar` (the reported defect, #72), and
+                  `best.length` agrees with that page line but then reveals
+                  three similar cards after saying `Show 0 matches`. Size is
+                  not a filter (D47(8)) — it splits the set rather than
+                  shrinking it — so there are two true numbers and a
+                  single-number button cannot carry both. The owner chose to
+                  carry neither. #74, D85. */}
+              Apply
             </Button>
           </div>
         </div>

@@ -63,10 +63,26 @@ export function QuoteBand({ view }: QuoteBandProps) {
           </span>
 
           {/* `<h2>` — display, 88px desktop / 48px mobile
-              (product-desktop.html:135, product-mobile.html:114). */}
+              (product-desktop.html:135, product-mobile.html:114). Both
+              artboards wrap this line to two on their own: product-mobile
+              at its own 390 (358px column, 48px) and product-desktop at its
+              own 1440 (533px column, 88px), measured directly on :4000 -
+              drawn, not a bug, and DESIGN.md section 3's own stated ceiling
+              at the 88 role. Between them, 720 to 1319px, no artboard exists
+              and 88px cannot fit this string in the quote-grid 5fr column
+              below roughly 2160px, so jumping straight to 88 at sm wrapped
+              it to two lines as early as 721px and to three at md,
+              1100-1319 (measured), breaking that same two-line ceiling with
+              no artboard to license it. Fix: hold 56, the existing token
+              winter-promo.tsx already uses for this same tablet gap
+              (D41, promo h2 56), through 720-1319, so that band is one line
+              at 720-1099 and a clean two, never three, at 1100-1319; 88
+              only resumes at lg, 1320, already measured two-line-safe there
+              and at 1400/1440. Neither measured breakpoint (390, 1440)
+              moved, so no DEVIATIONS row - see product/llm.md Rules. */}
           <h2
             data-probe="quote-h2"
-            className="display text-ink text-display-48 sm:text-display-88"
+            className="display text-ink text-display-48 sm:text-display-56 lg:text-display-88"
           >
             Tell us where to send it.
           </h2>

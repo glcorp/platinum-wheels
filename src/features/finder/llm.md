@@ -116,6 +116,15 @@ None folder-scoped. Governing: **D27, D28, D33, D39, D79**.
   styled error summary for an empty submit (D79). There is nothing invalid about it — it is D28's
   unselected ship state reaching the destination route, not a rejected form.
 
+## Don't chase this one in dev
+
+`FinderModelSync` resolves both selects with `document.getElementById`. In `next dev` the page can sit
+mid-stream with the whole finder still inside `<div hidden>`, so that call returns a node in a tree
+nobody can interact with and the narrowing appears dead — measured 2026-09-22: Make set to `GMC`, change
+fired, all 15 groups still visible. **In a production build it works** (one copy, `GMC` group only, 4
+options). Same streaming mechanism as **D80**, seen from the other side. Verify this behaviour against
+`next build && next start`, never against the dev server.
+
 ## Open
 - Real fitment data source and who supplies it (root `llm.md` §7.3). Owner / client. Since D67 this
   is four facts per vehicle, not two, and thread pitch is the one a wrong value damages a wheel over.

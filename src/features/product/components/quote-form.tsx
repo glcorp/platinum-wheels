@@ -86,16 +86,26 @@ export function QuoteForm({
   // state — stay unconditional, per the rules of hooks.
   const values = state.status === "invalid" ? state.values : undefined;
 
-  // Which cell the Quantity select currently shows, so the free-text field
-  // for `Custom` (D50 Open #6) can mount and unmount without a page reload.
-  // Seeded the same way the Select's own `defaultValue` is below; updated by
-  // its `onChange`. `quote-form.tsx` remounts fresh on every `?qty=` cell
-  // click (a real navigation, D50), so this re-seeds to the new selection
-  // each time rather than needing to react to the `quantity` prop changing
-  // under an existing instance.
-  const [selectedQuantity, setSelectedQuantity] = useState<string>(
-    values?.quantity ?? quantity,
-  );
+  // Which cell the Quantity select currently shows — also its own controlled
+  // `value` below, so a `?qty=` cell click and an invalid-resubmit echo both
+  // land on the right option and the Custom field mounts/unmounts in step.
+  //
+  // A `?qty=` cell click changes `quantity` but does NOT remount this island:
+  // Next keeps the same client-component instance across a same-route
+  // search-param navigation (verified live — typed field values and this
+  // component's own state both survive it). An uncontrolled select only reads
+  // `defaultValue` at mount, so it went stale after the first `?qty=` change.
+  // Resynced here during render — React's documented "adjusting state when a
+  // prop changes" pattern (not an Effect: a `setState` in an Effect body would
+  // commit the stale value first and fix it a tick later; this corrects it
+  // before that first paint).
+  const quantityFromProps = values?.quantity ?? quantity;
+  const [selectedQuantity, setSelectedQuantity] = useState<string>(quantityFromProps);
+  const [syncedQuantity, setSyncedQuantity] = useState(quantityFromProps);
+  if (quantityFromProps !== syncedQuantity) {
+    setSyncedQuantity(quantityFromProps);
+    setSelectedQuantity(quantityFromProps);
+  }
 
   // Move focus to the confirmation once it replaces the form, so a screen
   // reader (and a sighted keyboard user) lands on the thing that changed.
@@ -278,12 +288,15 @@ export function QuoteForm({
         <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-[1fr_2fr] sm:gap-4">
           <div>
             <FieldLabel htmlFor="quote-quantity">Quantity</FieldLabel>
-            {/* Defaults to the buy panel's own selection (D50) unless a
-                previous submit's echoed value overrides it. */}
+            {/* Controlled by `selectedQuantity` (above): defaults to the buy
+                panel's own selection (D50) unless a previous submit's echoed
+                value overrides it, and stays in sync across a `?qty=` nav —
+                see the render-time resync above for why `defaultValue` alone
+                was not enough. */}
             <Select
               id="quote-quantity"
               name={QUOTE_FIELD.quantity}
-              defaultValue={values?.quantity ?? quantity}
+              value={selectedQuantity}
               onChange={(event) => setSelectedQuantity(event.target.value)}
             >
               {QUANTITY_OPTIONS.map((option) => (

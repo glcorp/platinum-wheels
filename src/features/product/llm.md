@@ -36,18 +36,15 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
   the split column. `product-desktop.html:101-125`, `product-mobile.html:90-100`.
 - `components/specifications.tsx` · `similar-products.tsx` — `:126-131` / `:159-315`.
 - `components/quote-band.tsx` · `quote-form.tsx` — `:132-157`. `quote-form.tsx` is the folder's only
-  client island (`useActionState`); the band is a Server Component. Also tracks the Quantity select
-  client-side (2026-09-22) to show/hide the `Custom` field, still submitted uncontrolled (`DEVIATIONS.md` #70).
-- `components/quote-success.tsx` — `QuoteSuccess`, the authored post-submit panel (D51). Its own module,
-  not inlined in the island, so `/styleguide` renders the real component rather than a copy that can
-  drift (the `ResultsEmpty` precedent) and it stays out of that page's client bundle. `role` and
-  `tabIndex` are props: the live form passes them and focuses it; the styleguide renders it inert.
+  client island (`useActionState`); its Quantity select is controlled (2026-09-22 fix, see Rules) so it
+  and `Custom` stay correct across a `?qty=` nav, which doesn't remount the island.
+- `components/quote-success.tsx` — `QuoteSuccess`, the authored post-submit panel (D51), its own module
+  so `/styleguide` renders the real component, not a drifting copy (`ResultsEmpty` precedent). `role`/
+  `tabIndex` are props: the live form passes and focuses them; the styleguide renders it inert.
 - `components/quote-error-summary.tsx` — `QuoteErrorSummary`, the authored **failed**-submit
-  announcement (D57, audit C2/C3, `DEVIATIONS.md` #46). Own module and `role`/`tabIndex` as props for
-  the same reasons as `quote-success.tsx` above. `role="alert"` is implicitly assertive and atomic, so
-  **mounting the node is the announcement**; it renders `null` at a count of 0, so the caller needs no
-  guard, and no artboard draws an error state (#9). **Reachable only because the form is `noValidate`**
-  (D65 — see Rules).
+  announcement (D57, audit C2/C3, `DEVIATIONS.md` #46), same module shape and props as above.
+  `role="alert"` is implicitly assertive/atomic, so **mounting the node is the announcement**; it renders
+  `null` at a count of 0. **Reachable only because the form is `noValidate`** (D65 — see Rules).
 
 ## Rules
 - **Measured baseline is `design/inventory/product.md`** (696 lines). Every number in a component
@@ -71,18 +68,23 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
   band and is **desktop-only**, as drawn.
 - **Quantity is a URL param** (D50). The cells are links that set `?qty=`; the panel stays a Server
   Component. `qty` never reaches the breadcrumb's `backHref`. The *selected* cell defaults per category
-  (D65) — only the default, never the four cells or their labels, which stay as drawn (D63). The
-  `How many?` span carries `id="qty-label"` and the cell grid is `role="group"
-  aria-labelledby="qty-label"` (**D66**). **`custom`'s link also carries `#quote`**: the quote form's
-  Quantity select, on reading it, server-renders a bounded `Input` in the Optional group — the cell
-  itself is untouched (`DEVIATIONS.md` #70, closing Open #6).
-- **The quote form is `noValidate`, and that is load-bearing** (D65). With native validation on, the
-  browser's own bubble fired first on an empty `required` field, so the Server Action never ran and
-  **both D57 fixes were dead on that path** — the `role="alert"` summary (C2) and focus-first-invalid
-  (C3). `required` stays for semantics; `actions.ts` is the real validator. Removing it disables both.
-- **A `beforeunload` guard protects typed input** (D65). The `?qty=` cells above the form are real
-  navigations that emptied every field already typed; `onInput` arms a `dirtyRef` and `success` disarms
-  it, so the confirmation never warns. The owner chose this over changing D50's mechanism.
+  (D65) — only the default, never the four cells or their labels, which stay as drawn (D63).
+  `role="group" aria-labelledby="qty-label"` on the cell grid (**D66**). `custom`'s link also carries
+  `#quote`: the quote form's Quantity select server-renders a bounded `Input` in the Optional group on
+  reading it (`DEVIATIONS.md` #70, closing Open #6). A `?qty=` click doesn't remount `quote-form.tsx`
+  (same-route search-param nav), so the select is controlled and resynced during render, not via
+  `defaultValue` (2026-09-22 fix, wiring only, no `DEVIATIONS.md` row).
+- **`noValidate` on the quote form is load-bearing** (D65): native validation fired the browser's bubble
+  before the Server Action ran, so both D57 fixes (`role="alert"` summary, focus-first-invalid) were dead
+  on that path. `required` stays for semantics; `actions.ts` is the real validator.
+- **A `beforeunload` guard protects typed input** (D65): the `?qty=` cells are real navigations that
+  emptied fields already typed; `onInput` arms it, `success` disarms it.
+- **`quote-h2` steps 48 → 56 → 88 at `sm`/`lg`, not 48 → 88 at `sm`** (2026-09-22, no `DEVIATIONS.md`
+  row). Both artboards wrap the line to two at their own width — drawn, and DESIGN.md §3's own ceiling
+  at the 88 role — so 390 and 1440 are untouched. But 88 at `sm` (720) wrapped it to two lines while
+  still single-column, and to **three** at `md` (1100–1319, measured) — past that ceiling, no artboard to
+  license it. `56` is the token `winter-promo.tsx` already uses for this gap (D41 "promo h2 56"); it
+  holds through 720–1319 (one line to 1099, a clean two after), 88 resuming only at `lg` (1320).
 - **Spec table is derived, never typed** (D53) — the same principle as D42 on `/results`. Six rows from
   `Product` + `studdable`; if a value cannot be derived the row is dropped, not invented.
 - **The gallery is one image, no thumbnails** (D53). The desktop column's inert `gap:12px` is the slot a
@@ -90,8 +92,7 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
 - **`ProductCard` renders the similar row unchanged.** It is the same card as home and `/results`
   (`src/features/catalog/llm.md`); no PDP variant.
 - **CASL renders unticked** (`docs/decisions.md:118`) — `Checkbox variant="consent"` refuses `checked`.
-- **Sample form data does not ship**: `Priya Sandhu`, `priya.s@`, `(905) 000-0000`, the drawn `2021
-  Honda Civic` (`DEVIATIONS.md:76`, `design/DEVIATIONS.md` "Sample data"). Fields render empty with real placeholders.
+- **Sample form data does not ship** (`Priya Sandhu` etc., `design/DEVIATIONS.md` "Sample data") — fields render empty, real placeholders only.
 - Server Components by default; one `"use client"` leaf (`quote-form.tsx`). Named exports, no barrel.
   Tokens only, no arbitrary values (`.claude/rules/ui.md`).
 
@@ -149,8 +150,6 @@ context="pdp"`), **D37** (imports go through `catalog/`), **D47(2)** (no trust l
 5. **`How many?` reads oddly on an accessory** whose `size` already says `Set of 20`, so the cells offer
    one, two or four *sets*. **Half-closed 2026-09-22 by D65:** accessories now open on `1`. The cells
    and their **labels** are untouched (D50, D63). Still **owner's**, if the wording should change.
-6. ~~**`Custom` collects no number.**~~ **Closed 2026-09-22 — see Rules ("Quantity is a URL param") and
-   `DEVIATIONS.md` #70.** Owner approved the recommended fix over the other two (a numeric input in the
-   cell; a native `<select>` there costing D50's no-JS guarantee and a tenth island): the quote form now
-   renders a bounded free-text field in its own Optional group whenever the selection is `custom`. No
-   new island, no drawn pixel moved.
+6. ~~**`Custom` collects no number.**~~ **Closed 2026-09-22** — see Rules ("Quantity is a URL param") and
+   `DEVIATIONS.md` #70: a bounded free-text field renders in the Optional group whenever the selection is
+   `custom`. No new island, no drawn pixel moved.

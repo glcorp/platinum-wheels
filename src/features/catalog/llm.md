@@ -44,8 +44,12 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   `Badge`, `Button` and `Price` (`:4-6`). The photo src is `/images/products/` + `product.image ?? slug`
   + `.webp` (`product-card.tsx:160`). The photo is wrapped in a second `<Link>` to the same
   `productRoute(slug)` the model link uses, `tabIndex={-1} aria-hidden="true"` so it adds a pointer
-  affordance without a second tab stop or a second announced route (DEVIATIONS #69). Per-value sources
-  are in the inline comments.
+  affordance without a second tab stop or a second announced route (DEVIATIONS #69). **That anchor's box
+  was correct from the start but sat under three `position:absolute` siblings — the `photo-vignette` div,
+  the badge-row wrapper, the brand-stamp span — that CSS paints above it regardless of DOM order; none
+  carried `pointer-events:none`, so the full-box vignette silently swallowed every click on the photo.
+  Corrected 2026-09-22 by adding `pointer-events-none` to all three overlays** (DEVIATIONS #69, amended).
+  Per-value sources are in the inline comments.
 - [`data.ts`](data.ts) — `FEATURED_ROW` (**D74**) is what the home carousel renders: `FEATURED_PRODUCTS`
   plus `zeta-antarctica-sport-235-40r18` and `mazzini-snowleopard-225-50r17`, filtered out of `PRODUCTS`
   by slug. It is a **separate export, not an append to `FEATURED_PRODUCTS`** — `PRODUCTS` spreads that
@@ -92,6 +96,12 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   href as the model link, `tabIndex={-1} aria-hidden="true"` — a pointer-only affordance, not a second
   keyboard/AT stop. The model link stays the card's one announced route (DEVIATIONS #69, the D57/D66
   duplicate-tab-stop precedent).
+- **Every purely decorative overlay inside the photo box needs `pointer-events-none`.** `position:static`
+  content (the image anchor) paints *below* `position:absolute` siblings regardless of DOM order, so an
+  absolutely-positioned decorative layer with default `pointer-events: auto` silently steals clicks from
+  whatever is beneath it — this is exactly how the image link above went dead (DEVIATIONS #69, amended).
+  Any new absolutely-positioned layer added to this box needs the same treatment unless it is meant to
+  intercept clicks itself.
 - **Price suffix is per context AND per category**: cards read `/ tire`, `/ wheel`, `/ each` — D21
   extended by D58. The card passes `context="card"` plus `unit={configFor(product).unit.card}`; the
   default keeps the tire string, so an un-passed caller is unchanged.

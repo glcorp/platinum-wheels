@@ -70,9 +70,14 @@ const COUNT = "text-ink-muted text-14 leading-flat tabular-nums md:text-15";
  *
  *  `N matches` counts the BEST list, not the total (D49): once a vehicle
  *  derives a size (D48) the two diverge, and `9 matches · 9 similar` for a
- *  vehicle with no exact fit reads as a contradiction. The filter sheet's
- *  `Show N matches` keeps the total, because that number counts the cards the
- *  sheet reveals.
+ *  vehicle with no exact fit reads as a contradiction. **This line is now the
+ *  only place a count is stated.** The filter sheet's footer button used to
+ *  carry one and no longer does (#74, D85): a total-based button read
+ *  `Show 9 matches` over this line reading `0 matches · 9 similar` for the
+ *  same URL, and a `best.length` one agreed with this line but then revealed
+ *  three similar cards after saying `Show 0 matches`. Size splits the set
+ *  rather than shrinking it (D47(8)), so two numbers are true at once and the
+ *  button carries neither; it reads `Apply`.
  *
  *  The `similar` half disappears when there is none, and `matches`
  *  singularises at one — new copy under `.claude/rules/ui.md` "Copy".
