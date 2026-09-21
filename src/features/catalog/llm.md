@@ -46,9 +46,10 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   `zeta-antarctica-sport-235-40r18`, `zmax-landgema-235-40r18`, `mazzini-snowleopard-225-50r17`,
   `zmax-winterhawk-215-50r17` (`available: false`, the drawn unavailable card — `data.ts:126-139`) and
   `zmax-landgema-225-45r17`. Each of the five carries a size-suffixed slug and an `image` pointing at
-  its base SKU's cut-out. **D58 added** `WHEELS` (nine SKUs, three cut-outs, brands Touren and Spec-1,
-  one unavailable) and `ACCESSORIES` (nine SKUs, five types, brands Schrader / Gorilla / Coyote, one
-  unavailable), plus `ALL_PRODUCTS` and `productsIn(category)`. `findProduct(slug)` searches
+  its base SKU's cut-out. **D58 added** `WHEELS` (nine SKUs, brands Touren and Spec-1, one
+  unavailable) and `ACCESSORIES`, plus `ALL_PRODUCTS` and `productsIn(category)`. **D63 re-cut
+  `ACCESSORIES`** to the four types the client's photography actually covers — TPMS, lug nuts, wheel
+  locks, centre caps — with brands Bosch / Gorilla / Sentali. `findProduct(slug)` searches
   `ALL_PRODUCTS`. All of it is placeholder data (D48) — the tire rows are untouched and carry no
   `category` field, which is what keeps every measured card byte-identical.
 
@@ -126,14 +127,19 @@ derived from that feed), **D58** (three categories, `categories.ts`, the two new
    vehicle, not a real merchandising selection" (`design/DEVIATIONS.md`, Sample data).
 2. **Four product images cover nine tire SKUs**, and two cut-outs are too low-resolution to normalise —
    client blockers, `HANDOFF.md` §7. Needs the client, not code.
-4. **Wheel and accessory imagery (D58).** Three wheel cut-outs cover nine wheel SKUs, the same
-   reuse pattern as the tires. Accessories are worse: **no accessory cut-out exists at all**, so all nine
-   accessory SKUs point `image` at the one lifestyle photograph `/images/photos/accessories.webp` via the
-   absolute-path branch in `productImageSrc()`. That branch exists only to carry the placeholder and
-   should be deleted when real per-SKU accessory photography arrives. Client, via owner.
-5. **Nobody has confirmed the shop stocks Touren, Spec-1, Schrader, Gorilla or Coyote.** They are real
-   brand names used as sample data, on the same footing as the artboards' Zeta / ZMAX / Mazzini. Joins
-   the existing brand-confirmation blocker in `HANDOFF.md` §7. Client, via owner.
+4. **Wheel and accessory imagery.** Wheels: **two** usable cut-outs cover nine SKUs — the third,
+   `touren-tr79`, cannot be normalised, so its SKUs borrow `touren-tr76` (D63); `zmax-landgema` borrows
+   `zmax-winterhawk` for the same reason. Accessories: **five real client product shots** arrived
+   2026-09-21 (D63) and are wired in, so the absolute-path branch in `productImageSrc()` is no longer
+   used by anything and can go once the last placeholder does. What is still owed is **transparent
+   cut-outs** — the supplied shots were taken on white, and their drop shadows survive background
+   keying (`design/ASSET-CREDITS.md`). Client, via owner.
+5. **Nobody has confirmed the shop stocks Touren, Spec-1, Gorilla, Bosch or Sentali.** The last two
+   arrived with the accessory photography and are legible in it. Joins the brand-confirmation blocker
+   in `HANDOFF.md` §7. Client, via owner.
+6. **The accessory types follow the photography (D63).** `valve-stems` and `hub-rings` were invented and
+   had no imagery; they are gone, and `centre-caps` is in. Adding a type without a product shot for it
+   puts the build back where it started.
 3. ~~**Facet counts do not reconcile.**~~ Answered by **D42**: every facet count, the result count,
    `Filters (n)` and the price bounds are computed from this seed, never typed
    (`design/DEVIATIONS.md` #25). The drawn numbers stay unreconciled and unused.

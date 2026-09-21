@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ComponentPropsWithoutRef } from "react";
 
+import { cx } from "@/lib/cx";
+
 /* ---------------------------------------------------------------------------
    Button — primary / secondary (ghost) / tertiary (text)
 
@@ -167,10 +169,6 @@ const variantClass: Record<ButtonVariant, string> = {
    `touch-manipulation` per docs/decisions.md §5. */
 const buttonBase =
   "label inline-flex min-w-0 items-center justify-center rounded-ctl text-center no-underline touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-0";
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 function buttonClasses(
   variant: ButtonVariant,

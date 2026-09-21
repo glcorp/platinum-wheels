@@ -1,5 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
 import { fieldBoxClasses, type FieldDensity } from "@/components/ui/input";
+import { join } from "@/lib/cx";
 
 /**
  * A real native `<select>` wearing the artboard box.
@@ -14,10 +15,6 @@ import { fieldBoxClasses, type FieldDensity } from "@/components/ui/input";
  * "These are **not** `<select>` elements — they are static divs") because an
  * artboard is a snapshot. The box they draw is the spec; the element is ours.
  */
-
-function join(base: string, extra?: string): string {
-  return extra ? `${base} ${extra}` : base;
-}
 
 export interface SelectProps extends ComponentPropsWithRef<"select"> {
   /** Required so a `FieldLabel htmlFor` always has something to point at. */

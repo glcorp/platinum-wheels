@@ -35,12 +35,9 @@ import {
   quantityQuoteLabel,
   type QuantityKey,
 } from "@/features/product/types";
+import { cx } from "@/lib/cx";
 import { QuoteErrorSummary } from "./quote-error-summary";
 import { QuoteSuccess } from "./quote-success";
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 export interface QuoteFormProps {
   /** Hidden `slug` field — which product this inquiry is about. */

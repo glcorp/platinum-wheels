@@ -41,10 +41,11 @@
  * measured, because no wheel or accessory artboard exists to measure from.
  *
  * Two client blockers join the existing list (`root llm.md` §7.2):
- *   (a) only three wheel cut-outs exist on disk
- *       (`touren-tr76`, `touren-tr79`, `spec1-sp51`), so nine wheel SKUs share
- *       them via `image`, exactly as the five extra tire SKUs share four
- *       tire photos (D43) — there is no per-SKU wheel photography yet.
+ *   (a) only three wheel cut-outs exist on disk and one of them,
+ *       `touren-tr79`, is too low-resolution to normalise — so nine wheel SKUs
+ *       render from **two** photos (`touren-tr76`, `spec1-sp51`) via `image`,
+ *       the same sharing the five extra tire SKUs do (D43). There is no
+ *       per-SKU wheel photography yet.
  *   (b) no accessory cut-outs exist at all: every one of the nine accessory
  *       cards points its `image` at the single lifestyle photograph
  *       `/images/photos/accessories.webp` (an absolute path — the accessory
@@ -85,6 +86,15 @@ export const FEATURED_PRODUCTS: readonly Product[] = [
   },
   {
     slug: "zmax-landgema",
+    /* Borrows `zmax-winterhawk`'s cut-out. Its own source trims to 546×757
+       against a target subject of 880px on a 1000px canvas, so
+       `scripts/prepare-assets.mjs` refuses to upscale it and the card renders
+       optically small beside the rest of the set. Owner ruling, 2026-09-21:
+       "use another image - make duplication. it is only for mock" (D63).
+       Same brand, so the duplication reads as a range rather than an error.
+       DELETE THIS LINE when the client supplies a usable original — the SKU
+       itself is artboard data and stays either way. */
+    image: "zmax-winterhawk",
     brand: "ZMAX",
     model: "Landgema",
     size: "215/55R16 · 97V XL",
@@ -131,7 +141,8 @@ export const PRODUCTS: readonly Product[] = [
   {
     /* §7.4 row 6 — desktop best-match card 6. */
     slug: "zmax-landgema-235-40r18",
-    image: "zmax-landgema",
+    /* Follows its base SKU onto `zmax-winterhawk` (D63) — see the note there. */
+    image: "zmax-winterhawk",
     brand: "ZMAX",
     model: "Landgema",
     size: "235/40R18 · 95W XL",
@@ -173,7 +184,8 @@ export const PRODUCTS: readonly Product[] = [
   {
     /* §7.4 row 9 — last similar-match card. */
     slug: "zmax-landgema-225-45r17",
-    image: "zmax-landgema",
+    /* Follows its base SKU onto `zmax-winterhawk` (D63) — see the note there. */
+    image: "zmax-winterhawk",
     brand: "ZMAX",
     model: "Landgema",
     size: "225/45R17 · 94W XL",
@@ -186,9 +198,10 @@ export const PRODUCTS: readonly Product[] = [
 ];
 
 /**
- * The nine wheel SKUs (D58, D48 — sample data, see the file header). Three
- * cut-outs (`touren-tr76`, `touren-tr79`, `spec1-sp51`) cover all nine via
- * `image`. `size` is the card's one-line display string
+ * The nine wheel SKUs (D58, D48 — sample data, see the file header). Two
+ * usable cut-outs (`touren-tr76`, `spec1-sp51`) cover all nine via `image`;
+ * the third, `touren-tr79`, cannot be normalised and its three SKUs borrow
+ * `touren-tr76` instead (D63). `size` is the card's one-line display string
  * (`<diameter>×<width> · <bolt>`, U+00D7); `wheel.bolt` stays ASCII
  * (`5x114.3`) because it is the `bolt` filter's URL param value — only the
  * display `size` string uses the typographic ×.
@@ -239,7 +252,10 @@ export const WHEELS: readonly Product[] = [
   {
     category: "wheels",
     slug: "touren-tr79-17x7",
-    image: "touren-tr79",
+    /* `touren-tr79`'s source trims to 470×439 and cannot be normalised, so
+       all three TR79 SKUs borrow `touren-tr76`'s cut-out — same brand, and
+       placeholder data either way (D63). */
+    image: "touren-tr76",
     brand: "Touren",
     model: "TR79",
     size: "17×7 · 5×100",
@@ -253,7 +269,7 @@ export const WHEELS: readonly Product[] = [
   {
     category: "wheels",
     slug: "touren-tr79-18x8",
-    image: "touren-tr79",
+    image: "touren-tr76",
     brand: "Touren",
     model: "TR79",
     size: "18×8 · 5×114.3",
@@ -267,7 +283,7 @@ export const WHEELS: readonly Product[] = [
   {
     category: "wheels",
     slug: "touren-tr79-20x85",
-    image: "touren-tr79",
+    image: "touren-tr76",
     brand: "Touren",
     model: "TR79",
     size: "20×8.5 · 5×120",
@@ -325,16 +341,35 @@ export const WHEELS: readonly Product[] = [
 ];
 
 /**
- * The nine accessory SKUs (D58, D48 — sample data, see the file header).
- * Every row's `image` is the absolute-path escape hatch: no accessory
- * cut-outs exist, so all nine share `/images/photos/accessories.webp`.
+ * The nine accessory SKUs (D58, D48 — sample data), **re-cut 2026-09-21 to
+ * match the photography the client actually supplied (D63).**
+ *
+ * The first version invented five types (TPMS, lug nuts, valve stems, hub
+ * rings, wheel locks) and had no imagery for any of them. The client then
+ * supplied real product shots, and they cover a different set: TPMS sensors,
+ * lug nuts, wheel locks and **centre caps**. Rather than keep types no photo
+ * depicts, the seed follows the photos — valve stems and hub rings are gone
+ * and centre caps are in.
+ *
+ * Brands follow the photos too, because the marks are legible in them: the
+ * TPMS sensor is a Bosch unit and the centre cap carries a Sentali mark. The
+ * lug-nut and wheel-lock shots are unbranded, so those keep `Gorilla` from
+ * the original placeholder set. **None of these brands is confirmed as
+ * stocked** (`HANDOFF.md` §7).
+ *
+ * Images are the five client photos, keyed off their white backgrounds and
+ * normalised to the same 1000px square canvas as every other cut-out by
+ * `scripts/prepare-assets.mjs` (`clientProducts()`). Four of the five are
+ * shared by two SKUs each, the same reuse the tire and wheel seeds already
+ * do. The absolute-path escape hatch in `productImageSrc()` is no longer used
+ * by anything — it stays only until the last placeholder is gone.
  */
 export const ACCESSORIES: readonly Product[] = [
   {
     category: "accessories",
-    slug: "schrader-tpms-315",
-    image: "/images/photos/accessories.webp",
-    brand: "Schrader",
+    slug: "bosch-tpms-315",
+    image: "bosch-tpms",
+    brand: "Bosch",
     model: "TPMS Sensor 315",
     accessoryType: "tpms",
     size: "Programmable · 315 MHz",
@@ -346,9 +381,9 @@ export const ACCESSORIES: readonly Product[] = [
   },
   {
     category: "accessories",
-    slug: "schrader-tpms-433",
-    image: "/images/photos/accessories.webp",
-    brand: "Schrader",
+    slug: "bosch-tpms-433",
+    image: "bosch-tpms",
+    brand: "Bosch",
     model: "TPMS Sensor 433",
     accessoryType: "tpms",
     size: "Programmable · 433 MHz",
@@ -360,36 +395,8 @@ export const ACCESSORIES: readonly Product[] = [
   },
   {
     category: "accessories",
-    slug: "schrader-valve-tr413",
-    image: "/images/photos/accessories.webp",
-    brand: "Schrader",
-    model: "TR413 Valve Stems",
-    accessoryType: "valve-stems",
-    size: "Set of 4 · Rubber snap-in",
-    price: 12,
-    currency: "CAD",
-    badges: [],
-    threePeakMountainSnowflake: false,
-    available: true,
-  },
-  {
-    category: "accessories",
-    slug: "schrader-valve-metal",
-    image: "/images/photos/accessories.webp",
-    brand: "Schrader",
-    model: "Metal Valve Stems",
-    accessoryType: "valve-stems",
-    size: "Set of 4 · Chrome",
-    price: 28,
-    currency: "CAD",
-    badges: [],
-    threePeakMountainSnowflake: false,
-    available: true,
-  },
-  {
-    category: "accessories",
     slug: "gorilla-lug-nuts-acorn",
-    image: "/images/photos/accessories.webp",
+    image: "gorilla-lug-nuts-acorn",
     brand: "Gorilla",
     model: "Acorn Lug Nuts",
     accessoryType: "lug-nuts",
@@ -402,10 +409,24 @@ export const ACCESSORIES: readonly Product[] = [
   },
   {
     category: "accessories",
-    slug: "gorilla-lug-nuts-tuner",
-    image: "/images/photos/accessories.webp",
+    slug: "gorilla-lug-nuts-spike",
+    image: "gorilla-lug-nuts-spike",
     brand: "Gorilla",
-    model: "Tuner Lug Nuts",
+    model: "Spike Lug Nuts",
+    accessoryType: "lug-nuts",
+    size: "Set of 20 · 12×1.5",
+    price: 59,
+    currency: "CAD",
+    badges: [],
+    threePeakMountainSnowflake: false,
+    available: true,
+  },
+  {
+    category: "accessories",
+    slug: "gorilla-lug-nuts-spike-1225",
+    image: "gorilla-lug-nuts-spike",
+    brand: "Gorilla",
+    model: "Spike Lug Nuts",
     accessoryType: "lug-nuts",
     size: "Set of 20 · 12×1.25",
     price: 59,
@@ -417,7 +438,7 @@ export const ACCESSORIES: readonly Product[] = [
   {
     category: "accessories",
     slug: "gorilla-wheel-locks",
-    image: "/images/photos/accessories.webp",
+    image: "gorilla-wheel-locks",
     brand: "Gorilla",
     model: "Wheel Lock Set",
     accessoryType: "wheel-locks",
@@ -431,7 +452,7 @@ export const ACCESSORIES: readonly Product[] = [
   {
     category: "accessories",
     slug: "gorilla-wheel-locks-tuner",
-    image: "/images/photos/accessories.webp",
+    image: "gorilla-wheel-locks",
     brand: "Gorilla",
     model: "Tuner Wheel Locks",
     accessoryType: "wheel-locks",
@@ -444,22 +465,36 @@ export const ACCESSORIES: readonly Product[] = [
   },
   {
     category: "accessories",
-    slug: "coyote-hub-rings-alloy",
-    image: "/images/photos/accessories.webp",
-    brand: "Coyote",
-    model: "Alloy Hub Rings",
-    accessoryType: "hub-rings",
-    size: "Set of 4 · 73.1 to 66.1",
-    price: 24,
+    slug: "sentali-centre-cap-chrome",
+    image: "sentali-centre-cap",
+    brand: "Sentali",
+    model: "Chrome Centre Cap",
+    accessoryType: "centre-caps",
+    size: "Fits 5-lug · 74 mm",
+    price: 29,
     currency: "CAD",
     badges: [],
     threePeakMountainSnowflake: false,
-    /* The drawn unavailable-equivalent SKU for this category. */
+    available: true,
+  },
+  {
+    /* The one unavailable accessory, mirroring the tire and wheel seeds, so
+       the dimmed card variant is reachable on every category. */
+    category: "accessories",
+    slug: "sentali-centre-cap-black",
+    image: "sentali-centre-cap",
+    brand: "Sentali",
+    model: "Gloss Black Centre Cap",
+    accessoryType: "centre-caps",
+    size: "Fits 5-lug · 74 mm",
+    price: 29,
+    currency: "CAD",
+    badges: [],
+    threePeakMountainSnowflake: false,
     available: false,
   },
 ];
 
-/** Every SKU in every category — what `findProduct` searches (D58). */
 export const ALL_PRODUCTS: readonly Product[] = [...PRODUCTS, ...WHEELS, ...ACCESSORIES];
 
 /** Looks up a product by its slug (the URL segment; the image basename is

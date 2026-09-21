@@ -1,5 +1,7 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
 
+import { join } from "@/lib/cx";
+
 /**
  * Field furniture: the label above a control, and the helper line below it.
  *
@@ -15,10 +17,6 @@ import type { ComponentPropsWithRef, ReactNode } from "react";
  * product-desktop.html:140/147). That one is the quote form's local override,
  * not the system label; §4 and the finder agree, so the finder value ships.
  */
-
-function join(base: string, extra?: string): string {
-  return extra ? `${base} ${extra}` : base;
-}
 
 export interface FieldLabelProps extends ComponentPropsWithRef<"label"> {
   /**

@@ -1,5 +1,7 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
 
+import { join } from "@/lib/cx";
+
 /**
  * A real native `<input type="checkbox">` with the label beside it.
  *
@@ -21,10 +23,6 @@ import type { ComponentPropsWithRef, ReactNode } from "react";
  * — which is what docs/decisions.md §7 requires of the CASL consent box. Keeping
  * it uncontrolled also keeps it a Server Component: no JS is involved.
  */
-
-function join(base: string, extra?: string): string {
-  return extra ? `${base} ${extra}` : base;
-}
 
 /**
  * `consent` is this primitive's original and only drawn shape: the CASL row's

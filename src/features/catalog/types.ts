@@ -67,13 +67,18 @@ export type WheelFinish = "gloss-black" | "machined" | "bronze" | "silver";
 /**
  * Accessory type. Values are the `type` filter's param values and the spec
  * table's `Type` row; labels live beside the finish labels.
+ *
+ * **This list follows the photography, not the other way round (D63).** It
+ * originally carried invented types with no imagery (`valve-stems`,
+ * `hub-rings`); when the client supplied real product shots they covered a
+ * different set, and the seed was re-cut to match what can actually be shown.
+ * Adding a type here without a photo for it puts the build back where it was.
  */
 export type AccessoryType =
   | "tpms"
   | "lug-nuts"
-  | "valve-stems"
-  | "hub-rings"
-  | "wheel-locks";
+  | "wheel-locks"
+  | "centre-caps";
 
 /**
  * The four wheel facts the PDP spec table draws and the three the rail filters

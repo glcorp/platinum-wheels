@@ -10,6 +10,7 @@ import {
   type Product,
   type ProductBadge,
 } from "@/features/catalog/types";
+import { cx } from "@/lib/cx";
 import { productRoute, quoteRoute } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
@@ -35,10 +36,6 @@ import { productRoute, quoteRoute } from "@/lib/routes";
    Server Component. Hover is pure CSS, so there is no `"use client"`
    (`docs/decisions.md:73`).
    --------------------------------------------------------------------------- */
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 /* --- Routing ---------------------------------------------------------------
    No route is drawn anywhere: every `href` in all seven exports is `"#"`

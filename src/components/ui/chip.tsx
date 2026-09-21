@@ -1,5 +1,7 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
+import { cx } from "@/lib/cx";
+
 /* ---------------------------------------------------------------------------
    Chip — the filter chip
 
@@ -75,10 +77,6 @@ export const chipSelectedClass = "border-ink bg-ink text-on-accent";
 
 const restClass = chipRestClass;
 const selectedClass = chipSelectedClass;
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 export type ChipProps = Omit<ComponentPropsWithoutRef<"button">, "children"> & {
   children: ReactNode;

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { cx } from "@/lib/cx";
+
 /**
  * SectionHeading — the `01 — Shop by category` pattern.
  *
@@ -50,10 +52,6 @@ const TITLE_SIZE: Record<HeadingLevel, string> = {
   h2: "text-display-40 sm:text-display-56",
   h3: "text-display-32 sm:text-display-40",
 };
-
-function cx(...parts: ReadonlyArray<string | undefined>): string {
-  return parts.filter((part): part is string => Boolean(part)).join(" ");
-}
 
 export function SectionHeading({
   eyebrow,

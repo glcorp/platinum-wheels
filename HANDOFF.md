@@ -6,8 +6,10 @@ now has **three categories, not one** (`/wheels` and `/accessories` are full res
 **the last two undrawn states, `loading` and route `error`, are authored (**D62**)**, which completes
 `/styleguide` §11. Scope is still **UI only** (D54).
 
-**Nothing is owed by a session right now.** What is left needs the owner (one reserved refactor) or the
-client (data and photography). Start at §6.
+Then the owner's "do whatever you can" pass (**D63**): **S2 is applied** (13 class-merge helpers →
+`src/lib/cx.ts`, every emitted class string proven unchanged), **real accessory photography is wired in**
+and the accessory types re-cut to match it, the **category tiles** use their own photos at last, and
+`/about`, `/privacy` and `/terms` carry real content. Scope is still **UI only** (D54). Start at §6.
 
 **How to use this file.** It is the single current record of how to work in this repo. **Cite it by
 section (`HANDOFF.md §7`), never by line number** — sections are stable, line numbers are not (D55).
@@ -66,8 +68,8 @@ session 5 and invalidated several readings before it was spotted (§8.17).
    still open, and the pass's coverage limits. Read this before "fixing" anything.
 5. **`design/reports/{home,results,product}.md`** — the three parity baselines. `product.md` shows the
    shape to copy, including a *Behaviour verified* section.
-6. **`design/DEVIATIONS.md`** — **56 rows**. #1–#24 shared and home, #25–#35 `/results`, #36–#43 the PDP,
-   #44–#48 the D57 accessibility fixes, #49–#53 the D58 wheels/accessories scope, #54 the header background (D61), #55–#56 loading and route error (D62). Nearly all of it is deliberate and sourced.
+6. **`design/DEVIATIONS.md`** — **57 rows**. #1–#24 shared and home, #25–#35 `/results`, #36–#43 the PDP,
+   #44–#48 the D57 accessibility fixes, #49–#53 the D58 wheels/accessories scope, #54 the header background (D61), #55–#56 loading and route error (D62), #57 the category tiles (D63). #51 is largely closed by D63. Nearly all of it is deliberate and sourced.
 7. `design/inventory/{home,results,product}.md` — the measured baseline, only if re-measuring.
 
 ---
@@ -198,17 +200,15 @@ parked row.
    that this item flagged for the owner was delegated and ruled: Next rejects every alternative, so
    `error.tsx` carries the directive as the single named exception and holds no component code. Read
    `src/components/site/route-error.tsx`'s header before touching either.
-2. **The one item reserved to the owner: S2**, the 13 class-merge helpers (root `llm.md` §7.10).
-   **No session may do this in passing** — the prohibition is written and still stands. 10 files,
-   several carrying parity-measured class output; any consolidation must not change one emitted class
-   string. `design/reports/audit.md` §4 S2.
-3. **D58 follow-ups the owner may want to rule on.** None blocks anything. (a) The **accessory
-   imagery** — all nine cards share one lifestyle photograph (`DEVIATIONS.md` #51); it is the most
-   visible placeholder in the build. (b) The seven **derived D59 rulings**, each vetoable, especially
-   (2) omitting the vehicle finder from `/accessories` and (7) the non-tire quote-form copy variant.
-   (c) Whether `How many? 1 / 2 / 4` should reword on an accessory already sold as a `Set of 20`
-   (`src/features/product/llm.md` Open #5).
-4. **Finish the `DEVIATIONS.md` sweep.** The audit traced 18 of the then-43 rows; there are now **56**,
+2. ~~**S2**, the 13 class-merge helpers.~~ **Done 2026-09-21 (D63).** `src/lib/cx.ts` now exports both
+   `cx` and `join`; all 13 local copies are gone. Verified by extracting every `class="…"` attribute
+   from all six rendered pages before and after and diffing — **empty on all six** — with the change
+   isolated by `git stash` so concurrent edits could not contaminate it. §7.10's prohibition is lifted
+   and spent; do not re-litigate it.
+3. ~~**D58 follow-ups.**~~ **All ruled 2026-09-21 (D63)** — see root `llm.md` §7.21. The accessory
+   imagery is real now; the seven D59 rulings stand; the accessory quantity control stays as drawn;
+   brands keep text wordmarks rather than logos.
+4. **Finish the `DEVIATIONS.md` sweep.** The audit traced 18 of the then-43 rows; there are now **57**,
    and the rest are untested, not certified clean (`design/reports/audit.md` §6). A session can do this
    unprompted — it is measurement, not change.
 5. **Push.** `origin/main` is at `0a4a3aa`; the handoff commit on top of it is local only.
@@ -229,13 +229,12 @@ parked row.
 
 **Awaiting an owner decision:**
 
-- **S2**, the 13 class-merge helpers — the one audit item still open, and the only thing a session is
-  forbidden to do on its own (root `llm.md` §7.10). S3, S4, S5 and T1 were applied 2026-09-21 (D61);
-  T2, T3 and T4 are recorded as no-action, which is what the audit recommended.
-- **Category-tile imagery**: both home artboards use product cut-outs where `tires-tile.png` /
-  `wheels-tile.png` exist unused on disk. The code correctly matches the artboard; the owner decides
-  whether the artboard is right (§7.19).
-- The **D58 follow-ups** in §6 item 3.
+- **Nothing from the audit.** S2 landed with D63; S3, S4, S5 and T1 with D61; T2–T4 are no-action.
+  `design/reports/audit.md`'s fix list is fully discharged.
+- **Whether the shop stocks Bosch and Sentali**, the two brands that arrived with the accessory
+  photography (D63). Joins the existing brand-confirmation blocker.
+- The **street address**, **social links** and **which contact receives call taps** — the owner had none
+  of the three to hand on 2026-09-21.
 - ~~Two register rows both numbered `D55`~~ — closed 2026-09-21 by D61: the `HANDOFF.md`-shape row is
   now `D55b`. Nothing renumbered, so rule §1.5 holds.
 
@@ -253,12 +252,13 @@ confirmation · which contact receives call taps · **13** class-merge helpers, 
 the audit) · `skills-lock.json` provenance · stale citations in the inventories.
 
 **Owed by the client (D48):** real year-specific fitment data (now a size **and** a bolt pattern per
-vehicle) · per-SKU photography · higher-resolution originals for `touren-tr79` (470×439) and
-`zmax-landgema` (546×757), which `scripts/prepare-assets.mjs` refuses to upscale · `M+S` sidewall data ·
-monochrome white brand logos, plus confirmation those brands are stocked — **now including Touren,
-Spec-1, Schrader, Gorilla and Coyote** (D58). **New and worst: there is no accessory imagery at all**, so
-all nine accessory SKUs share one lifestyle photograph (`DEVIATIONS.md` #51). Every wheel and accessory
-SKU, price and finish is authored placeholder data, **not** derived from the wheel CSV — D9 still holds.
+vehicle) · per-SKU tire and **wheel** photography · higher-resolution originals for `touren-tr79`
+(470×439) and `zmax-landgema` (546×757), whose SKUs currently borrow a same-brand sibling's photo
+(D63) · `M+S` sidewall data · confirmation that the seeded brands are stocked, now including **Bosch**
+and **Sentali**. **Accessory photography arrived 2026-09-21** and is wired in (D63); what is left there
+is transparent cut-outs, since the supplied shots were taken on white and their drop shadows survive
+keying. Every wheel and accessory SKU, price and finish is still authored placeholder data, **not**
+derived from the wheel CSV — D9 still holds.
 
 ---
 

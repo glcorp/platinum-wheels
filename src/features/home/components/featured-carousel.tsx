@@ -31,6 +31,7 @@ import { useEffect, useRef, useState } from "react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import type { Product } from "@/features/catalog/types";
+import { cx } from "@/lib/cx";
 
 /* 260px card + 12px gap — `design/inventory/home.md:64` (mobile track
    `grid-template-columns:repeat(4,260px);gap:12px`). One scroll step moves
@@ -38,10 +39,6 @@ import type { Product } from "@/features/catalog/types";
 const CARD_WIDTH = 260;
 const CARD_GAP = 12;
 const SCROLL_STEP = CARD_WIDTH + CARD_GAP;
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 function prefersReducedMotion(): boolean {
   return (

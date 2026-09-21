@@ -1,5 +1,7 @@
 import type { ComponentPropsWithoutRef } from "react";
 
+import { cx } from "@/lib/cx";
+
 /* ---------------------------------------------------------------------------
    Badge — winter / outline / unavailable
 
@@ -59,10 +61,6 @@ const variantClass: Record<BadgeVariant, string> = {
   unavailable:
     "border border-ink-dim bg-surface-2 leading-badge-outline text-ink-dim",
 };
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 export type BadgeProps = ComponentPropsWithoutRef<"span"> & {
   variant?: BadgeVariant;

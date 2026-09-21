@@ -78,12 +78,23 @@ export function CategoryTiles() {
             data-probe="tile-tires"
             className="relative block h-75 overflow-hidden border border-border text-on-photo md:h-auto md:row-span-2"
           >
+            {/* `tires-tile.webp`, NOT the `zeta-antarctica-sport` cut-out the
+                artboards draw here — owner ruling, 2026-09-21 (D63,
+                `design/DEVIATIONS.md` #57). The artboards put a product
+                cut-out in this tile, which meant the Tires tile showed the
+                same specific tire that appears as its own card three sections
+                later; `design/inventory/home.md` flagged the choice as
+                undecidable from the export. The tile photos exist on disk,
+                are named for these tiles, and are referenced by nothing.
+                A photo fills the tile, so this is `object-cover` and drops
+                `photo-inset-card` (the cut-out's 6% inset) — the same
+                treatment the Accessories tile already uses. */}
             <Image
-              src="/images/products/zeta-antarctica-sport.webp"
+              src="/images/photos/tires-tile.webp"
               alt=""
               fill
               sizes="(min-width: 1100px) 62vw, 100vw"
-              className="photo-inset-card object-contain object-center"
+              className="object-cover object-center"
             />
             <div
               aria-hidden="true"
@@ -106,12 +117,16 @@ export function CategoryTiles() {
             data-probe="tile-wheels"
             className="relative block h-50 overflow-hidden border border-border text-on-photo md:h-auto"
           >
+            {/* `wheels-tile.webp`, not the `spec1-sp51` cut-out — same ruling
+                as the Tires tile above (D63, DEVIATIONS #57). All three tiles
+                now carry photography, which is what makes them read as one
+                set. */}
             <Image
-              src="/images/products/spec1-sp51.webp"
+              src="/images/photos/wheels-tile.webp"
               alt=""
               fill
               sizes="(min-width: 1100px) 31vw, 100vw"
-              className="photo-inset-card object-contain"
+              className="object-cover"
             />
             <div aria-hidden="true" className="tile-scrim absolute inset-0" />
             <div className="absolute left-5 bottom-5 flex flex-col gap-2 md:left-8 md:bottom-8 md:gap-3">

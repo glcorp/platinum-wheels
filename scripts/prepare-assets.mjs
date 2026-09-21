@@ -25,9 +25,73 @@ import sharp from "sharp";
 const SRC = "design/assets";
 const OUT = "public/images";
 
+/**
+ * Client product photography supplied AFTER the design export (D63).
+ * `design/assets/**` is the frozen design export and is never added to
+ * (library rule, D55), so later client assets land here instead and are
+ * processed into the same `public/images/products/` output.
+ */
+const CLIENT_SRC = "client-assets";
+
 /** Product cut-outs: one square canvas, subject at a fixed fraction of it. */
 const PRODUCT_CANVAS = 1000;
 const PRODUCT_SUBJECT_RATIO = 0.88;
+
+/**
+ * Background keying for client photos shot on white (D63).
+ *
+ * The design export's cut-outs already have transparent backgrounds; the
+ * accessory photos the client supplied do not — they are products on white,
+ * which would render as a bright tile on the card's near-black ground.
+ *
+ * A luminance threshold alone is wrong here: chrome highlights are as bright
+ * as the background, so a global key punches holes through the lug nuts. This
+ * instead FLOOD-FILLS from the image border, so only background CONNECTED to
+ * the edge is removed and every interior highlight survives. Verified by
+ * looking at the output on the card's own background, not by trusting the
+ * percentages.
+ *
+ * 215 is the measured ceiling: at 200 the fill leaks through the chrome and
+ * eats the centre cap's face; at 236 more of each drop shadow survives. The
+ * soft grey shadow these products were photographed with is BELOW any
+ * threshold that keeps the chrome, so it stays — a known artefact, recorded
+ * in ASSET-CREDITS.md. Real transparent cut-outs remain the proper fix.
+ */
+const KEY_NEAR_WHITE = 215;
+
+function keyBackground(data, width, height, channels) {
+  const background = new Uint8Array(width * height);
+  const stack = [];
+  const isBackground = (i) => {
+    const p = i * channels;
+    return (
+      data[p] >= KEY_NEAR_WHITE &&
+      data[p + 1] >= KEY_NEAR_WHITE &&
+      data[p + 2] >= KEY_NEAR_WHITE
+    );
+  };
+
+  for (let x = 0; x < width; x++) {
+    stack.push(x, (height - 1) * width + x);
+  }
+  for (let y = 0; y < height; y++) {
+    stack.push(y * width, y * width + width - 1);
+  }
+
+  while (stack.length > 0) {
+    const i = stack.pop();
+    if (background[i] === 1 || !isBackground(i)) continue;
+    background[i] = 1;
+    const x = i % width;
+    const y = (i / width) | 0;
+    if (x > 0) stack.push(i - 1);
+    if (x < width - 1) stack.push(i + 1);
+    if (y > 0) stack.push(i - width);
+    if (y < height - 1) stack.push(i + width);
+  }
+
+  return background;
+}
 
 /** Photography: capped on the long edge; next/image handles the rest. */
 const PHOTO_MAX = 1600;
@@ -98,6 +162,82 @@ async function products() {
   }
 }
 
+/**
+ * Client accessory photography (D63) — `client-assets/accessories/*` into the
+ * same `public/images/products/` output as the design export's cut-outs, so a
+ * card resolves every category through one convention.
+ *
+ * Same square-canvas normalisation as `products()`, with one extra step in
+ * front: these are shot on white, so `keyBackground()` removes the connected
+ * background before the trim. Everything after that is identical, including
+ * the refusal to upscale.
+ */
+async function clientProducts() {
+  const dir = join(CLIENT_SRC, "accessories");
+  await mkdir(join(OUT, "products"), { recursive: true });
+
+  let files;
+  try {
+    files = await readdir(dir);
+  } catch {
+    return; /* No client assets on this machine; nothing to do. */
+  }
+
+  for (const f of files.filter((f) => /\.(png|jpe?g|webp)$/i.test(f))) {
+    const src = join(dir, f);
+
+    /* Key the white background out, then hand a transparent RGBA buffer to
+       the same trim/scale/centre path the design cut-outs take. */
+    const { data, info } = await sharp(src)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const background = keyBackground(data, info.width, info.height, info.channels);
+    for (let i = 0; i < info.width * info.height; i++) {
+      if (background[i] === 1) data[i * info.channels + 3] = 0;
+    }
+    const keyed = await sharp(data, {
+      raw: { width: info.width, height: info.height, channels: info.channels },
+    })
+      .png()
+      .toBuffer();
+
+    const trimmed = await sharp(keyed).trim().toBuffer({ resolveWithObject: true });
+    const { width, height } = trimmed.info;
+    const target = Math.round(PRODUCT_CANVAS * PRODUCT_SUBJECT_RATIO);
+    const scale = target / Math.max(width, height);
+    const capped = Math.min(scale, 1);
+
+    if (capped < scale) {
+      report.push({
+        label: "client",
+        file: f,
+        warn: `subject is only ${width}x${height} after keying and trim; rendered at ${Math.round(
+          Math.max(width, height) * capped,
+        )}px on a ${PRODUCT_CANVAS}px canvas instead of ${target}px. Needs a higher-resolution source.`,
+      });
+    }
+
+    const w = Math.round(width * capped);
+    const h = Math.round(height * capped);
+
+    await emit(
+      "client",
+      src,
+      join(OUT, "products", `${parse(f).name}.webp`),
+      sharp(trimmed.data)
+        .resize(w, h, { fit: "inside" })
+        .extend({
+          top: Math.floor((PRODUCT_CANVAS - h) / 2),
+          bottom: Math.ceil((PRODUCT_CANVAS - h) / 2),
+          left: Math.floor((PRODUCT_CANVAS - w) / 2),
+          right: Math.ceil((PRODUCT_CANVAS - w) / 2),
+          background: { r: 0, g: 0, b: 0, alpha: 0 },
+        }),
+    );
+  }
+}
+
 async function scaled(folder, max) {
   const dir = join(SRC, folder);
   await mkdir(join(OUT, folder), { recursive: true });
@@ -112,6 +252,7 @@ async function scaled(folder, max) {
 }
 
 await products();
+await clientProducts();
 await scaled("photos", PHOTO_MAX);
 await scaled("logo", LOGO_MAX);
 

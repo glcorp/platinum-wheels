@@ -50,12 +50,9 @@ import {
   type ResultsView,
   type SizeOption,
 } from "@/features/results/types";
+import { cx } from "@/lib/cx";
 
 /* --- Shared bits ---------------------------------------------------------- */
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
 
 /** `Zeta` → `zeta`, `BF Goodrich` → `bf-goodrich`. Ids only, never a URL. */
 function slugifyId(value: string): string {

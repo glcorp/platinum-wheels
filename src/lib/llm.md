@@ -8,6 +8,13 @@ CTA, the footer, the contact section and every `tel:`/`mailto:` link lose their 
 the next session guesses which of the two phone numbers is real.
 
 ## Owns
+- [`cx.ts`](cx.ts) — `cx()` and `join()`, the build's two class-merge helpers (**D63**, audit finding
+  S2). Consolidated from **13** local copies across `src/components/ui/` and four feature files. They
+  stay two functions because they are not interchangeable: `cx` is variadic and filters falsy values,
+  `join` is the two-argument base-then-override form. Neither deduplicates, sorts or normalises — every
+  emitted class string must stay byte-identical, and the consolidation was verified by diffing the
+  `class="…"` attributes of all six rendered pages before and after. Zero imports, which is what keeps
+  `src/lib/` free of any feature dependency (D37).
 - [`site.ts`](site.ts) — four named exports, sourced from `design/DESIGN.md` "Contact block (canonical)"
   (`site.ts:1-8`):
   - `SITE` — `name`, `legalName`, `tagline`, `city`, `province`, `email`, `hours`, `hoursLabel`, and

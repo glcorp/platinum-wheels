@@ -15,6 +15,8 @@
  * `@media` rules (docs/decisions.md §5), so §8 is the only source for it.
  */
 
+import { cx } from "@/lib/cx";
+
 type PriceContext = "card" | "pdp";
 
 export interface PriceProps {
@@ -100,10 +102,6 @@ const PRESENTATION = {
     suffixCopy: "per tire · before tax",
   },
 } as const;
-
-function cx(...parts: ReadonlyArray<string | undefined>): string {
-  return parts.filter((part): part is string => Boolean(part)).join(" ");
-}
 
 export function Price({
   amount,

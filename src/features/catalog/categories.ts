@@ -255,12 +255,13 @@ const WHEEL_SIZE_FIELDS: readonly SizeFieldConfig[] = [
 const ACCESSORY_TYPES: ChipGroupConfig = {
   label: "Type",
   param: "type",
+  /* Follows the client's photography (D63) — a type without a product shot
+     does not belong here; see `AccessoryType`. */
   options: [
     { value: "tpms", label: "TPMS sensors" },
     { value: "lug-nuts", label: "Lug nuts" },
-    { value: "valve-stems", label: "Valve stems" },
-    { value: "hub-rings", label: "Hub rings" },
     { value: "wheel-locks", label: "Wheel locks" },
+    { value: "centre-caps", label: "Centre caps" },
   ],
   match: (product, value) => product.accessoryType === value,
 };

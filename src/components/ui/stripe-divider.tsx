@@ -25,14 +25,12 @@
  * gradients only as photographic scrims, and a stripe is a line, not a fill.
  */
 
+import { cx } from "@/lib/cx";
+
 export interface StripeDividerProps {
   /** Line weight in px. DESIGN.md §5 allows 1–2px; 1 by default. */
   thickness?: 1 | 2;
   className?: string;
-}
-
-function cx(...parts: ReadonlyArray<string | undefined>): string {
-  return parts.filter((part): part is string => Boolean(part)).join(" ");
 }
 
 export function StripeDivider({

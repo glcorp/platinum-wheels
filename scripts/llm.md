@@ -16,6 +16,14 @@ from `design/assets/`, and parity becomes eyeballing — which
   horizontal-scroll gate, `:89`), `accentCount(root, accent)` (the one-accent-per-frame audit, `:109`).
 
 ## Rules
+- **`client-assets/` is where client material supplied AFTER the design export goes** (D63).
+  `design/assets/**` is the frozen export and is never added to (D55), so later photography lands in
+  `client-assets/<kind>/` and `prepare-assets.mjs` → `clientProducts()` normalises it into the same
+  `public/images/products/` output. Sources there are committed, like the design export's.
+- **Client photos shot on white are keyed by a border flood-fill, never a luminance threshold**
+  (D63). Chrome highlights are as bright as the background, so a global threshold punches holes through
+  the product; the flood-fill only removes background connected to the image edge. The 215 threshold is
+  measured, not guessed — see the block comment above `keyBackground()`.
 - **Plain Node, not application source.** `.mjs` and `.js` are outside tsc's scope — `tsconfig.json:25-32`
   includes `**/*.ts`, `**/*.tsx` and `**/*.mts` only, so `npm run typecheck` never sees these files.
   `eslint .` (`package.json:10`) *does* lint them: `scripts/` is not in the ignore list
