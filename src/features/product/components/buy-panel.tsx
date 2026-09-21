@@ -140,7 +140,6 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
       <div className="pt-2">
         <Price
           amount={product.price}
-          currency={product.currency}
           context="pdp"
           unit={view.config.unit.pdp}
         />

@@ -19,10 +19,14 @@
    specific, sentence case, no em dashes, tells the person what to do.
    --------------------------------------------------------------------------- */
 
+import { findProduct } from "@/features/catalog/data";
+import { productCategory } from "@/features/catalog/types";
 import {
   CONTACT_METHODS,
+  CUSTOM_QUANTITY_MAX,
+  CUSTOM_QUANTITY_MIN,
   DEFAULT_CONTACT_METHOD,
-  DEFAULT_QUANTITY,
+  DEFAULT_QUANTITY_BY_CATEGORY,
   QUANTITY_OPTIONS,
   QUOTE_FIELD,
   type ContactMethod,
@@ -68,19 +72,32 @@ export async function submitQuote(
   const phone = readString(formData, QUOTE_FIELD.phone);
   const message = readString(formData, QUOTE_FIELD.message);
   const rawQuantity = readString(formData, QUOTE_FIELD.quantity);
+  const customQuantity = readString(formData, QUOTE_FIELD.customQuantity);
   const rawContact = readString(formData, QUOTE_FIELD.contact);
+  const slug = readString(formData, QUOTE_FIELD.slug);
+
+  // The unknown-value fallback below is category-aware: which cell is
+  // "the" default differs by category (D65 — accessories open on `1`, tires
+  // and wheels on `4`), so falling back to the flat `4` for every category
+  // silently re-broke that for a tampered accessory submission. `slug` is
+  // already a hidden field on every inquiry; a missing/stale one reads as
+  // `tires`, `productCategory()`'s own default (D58).
+  const product = findProduct(slug);
+  const category = product ? productCategory(product) : "tires";
 
   // Quantity and Preferred contact are never wrong, only unset or tampered
-  // with — an unknown value falls back to the artboard's own default rather
+  // with — an unknown value falls back to the product's own default rather
   // than failing the whole submission over an optional-group control.
   const quantity: QuantityKey = QUANTITY_VALUES.has(rawQuantity)
     ? (rawQuantity as QuantityKey)
-    : DEFAULT_QUANTITY;
+    : DEFAULT_QUANTITY_BY_CATEGORY[category];
   const contact: ContactMethod = CONTACT_VALUES.has(rawContact)
     ? (rawContact as ContactMethod)
     : DEFAULT_CONTACT_METHOD;
 
-  const errors: Partial<Record<"name" | "email" | "phone" | "message", string>> = {};
+  const errors: Partial<
+    Record<"name" | "email" | "phone" | "customQuantity" | "message", string>
+  > = {};
 
   if (name === "") {
     errors.name = "Enter your name.";
@@ -102,6 +119,22 @@ export async function submitQuote(
     errors.message = `Keep your message under ${MESSAGE_MAX_LENGTH} characters.`;
   }
 
+  // `Custom` quantity (D50 Open #6): optional group, so a blank value stays
+  // legal regardless of which cell is selected — the drawn `Optional`
+  // eyebrow governs. Only a non-blank value is held to the bound, and only
+  // this server check enforces it: the form is `noValidate` (D65), so the
+  // Input's `min`/`max` are affordance, not validation.
+  if (customQuantity !== "") {
+    const parsed = Number(customQuantity);
+    const inBounds =
+      Number.isInteger(parsed) &&
+      parsed >= CUSTOM_QUANTITY_MIN &&
+      parsed <= CUSTOM_QUANTITY_MAX;
+    if (!inBounds) {
+      errors.customQuantity = `Enter a number between ${CUSTOM_QUANTITY_MIN} and ${CUSTOM_QUANTITY_MAX}.`;
+    }
+  }
+
   // CASL consent is opt-in (docs/decisions.md:118): the box is read only to
   // decide what ships in a future delivery payload, never to gate success. An
   // unticked box is never an error and its state is never echoed back on
@@ -118,6 +151,7 @@ export async function submitQuote(
         phone,
         message,
         quantity,
+        customQuantity,
         contact,
       },
     };
@@ -128,6 +162,13 @@ export async function submitQuote(
   // to (src/features/product/llm.md "Open" #1: "Owner, then client"). When one
   // exists, this is where the email/CRM call goes; until then this action
   // must not add a dependency, write to disk, or reach the network.
+  //
+  // When it is wired: this inquiry carries a `slug`, never a price string, and
+  // it must stay that way unless the price is spelled with its currency. Since
+  // D77 (2026-09-22) `formatPrice()` returns a bare `$129` — correct on the
+  // site, where the footer states the currency once, and wrong in an email,
+  // which has no footer. Compose any amount in a message as `$129 CAD`
+  // explicitly; do not reuse the presentation helper (`docs/decisions.md` §7).
 
   return { status: "success" };
 }

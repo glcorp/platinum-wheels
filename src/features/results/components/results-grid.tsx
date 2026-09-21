@@ -49,6 +49,67 @@ const CARD_GRID = "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3
    `globals.css` sets `body { color: var(--text-muted) }`. */
 const HEADING = "display text-ink text-display-32 md:text-display-40";
 
+/* Header stack: `gap:10px` M (results-mobile.html:103), `12px` D
+   (results-desktop.html:153). The artboard draws it as a column with a gap
+   around a single child — a slot for a heading and the line that supports it,
+   which is exactly the shape the empty state and the `best-none` line already
+   use. Since D72 the count is that supporting line. */
+const HEAD_STACK = "flex flex-col gap-2.5 md:gap-3";
+
+/* The supporting line under a heading: `400 15px/1.5 --text-muted`. */
+const SUPPORT = "text-ink-muted text-15 leading-body max-w-measure";
+
+/* Count type, carried over unchanged from the toolbar it left: `400 14px/1
+   tabular --text-muted` M, 15px D (`design/inventory/results.md` §2.2 row 6).
+   Only the toolbar's flex-alignment classes are dropped, because the count is
+   no longer a flex item in a 44px row. */
+const COUNT = "text-ink-muted text-14 leading-flat tabular-nums md:text-15";
+
+/** `12 matches · 6 similar` — `results-desktop.html:115`, U+00B7 spaced. The
+ *  numbers are computed from the seed, never typed (D42).
+ *
+ *  `N matches` counts the BEST list, not the total (D49): once a vehicle
+ *  derives a size (D48) the two diverge, and `9 matches · 9 similar` for a
+ *  vehicle with no exact fit reads as a contradiction. The filter sheet's
+ *  `Show N matches` keeps the total, because that number counts the cards the
+ *  sheet reveals.
+ *
+ *  The `similar` half disappears when there is none, and `matches`
+ *  singularises at one — new copy under `.claude/rules/ui.md` "Copy".
+ *
+ *  Moved here from `results-toolbar.tsx` by D72 together with the element it
+ *  feeds; it is still the only place the string is built. */
+function countCopy(best: number, similar: number): string {
+  const matches = `${best} ${best === 1 ? "match" : "matches"}`;
+  return similar > 0 ? `${matches} · ${similar} similar` : matches;
+}
+
+/* The empty state's action pair, shared by `ResultsEmpty` (which `/styleguide`
+   renders) and by `ResultsGrid`'s own zero-results branch, so the two cannot
+   drift — the `QuoteSuccess` / `QuoteErrorSummary` precedent (D57). */
+function EmptyActions({ clearHref }: { clearHref: string }) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <Button variant="secondary" size="compact" href={clearHref}>
+        Clear all
+      </Button>
+      <Button
+        variant="accent"
+        size="compact"
+        href={`tel:${PRIMARY_CONTACT.tel}`}
+      >
+        Call {PRIMARY_CONTACT.display}
+      </Button>
+    </div>
+  );
+}
+
+/** The empty state's heading, shared for the same reason as `EmptyActions`. */
+const EMPTY_HEADING = "No matches";
+
+/** The empty state's default body line, shared for the same reason. */
+const EMPTY_BODY = "Nothing fits those filters yet. Clear them, or call us.";
+
 function CardGrid({
   products,
   probe,
@@ -79,59 +140,52 @@ function CardGrid({
    no em dash, no exclamation. The heading replaces `Best matches` as the
    page `<h1>` (D47(6)); `/styleguide` passes `as="h2"` so that page keeps
    exactly one `<h1>`.
+
+   Since **D72** this component is the `/styleguide` reference only: on the
+   live page `ResultsGrid` composes the zero-results state itself, out of the
+   same `SECTION`, `HEAD_STACK`, `HEADING`, `SUPPORT`, `EMPTY_HEADING` and
+   `EmptyActions` this one uses, because the count's live region has to be the
+   same DOM node in every state and a component swap would remount it. The
+   shared constants are what stop the two from drifting; the only thing
+   written twice is the `<section>` wrapper, and both spell it `${SECTION}
+   pt-10`.
    --------------------------------------------------------------------------- */
 export interface ResultsEmptyProps {
   /** `resultsHref(clearFilters(query))` — the page with every filter dropped. */
   clearHref: string;
   as?: "h1" | "h2";
-  /** The body line. Defaults to the tire copy so the `/styleguide` call site
+  /** The body line. Defaults to `EMPTY_BODY` so the `/styleguide` call site
    *  (`<ResultsEmpty clearHref={…} as="h2" />`, no other props) stays
-   *  untouched; `ResultsGrid` passes `CATEGORY_CONFIG[category].copy.empty`
-   *  for `/wheels` and `/accessories` (D58). */
+   *  untouched. The live page renders `CATEGORY_CONFIG[category].copy.empty`
+   *  (D58), which today is the same sentence in all three categories — see
+   *  the `empty` field in `categories.ts` for why. */
   body?: string;
 }
 
 export function ResultsEmpty({
   clearHref,
   as = "h1",
-  body = "Nothing fits those filters yet. Clear them, or call us and we will check your size.",
+  body = EMPTY_BODY,
 }: ResultsEmptyProps) {
   const Heading = as;
   return (
     <section data-probe="empty" className={`${SECTION} pt-10`}>
-      <div className="flex flex-col gap-2.5 md:gap-3">
-        <Heading className={HEADING}>No matches</Heading>
-        <p className="text-ink-muted text-15 leading-body max-w-measure">
-          {body}
-        </p>
+      <div className={HEAD_STACK}>
+        <Heading className={HEADING}>{EMPTY_HEADING}</Heading>
+        <p className={SUPPORT}>{body}</p>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Button variant="secondary" size="compact" href={clearHref}>
-          Clear all
-        </Button>
-        <Button
-          variant="accent"
-          size="compact"
-          href={`tel:${PRIMARY_CONTACT.tel}`}
-        >
-          Call {PRIMARY_CONTACT.display}
-        </Button>
-      </div>
+      <EmptyActions clearHref={clearHref} />
     </section>
   );
 }
 
 export function ResultsGrid({ view }: ResultsGridProps) {
   const copy = CATEGORY_CONFIG[view.query.category].copy;
-
-  if (view.total === 0) {
-    return (
-      <ResultsEmpty
-        clearHref={resultsHref(clearFilters(view.query))}
-        body={copy.empty}
-      />
-    );
-  }
+  /* No early return for the zero-results state, deliberately — see the count
+     note below. The first `<section>`, its header stack, its `<h1>` and its
+     count `<p>` are rendered unconditionally and only their content branches;
+     that is what keeps the live region a single, stable DOM node. */
+  const empty = view.total === 0;
 
   /* One window at every width — 6 best + 3 similar, the desktop artboard's own
      counts (D47(7)). `?show=all` lifts it (D44). */
@@ -147,13 +201,52 @@ export function ResultsGrid({ view }: ResultsGridProps) {
     <div className="flex flex-col md:gap-20">
       {/* M `padding:40px 16px 0` (results-mobile.html:102); from `md:` the
           grid shell owns the padding and SECTION zeroes this one. */}
-      <section data-probe="best" className={`${SECTION} pt-10`}>
-        {/* Header wrapper `gap:10px` M (results-mobile.html:103), `12px` D
-            (results-desktop.html:153). */}
-        <div className="flex flex-col gap-2.5 md:gap-3">
-          <h1 data-probe="best-heading" className={HEADING}>
-            Best matches
+      <section
+        data-probe={empty ? "empty" : "best"}
+        className={`${SECTION} pt-10`}
+      >
+        <div className={HEAD_STACK}>
+          <h1
+            data-probe={empty ? "empty-heading" : "best-heading"}
+            className={HEADING}
+          >
+            {empty ? EMPTY_HEADING : "Best matches"}
           </h1>
+          {/* ---------------------------------------------------------------
+              The result count — **D72 (owner, 2026-09-22): "put 9 matches
+              somewhere else"**. It was the toolbar's fourth element; it is now
+              the second line of the header stack the artboard already draws as
+              a column with a gap (`results-desktop.html:153`), directly under
+              the heading it counts. Same measured type, same string, same
+              `countCopy` (moved with it).
+
+              **The `aria-live` region moved intact and is still stable.** It
+              is the build's only live region (D57 / C2, deviation #45) and an
+              ARIA live region only announces if the node is already in the
+              accessibility tree when its text changes — a region that unmounts
+              and remounts is not reliably announced by any screen reader. The
+              zero-results state used to `return <ResultsEmpty/>` from here,
+              which would have torn this node out on exactly the two
+              transitions that matter most (last filter to no results, and
+              back). So the branch was moved BELOW this element instead: every
+              state now renders the same `div > section > div > h1 + p`, React
+              reconciles by position and element type, the DOM node survives,
+              and only its text is rewritten. The empty state announces
+              `0 matches`, which it never did before.
+
+              On screen the empty state would then read `0 matches` under the
+              display heading `No matches`, so there the line goes `sr-only`:
+              the node, its text and its live region are unchanged, only the
+              class swaps. --------------------------------------------- */}
+          <p
+            data-probe="count"
+            aria-live="polite"
+            aria-atomic="true"
+            className={empty ? "sr-only" : COUNT}
+          >
+            {countCopy(view.best.length, view.similar.length)}
+          </p>
+          {empty ? <p className={SUPPORT}>{copy.empty}</p> : null}
         </div>
         {/* The first row preloads: `/results` has no hero, so a best-matches
             card is the LCP element. Lighthouse mobile, 2026-09-21, measured
@@ -163,11 +256,13 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             is 3-up (results-desktop.html:154); at 390 the first card is the
             LCP and the other two are harmless preloads. `Similar matches` is
             always below the fold and stays lazy. */}
-        {view.best.length === 0 ? (
+        {empty ? (
+          <EmptyActions clearHref={resultsHref(clearFilters(view.query))} />
+        ) : view.best.length === 0 ? (
           /* A vehicle now derives a size (D48), so a fitment with no exact
-             match lands here: best empty, similar populated. `total === 0`
-             still belongs to `ResultsEmpty`. The heading stays — it is the
-             page `<h1>` (D47(6)) — and this line replaces the empty grid.
+             match lands here: best empty, similar populated. `total === 0` is
+             the `empty` branch above. The heading stays — it is the page
+             `<h1>` (D47(6)) — and this line replaces the empty grid.
              Undrawn, so new copy under `.claude/rules/ui.md` "Copy": short,
              declarative, no em dash, no exclamation. Type is the same
              `400 15px/1.5 --text-muted` as the empty state's line.
@@ -175,10 +270,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
              wheels (D58, `categories.ts`) — so the tire sentence comes out
              character-for-character what it was: "No exact size match
              yet. Similar sizes are below." */
-          <p
-            data-probe="best-none"
-            className="text-ink-muted text-15 leading-body max-w-measure"
-          >
+          <p data-probe="best-none" className={SUPPORT}>
             {view.query.vehicle === null
               ? `No exact ${copy.nearMiss} match yet. Similar ${copy.nearMiss}s are below.`
               : `No exact ${copy.nearMiss} match for your ${view.query.vehicle.year} ${view.query.vehicle.make} ${view.query.vehicle.model} yet. Similar ${copy.nearMiss}s are below.`}
@@ -227,6 +319,14 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             fullWidth
             className="md:w-auto"
             href={resultsHref(withShowAll(view.query))}
+            /* `scroll={false}`: this is a `?show=all` link (D44), and Next
+               scrolls a navigation to the top by default — so pressing
+               `Load more` threw the reader back to the header, away from the
+               cards it had just revealed. Measured before the fix: scrollY
+               2146 → 0. The newly revealed cards render directly below the
+               button's old position, so holding the scroll position puts them
+               exactly where the reader is already looking. D68. */
+            scroll={false}
           >
             Load more
           </Button>

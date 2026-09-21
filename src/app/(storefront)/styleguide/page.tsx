@@ -385,16 +385,16 @@ export default function StyleguidePage() {
 
       <Block id="price" index={8} eyebrow="Content" title="Price">
         <Row label="Card context">
-          <Price amount={129} currency="CAD" />
+          <Price amount={129} />
         </Row>
         <Row label="Card · unavailable">
-          <Price amount={129} currency="CAD" unavailable />
+          <Price amount={129} unavailable />
         </Row>
         <Row label="PDP context">
-          <Price amount={129} currency="CAD" context="pdp" />
+          <Price amount={129} context="pdp" />
         </Row>
         <Row label="A $1,900 wheel gets the same treatment">
-          <Price amount={1900} currency="CAD" context="pdp" />
+          <Price amount={1900} context="pdp" />
         </Row>
       </Block>
 

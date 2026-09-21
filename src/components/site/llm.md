@@ -38,7 +38,31 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   20px and needs **no `design/DEVIATIONS.md` row** — the drawer is undrawn, so its layout is the
   coordinator's call (D31).
 
-- [`page-stub.tsx`](page-stub.tsx) — `PageStub`, props `{ title; active?; children? }`. Solid header + one `h1` + one line + footer, behind every planned-but-undesigned route (D26, D39). Replace each stub with its designed page.
+- [`page-stub.tsx`](page-stub.tsx) — `PageStub`, props `{ title; active?; children? }`. Solid header +
+  one `h1` + one line + footer, behind every planned-but-undesigned route (D26, D39). Replace each stub
+  with its designed page. **Its only caller since 2026-09-22 is `src/app/not-found.tsx`** — `/about`,
+  `/privacy` and `/terms` moved to `prose-page.tsx` below, and the `body` prop plus the `StubSection`
+  helper D63 had added for them were removed with them rather than left unused. Do not re-add a `body`
+  prop: a page with real content belongs in `ProsePage`.
+- [`prose-page.tsx`](prose-page.tsx) — Server Components, the shell behind the three **written** pages
+  `/about`, `/privacy` and `/terms`. Built 2026-09-22 (owner: *"not centered in desktop view, looks bland
+  too — go full in and add details and style"*), then simplified the same day on the owner's follow-up
+  that the result *"looks too much now, dont add On this page etc — just simple plain"*. Exports
+  `ProsePage` (`{ eyebrow; title; lede; active?; meta?; children }`), `ProseSection`
+  (`{ title; children; wide? }`), and two shared class constants, `PROSE_LINK` and `CAPTION`.
+  **`SectionIndex` ("On this page") and the per-section `01`/`02` numeral are gone** — the owner named
+  the index explicitly, and the numbering was scaffolding for it. Since nothing links to a section
+  anymore, `ProseSection` also dropped its `id` prop and `scroll-mt-*` offset; only `/about`'s fact band
+  still uses `meta` (`/privacy` and `/terms` no longer pass it).
+  **No artboard draws any of these pages**, so there is no parity to hold and no drawn value to deviate
+  from; every class is an existing token, role utility or idiom lifted from a page that *was* measured.
+  Composition: a 12-column page header (eyebrow + `h1` on the left six, lede on the right five,
+  `items-end` as `SectionHeading`'s own header row aligns), an optional full-width `meta` band, then
+  plain **side-head** sections — `h2` in the left four columns, prose in the right eight capped at
+  `max-w-hero-lede` (560px, `DESIGN.md` §3's text-column cap), each opening on a full-width
+  `--border-strong` hairline. That hairline is what still holds the right half of the frame now the
+  numbering is gone; before either pass, a 420px measure sat against the left edge of a 1344px
+  container.
 - [`route-error.tsx`](route-error.tsx) — `"use client"`. `RouteError({ error, retry })`, the storefront's
   route error boundary (**D62**), plus `RouteErrorPanel({ digest?, retry?, as? })`, its contents without
   the `<main>` wrapper so `/styleguide` §11 can render the real component instead of a copy that drifts
@@ -52,14 +76,22 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 
 ## Rules
 - **Header composition is the artboards as drawn** — D7 / DEVIATIONS #11: 64px badge image, **no text
-  wordmark**, one accent-bordered `Call 647-989-6178` link, and **four** nav items (`Tires` active,
+  wordmark**, one accent-bordered `Call <PRIMARY_CONTACT.display>` link, and **four** nav items (`Tires` active,
   `Wheels`, `Accessories`, `Contact` — `design/inventory/home.md:139`). No fifth `Services` item: there
   is no designed Services page, so it would be a dead link.
 - **The nav bottom hairline is `1px --border`, not `--border-strong`** — DEVIATIONS #7, "What the
   artboards draw". `design/DESIGN.md` §4 says `--border-strong` and loses.
 - **Contact data comes only from `src/lib/site.ts`.** "Contact data lives in `src/lib/site.ts` as named
   constants, never hardcoded in components" (`docs/decisions.md:129`). The header CTA and any call
-  button use `PRIMARY_CONTACT`; the footer uses `CONTACTS` and `SITE`.
+  button use `PRIMARY_CONTACT`; the footer uses `CONTACTS` and `SITE`. **The phone CTA's label is
+  therefore variable-width** — no file in this folder may pin it. The artboards drew a 195.02px pill on
+  a 17-character label; since **D76** (2026-09-22) the number is `+1 (437) 882-5000` and the same pill
+  measures **223.48px** (`design/DEVIATIONS.md` #66). It hugs its content, is `whitespace-nowrap` from
+  the `accent` variant, and sits in a `justify-between` row that still has 335.9px of slack at the
+  `md:` 1100px breakpoint, so nothing reflows — but a longer number would collide with the link row at
+  roughly 764px, below which the row is already collapsed to the drawer. Do not give it a width.
+  The mobile 44×44 circular call link is icon-only, `aria-label="Call now"`, and carries no number,
+  so the mobile header is unaffected by any number change.
 - **The footer ships no social links** — D34, "No social links yet"; the drawn three social squares are
   omitted until URLs exist. Precedent D7: no dead links.
 - **The year is computed at render**, never hard-coded — D32. `© <year>` here, `Winter <year>` in the
@@ -69,6 +101,16 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 - **Header and footer stay Server Components.** Only the drawer takes `"use client"`, as a leaf island
   (`docs/decisions.md:73`). The drawer is the four nav links plus the phone CTA, full-screen, Esc
   closes, focus trapped, sized in `dvh` (D31); nothing else about it is drawn or specified.
+- **The written pages state no fact that is not already in the repo.** Everything on `/about`,
+  `/privacy` and `/terms` traces to `src/lib/site.ts`, to `docs/decisions.md`, or to behaviour the code
+  actually has. No founding year, staff count, years-in-business, certification, testimonial or customer
+  number — `docs/decisions.md` §8 forbids inventing exactly those, and they are what an About page
+  usually pads itself with. The two legal pages are **drafts, not lawyer-reviewed**; their file headers
+  say so. Restructuring their existing clauses is fine, **authoring a new obligation, warranty or
+  liability term is not.**
+- **No `Updated <date>` line on the legal pages.** D32 requires a computed date and forbids a typed one,
+  and neither page has an honest source for one: `new Date()` would claim the policy changed today on
+  every request. Owner owes either an effective date or a build-time hook to the commit.
 - Tokens only; `next/image` with `sizes` and a reserved box for the badge; `next/link` for internal
   links (`docs/decisions.md` §4). Named exports, no barrel (`docs/decisions.md:69`).
 
@@ -86,15 +128,19 @@ all widths, hide rather than remove).
   `src/components/ui/button.tsx` for the header CTA; `src/app/globals.css` tokens; `next/image`,
   `next/link`; `public/images/` for the badge PNG.
 - **Depended on by:** `src/app/(storefront)/page.tsx:3-4` and `results/page.tsx:3-4`
-  (`SiteHeader` + `SiteFooter`); `products/[slug]/`, `wheels/`, `accessories/`, `about/`, `privacy/`,
-  `terms/` and `src/app/not-found.tsx:2` (`PageStub`). Nothing under `src/features/` imports it —
-  the boundary runs one way (`docs/decisions.md:65`).
+  (`SiteHeader` + `SiteFooter`); `products/[slug]/`, `wheels/`, `accessories/`;
+  `about/`, `privacy/`, `terms/` (`ProsePage`) and `src/app/not-found.tsx:2` (`PageStub`). Nothing
+  under `src/features/` imports it — the boundary runs one way (`docs/decisions.md:65`).
 
 ## Don't
 - **Don't build a text wordmark, a `GET A QUOTE` ghost button, or a `Services` nav item.** The spec asks
   for all three; the owner ruled for the artboards (D7, DEVIATIONS #11).
 - **Don't hardcode a phone number, email or address.** `src/lib/site.ts` or nothing
   (`docs/decisions.md:129`).
+- **Don't centre-align anything in `prose-page.tsx` to "fix" the empty right half.** The container is
+  already centred (`lg:mx-auto lg:max-w-content`, the idiom `hero`/`contact`/`how-it-works` use); what
+  fills the frame is the side-head grid and the full-width hairlines. Centre-aligned type would break
+  `.claude/rules/ui.md` "Flush-left" and `DESIGN.md` §5 outright.
 - **Don't make the home header sticky.** It is absolutely positioned inside the hero
   (`design/manifest.md:44`, `HANDOFF.md` §6).
 - **Don't add the social row back** because the artboard draws it (D34).

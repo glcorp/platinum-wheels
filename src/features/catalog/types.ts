@@ -167,10 +167,17 @@ export interface Product {
   /**
    * Whole currency units, e.g. `129`. A number, not a string: `Price` formats
    * it so a caller can never reintroduce cents, a shrunken `$` or superscript
-   * (`src/components/ui/price.tsx`, `docs/decisions.md:112`).
+   * (`src/components/ui/price.tsx`, `docs/decisions.md` §7).
    */
   price: number;
-  /** ISO code rendered inside the numeral: `$129 CAD`. `CAD` throughout. */
+  /**
+   * ISO code for `price`. `CAD` throughout. **Data, not presentation:** since
+   * D77 (2026-09-22) no price renders the code — the footer's
+   * `Brampton, Ontario · Prices in CAD, before tax` declares it once, site-wide
+   * (`src/lib/site.ts` `priceNote`). The field stays because the currency of an
+   * amount is a fact a real feed carries and a future `schema.org/Offer`
+   * `priceCurrency` would need; `Price` no longer takes it.
+   */
   currency: string;
   /**
    * Season / fitment badges, in the order the shop wants them read. The card

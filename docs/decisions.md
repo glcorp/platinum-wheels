@@ -115,12 +115,23 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
   Spec §9 now states this outright ("there is NO cart and NO checkout"), and the artboards agree
   (30× "Request a quote", 0× "Add to cart"). Never show stock counts, shipping, ratings or invented specs.
 - Price format: every price is prefixed `from`, the amount is Barlow 700 tabular in `--text`, never
-  accent-coloured, with a full-size `$` and no cents. The **suffix is per context**, verbatim from the
-  artboards: cards read `from $129 CAD / tire`, the PDP buy panel reads `from $129 CAD` above
-  `per tire · before tax` (U+00B7, spaced). Both carry the same meaning; the PDP adds the tax qualifier
-  the footer repeats. `Price` takes a number plus a currency code and formats it itself, so a
+  accent-coloured, with a full-size `$` and no cents, and **no currency code**. The **suffix is per
+  context**, verbatim from the artboards: cards read `from $129 / tire`, the PDP buy panel reads
+  `from $129` above `per tire · before tax` (U+00B7, spaced). Both carry the same meaning; the PDP adds
+  the tax qualifier the footer repeats. `Price` takes a number and formats it itself, so a
   pre-formatted string can never reintroduce superscript cents or a shrunken `$`.
-  Footer states "Brampton, Ontario · Prices in CAD, before tax".
+  Footer states "Brampton, Ontario · Prices in CAD, before tax" — since the amounts no longer name a
+  currency, **that line is the only place the site states one, and is load-bearing**: it may not be
+  removed, shortened past the currency, or hidden at any width without a new ruling.
+  *(Amended 2026-09-22, D77. Until then this line specified the drawn strings `from $129 CAD / tire` and
+  `from $129 CAD`, and `Price` "takes a number plus a currency code". The owner ruled: "change cad to
+  just $ everywhere — we anyways have mentioned in the footer that it is cad". Both artboards draw the
+  ` CAD` suffix, so this is a level-1 rule and a level-2 drawn value changing together, deliberately and
+  in the same edit rather than letting code and rule disagree — the D67 precedent. The rest of the
+  format is untouched: full-size `$`, no cents, Barlow 700, tabular, `--text`, never accent-coloured,
+  always prefixed `from`, and the per-context suffixes stay exactly as D21 pinned them. The currency
+  survives as **data** on `Product.currency`, which nothing renders; `design/DEVIATIONS.md` #64 carries
+  the drawn-vs-shipped row.)*
 - Fitment trust line on **product pages**. *(Amended 2026-09-22, D67. This line read "on results and
   product pages" until then, and **D47(2) had already removed it from `/results`** on the grounds that no
   results artboard draws one — which let authority level 2 overrule level 1 on a business rule. The owner

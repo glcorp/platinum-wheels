@@ -198,6 +198,46 @@ export const PRODUCTS: readonly Product[] = [
 ];
 
 /**
+ * `FEATURED_ROW` is what the home `featured-tires` carousel renders (**D74**):
+ * `FEATURED_PRODUCTS` — the four artboard SKUs, in artboard order, the ones
+ * `design/reports/home.md` measures at 390 and 1440 — followed by two more
+ * SKUs that are already rows of `PRODUCTS`. Appending rather than reordering
+ * is what keeps the at-rest viewport the drawn one: the first four cards are
+ * the same objects in the same positions at the same width.
+ *
+ * **Why a separate export and not an append to `FEATURED_PRODUCTS`:**
+ * `PRODUCTS` is `[...FEATURED_PRODUCTS, ...five]` above, so appending there
+ * would put duplicate slugs into the `/results` seed and take it from nine
+ * SKUs to eleven. `/results` parity depends on exactly those nine, in order.
+ *
+ * **Why these two and no others.** The heading is drawn as `Winter sets, in
+ * stock now.` (`design/inventory/home.md:248`) and drawn copy ships verbatim
+ * (`.claude/rules/ui.md` "Copy"), so an appended SKU must be winter *and* in
+ * stock. Of the nine tire SKUs that leaves exactly two: the third winter
+ * candidate `zmax-winterhawk-215-50r17` is `available: false`, and the three
+ * `zmax-landgema` rows are all-season. The all-season `zmax-landgema` among
+ * the drawn four stays because it is drawn (D29); the rule is only that we do
+ * not *add* more of what the heading does not cover.
+ *
+ * Nothing is invented: both rows already exist, both are sample data under
+ * D29/D43, and both already reuse a base cut-out via `image`, so no new
+ * photography is owed. **Open for the owner:** both are other sizes of tires
+ * already in the row, so `Antarctica Sport` and `Snowleopard` each appear
+ * twice. That is the only way to fill six slots honestly under this heading
+ * from this seed — a real feed would carry six distinct models (the D52
+ * precedent: a feed should not offer the same tire as its own alternative).
+ */
+const FEATURED_EXTRA_SLUGS: readonly string[] = [
+  "zeta-antarctica-sport-235-40r18",
+  "mazzini-snowleopard-225-50r17",
+];
+
+export const FEATURED_ROW: readonly Product[] = [
+  ...FEATURED_PRODUCTS,
+  ...PRODUCTS.filter((product) => FEATURED_EXTRA_SLUGS.includes(product.slug)),
+];
+
+/**
  * The nine wheel SKUs (D58, D48 — sample data, see the file header). Two
  * usable cut-outs (`touren-tr76`, `spec1-sp51`) cover all nine via `image`;
  * the third, `touren-tr79`, cannot be normalised and its three SKUs borrow
@@ -219,7 +259,13 @@ export const WHEELS: readonly Product[] = [
     badges: [],
     threePeakMountainSnowflake: false,
     available: true,
-    wheel: { diameter: "17", width: "7", bolt: "5x114.3", offset: "+40", finish: "gloss-black" },
+    wheel: {
+      diameter: "17",
+      width: "7",
+      bolt: "5x114.3",
+      offset: "+40",
+      finish: "gloss-black",
+    },
   },
   {
     category: "wheels",
@@ -233,7 +279,13 @@ export const WHEELS: readonly Product[] = [
     badges: [],
     threePeakMountainSnowflake: false,
     available: true,
-    wheel: { diameter: "18", width: "8", bolt: "5x114.3", offset: "+35", finish: "machined" },
+    wheel: {
+      diameter: "18",
+      width: "8",
+      bolt: "5x114.3",
+      offset: "+35",
+      finish: "machined",
+    },
   },
   {
     category: "wheels",
@@ -247,7 +299,13 @@ export const WHEELS: readonly Product[] = [
     badges: [],
     threePeakMountainSnowflake: false,
     available: true,
-    wheel: { diameter: "20", width: "9", bolt: "6x139.7", offset: "+30", finish: "gloss-black" },
+    wheel: {
+      diameter: "20",
+      width: "9",
+      bolt: "6x139.7",
+      offset: "+30",
+      finish: "gloss-black",
+    },
   },
   {
     category: "wheels",
@@ -264,7 +322,13 @@ export const WHEELS: readonly Product[] = [
     badges: [],
     threePeakMountainSnowflake: false,
     available: true,
-    wheel: { diameter: "17", width: "7", bolt: "5x100", offset: "+42", finish: "silver" },
+    wheel: {
+      diameter: "17",
+      width: "7",
+      bolt: "5x100",
+      offset: "+42",
+      finish: "silver",
+    },
   },
   {
     category: "wheels",
@@ -278,7 +342,13 @@ export const WHEELS: readonly Product[] = [
     badges: [],
     threePeakMountainSnowflake: false,
     available: true,
-    wheel: { diameter: "18", width: "8", bolt: "5x114.3", offset: "+38", finish: "gloss-black" },
+    wheel: {
+      diameter: "18",
+      width: "8",
+      bolt: "5x114.3",
+      offset: "+38",
+      finish: "gloss-black",
+    },
   },
   {
     category: "wheels",
@@ -292,7 +362,13 @@ export const WHEELS: readonly Product[] = [
     badges: [],
     threePeakMountainSnowflake: false,
     available: true,
-    wheel: { diameter: "20", width: "8.5", bolt: "5x120", offset: "+35", finish: "bronze" },
+    wheel: {
+      diameter: "20",
+      width: "8.5",
+      bolt: "5x120",
+      offset: "+35",
+      finish: "bronze",
+    },
   },
   {
     category: "wheels",
@@ -306,7 +382,13 @@ export const WHEELS: readonly Product[] = [
     badges: [],
     threePeakMountainSnowflake: false,
     available: true,
-    wheel: { diameter: "17", width: "7.5", bolt: "5x114.3", offset: "+40", finish: "bronze" },
+    wheel: {
+      diameter: "17",
+      width: "7.5",
+      bolt: "5x114.3",
+      offset: "+40",
+      finish: "bronze",
+    },
   },
   {
     category: "wheels",
@@ -320,7 +402,13 @@ export const WHEELS: readonly Product[] = [
     badges: [],
     threePeakMountainSnowflake: false,
     available: true,
-    wheel: { diameter: "18", width: "8.5", bolt: "5x114.3", offset: "+35", finish: "gloss-black" },
+    wheel: {
+      diameter: "18",
+      width: "8.5",
+      bolt: "5x114.3",
+      offset: "+35",
+      finish: "gloss-black",
+    },
   },
   {
     category: "wheels",
@@ -336,7 +424,13 @@ export const WHEELS: readonly Product[] = [
     /* The drawn unavailable-equivalent SKU for this category (D58 mirrors the
        tire seed's one unavailable card, `zmax-winterhawk-215-50r17` above). */
     available: false,
-    wheel: { diameter: "20", width: "9", bolt: "5x114.3", offset: "+30", finish: "machined" },
+    wheel: {
+      diameter: "20",
+      width: "9",
+      bolt: "5x114.3",
+      offset: "+30",
+      finish: "machined",
+    },
   },
 ];
 
@@ -495,7 +589,11 @@ export const ACCESSORIES: readonly Product[] = [
   },
 ];
 
-export const ALL_PRODUCTS: readonly Product[] = [...PRODUCTS, ...WHEELS, ...ACCESSORIES];
+export const ALL_PRODUCTS: readonly Product[] = [
+  ...PRODUCTS,
+  ...WHEELS,
+  ...ACCESSORIES,
+];
 
 /** Looks up a product by its slug (the URL segment; the image basename is
  *  `image ?? slug`, unless `image` is an absolute path — see `Product.image`).

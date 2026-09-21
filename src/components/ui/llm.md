@@ -48,8 +48,11 @@ One line each; measurements and per-variant tables live in each file's header co
   `spellCheck` per `type`, all applied *before* the `{...rest}` spread so a caller still wins;
   `email`/`tel`/`url` set `spellCheck: false`, the attribute's first use anywhere in the build.
 - [`price.tsx`](price.tsx) — `Price` and `formatPrice()`. `PriceProps`: `amount: number`,
-  `currency: string`, `context?: "card" | "pdp"`, `unit?: string`, `unavailable?`. Takes a number, never
-  a string. `unit` (**D58**) is the suffix copy — `/ tire`, `/ wheel`, `/ each`, `per tire · before tax`
+  `context?: "card" | "pdp"`, `unit?: string`, `unavailable?`. Takes a number, never a string. **No
+  `currency` prop since D77** (2026-09-22): the code is not rendered, so a presentation primitive has
+  no use for it — `formatPrice(amount)` returns `$129`, not `$129 CAD`. The currency stays as data on
+  `Product.currency` and is stated once site-wide by the footer's `SITE.priceNote`
+  (`docs/decisions.md` §7, `design/DEVIATIONS.md` #64). `unit` (**D58**) is the suffix copy — `/ tire`, `/ wheel`, `/ each`, `per tire · before tax`
   — and **defaults to the drawn tire string for each context**, so every pre-D58 call site renders
   identically. It is a plain string, not a category lookup, precisely because `src/components/*` never
   imports a feature (D37): the caller in `catalog/` or `product/` reads

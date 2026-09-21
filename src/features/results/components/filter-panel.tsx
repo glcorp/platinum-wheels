@@ -4,18 +4,33 @@
    FilterPanel — the one `/results` filter form, drawn twice
 
    The desktop rail (`results-desktop.html:121-147`) and the mobile sheet body
-   (`results-mobile-filters.html:76-82`) are the same five groups with different
+   (`results-mobile-filters.html:76-82`) are the same groups with different
    shells, so they are one component with a `variant`. Every difference between
    the two is measured and cited inline; the summary table is
    `design/inventory/results.md` §4.6.
 
+   **The drawn `Category` group is not built (`DEVIATIONS.md` #60).** The
+   artboards draw five groups; the panel renders **four** on tires and wheels
+   and **three** on accessories, which draw no size group (#50). Category was
+   navigation, never a filter — it set no param and never counted towards
+   `Filters (n)` — so nothing about the query, the counts or the best/similar
+   split moves with it. The three category routes are reached from the site
+   header nav and the footer's first column.
+
    **State is the URL (D44).** The panel stores nothing a query string does not.
    It is one `<form method="get" action="/results">` whose control `name`s are
    `RESULTS_PARAM`, so:
-     - without JS, `Apply` / `Show N matches` is a plain GET that lands on the
-       same href the island would have pushed;
      - with JS, the form's native `change` event rebuilds the query from its own
-       `FormData` and `router.replace`s it, `scroll:false`, inside a transition.
+       `FormData` and `router.replace`s it, `scroll:false`, inside a transition —
+       every control, size fields included, commits on `change`;
+     - without JS, the **sheet** still commits: its footer `Show N matches`
+       (`filter-sheet.tsx`, `form="results-filter-sheet"`) is a plain GET that
+       submits this same form. **The rail has no submit control of any kind**
+       since the per-group `Apply` was removed (owner instruction, `DEVIATIONS.md`
+       #71) — the rail was the button's only reason to exist, so removing it
+       removes the rail's entire no-JS commit path, not only for size: brand,
+       chips and price change the DOM state but a no-JS visitor has no way to
+       turn that into a navigation. `design/DEVIATIONS.md` #71 is the record.
    The native `change` event is used deliberately: React's `onChange` is the
    `input` event, which would fire on every pixel of a range drag. `change` is
    the commit, so a slider navigates once, on release
@@ -35,7 +50,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChipCheckbox, chipBox, chipRestClass } from "@/components/ui/chip";
+import { ChipCheckbox } from "@/components/ui/chip";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import {
   clearFilters,
@@ -90,9 +105,10 @@ function readForm(form: HTMLFormElement): RawSearchParams {
 }
 
 /* Collapse chevron, `stroke-width:1.6`, `--text-muted`, pointing UP (expanded):
-   `<svg width="16" height="16"><path d="M18 15l-6-6-6 6">` — drawn on all five
-   rail groups (results-desktop.html:123,128,134,136,144) and on the sheet's
-   Category and Tire size only (results-mobile-filters.html:77,78).
+   `<svg width="16" height="16"><path d="M18 15l-6-6-6 6">` — drawn on every
+   rail group (results-desktop.html:128,134,136,144; :123 was Category, #60)
+   and on the sheet's size group only (results-mobile-filters.html:78; the
+   sheet's other chevron was Category's, :77).
    It ships as static decoration: no group collapses, because no artboard draws
    a collapsed group and nothing specifies one. `aria-hidden` so it is never
    announced as a control that does nothing. */
@@ -160,6 +176,8 @@ function SizeField({
   options,
   value,
   probe,
+  dense,
+  spanTwo,
 }: {
   id: string;
   name: string;
@@ -167,10 +185,17 @@ function SizeField({
   options: readonly SizeOption[];
   value: string | null;
   probe?: string;
+  /** Tighter padding for a `dense` group (`Facets["sizeGroup"].dense`) — the
+   *  measured 10 + 14 + 6 padding only clears a tire value; a bolt pattern
+   *  (`5x114.3`) needs the room back. Tires never pass this. #67. */
+  dense?: boolean;
+  /** Bolt pattern's own two-track width in the `dense` 4-column grid (#71) —
+   *  a stock `col-span-2`, never set on tires. */
+  spanTwo?: boolean;
 }) {
   return (
     /* Field column `gap:6px` (results-desktop.html:129). */
-    <div className="flex flex-col gap-1.5">
+    <div className={cx("flex flex-col gap-1.5", spanTwo && "col-span-2")}>
       {/* Caption `font:500 10px/1; letter-spacing:.1em; uppercase;
           color:var(--text-dim)`. */}
       <label htmlFor={id} className="label text-10 tracking-10 text-ink-dim">
@@ -191,8 +216,12 @@ function SizeField({
             "h-11 w-full cursor-pointer appearance-none touch-manipulation",
             "border border-border-control bg-surface-2",
             /* 10px inset, and 10 + 14 + 6 on the right so the value can never
-               run under the 14px mark. */
-            "pl-2.5 pr-7.5",
+               run under the 14px mark — the measured tire padding. `dense`
+               (wheels only, #67) trims it to 8 + 14 + 12: the chevron is still
+               clear of the text, just without the tire group's extra 6px of
+               air, and the saved 6px goes to the bolt-pattern column's content
+               box. */
+            dense ? "pl-2 pr-6.5" : "pl-2.5 pr-7.5",
             "numeral text-15 leading-flat text-ink",
             "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0",
           ].join(" ")}
@@ -273,47 +302,72 @@ function PriceGroup({
           className="absolute top-1/2 h-0.5 -translate-y-1/2 bg-ink"
           style={{ left: `${leftPercent}%`, right: `${rightPercent}%` }}
         />
-        <input
-          id={`${idPrefix}-price-min`}
-          type="range"
-          name={RESULTS_PARAM.min}
-          min={min}
-          max={max}
-          step={1}
-          value={range.min}
-          aria-label="Minimum price"
-          aria-valuetext={money(range.min)}
-          onChange={(event) => {
-            const next = Number(event.currentTarget.value);
-            /* The two thumbs share a box, so the lower one is clamped rather
-               than allowed to pass the upper. `parseResultsQuery` also swaps a
-               crossed pair, so a hand-typed URL still resolves. */
-            setRange((current) => ({
-              min: Math.min(next, current.max),
-              max: current.max,
-            }));
-          }}
-          className="range-input absolute inset-x-0 top-0"
-        />
-        <input
-          id={`${idPrefix}-price-max`}
-          type="range"
-          name={RESULTS_PARAM.max}
-          min={min}
-          max={max}
-          step={1}
-          value={range.max}
-          aria-label="Maximum price"
-          aria-valuetext={money(range.max)}
-          onChange={(event) => {
-            const next = Number(event.currentTarget.value);
-            setRange((current) => ({
-              min: current.min,
-              max: Math.max(next, current.min),
-            }));
-          }}
-          className="range-input absolute inset-x-0 top-0"
-        />
+        {/* Thumb travel box, 8px wider than the track on each side (D69).
+            A native range thumb travels `w/2 … width − w/2`, so with the
+            inputs laid straight over the track box the 16px thumb centre
+            only ever reached 8px…256px of the 264px rail: it stopped short
+            of both ends, and at the artboard's drawn `left:14%` it sat at
+            16.2% — 5.7px right of the measured handle
+            (results-desktop.html:146). Stretching the inputs 8px past each
+            edge maps thumb centre to exactly 0–100% of the track box, so a
+            handle lands on its drawn percentage and the fill's `left` /
+            `right` mark the same two points the handles do. The overhang at
+            the extremes is what the track box's own `margin:0 8px` is for:
+            half a handle hangs off the rail exactly as the artboard draws
+            it with `margin-left:-8px`. */}
+        <div className="pointer-events-none absolute -inset-x-2 top-0 h-5">
+          <input
+            id={`${idPrefix}-price-min`}
+            type="range"
+            name={RESULTS_PARAM.min}
+            min={min}
+            max={max}
+            step={1}
+            value={range.min}
+            aria-label="Minimum price"
+            aria-valuetext={money(range.min)}
+            onChange={(event) => {
+              const next = Number(event.currentTarget.value);
+              /* The two thumbs share a box, so the lower one is clamped rather
+                 than allowed to pass the upper. `parseResultsQuery` also swaps a
+                 crossed pair, so a hand-typed URL still resolves. */
+              setRange((current) => ({
+                min: Math.min(next, current.max),
+                max: current.max,
+              }));
+            }}
+            /* Both inputs fill the box, so the later one in the DOM owns any
+               pixel where the two 16px thumbs overlap. That is harmless until
+               the pair collapses on the ceiling: `max` cannot be dragged below
+               `min`, `min` is buried underneath it, and the control locks with
+               no way back. Lifting `min` above `max` in exactly that state is
+               the whole fix, and it paints nothing — both inputs are
+               transparent. D69. */
+            className={cx(
+              "range-input absolute inset-x-0 top-0",
+              range.min >= max && "z-10",
+            )}
+          />
+          <input
+            id={`${idPrefix}-price-max`}
+            type="range"
+            name={RESULTS_PARAM.max}
+            min={min}
+            max={max}
+            step={1}
+            value={range.max}
+            aria-label="Maximum price"
+            aria-valuetext={money(range.max)}
+            onChange={(event) => {
+              const next = Number(event.currentTarget.value);
+              setRange((current) => ({
+                min: current.min,
+                max: Math.max(next, current.min),
+              }));
+            }}
+            className="range-input absolute inset-x-0 top-0"
+          />
+        </div>
       </div>
 
       {/* Value row: `font:700 15px/1`, tabular in the rail and **non-tabular**
@@ -341,9 +395,14 @@ function PriceGroup({
         </span>
       </div>
 
-      {/* Bounds row: rail only — the sheet drops it (results.md §4.4 group 5).
+      {/* Bounds row: rail only — the sheet drops it (results.md §4.4 group 5) —
+          and only once a price filter narrows the range (DEVIATIONS.md #68).
+          `selectedMin`/`selectedMax` are the URL-derived committed range
+          (`search.ts` `priceFacet()`), the same comparison `countActiveGroups`
+          makes for `Filters (n)`; at rest they equal `min`/`max`, so this row
+          and the value row above it would render the same two numbers twice.
           `font:400 12px/1; color:var(--text-dim)`. */}
-      {rail ? (
+      {rail && (selectedMin !== min || selectedMax !== max) ? (
         <div className="flex justify-between">
           <span className="text-12 leading-flat text-ink-dim">{money(min)}</span>
           <span className="text-12 leading-flat text-ink-dim">{money(max)}</span>
@@ -427,7 +486,7 @@ export function FilterPanel({
   }, [href, onNavigate]);
 
   /* Group shells.
-     Rail (results-desktop.html:123): `gap:14px; border-top:1px solid
+     Rail (results-desktop.html:128): `gap:14px; border-top:1px solid
      var(--border-strong); padding-top:20px`, Price `gap:20px`.
      Sheet (results.md §4.4): `gap:12px; padding:16px 0; border-bottom`, Brand
      `gap:8px`, Price `gap:16px` and no bottom hairline. */
@@ -440,32 +499,6 @@ export function FilterPanel({
   const shellPrice = rail
     ? "flex flex-col gap-5 border-t border-border-strong pt-5"
     : "flex flex-col gap-4 py-4";
-
-  /* Category rows, rail: `height:40px; padding:0 12px; font:500 15px/1`,
-     current `background:var(--text); color:var(--on-accent)`, the rest
-     `background:transparent; color:var(--text-muted)`
-     (results-desktop.html:125). 40px is a desktop-only row — the rail is
-     `md:` and up (D46), i.e. pointer devices, so the 44px touch floor in
-     docs/decisions.md §5 does not apply to it.
-     No hover: results.md §2.4 ends "No hover rules exist on any rail control",
-     and DESIGN.md §4's row-hover value (`--bg-alt`) is a token this theme does
-     not have (results.md §6 #2, #24), so there is nothing to author from.
-     Rows come from `facets.categories` (D58): on `/results` this reproduces
-     the built page byte for byte — `Tires` is `current`, `Wheels` and
-     `Accessories` are the plain rest treatment — and the same markup now also
-     renders on `/wheels` and `/accessories` with a different row current. */
-  const categoryRow =
-    "flex h-10 items-center justify-between px-3 text-15 font-medium leading-flat focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0";
-
-  /* Sheet Category chips, 44px, `padding:0 16px; font:500 14px/1` — the `Chip`
-     primitive's own box (src/components/ui/chip.tsx), reused as a class recipe
-     because these two are `<Link>`s and `Chip` renders a `<button>`. The
-     current `Tires` chip keeps `border:1px solid var(--border-strong)` rather
-     than the `--text` border the Season chips get — an inconsistency the
-     artboard draws on purpose-or-not (results.md §4.4 group 1, §6 "Internal
-     inconsistencies" #4) and that ships as drawn. */
-  const chipFocus =
-    "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0";
 
   return (
     <form
@@ -549,135 +582,75 @@ export function FilterPanel({
         </div>
       ) : null}
 
-      {/* 1 — Category ---------------------------------------------------- */}
-      <div
-        data-probe="group-category"
-        role="group"
-        aria-labelledby={`${idPrefix}-category-label`}
-        className={shell}
-      >
-        <GroupLabel id={`${idPrefix}-category-label`} mark>
-          Category
-        </GroupLabel>
-
-        {rail ? (
-          /* List `gap:4px` (results-desktop.html:124). One row per
-             `facets.categories` entry, drawn order (D58). On `/results` this
-             is exactly the old markup: `Tires` current with its count,
-             `Wheels` / `Accessories` the rest treatment with none — only the
-             source of the three rows moved. */
-          <div className="flex flex-col gap-1">
-            {facets.categories.map((row) =>
-              row.current ? (
-                <span
-                  key={row.category}
-                  aria-current="true"
-                  className={cx(categoryRow, "bg-ink text-on-accent")}
-                >
-                  {row.label}
-                  {/* Count `font:400 13px/1; color:var(--text-dim); tabular`.
-                      Computed from the seed, never typed (D42). Only the
-                      current row ever carries one (`Facets.categories`). */}
-                  {row.count !== null ? (
-                    <span className="text-13 leading-flat font-normal text-ink-dim tabular-nums">
-                      {row.count}
-                    </span>
-                  ) : null}
-                </span>
-              ) : (
-                <Link
-                  key={row.category}
-                  href={row.href}
-                  className={cx(categoryRow, "bg-transparent text-ink-muted")}
-                >
-                  {row.label}
-                </Link>
-              ),
-            )}
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            {facets.categories.map((row) =>
-              row.current ? (
-                <span
-                  key={row.category}
-                  aria-current="true"
-                  className={cx(chipBox, "border-border-strong bg-ink text-on-accent")}
-                >
-                  {row.label}
-                </span>
-              ) : (
-                <Link
-                  key={row.category}
-                  href={row.href}
-                  className={cx(chipBox, chipRestClass, chipFocus)}
-                >
-                  {row.label}
-                </Link>
-              ),
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* 2 — Size (tires only draw a group; accessories draw none) -------- */}
+      {/* 1 — Size (tires and wheels draw a group; accessories draw none) - */}
       {/* `facets.sizeGroup` is `null` for accessories (D58) — the group is
-          omitted entirely and the rail draws four groups instead of five,
-          owner-ruled. Where it exists it is always exactly three fields
+          omitted entirely, so accessories draw three groups where tires and
+          wheels draw four (#50 with #60), owner-ruled. Where it exists it is always exactly three fields
           (`categories.ts` "The group is drawn as a three-track grid ... a
           category gets exactly three fields or none at all"), so the 3-track
           grid below is unchanged. */}
-      {facets.sizeGroup !== null ? (
-        <div
-          data-probe="group-size"
-          role="group"
-          aria-labelledby={`${idPrefix}-size-label`}
-          className={shell}
-        >
-          <GroupLabel id={`${idPrefix}-size-label`} mark>
-            {facets.sizeGroup.label}
-          </GroupLabel>
+      {/* Local const, not `facets.sizeGroup` inline: a property access does not
+          keep its `!== null` narrowing inside the `.map` closure below, a
+          local `const` binding does. */}
+      {(() => {
+        const sizeGroup = facets.sizeGroup;
+        if (sizeGroup === null) return null;
+        return (
+          <div
+            data-probe="group-size"
+            role="group"
+            aria-labelledby={`${idPrefix}-size-label`}
+            className={shell}
+          >
+            <GroupLabel id={`${idPrefix}-size-label`} mark>
+              {sizeGroup.label}
+            </GroupLabel>
 
-          {/* Rail `grid-template-columns:1fr 1fr 1fr; gap:8px` with `Apply` on its
-              own full-width row below (results-desktop.html:129,133).
-              Sheet `1fr 1fr 1fr 88px; gap:8px; align-items:end` with `Apply`
-              inline (results-mobile-filters.html:78) — the fourth track is a
-              fixed 88px, so it is the `size-grid-sheet` utility rather than four
-              equal columns (globals.css). */}
-          <div className={rail ? "grid grid-cols-3 gap-2" : "size-grid-sheet gap-2"}>
-            {facets.sizeGroup.fields.map((field, index) => (
-              <SizeField
-                key={field.param}
-                id={`${idPrefix}-${field.param}`}
-                name={field.param}
-                caption={field.caption}
-                options={field.options}
-                value={field.value}
-                /* `size-width` is the tire rail's own probe id
-                   (results-desktop.html:131); kept on the first field
-                   generically so it still resolves on every category. */
-                probe={index === 0 ? "size-width" : undefined}
-              />
-            ))}
-            {rail ? null : (
-              <Button type="submit" variant="secondary" size="compact" fullWidth data-probe="apply">
-                Apply
-              </Button>
-            )}
+            {/* Rail and sheet now share one grid (owner instruction, #71:
+                the per-group `Apply` that sat below this grid on the rail and
+                inline as its fourth column on the sheet is gone — filters
+                already commit on `change`, so it committed nothing new — and
+                with it goes the sheet's reserved 88px `Apply` column, so the
+                rail's own `grid-template-columns:1fr 1fr 1fr; gap:8px`
+                (results-desktop.html:129) now governs both variants directly.
+                A `dense` group (wheels, #67, #71) still swaps in a **stock**
+                4-column grid with the third field (`Bolt pattern`) on
+                `col-span-2` — a 1 : 1 : 2 split from Tailwind's own utilities,
+                no arbitrary value, no custom `@utility`. Tires never set
+                `dense`, so their `grid-cols-3` is byte-identical to the
+                parity-measured rail. */}
+            <div
+              className={cx(
+                "gap-2",
+                sizeGroup.dense ? "grid grid-cols-4" : "grid grid-cols-3",
+              )}
+            >
+              {sizeGroup.fields.map((field, index) => (
+                <SizeField
+                  key={field.param}
+                  id={`${idPrefix}-${field.param}`}
+                  name={field.param}
+                  caption={field.caption}
+                  options={field.options}
+                  value={field.value}
+                  /* `size-width` is the tire rail's own probe id
+                     (results-desktop.html:131); kept on the first field
+                     generically so it still resolves on every category. */
+                  probe={index === 0 ? "size-width" : undefined}
+                  dense={sizeGroup.dense}
+                  spanTwo={sizeGroup.dense && index === sizeGroup.fields.length - 1}
+                />
+              ))}
+            </div>
           </div>
+        );
+      })()}
 
-          {rail ? (
-            <Button type="submit" variant="secondary" size="compact" fullWidth data-probe="apply">
-              Apply
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {/* 3 — Chip group: Season / Finish / Type --------------------------- */}
+      {/* 2 — Chip group: Season / Finish / Type --------------------------- */}
       {/* Rail label carries the collapse mark, the sheet's is bare
           (results.md §4.6 "Collapse chevrons | all 5 groups | Category and Tire
-          size only"). */}
+          size only" — with Category gone the sheet's only chevron is the size
+          group's, #60). */}
       <div
         /* `group-${param}` resolves to the measured `group-season` on tires,
            so every existing probe in `design/reports/results.md` still hits;
@@ -718,7 +691,7 @@ export function FilterPanel({
         </div>
       </div>
 
-      {/* 4 — Brand ------------------------------------------------------- */}
+      {/* 3 — Brand ------------------------------------------------------- */}
       <div
         data-probe="group-brand"
         role="group"
@@ -766,7 +739,7 @@ export function FilterPanel({
         </div>
       </div>
 
-      {/* 5 — Price per tire / wheel / item -------------------------------- */}
+      {/* 4 — Price per tire / wheel / item -------------------------------- */}
       <div
         data-probe="group-price"
         role="group"
@@ -785,6 +758,25 @@ export function FilterPanel({
           selectedMax={facets.price.selectedMax}
         />
       </div>
+
+      {/* The rail's only submit, and only for a visitor with scripting off.
+          `Apply` was removed on owner instruction (DEVIATIONS.md #71, D82) —
+          with JS it committed nothing the `change` listener had not already
+          committed. But it was the generic submit for the WHOLE form, not a
+          size control, so removing it left the rail with no submit at all:
+          a form with zero submit buttons does not submit on Enter either, so
+          a no-JS visitor could tick a brand or drag the price and have no way
+          to turn any of it into a navigation. `<noscript>` restores D44's
+          guarantee for exactly the visitors who need it and renders nothing
+          for everyone else. Sheet is unaffected; its `Show N matches` is a
+          separate button that was never removed. D83. */}
+      {rail ? (
+        <noscript>
+          <Button type="submit" variant="secondary" size="compact" fullWidth>
+            Apply filters
+          </Button>
+        </noscript>
+      ) : null}
     </form>
   );
 }

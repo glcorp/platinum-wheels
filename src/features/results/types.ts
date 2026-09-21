@@ -133,33 +133,25 @@ export interface PriceFacet {
   selectedMax: number;
 }
 
-/** One row of the Category group. All three always render, in this order; the
- *  current one is marked and carries no link (D58 — the built page's `Tires`
- *  row behaves exactly as before, the other two now lead somewhere real). */
-export interface CategoryFacet {
-  category: ProductCategory;
-  label: string;
-  href: string;
-  current: boolean;
-  /**
-   * Products in that category given this page's non-category filters, or
-   * `null` when no count should render. Only the CURRENT category carries
-   * one: the artboard draws a count on `Tires` alone
-   * (`results-desktop.html:125`), and counting another category through
-   * filters it does not share would be a number nobody can check (D42).
-   */
-  count: number | null;
-}
-
 export interface Facets {
   category: ProductCategory;
-  /** The three Category rows, in drawn order. */
-  categories: readonly CategoryFacet[];
-  /** The size group, or `null` when the category draws none (accessories). */
+  /**
+   * The size group, or `null` when the category draws none (accessories).
+   *
+   * There is no `categories` facet: the drawn `Category` group is not built
+   * (`design/DEVIATIONS.md` #60, owner, 2026-09-22). It was cross-category
+   * navigation, not a filter — it set no param and never reached
+   * `activeGroups` — so its removal moves no count and no result. The three
+   * category routes are reached from the site header nav and the footer.
+   */
   sizeGroup: {
     /** `Tire size` / `Wheel size` — the group label. */
     label: string;
     fields: readonly SizeFieldFacet[];
+    /** Uneven column grid + tighter select padding (`categories.ts`
+     *  `CategoryConfig.size.dense`) — wheels only, for the bolt-pattern
+     *  clip (`design/DEVIATIONS.md` #67). */
+    dense: boolean;
   } | null;
   /** The chip row: `Season` / `Finish` / `Type`. Always rendered; counts may
    *  be 0, and options are the category's full list, not just what is in stock. */

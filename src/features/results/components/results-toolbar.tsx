@@ -8,7 +8,9 @@ import { ROUTES } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
    ResultsToolbar — breadcrumb, active-vehicle chip, `Change vehicle`
-   disclosure, result count and (desktop only) the sort cluster.
+   disclosure and (desktop only) the sort cluster. The result count was the
+   row's fourth element until **D72** moved it into the `Best matches` header
+   stack (`results-grid.tsx`, deviation #63).
    Server Component; the only client code it renders is `SortSelect` (D44).
 
    Measured: `design/inventory/results.md` §2.2, from
@@ -19,8 +21,9 @@ import { ROUTES } from "@/lib/routes";
        justify-content:space-between; gap:24px`, left cluster `gap:20px`,
        sort cluster `gap:12px`.
    M  `padding:20px 16px 0; flex-direction:column; gap:12px` — three stacked
-       rows (breadcrumb / chip + link / count) and no sort control; sort lives
-       in the sticky bar (`results.md` §2.3).
+       rows as drawn (breadcrumb / chip + link / count); since D72 the third
+       is gone and two remain. No sort control; sort lives in the sticky bar
+       (`results.md` §2.3).
    Tablet 720-1099 keeps the mobile arrangement (D46) and steps the page
    padding to 32px (`sm:px-8`, DESIGN.md §8).
 
@@ -40,8 +43,12 @@ import { ROUTES } from "@/lib/routes";
      ├─ <details>           ← M: a full-width block   D: a flex item
      │   ├─ <summary>       ← M: row 2 (chip + link)  D: chip + link inline
      │   └─ <VehicleFinder variant="inline">   ← opens in flow, full width
-     ├─ count               ← M: row 3           D: next to the link
      └─ sort cluster        ← D only
+
+   (The drawn fourth element, the count, left this row at D72 — it is now the
+   second line of the `Best matches` header stack. On D that makes the open
+   `<details>` the only thing between the breadcrumb and the sort cluster, so
+   it has strictly more room than before, not less.)
 
    Consequences, both accepted because the open state is undrawn (D45):
    1. The whole summary row toggles, not just the link — tapping the chip
@@ -49,9 +56,9 @@ import { ROUTES } from "@/lib/routes";
       the 12px-tall link a 44px target without `tap-extend`.
    2. On D the `<details>` is a shrink-to-fit flex item, so CLOSED it is
       exactly as wide as the chip + link (parity holds) and OPEN it grows to
-      the space left between the breadcrumb and the sort cluster, with the
-      count pushed along the top line by `md:items-start`. On M the panel
-      opens between row 2 and the count, directly under its trigger.
+      the space left between the breadcrumb and the sort cluster. `items-start`
+      keeps the breadcrumb on the top line while it does. On M the panel opens
+      directly under its trigger, at the bottom of the toolbar since D72.
    No overlay, no absolute positioning, no JS.
    --------------------------------------------------------------------------- */
 
@@ -60,7 +67,9 @@ export interface ResultsToolbarProps {
 }
 
 /* `<svg width="18" height="18" … stroke-width="1.5" stroke-linejoin="round">`
-   — `results-desktop.html:113`, identical on mobile (`results-mobile.html:95`). */
+   — `results-desktop.html:113`, identical on mobile (`results-mobile.html:95`).
+   `text-accent` is the D72 highlight: the glyph strokes `currentColor`, so the
+   class is the only thing that changes and the geometry is untouched. */
 function CarIcon() {
   return (
     <svg
@@ -72,28 +81,13 @@ function CarIcon() {
       strokeWidth="1.5"
       strokeLinejoin="round"
       aria-hidden="true"
+      className="text-accent shrink-0"
     >
       <path d="M3 13l2-5a2 2 0 0 1 2-1h10a2 2 0 0 1 2 1l2 5v5H3z" />
       <circle cx="7.5" cy="16.5" r="1.5" />
       <circle cx="16.5" cy="16.5" r="1.5" />
     </svg>
   );
-}
-
-/** `12 matches · 6 similar` — `results-desktop.html:115`, U+00B7 spaced. The
- *  numbers are computed from the seed, never typed (D42).
- *
- *  `N matches` counts the BEST list, not the total (D49): once a vehicle
- *  derives a size (D48) the two diverge, and `9 matches · 9 similar` for a
- *  vehicle with no exact fit reads as a contradiction. The filter sheet's
- *  `Show N matches` keeps the total, because that number counts the cards the
- *  sheet reveals.
- *
- *  The `similar` half disappears when there is none, and `matches`
- *  singularises at one — new copy under `.claude/rules/ui.md` "Copy". */
-function countCopy(best: number, similar: number): string {
-  const matches = `${best} ${best === 1 ? "match" : "matches"}`;
-  return similar > 0 ? `${matches} · ${similar} similar` : matches;
 }
 
 export function ResultsToolbar({ view }: ResultsToolbarProps) {
@@ -173,14 +167,31 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
             >
               {vehicleLabel === null ? null : (
                 /* Vehicle chip — `height:44px` M / `40px` D, `padding:0 14px`,
-                   `--surface` fill, `1px --border-strong`, `700 14px/1`,
-                   `gap:10px`, radius 0 (`results.md` §2.2 row 4, §5.4;
-                   results-desktop.html:113, results-mobile.html:95). Not
+                   `gap:10px`, `700 14px/1`, radius 0 (`results.md` §2.2 row 4,
+                   §5.4; results-desktop.html:113, results-mobile.html:95). Not
                    the `numeral` utility: the drawn chip has no tabular-nums
-                   (`results.md` §5.2). */
+                   (`results.md` §5.2).
+
+                   **D72 (owner, 2026-09-22): "higlight the vehicle more".**
+                   Every box metric above is the drawn one and is unchanged —
+                   only the two colour properties move: the `--surface` fill
+                   becomes `--accent-subtle` and the `1px --border-strong`
+                   becomes `1px --accent`, with the car glyph in `--accent`
+                   (`CarIcon`). Both are tokens the artboards' own `:root`
+                   declares and the results export never spends
+                   (`design/inventory/results.md`, token block: "Declared but
+                   never referenced … `--accent-subtle`"), so nothing is
+                   invented. The label stays `--text` 700/14 rather than going
+                   accent: `--accent-subtle` over `--bg` composites to ~#222712
+                   and #F4F4F5 on that is ~15:1, where lime-on-lime-tint would
+                   not be. No shadow, blur, gradient, radius or motion — the
+                   bans in `.claude/rules/ui.md` rule out every other way of
+                   making an element louder, which is why the answer is the
+                   colour pair and nothing else. D5: a second accent in the
+                   frame is not a defect here. Deviation #61. */
                 <span
                   data-probe="vehicle-chip"
-                  className="bg-surface border-border-strong text-ink inline-flex h-11 shrink-0 items-center gap-2.5 border px-3.5 font-sans text-14 leading-flat font-bold md:h-10"
+                  className="bg-accent-subtle border-accent text-ink inline-flex h-11 shrink-0 items-center gap-2.5 border px-3.5 font-sans text-14 leading-flat font-bold md:h-10"
                 >
                   <CarIcon />
                   {vehicleLabel}
@@ -189,8 +200,29 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
               {/* `Change vehicle` — `500 12px/1 +.06em uppercase --text-muted`
                   underlined at 4px offset, `padding:12px 0` for touch (M,
                   results-mobile.html:95); `500 13px/1` and no padding on D
-                  (results-desktop.html:114). */}
-              <span className="label text-ink-muted shrink-0 cursor-pointer text-12 tracking-6 underline underline-offset-4 py-3 md:py-0 md:text-13">
+                  (results-desktop.html:114).
+
+                  **D72 (owner, 2026-09-22): "make change vehicle lower caps".**
+                  Sentence case, matching the authored strings above, which are
+                  already written `Change vehicle` / `Add vehicle` — so both
+                  states change by construction and cannot drift apart.
+
+                  The uppercase came from the shared `label` utility
+                  (`globals.css` `@utility label` → `text-transform:uppercase`),
+                  which 24 files use. It is NOT edited, and no `normal-case`
+                  override is used either: both `.label` and `.normal-case` are
+                  single-class utilities in the same Tailwind layer, so which
+                  wins is source-order, not specificity. Instead this one span
+                  opts out of the utility and spells the three properties
+                  `label` would have given it — `font-sans` (`--font-body`),
+                  `font-medium` (500), `leading-flat` (1) — leaving the drawn
+                  family, weight and leading byte-identical and dropping only
+                  the transform. `tracking-6` goes with it: `+.06em` is an
+                  uppercase device on this page (it rides `text-transform`
+                  on every control that carries it — this link, `Clear all`,
+                  `Apply`, the sticky-bar pair), and lowercase at 12px does
+                  not want it. Deviation #62. */}
+              <span className="text-ink-muted shrink-0 cursor-pointer font-sans text-12 leading-flat font-medium underline underline-offset-4 py-3 md:py-0 md:text-13">
                 {disclosureCopy}
               </span>
             </summary>
@@ -207,16 +239,13 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
           </details>
           )}
 
-          {/* Count — `400 14px/1 tabular --text-muted` M, 15px D
-              (`results.md` §2.2 row 6). */}
-          <span
-            data-probe="count"
-            aria-live="polite"
-            aria-atomic="true"
-            className="text-ink-muted text-14 leading-flat tabular-nums md:flex md:min-h-11 md:shrink-0 md:items-center md:text-15"
-          >
-            {countCopy(view.best.length, view.similar.length)}
-          </span>
+          {/* The count used to sit here, third in the left cluster on D and
+              row 3 on M (`results.md` §2.2 row 6). **D72 (owner, 2026-09-22):
+              "put 9 matches somewhere else"** — it moved to the `Best matches`
+              header stack in `results-grid.tsx`, where it labels the list it
+              counts. Its `aria-live` region moved with it, intact and still
+              the build's only one; `countCopy` moved with it too, so the
+              string is still produced in exactly one place. Deviation #63. */}
         </div>
 
         {/* Sort cluster — D only (`results.md` §2.2 rows 7-9); on M the sort

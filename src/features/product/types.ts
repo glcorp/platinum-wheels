@@ -78,6 +78,13 @@ export const DEFAULT_QUANTITY_BY_CATEGORY: Record<
   accessories: "1",
 };
 
+/** Bounds for the free-text field the quote form renders when the buy
+ *  panel's `Custom` cell is selected (D50, product `llm.md` Open #6). The
+ *  form is `noValidate` (D65) — `actions.ts` is the enforcement; the
+ *  `Input`'s `min`/`max` are affordance only. */
+export const CUSTOM_QUANTITY_MIN = 1;
+export const CUSTOM_QUANTITY_MAX = 99;
+
 /** Query-string params this route reads. `qty` is its own (D50); the vehicle
  *  trio arrives from `/results` and is passed straight through to the
  *  breadcrumb's back-link and the quote chip. */
@@ -185,6 +192,7 @@ export type QuoteField =
   | "email"
   | "phone"
   | "quantity"
+  | "customQuantity"
   | "contact"
   | "message"
   | "consent";
@@ -195,6 +203,9 @@ export const QUOTE_FIELD = {
   email: "email",
   phone: "phone",
   quantity: "quantity",
+  /** Free-text count, rendered only while `quantity === "custom"`
+   *  (D50 Open #6, `quote-form.tsx`). Optional — blank stays legal. */
+  customQuantity: "customQuantity",
   contact: "contact",
   message: "message",
   consent: "consent",

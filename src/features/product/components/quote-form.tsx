@@ -18,7 +18,7 @@
    phone number appears only as a `placeholder` attribute.
    --------------------------------------------------------------------------- */
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,6 +28,8 @@ import { Select } from "@/components/ui/select";
 import { submitQuote } from "@/features/product/actions";
 import {
   CONTACT_METHODS,
+  CUSTOM_QUANTITY_MAX,
+  CUSTOM_QUANTITY_MIN,
   DEFAULT_CONTACT_METHOD,
   QUANTITY_OPTIONS,
   QUOTE_FIELD,
@@ -76,7 +78,24 @@ export function QuoteForm({
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
+  const customQuantityRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+
+  // Computed ahead of the `success` early return below so the hooks that
+  // follow — the invalid-focus effect and the Custom-quantity field's own
+  // state — stay unconditional, per the rules of hooks.
+  const values = state.status === "invalid" ? state.values : undefined;
+
+  // Which cell the Quantity select currently shows, so the free-text field
+  // for `Custom` (D50 Open #6) can mount and unmount without a page reload.
+  // Seeded the same way the Select's own `defaultValue` is below; updated by
+  // its `onChange`. `quote-form.tsx` remounts fresh on every `?qty=` cell
+  // click (a real navigation, D50), so this re-seeds to the new selection
+  // each time rather than needing to react to the `quantity` prop changing
+  // under an existing instance.
+  const [selectedQuantity, setSelectedQuantity] = useState<string>(
+    values?.quantity ?? quantity,
+  );
 
   // Move focus to the confirmation once it replaces the form, so a screen
   // reader (and a sighted keyboard user) lands on the thing that changed.
@@ -90,7 +109,8 @@ export function QuoteForm({
   // or screen-reader user had no indication anything happened. Same pattern
   // as the success effect above — focus the first field that actually failed
   // validation, in drawn field order, rather than a fixed field. `errors`
-  // keys are a subset of `name`/`email`/`phone`/`message` (`actions.ts`).
+  // keys are a subset of `name`/`email`/`phone`/`customQuantity`/`message`
+  // (`actions.ts`).
   useEffect(() => {
     if (state.status !== "invalid" || !state.errors) {
       return;
@@ -101,6 +121,8 @@ export function QuoteForm({
       emailRef.current?.focus();
     } else if (state.errors.phone) {
       phoneRef.current?.focus();
+    } else if (state.errors.customQuantity) {
+      customQuantityRef.current?.focus();
     } else if (state.errors.message) {
       messageRef.current?.focus();
     } else {
@@ -135,7 +157,6 @@ export function QuoteForm({
     return <QuoteSuccess ref={successRef} role="status" tabIndex={-1} />;
   }
 
-  const values = state.status === "invalid" ? state.values : undefined;
   const errors = state.status === "invalid" ? state.errors : undefined;
   const selectedContact = values?.contact ?? DEFAULT_CONTACT_METHOD;
   const errorCount = errors ? Object.keys(errors).length : 0;
@@ -263,6 +284,7 @@ export function QuoteForm({
               id="quote-quantity"
               name={QUOTE_FIELD.quantity}
               defaultValue={values?.quantity ?? quantity}
+              onChange={(event) => setSelectedQuantity(event.target.value)}
             >
               {QUANTITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -326,6 +348,40 @@ export function QuoteForm({
             </fieldset>
           </div>
         </div>
+
+        {/* Custom quantity — the field `?qty=custom` promised and never had
+            (D50 Open #6). Server-rendered whenever the Quantity select reads
+            `custom`, in the Optional group's own drawn order: no new box on
+            a page that never draws one, no new island. Blank is legal — the
+            group's own eyebrow says `Optional`, so a required field here
+            would contradict drawn copy (`actions.ts`). New copy under
+            `.claude/rules/ui.md` "Copy": short, specific, names the unit. */}
+        {selectedQuantity === "custom" ? (
+          <div>
+            <FieldLabel htmlFor="quote-custom-quantity">
+              {`How many ${unit.many}?`}
+            </FieldLabel>
+            <Input
+              id="quote-custom-quantity"
+              name={QUOTE_FIELD.customQuantity}
+              type="number"
+              inputMode="numeric"
+              min={CUSTOM_QUANTITY_MIN}
+              max={CUSTOM_QUANTITY_MAX}
+              ref={customQuantityRef}
+              defaultValue={values?.customQuantity}
+              invalid={Boolean(errors?.customQuantity)}
+              aria-describedby={
+                errors?.customQuantity ? "quote-custom-quantity-error" : undefined
+              }
+            />
+            {errors?.customQuantity ? (
+              <FieldError id="quote-custom-quantity-error">
+                {errors.customQuantity}
+              </FieldError>
+            ) : null}
+          </div>
+        ) : null}
 
         <div>
           <FieldLabel htmlFor="quote-message">Message</FieldLabel>

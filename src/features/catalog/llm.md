@@ -29,19 +29,29 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   `category` / `wheel` / `accessoryType` fields, `productCategory()` (absent `category` = tires) and
   `productImageSrc()` (shared by `ProductCard` and `PdpGallery`).
 - [`categories.ts`](categories.ts) — `CATEGORY_CONFIG`, the per-category table (**D58**): route, nav
-  item, Category-row label, breadcrumb crumb, the three size fields (param, caption, label prefix, strip
-  regex, `read`), the chip group (label, param, options, `match`), the finder (`{ cta }` — **non-null on
-  all three categories since D67**, which vetoed D59(2)'s omission on `/accessories`; `null` stays legal
-  and is taken by nobody), the price label, the unit copy and the two authored copy strings.
-  `categoryConfig()`, `configFor(product)`, `sizeParams()` and
-  `parseTireSize()`. **It lives here, not in `results/`,** because three features need it —
-  `results/` for facets, `product/` for the spec table and units, `ProductCard` for the price suffix —
+  item, breadcrumb crumb, the three size fields (param, caption, label prefix, strip regex, `read`), the
+  chip group (label, param, options, `match`), the finder (`{ cta }` — **non-null on all three
+  categories since D67**, which vetoed D59(2)'s omission on `/accessories`; `null` stays legal
+  and is taken by nobody), the price label, the unit copy and the two authored copy strings. Plus
+  `categoryConfig()`, `configFor(product)`, `sizeParams()` and `parseTireSize()`. **It lives here, not in
+  `results/`,** because three features need it — `results/` for facets, `product/` for the spec table and
+  units, `ProductCard` for the price suffix —
   and D37 routes every cross-feature import through `catalog/`. It imports **no seed data**, so
-  `filter-panel.tsx` (a `"use client"` island) can import it.
+  `filter-panel.tsx` (a `"use client"` island) can import it. **No `label` field since D71**: it fed only
+  the rail's `Category` group, now unbuilt (#60).
 - [`components/product-card.tsx`](components/product-card.tsx) — `ProductCard`, props
   `{ product: Product }`. A Server Component: hover is pure CSS (`product-card.tsx:29-30`). Composes
   `Badge`, `Button` and `Price` (`:4-6`). The photo src is `/images/products/` + `product.image ?? slug`
-  + `.webp` (`product-card.tsx:160`). Per-value sources are in the inline comments.
+  + `.webp` (`product-card.tsx:160`). The photo is wrapped in a second `<Link>` to the same
+  `productRoute(slug)` the model link uses, `tabIndex={-1} aria-hidden="true"` so it adds a pointer
+  affordance without a second tab stop or a second announced route (DEVIATIONS #69). Per-value sources
+  are in the inline comments.
+- [`data.ts`](data.ts) — `FEATURED_ROW` (**D74**) is what the home carousel renders: `FEATURED_PRODUCTS`
+  plus `zeta-antarctica-sport-235-40r18` and `mazzini-snowleopard-225-50r17`, filtered out of `PRODUCTS`
+  by slug. It is a **separate export, not an append to `FEATURED_PRODUCTS`** — `PRODUCTS` spreads that
+  array, so appending there would duplicate slugs into the `/results` seed and take it to eleven SKUs.
+  The two appends are the only winter, in-stock rows the seed holds beyond the drawn four, which the
+  heading `Winter sets, in stock now.` requires. `design/DEVIATIONS.md` #65.
 - [`data.ts`](data.ts) — `FEATURED_PRODUCTS`, the four artboard SKUs of the home row, flagged sample
   (D29, `design/inventory/home.md:278-285`), and `PRODUCTS`, the nine-SKU `/results` seed (D43): the four
   featured objects spread first (`data.ts:84-85`) so seed order is artboard order, then
@@ -78,6 +88,10 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   does not zoom.
 - **The whole card is not an anchor** — wrapping it would nest the CTA link inside it
   (`product-card.tsx:229-230`).
+- **The photo is a link to the PDP, but a hidden one.** It is wrapped in its own `<Link>` to the same
+  href as the model link, `tabIndex={-1} aria-hidden="true"` — a pointer-only affordance, not a second
+  keyboard/AT stop. The model link stays the card's one announced route (DEVIATIONS #69, the D57/D66
+  duplicate-tab-stop precedent).
 - **Price suffix is per context AND per category**: cards read `/ tire`, `/ wheel`, `/ each` — D21
   extended by D58. The card passes `context="card"` plus `unit={configFor(product).unit.card}`; the
   default keeps the tire string, so an un-passed caller is unchanged.

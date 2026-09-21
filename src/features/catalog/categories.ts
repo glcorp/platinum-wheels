@@ -104,15 +104,16 @@ export interface CategoryConfig {
    *  measured URL on the built page is untouched. */
   route: string;
   /**
-   * The Category filter row's label — `Tires` / `Wheels` / `Accessories`,
-   * artboard-verbatim (`results-desktop.html:125`). Written out rather than
-   * derived by capitalising the category key: the key is an internal
-   * identifier, the label is drawn copy, and tying one to the other would let
-   * a future rename silently change what the rail says.
+   * Breadcrumb leaf and `<title>`. Tires keep the artboard's `Results`
+   * verbatim (`results-desktop.html:112`); the other two are new copy.
+   *
+   * There is no `label` field. It existed only for the rail's `Category` group
+   * row (`Tires` / `Wheels` / `Accessories`, `results-desktop.html:125`), and
+   * that group is not built (`design/DEVIATIONS.md` #60, owner, 2026-09-22).
+   * D59(1) still governs `crumb` and `route`: both are written out per
+   * category, never derived by capitalising the key, because the key is an
+   * internal identifier and these are drawn copy.
    */
-  label: string;
-  /** Breadcrumb leaf and `<title>`. Tires keep the artboard's `Results`
-   *  verbatim (`results-desktop.html:112`); the other two are new copy. */
   crumb: string;
   /** Which `SiteHeader` nav item renders active. */
   nav: "tires" | "wheels" | "accessories";
@@ -120,7 +121,18 @@ export interface CategoryConfig {
    *  Accessories have none: most fit everything, so a `Fits` select would be a
    *  filter that filters nothing (owner, 2026-09-21). The rail then draws four
    *  groups instead of five — `design/DEVIATIONS.md`. */
-  size: { label: string; fields: readonly SizeFieldConfig[] } | null;
+  size: {
+    label: string;
+    fields: readonly SizeFieldConfig[];
+    /** Equal-thirds columns clip a bolt pattern (`5x114.3`, `6x139.7`): the
+     *  three-track grid was measured against tire values (`215`/`55`/`R16`,
+     *  results-desktop.html:129) and D58 reused it unchanged. `dense` swaps in
+     *  an uneven 1 : 1 : 1.6 column split plus tighter select padding for
+     *  this group only — no wheels artboard exists to measure against, so
+     *  this is an authored value, not a parity number (`design/DEVIATIONS.md`
+     *  #67). Tires never set this; their grid and padding are untouched. */
+    dense?: boolean;
+  } | null;
   chips: ChipGroupConfig;
   /**
    * The vehicle finder on this category's results page — the `Change vehicle`
@@ -157,7 +169,14 @@ export interface CategoryConfig {
     many: string;
   };
   copy: {
-    /** `ResultsEmpty` body — undrawn, new copy under `.claude/rules/ui.md`. */
+    /** `ResultsEmpty` body — undrawn, new copy under `.claude/rules/ui.md`.
+     *  **All three values are deliberately identical.** The clause that used to
+     *  differ per category ("check your size" / "your fitment" / "what fits")
+     *  is the clause that pushed the line to two rows at desktop; the owner
+     *  asked for one line, so it was cut rather than wrapped. What is left
+     *  names both recoveries and no category noun, so it is true everywhere.
+     *  The field stays per-category: it is the hook a category would need if
+     *  its empty state ever has something of its own to say. */
     empty: string;
     /** `Best matches` is empty but `Similar matches` is not: the noun this
      *  category's near-miss is measured on. Tires match on size, wheels on
@@ -281,7 +300,6 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
     tires: {
       category: "tires",
       route: ROUTES.results,
-      label: "Tires",
       crumb: "Results",
       nav: "tires",
       size: { label: "Tire size", fields: TIRE_SIZE_FIELDS },
@@ -295,8 +313,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         many: "tires",
       },
       copy: {
-        empty:
-          "Nothing fits those filters yet. Clear them, or call us and we will check your size.",
+        empty: "Nothing fits those filters yet. Clear them, or call us.",
         nearMiss: "size",
         /* Artboard-verbatim, both PDP exports. */
         quotePlaceholder:
@@ -308,10 +325,9 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
     wheels: {
       category: "wheels",
       route: ROUTES.wheels,
-      label: "Wheels",
       crumb: "Wheels",
       nav: "wheels",
-      size: { label: "Wheel size", fields: WHEEL_SIZE_FIELDS },
+      size: { label: "Wheel size", fields: WHEEL_SIZE_FIELDS, dense: true },
       chips: WHEEL_FINISHES,
       finder: { cta: "Find my wheels" },
       priceLabel: "Price per wheel",
@@ -322,8 +338,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         many: "wheels",
       },
       copy: {
-        empty:
-          "Nothing fits those filters yet. Clear them, or call us and we will check your fitment.",
+        empty: "Nothing fits those filters yet. Clear them, or call us.",
         nearMiss: "fitment",
         quotePlaceholder:
           "Anything we should know — current setup, storage, install timing…",
@@ -334,7 +349,6 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
     accessories: {
       category: "accessories",
       route: ROUTES.accessories,
-      label: "Accessories",
       crumb: "Accessories",
       nav: "accessories",
       size: null,
@@ -351,8 +365,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         many: "items",
       },
       copy: {
-        empty:
-          "Nothing fits those filters yet. Clear them, or call us and we will check what fits.",
+        empty: "Nothing fits those filters yet. Clear them, or call us.",
         /* An accessory derives no SIZE from a vehicle, but since D67 it does
            derive a fit — thread pitch and TPMS frequency — so the line does
            render here. `fitment` rather than `fit`: the sentence pluralises

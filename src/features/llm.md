@@ -13,7 +13,9 @@ composition only, `docs/decisions.md:62`); this is where the actual page content
 - [`finder/`](finder/llm.md) — **built** at `page home`, 2026-09-20 (`finder/llm.md:10`). The
   Year/Make/Model vehicle finder, its own feature rather than part of `home/` (D33); seed fitment in
   `finder/data.ts`, flagged sample (D27); ships unselected (D28). `variant="inline"` serves the
-  `/results` `Change vehicle` disclosure (D45).
+  `/results` `Change vehicle` disclosure (D45). One client island since **D70**,
+  `finder/components/finder-model-sync.tsx`, which renders nothing and narrows `Model` to the chosen
+  `Make`; the form itself stays a Server Component and a plain GET.
 - [`home/`](home/llm.md) — **built** at `page home`, 2026-09-20 (`design/reports/home.md`). Home-only
   sections in `home/components/` (D33), including the mobile featured carousel, a functional client
   island (D30).

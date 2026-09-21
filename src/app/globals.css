@@ -487,6 +487,49 @@
   background-image: linear-gradient(to right, transparent, var(--bg));
 }
 
+/* Featured-row card widths, for the scroller the desktop featured track became
+   in D74. The drawn desktop row is `repeat(4, minmax(0,1fr))` with `gap:16px`
+   in the 1344px content box, computing to 324px per card
+   (design/inventory/home.md:248). A flex `flex-basis` percentage resolves
+   against that SAME content box, so `(100% - 3*16px)/4` is 324px by
+   construction and stays fluid below 1320 exactly as the grid did — which a
+   fixed spacing-scale width could not. Two utilities rather than one because
+   the row is 3-up in the tablet band and 4-up from `md:`, as drawn.
+   These exist because a percentage `calc` with a gap term is not expressible
+   as a Tailwind utility without an arbitrary value, which the project bans. */
+/* filter-rail — the desktop rail's own scroll region. The rail is
+   `position:sticky;top:96px` (results-desktop.html:121), and once the panel is
+   taller than the space that offset leaves, it can never be scrolled: measured
+   at 1440x700 it is 735px against 604px, so it pins at 96 with its Brand and
+   Price groups below the fold while the page scrolls underneath them, and they
+   arrive only once the page itself is near its end. That is the reported bug.
+   The cap is derived from the sticky offset, not guessed - 100dvh - 96px is
+   exactly the space between `top:96px` and the bottom edge - and in dvh
+   because vh is banned (docs/decisions.md §5). `overscroll-behavior: contain`
+   stops a rail that has hit its end from scrolling the page behind it, the
+   guarantee the sheet and the drawer took in D65. The padding/negative-margin
+   pair is 2px of bleed so a focus ring on a control flush with the rail's edge
+   is not clipped by the new scroll container; it cancels out, so with
+   `box-sizing:border-box` the content box stays exactly 280px at the same x.
+   Deliberately NOT `hide-scrollbar`: the bug was that people could not tell
+   there was more panel, and hiding the bar reproduces that one level down.
+   D68. */
+@utility filter-rail {
+  max-height: calc(100dvh - 96px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-inline: 2px;
+  margin-inline: -2px;
+}
+
+@utility featured-card-3 {
+  flex-basis: calc((100% - 2 * 16px) / 3);
+}
+
+@utility featured-card-4 {
+  flex-basis: calc((100% - 3 * 16px) / 4);
+}
+
 /* Contact photo panel caption scrim (home.md:405). */
 @utility photo-caption-scrim {
   background-image: linear-gradient(
@@ -649,15 +692,6 @@
       opacity: 0;
     }
   }
-}
-
-/* Sheet tire-size row: `grid-template-columns:1fr 1fr 1fr 88px;gap:8px;
-   align-items:end` (results-mobile-filters.html:78) → three 82px fields and
-   the 88px `Apply` (results.md §4.4 group 2). */
-@utility size-grid-sheet {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 88px;
-  align-items: end;
 }
 
 /* Sheet footer `padding:12px 16px 20px` (results-mobile-filters.html:83) with

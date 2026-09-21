@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { barlow, barlowCondensed } from "./fonts";
 import "./globals.css";
+import { HashScroll } from "@/components/site/hash-scroll";
 
 export const metadata: Metadata = {
   title: {
@@ -38,6 +39,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <a href="#main" className="skip-link">
           Skip to content
         </a>
+        {/* Makes `/#contact` and `/#how-it-works` work. `loading.tsx`'s Suspense
+            boundary (D62) means the section arrives after the browser has
+            already resolved the fragment, so nothing scrolls — measured, ten
+            seconds, `scrollY` 0, in a production build. A leaf island, so this
+            file stays a Server Component. D80. */}
+        <HashScroll />
         {children}
       </body>
     </html>

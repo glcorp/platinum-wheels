@@ -65,6 +65,9 @@ is either fixed or linked to a `design/DEVIATIONS.md` row.
 | footer | pad / border-top / y | 80 48 40 / #35353B / 2371.4 | same | 0 | ✓ |
 | footer | height | 396.2 | 381.2 | −15 | DEVIATIONS #20 |
 
+> **Five rows above no longer have a target (2026-09-22).** `group shell ×5 … (Category)`, `category list`, `` `Tires` row (selected) ``, `` `Wheels` row `` and `` `Tires` count `` measured the `Category` filter group, which the owner removed — `design/DEVIATIONS.md` **#60**. They are superseded by that row, not re-measured here. The rail now opens on the size group, whose own `border-top` lands where Category's did, so the **first hairline stays at y 264** and everything below it shifts up **211px** (the 179px group plus the 32px aside gap); rail height 946 → 735. `group label` still applies, to the size group. Every other row on this table is unaffected.
+
+
 ## 390 × 844 — `results-mobile`
 
 | element | prop | design | app | Δ | ok |
@@ -94,6 +97,8 @@ is either fixed or linked to a `design/DEVIATIONS.md` row.
 | footer wrapper / footer | mt ; pad | 56 ; 56 16 120 | same | 0 | ✓ |
 | footer | height | 821.4 | 757.4 | −64 | DEVIATIONS #20 |
 
+> **Six rows in the two tables above were superseded on 2026-09-22 by D72** (owner: *"higlight the vehicle more, make change vehicle lower caps and put 9 matches somewhere else"*). At both widths: the `vehicle chip` row's `bg` / `border` are now `--accent-subtle` / `--accent` (`DEVIATIONS.md` #61) and every box metric in that row still measures 0; the `` `Change vehicle` `` row's `ls` is now 0 and its case sentence (#62); and the `count` row has no target in the toolbar at all, the element having moved under the `Best matches` `<h1>` (#63). Nothing else in either table is affected.
+
 ## 390 × 844 — `results-mobile-filters` (sheet open)
 
 | element | prop | design | app | Δ | ok |
@@ -118,6 +123,8 @@ is either fixed or linked to a `design/DEVIATIONS.md` row.
 | price value | font / tabular | 700 15/15 / no | same | 0 | ✓ |
 | footer | pad / bg / border-top / y,h | 12 16 20 / #16161A / #35353B / 759,85 | same (`pb-safe` = 20 on a flat viewport) | 0 | ✓ |
 | `Show N matches` | h / bg / color / radius / font / ls / w | 52 / #C9F23A / #0B0B0D / 2 / 500 14 / 1.12 / 358 | same (`Show 9 matches`) | 0 | ✓ |
+
+> **Three rows above no longer have a target (2026-09-22).** `Category group`, `` `Tires` chip (selected) `` and `` `Wheels` chip `` measured the `Category` group, removed by the owner — `design/DEVIATIONS.md` **#60**. The **panel itself does not move**: scrim, panel `144,700`, header `145,85` and body `230,529` are fixed, so only the scroll content shortens, by the group's measured **105px**, and the size group's top moves 343 → **238**. Every other row on this table is unaffected.
 
 ## Overflow-only checks
 
@@ -145,6 +152,9 @@ rail hidden until 1100 (D46, DEVIATIONS #33). Not parity rows.
   body scroll locked, Esc closes, focus returns, body unlocked.
 - `Change vehicle`: `<details>` opens the inline finder (3 native selects) under the toolbar; desktop
   keeps breadcrumb, count and sort on the drawn top line (sort label stays at y 136.5).
+  *(Verified 2026-09-21. D72 later took the count out of this row and lower-cased the link; the
+  breadcrumb / sort geometry is unaffected. Re-measure with the browser checks in `DEVIATIONS.md`
+  #61–#63 before citing these coordinates again.)*
 - Count copy (D42, D49): `matches` = the best list. `/results` → `9 matches`, summary `Add vehicle`, no
   chip, 6 cards + `Load more`; `?year=2021&make=Honda&model=Civic` → placeholder fitment `215/55R16`
   (D48) gives `4 matches · 5 similar`, size selects stay `Any`, `Filters` (no count); `…make=Ford&model=F-150`

@@ -5,9 +5,17 @@
  * prefixed `from`, the amount is Barlow 700 tabular in `--text`, and the quoted
  * figure is per tire, before tax and install. Prices are NEVER accent-coloured,
  * the `$` is full size and there are no cents — which is why this component takes
- * a number plus a currency code and formats it itself. A caller cannot hand it a
- * pre-formatted string, so it cannot smuggle in `¢`, a superscript span or a
- * shrunken `$`: the whole figure is one text node in one `numeral` span.
+ * a number and formats it itself. A caller cannot hand it a pre-formatted
+ * string, so it cannot smuggle in `¢`, a superscript span or a shrunken `$`:
+ * the whole figure is one text node in one `numeral` span.
+ *
+ * The currency code is NOT rendered (D77, 2026-09-22). The artboards draw
+ * `$129 CAD`; the owner ruled the bare `$` everywhere because the footer's
+ * `Brampton, Ontario · Prices in CAD, before tax` already declares the currency
+ * once, site-wide. That footer line is therefore load-bearing — see
+ * `src/lib/site.ts` `priceNote`. `docs/decisions.md` §7 is amended to match;
+ * `design/DEVIATIONS.md` #64 carries the drawn-vs-shipped row. The currency
+ * itself is still data — `Product.currency` — just not presentation.
  *
  * Contexts are measured, not guessed — see the per-context table below.
  * The mobile→desktop crossover is `sm:` (720px), the "Mobile <720" boundary in
@@ -22,8 +30,6 @@ type PriceContext = "card" | "pdp";
 export interface PriceProps {
   /** Amount in whole currency units. Rendered without cents by design. */
   amount: number;
-  /** ISO currency code, rendered inside the numeral: `$129 CAD`. */
-  currency: string;
   /** Where the price sits. `card` is the product grid, `pdp` the buy panel. */
   context?: PriceContext;
   /** Currently-unavailable product: the amount drops to `--text-dim`. */
@@ -43,7 +49,8 @@ export interface PriceProps {
 
 /* Whole dollars, grouped, never a fraction. `maximumFractionDigits: 0` is the
    mechanism behind DESIGN.md §7 "Don't … superscript cents": there are no cents
-   to superscript. en-CA per docs/decisions.md §7 ("Prices in CAD, before tax"). */
+   to superscript. en-CA grouping: the amounts are Canadian dollars even though
+   the code is no longer rendered beside them (D77). */
 const WHOLE_UNITS = new Intl.NumberFormat("en-CA", {
   useGrouping: true,
   minimumFractionDigits: 0,
@@ -51,12 +58,12 @@ const WHOLE_UNITS = new Intl.NumberFormat("en-CA", {
 });
 
 /**
- * `$129 CAD` — the exact artboard string
- * (home-desktop.html:216 card price; product-desktop.html:110 buy-panel price).
- * One text node: the `$`, the digits and the code share one span and one size.
+ * `$129` — the artboard string (home-desktop.html:216 card price;
+ * product-desktop.html:110 buy-panel price) minus its ` CAD` suffix, per D77.
+ * One text node: the `$` and the digits share one span and one size.
  */
-export function formatPrice(amount: number, currency: string): string {
-  return `$${WHOLE_UNITS.format(amount)} ${currency}`;
+export function formatPrice(amount: number): string {
+  return `$${WHOLE_UNITS.format(amount)}`;
 }
 
 const PRESENTATION = {
@@ -105,7 +112,6 @@ const PRESENTATION = {
 
 export function Price({
   amount,
-  currency,
   context = "card",
   unavailable = false,
   unit,
@@ -127,7 +133,7 @@ export function Price({
           style.amount,
         )}
       >
-        {formatPrice(amount, currency)}
+        {formatPrice(amount)}
       </span>
       <span
         className={cx(

@@ -17,6 +17,19 @@
 
    From `md:` (1100px) only — D46 keeps the mobile arrangement, and with it the
    sticky bar and sheet, through the whole 720–1099 band.
+
+   --- Why it is also a scroll container (D68) -------------------------------
+   Sticky alone is not enough once the panel is taller than the space under the
+   sticky offset. Measured at 1440×700: the rail is 735px against 604px
+   (700 − 96), so it pins at `top:96` with its Brand and Price groups 131px
+   below the fold and the page scrolling *underneath* them — they only come
+   into view once the page has scrolled nearly to its end. That is the reported
+   bug: "i cant individually scroll on the filters, need to get bottom of the
+   page to scroll there". `md:filter-rail` (globals.css) caps the box at the
+   space the sticky offset leaves and gives it its own scroller. At heights
+   where the panel already fits — 1440×900, every route — a `max-height` a box
+   is under is inert, and the form and all 22 controls measure identically with
+   and without it, so nothing drawn moves.
    --------------------------------------------------------------------------- */
 
 import { FilterPanel } from "@/features/results/components/filter-panel";
@@ -31,7 +44,7 @@ export function FilterRail({ view }: FilterRailProps) {
     <aside
       aria-label="Filters"
       data-probe="rail"
-      className="hidden md:sticky md:top-24 md:flex md:flex-col"
+      className="hidden md:sticky md:top-24 md:flex md:flex-col md:filter-rail"
     >
       <FilterPanel view={view} variant="rail" idPrefix="rail" />
     </aside>

@@ -23,7 +23,6 @@ import type { Product, ProductCategory } from "@/features/catalog/types";
 import { findFitment, type FitmentSize } from "@/features/finder/data";
 import { parseResultsQuery } from "./query";
 import type {
-  CategoryFacet,
   FacetOption,
   Facets,
   PriceFacet,
@@ -251,6 +250,7 @@ function buildSizeGroup(
       options: sizeFieldOptions(products, field),
       value: query.size[field.param] ?? null,
     })),
+    dense: config.dense ?? false,
   };
 }
 
@@ -338,38 +338,19 @@ function countActiveGroups(query: ResultsQuery, price: PriceFacet): number {
   ].filter(Boolean).length;
 }
 
-/** `Tires` / `Wheels` / `Accessories` — every category's id, capitalised, in
- *  drawn order (D58). Only `current` carries a `count`; the artboard draws a
- *  count on the current category alone and counting another category through
- *  filters it does not share would be a number nobody can check (D42). */
-function categoryFacets(
-  current: ProductCategory,
-  currentCount: number,
-): CategoryFacet[] {
-  const order: readonly ProductCategory[] = ["tires", "wheels", "accessories"];
-  return order.map((category) => {
-    const config = CATEGORY_CONFIG[category];
-    return {
-      category,
-      label: config.label,
-      href: config.route,
-      current: category === current,
-      count: category === current ? currentCount : null,
-    };
-  });
-}
-
+/** No `categories` facet: the drawn `Category` group is not built
+ *  (`design/DEVIATIONS.md` #60, owner, 2026-09-22). It was cross-category
+ *  navigation rather than a filter, so nothing here narrowed on it and no
+ *  count, facet or best/similar split changes with its removal. */
 function buildFacets(
   category: ProductCategory,
   products: readonly Product[],
   query: ResultsQuery,
-  currentCount: number,
 ): Facets {
   const config = CATEGORY_CONFIG[category];
   const price = priceFacet(products, query);
   return {
     category,
-    categories: categoryFacets(category, currentCount),
     sizeGroup: buildSizeGroup(category, products, query),
     chipGroup: {
       label: config.chips.label,
@@ -455,7 +436,7 @@ export function searchResults(
 
   return {
     query,
-    facets: buildFacets(category, products, query, filtered.length),
+    facets: buildFacets(category, products, query),
     best: sortProducts(best, query.sort),
     similar: sortProducts(similar, query.sort),
     total: best.length + similar.length,

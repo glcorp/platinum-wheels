@@ -64,7 +64,14 @@ function ChevronIcon({ size }: { size: number }) {
 }
 
 /** `?qty=<value>` with every other current param preserved, verbatim order
- *  (`view.ts` uses the same `URLSearchParams` approach for `backHref`). */
+ *  (`view.ts` uses the same `URLSearchParams` approach for `backHref`).
+ *
+ *  `custom` alone carries a `#quote` fragment: it is the one cell with
+ *  nowhere on-screen to record a number until the quote form's Optional
+ *  group renders the field for it (D50 Open #6), a viewport and a half
+ *  below on mobile — so its own link takes the visitor to where the choice
+ *  is actually expressed. `1`/`2`/`4` need no anchor; the panel already
+ *  shows their result in place. */
 function hrefFor(
   value: QuantityKey,
   searchParams: Record<string, string | string[] | undefined>,
@@ -79,7 +86,8 @@ function hrefFor(
     }
   }
   search.set(PRODUCT_PARAM.qty, value);
-  return `?${search.toString()}`;
+  const query = `?${search.toString()}`;
+  return value === "custom" ? `${query}#quote` : query;
 }
 
 export function QuantityControl({

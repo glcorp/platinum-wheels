@@ -40,8 +40,19 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   build's only `"use client"` under `src/app/` and it is a framework requirement, not a choice — Next
   fails the build on a bare re-export. It does not wrap `src/app/layout.tsx`; that would need
   `global-error.tsx`, which does not exist and is not owed.
-- `about/`, `privacy/`, `terms/` — the remaining `PageStub` pages for undesigned targets (D26, D39).
-  `wheels/` and `accessories/` left this list on 2026-09-21 (D58).
+- [`about/page.tsx`](about/page.tsx), [`privacy/page.tsx`](privacy/page.tsx) and
+  [`terms/page.tsx`](terms/page.tsx) — the three **written** pages. Undesigned (D26, D39): no artboard
+  draws any of them, so they are not parity rows and there is nothing for them to deviate from. They
+  left `PageStub` on 2026-09-22 for `ProsePage` / `ProseSection` (`src/components/site/prose-page.tsx`),
+  on the owner's note that they were *"not centered in desktop view, looks bland too — go full in and
+  add details and style"* — then, the same day, dropped the on-page section index and the per-section
+  numbering that pass had added, on the owner's follow-up that the result *"looks too much now"*. Still
+  thin: each file is metadata, a `ProsePage` call and its copy, with no layout maths of its own. The two
+  legal pages hold one `SECTIONS` array, mapped straight into `ProseSection`s. `wheels/` and
+  `accessories/` left this list on 2026-09-21 (D58); `PageStub`'s only caller now is
+  `src/app/not-found.tsx`.
+  **What "add style" did not license, either pass:** no new fact about the business, and on the legal
+  pages no new obligation — structure and typesetting only. See `src/components/site/llm.md` Owns/Rules.
 - [`styleguide/page.tsx`](styleguide/page.tsx) (471 ln) — route `/styleguide`, `noindex` via
   `metadata.robots: { index: false, follow: false }` (`:18-21`). Eleven blocks covering every primitive,
   variant and state, with computed contrast ratios shown on the page rather than buried in markdown

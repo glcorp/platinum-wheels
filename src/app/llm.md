@@ -57,8 +57,6 @@ entire site loses its type or its palette at once.
     `overscroll-behavior: contain` (**D65**, `:598`) — the property was declared nowhere in the build,
     so scrolling past either end of the sheet chained to the page behind it. The body `overflow:hidden`
     lock the sheet sets is a different guarantee and does not stop chaining.
-  - `size-grid-sheet` (`:533`) — the sheet's tire-size row, `1fr 1fr 1fr 88px` ending in the 88px
-    `Apply` (`results-mobile-filters.html:78`).
   - `pb-safe` (`:542`) — the sheet footer's 20px bottom padding plus `env(safe-area-inset-bottom)`.
 - Breakpoints `xs` 400 / `sm` 720 / `md` 1100 / `lg` 1320 (`:243-246`) — **D10**. Container
   `--container-content: 1344px` → `max-w-content` (`:227`) — **D11**. Spacing has no tokens: the

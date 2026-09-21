@@ -144,7 +144,6 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
     model,
     size,
     price,
-    currency,
     badges,
     threePeakMountainSnowflake,
     available,
@@ -197,23 +196,52 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             The basename is `product.image` when the SKU borrows another SKU's
             cut-out and `slug` otherwise: four photos cover the nine artboard
             SKUs, exactly as the artboards reuse them (D43,
-            `design/inventory/results.md` §7.2). */}
-        <Image
-          src={productImageSrc(product)}
-          alt={`${brand} ${model}`}
-          width={1000}
-          height={1000}
-          sizes={IMAGE_SIZES}
-          /* See `priority` in ProductCardProps for why this is eager +
-             fetchPriority rather than `preload`. Both stay undefined when the
-             prop is false, so the default lazy behaviour is untouched. */
-          loading={priority ? "eager" : undefined}
-          fetchPriority={priority ? "high" : undefined}
-          className={cx(
-            "photo-inset-card block h-full w-full object-contain",
-            !available && "opacity-35",
-          )}
-        />
+            `design/inventory/results.md` §7.2).
+
+            The photo is also a route to the PDP, same href as the model link
+            below — the owner asked for a clickable image (DEVIATIONS #69).
+            No artboard draws a link here (none of the seven exports wraps
+            this `<img>` in an `<a>` — checked directly), so this is new
+            interactive surface, not a parity fix. It is `tabIndex={-1}
+            aria-hidden="true"`: the model link is already the card's one
+            announced, focusable route to the product, and a second
+            identical stop per card would double every keyboard/AT traversal
+            of the grid (D57, D66 precedent — this build removes exactly this
+            defect shape, it does not reintroduce it). `alt` stays
+            `<Brand> <Name>` on the `<img>` itself even though the wrapping
+            anchor hides the subtree from the accessibility tree: it is still
+            the visible fallback text if the image fails to load, and image
+            search crawlers read `<img alt>` independently of `aria-hidden`
+            (which only prunes the AT tree, not the raw DOM). The anchor is
+            `block h-full w-full` with no padding, so it exactly overlays the
+            `<img>` box and adds no layout of its own; cursor and tap
+            affordance come free (default anchor cursor, plus the shared `a`
+            base rule for `touch-action`/`-webkit-tap-highlight-color`,
+            D65). */}
+        <Link
+          href={productRoute(slug)}
+          tabIndex={-1}
+          aria-hidden="true"
+          className="block h-full w-full"
+        >
+          <Image
+            src={productImageSrc(product)}
+            alt={`${brand} ${model}`}
+            width={1000}
+            height={1000}
+            sizes={IMAGE_SIZES}
+            /* See `priority` in ProductCardProps for why this is eager +
+               fetchPriority rather than `preload`. Both stay undefined when
+               the prop is false, so the default lazy behaviour is
+               untouched. */
+            loading={priority ? "eager" : undefined}
+            fetchPriority={priority ? "high" : undefined}
+            className={cx(
+              "photo-inset-card block h-full w-full object-contain",
+              !available && "opacity-35",
+            )}
+          />
+        </Link>
 
         <div aria-hidden="true" className="photo-vignette absolute inset-0" />
 
@@ -335,10 +363,10 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             (results-desktop.html:446); `Price` applies that to the amount and
             keeps `from` at `--text-muted`, which is what the artboard's
             explicit per-span colours resolve to. Renders
-            `from` · `$129 CAD` · `/ tire` (`docs/decisions.md:112`). */}
+            `from` · `$129` · `/ tire` (`docs/decisions.md` §7; the drawn
+            ` CAD` is dropped site-wide by D77). */}
         <Price
           amount={price}
-          currency={currency}
           context="card"
           unavailable={!available}
           unit={configFor(product).unit.card}
