@@ -36,8 +36,12 @@ import { ROUTES } from "@/lib/routes";
 
    `object-position:70% 30%` on the Tires image (home.md:39, "Fit" column)
    has no token; `object-right-top` (100% 0%) is off by 30/30 on both axes,
-   so `object-center` ships instead. Deviation candidate — see the final
-   report.
+   so `object-center` ships instead — `design/DEVIATIONS.md` #23.
+   **That row is superseded by #57 (D63):** the reason the crop difference was
+   harmless used to be that the tile drew a product cut-out on a transparent
+   canvas, so a focal point only moved empty margin. It draws a full-bleed
+   photo now, where a focal point would genuinely crop the subject. The class
+   is unchanged; only the justification moved. See the Tires tile below.
 
    Server Component. No hover: D35(2) — the artboard's global `a:hover`
    colour shift to `--text-muted` is suppressed for category tiles; no tile

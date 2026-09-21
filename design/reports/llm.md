@@ -9,6 +9,11 @@ and the audit trail (`docs/decisions.md` §10) — no commit can show what a pag
 Without this folder a page can be called "done" on an opinion, which is exactly what the protocol forbids.
 
 ## Owns
+- [`deviations-sweep.md`](deviations-sweep.md) — the 2026-09-21 trace of all 43 legacy `DEVIATIONS.md`
+  rows against the shipping code and the frozen artboards (**D64**). **0 wrong, 3 stale (corrected in
+  place), 1 measured.** Read it before assuming a deviation row is authoritative — it records which
+  rows were checked, how, and the one measurement trap that would have failed a correct row. Rows
+  #44–#57 are out of scope there: they were written and verified the same week.
 - [`README.md`](README.md) — 89 ln. The protocol: how to serve the baseline and the app, how to run the
   probes, the tolerance table, the pipeline-verification run of 2026-09-20, the stale-dev-server gotcha,
   and the control-boundary contrast measurements.

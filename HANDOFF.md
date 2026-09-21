@@ -118,7 +118,7 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | `globals.css` | **719 ln**: tokens, role utilities, the home/results/product layout utilities, and the three D57 accessibility utilities (`tap-extend-lg`, `hide-scrollbar`, `skip-link`). The dead `--container-rail` token was removed 2026-09-21 (D61, audit S5). **Single writer: the coordinator.** See §9. |
 | `/styleguide` | §11 carries the undrawn states, now **complete** (D62): empty results, open `Change vehicle`, quote-form **success** and **error**, the **skip link** (Tab into its demo box to reveal it), the **route error** and the **loading** skeleton. |
 | Undrawn states | `loading.tsx` and `error.tsx` at `(storefront)/` (D62). The boundary component is `src/components/site/route-error.tsx`; `error.tsx` is the directive plus a re-export and is the **only** `"use client"` under `src/app/` — a framework requirement, named as an exception in `.claude/rules/ui.md` and `docs/decisions.md` §4. `loading.tsx` renders a `<div>`, not a second `<main id="main">`. |
-| `design/reports/` | 10 files: `README.md` (protocol), three `<page>.md` parity baselines, `audit.md` + four `*-audit.md`, and `llm.md`. |
+| `design/reports/` | 11 files: `README.md` (protocol), three `<page>.md` parity baselines, `audit.md` + four `*-audit.md`, **`deviations-sweep.md`** (D64) and `llm.md`. |
 | `.claude/rules/ui.md` | Taste dials + JSX non-negotiables. **Auto-loads on every `src/**/*.tsx` edit.** Nothing imports it; it loads by glob, and its length is paid on every UI edit. |
 | Stubs left | `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). `/wheels` and `/accessories` left this list on 2026-09-21 (D58). |
 
@@ -208,9 +208,10 @@ parked row.
 3. ~~**D58 follow-ups.**~~ **All ruled 2026-09-21 (D63)** — see root `llm.md` §7.21. The accessory
    imagery is real now; the seven D59 rulings stand; the accessory quantity control stays as drawn;
    brands keep text wordmarks rather than logos.
-4. **Finish the `DEVIATIONS.md` sweep.** The audit traced 18 of the then-43 rows; there are now **57**,
-   and the rest are untested, not certified clean (`design/reports/audit.md` §6). A session can do this
-   unprompted — it is measurement, not change.
+4. ~~**Finish the `DEVIATIONS.md` sweep.**~~ **Done 2026-09-21 (D64).** All 43 legacy rows traced:
+   **0 wrong, 3 stale (corrected in place), 1 measured.** `design/reports/deviations-sweep.md`.
+   Rows #44–#57 were verified as they were written. **The file is certified** — a future session can
+   cite a row without re-deriving it, which was not true before today.
 5. **Push.** `origin/main` is at `0a4a3aa`; the handoff commit on top of it is local only.
    Confirm with `git status -sb` — the owner may already have pushed it.
 6. Replace the **three** remaining stub routes when the client supplies copy — undesigned, so they need the owner before
@@ -308,6 +309,21 @@ derived from the wheel CSV — D9 still holds.
     citing files after any insertion, and prefer citing a utility by **name**.
 22. Building a result object keyed by element text **collides** when a responsive pair renders twice —
     the hidden copy silently overwrites the visible one and every reading reads zero. Key by index.
+
+**Added in session 6:**
+
+23. **`getBoundingClientRect()` returns all zeros in a hidden pane tab.** Not just the element you asked
+    for — every element on the page, while `document.body` still measures correctly and the page renders
+    fine in a screenshot. `document.visibilityState === "hidden"` is the tell. `tabs_select` the tab and
+    re-measure. This is the geometry sibling of §8.18: that one is about `:focus` needing document
+    focus, this one is about layout boxes needing the tab to be visible. A zeroed probe looks exactly
+    like a broken layout, so **check `visibilityState` before believing a zero.**
+24. **Compare like with like when a probe crosses an artboard/app boundary.** `DEVIATIONS.md` #30 claims
+    the mobile sort text lands ~2px left of the drawn cluster. Measuring the two *boxes* says 0px — they
+    are both x=199 w=175 — because the artboard centres text+chevron as one flex cluster while the app
+    centres text alone in a `pl-2 pr-9` content box. Ranging the artboard's **text node** (centre 274.5)
+    against the app's content-box centre (272.5) gives the real answer: exactly 2.0px, and the row is
+    right. The wrong comparison would have marked a correct row wrong.
 
 ---
 
