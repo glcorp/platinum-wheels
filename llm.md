@@ -259,13 +259,14 @@ machine-local paths added by D55).
    `settings.local.json` name stays gitignored for genuine per-machine overrides.
 9. ~~**"Mobile call bar."**~~ Closed 2026-09-21 by D47(1): the `/results` `call-cta-panel` is a results
    section. No sticky site-wide call bar exists or is drawn.
-10. **13 hand-rolled class-merge helpers**, none shared — count verified by the D56 audit and corrected
-   upward: **10 × `cx()` in two signatures + 3 × `join()`**. Six `cx()` and all three `join()` are in
-   `src/components/ui/` (as this row originally said); the audit found **four more `cx()` copies outside
-   `ui/`** — `product-card`, `featured-carousel`, `quote-form`, `filter-panel`. Consolidate into
-   `src/lib/`? Not done; **no session may refactor it in passing.** Scope if ever approved: 10 files,
-   several carrying parity-measured class output, so no emitted class string may change.
-   (`design/reports/audit.md` §4 S2.) Owner.
+10. ~~**13 hand-rolled class-merge helpers**, none shared.~~ **Closed 2026-09-21 by D63 (audit finding
+   S2)** — this item was simply never struck, and stood stale until 2026-09-22. All 13 consolidated into
+   `src/lib/cx.ts`, which keeps `cx` and `join` as separate functions because they are not
+   interchangeable; **zero local definitions remain** and 13 files import from `@/lib/cx` (verified by
+   grep, 2026-09-22). The standing "no session may refactor it in passing" prohibition is lifted by that
+   row. It was proven behaviour-preserving rather than assumed: every `class="…"` attribute on all six
+   rendered pages was extracted before and after and diffed, empty on all six, with the change isolated
+   by `git stash` so concurrent edits could not contaminate the comparison.
 11. **Street address.** `SITE` has city and province only; `docs/decisions.md` §6 wants a static map plus
    "Get directions". Address is not in the canonical contact block. Client, via owner.
 12. **PARKED (D54).** Lighthouse runs on all three pages (Chrome at `/Applications`, recipe in
