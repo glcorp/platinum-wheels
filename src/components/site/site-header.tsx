@@ -141,11 +141,17 @@ export function SiteHeader({
 
           {/* Mobile-only 44x44 circular accent call button — home-mobile.html:84-86.
               rounded-full is drawn (border-radius:50%, design/inventory/home.md:589)
-              and is the whitelisted exception to "nothing is a pill". */}
+              and is the whitelisted exception to "nothing is a pill".
+              `hover:bg-accent-hover` added 2026-09-22 (D66): the button was
+              `bg-accent` in every state, the only accent CTA in the build with
+              no hover. `--accent-hover` is the existing "CTA hover fill
+              (instant)" token (globals.css:43) and is exactly what the primary
+              Button uses (button.tsx:131). Tailwind v4 compiles `hover:` to
+              `@media (hover: hover)` itself (D17), so no hand-rolled query. */}
           <a
             href={`tel:${PRIMARY_CONTACT.tel}`}
             aria-label="Call now"
-            className="bg-accent text-on-accent inline-flex size-11 touch-manipulation items-center justify-center rounded-full sm:hidden"
+            className="bg-accent hover:bg-accent-hover text-on-accent inline-flex size-11 touch-manipulation items-center justify-center rounded-full sm:hidden"
           >
             <svg
               width="18"

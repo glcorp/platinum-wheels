@@ -20,13 +20,22 @@
  *   the "models" are its cab/payload series: 1500, 2500, 3500.
  */
 
-/** Current year down to eleven years back — computed, never hard-coded (D32 precedent). */
-const CURRENT_YEAR = new Date().getFullYear();
-
-export const FINDER_YEARS: readonly number[] = Array.from(
-  { length: 12 },
-  (_, index) => CURRENT_YEAR - index,
-);
+/**
+ * Current year down to eleven years back — **computed at render** (D32), which
+ * is why this is a function and not a constant.
+ *
+ * It used to be `const CURRENT_YEAR = new Date().getFullYear()` at module
+ * scope with a list derived from it, so the list was frozen for the life of the
+ * server process and baked into every prerendered page: it went stale across a
+ * year boundary until a restart, and would have become a hydration mismatch the
+ * moment a `"use client"` file imported it. The comment cited D32 while
+ * defeating it. Called per render, the list is correct on every request.
+ * (D66, 2026-09-22.)
+ */
+export function finderYears(): readonly number[] {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: 12 }, (_, index) => currentYear - index);
+}
 
 export interface FinderMake {
   make: string;

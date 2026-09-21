@@ -2,7 +2,7 @@ import { FieldLabel } from "@/components/ui/field-label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/routes";
-import { FINDER_MAKES, FINDER_YEARS } from "@/features/finder/data";
+import { FINDER_MAKES, finderYears } from "@/features/finder/data";
 
 /**
  * The vehicle finder — Year / Make / Model native selects plus the primary
@@ -86,7 +86,10 @@ export function VehicleFinder({
             <option value="" disabled>
               Year
             </option>
-            {FINDER_YEARS.map((year) => (
+            {/* Called here, not read from a module constant: the year list is
+                computed at render (D32, D66) so it cannot go stale in a
+                long-lived server process or in a prerendered page. */}
+            {finderYears().map((year) => (
               <option key={year} value={year}>
                 {year}
               </option>

@@ -69,17 +69,17 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere to land.
   band and is **desktop-only**, as drawn.
 - **Quantity is a URL param** (D50). The cells are links that set `?qty=`; the panel stays a Server
   Component. `qty` never reaches the breadcrumb's `backHref`. The *selected* cell defaults per category
-  (D65) — only the default, never the four cells or their labels, which stay as drawn (D63).
-- **The quote form is `noValidate`, and that is load-bearing** (D65). With native constraint validation
-  on, the browser's own bubble fired first on the commonest failure — an empty `required` field — so the
-  Server Action never ran and **both already-applied D57 fixes were dead on that path**: the
-  `role="alert"` summary (C2) and focus-first-invalid (C3) were unreachable. `required` stays on the
-  fields for semantics and AT; `actions.ts` was always the real validator and owns the specific messages.
-  Removing `noValidate` silently disables C2 and C3 again.
-- **A `beforeunload` guard protects typed input** (D65). The quantity cells above the form are `?qty=`
-  links, so tapping one is a real navigation that emptied every field already typed. `onInput` arms a
-  `dirtyRef`; `success` disarms it so the confirmation never warns. The owner chose this over changing
-  D50's URL-param mechanism.
+  (D65) — only the default, never the four cells or their labels, which stay as drawn (D63). The
+  `How many?` span carries `id="qty-label"` and the cell grid is `role="group"
+  aria-labelledby="qty-label"` (**D66**); the four links read out as bare `1` / `2` / `4` / `Custom`
+  before, tied to nothing.
+- **The quote form is `noValidate`, and that is load-bearing** (D65). With native validation on, the
+  browser's own bubble fired first on an empty `required` field, so the Server Action never ran and
+  **both D57 fixes were dead on that path** — the `role="alert"` summary (C2) and focus-first-invalid
+  (C3). `required` stays for semantics; `actions.ts` is the real validator. Removing it disables both.
+- **A `beforeunload` guard protects typed input** (D65). The `?qty=` cells above the form are real
+  navigations that emptied every field already typed; `onInput` arms a `dirtyRef` and `success` disarms
+  it, so the confirmation never warns. The owner chose this over changing D50's mechanism.
 - **Spec table is derived, never typed** (D53) — the same principle as D42 on `/results`. Six rows from
   `Product` + `studdable`; if a value cannot be derived the row is dropped, not invented.
 - **The gallery is one image, no thumbnails** (D53). The desktop column's inert `gap:12px` is the slot

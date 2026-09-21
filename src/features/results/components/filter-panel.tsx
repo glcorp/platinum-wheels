@@ -182,6 +182,11 @@ function SizeField({
           name={name}
           data-probe={probe}
           defaultValue={value ?? ""}
+          /* State is the URL (D44). Without this, bfcache and session form
+             restoration can re-seat a value the query string does not hold, so
+             the control and the grid disagree after a Back. `vehicle-finder`
+             already does this. D66. */
+          autoComplete="off"
           className={[
             "h-11 w-full cursor-pointer appearance-none touch-manipulation",
             "border border-border-control bg-surface-2",
@@ -370,7 +375,11 @@ export function FilterPanel({
   onNavigate,
 }: FilterPanelProps) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  /* `isPending` was discarded, so a filter change had no busy affordance at
+     all while the server re-filtered — the grid simply sat still. Surfaced as
+     `aria-busy` on the form rather than a spinner: no motion, no new visual,
+     nothing the artboards do not draw. D66. */
+  const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const refocusRef = useRef<string | null>(null);
   const closeOnArrivalRef = useRef(false);
@@ -460,6 +469,7 @@ export function FilterPanel({
 
   return (
     <form
+      aria-busy={isPending}
       /* Re-mount on any URL change so the uncontrolled inputs re-read their
          defaults; see the file header for why that is safe for focus. */
       key={href}

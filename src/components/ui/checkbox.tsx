@@ -100,6 +100,13 @@ export function Checkbox({
                 : "peer block h-5 w-5 appearance-none rounded-ctl border border-ink-dim bg-transparent",
               // Checked: --text fill + --text border (results-desktop.html:141)
               "checked:border-ink checked:bg-ink",
+              // Hover: hairline --text-dim -> --text. D66: the box had rest,
+              // checked, focus and disabled recipes but no hover, so pointing at
+              // it changed nothing. Same value the checked row already uses, so
+              // a checked box hovers to the border it is already wearing.
+              // `enabled:` keeps it off a disabled control; Tailwind v4's
+              // `hover:` is already `@media (hover: hover)` (D17).
+              "enabled:hover:border-ink",
               // Focus ring: 2px accent, offset 0 (DESIGN.md §4, globals.css)
               "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0",
               // Disabled: --border hairline, the quiet edge from DESIGN.md §4's

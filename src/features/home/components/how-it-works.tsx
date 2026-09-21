@@ -90,7 +90,10 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="pt-14 px-4 sm:pt-20 sm:px-8 md:pt-30 md:px-12"
+      /* `scroll-mt-*`: `ROUTES.howItWorks` points the nav at this anchor, and
+         `scroll-margin-top` was set nowhere in the build, so following the link
+         landed the section flush at y=0 with no breathing room. D66. */
+      className="scroll-mt-14 sm:scroll-mt-20 pt-14 px-4 sm:pt-20 sm:px-8 md:pt-30 md:px-12"
     >
       <div className="flex flex-col gap-5 md:gap-10 lg:mx-auto lg:max-w-content">
         {/* Eyebrow only — no title on this section (home.md:215). */}

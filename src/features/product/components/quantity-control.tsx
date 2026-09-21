@@ -89,9 +89,19 @@ export function QuantityControl({
   return (
     <div className="flex flex-col gap-2.5 pt-2">
       <div className="flex items-baseline justify-between">
-        <span className="label text-ink text-12 tracking-12">How many?</span>
+        {/* `id` so the cells below can borrow this as their group name. The
+            four links read out as bare `1` / `2` / `4` / `Custom` otherwise,
+            with nothing tying them to the question they answer — the same
+            pattern `similar-products.tsx` already uses. D66. */}
+        <span id="qty-label" className="label text-ink text-12 tracking-12">
+          How many?
+        </span>
       </div>
-      <div className="qty-grid md:qty-grid-wide gap-2">
+      <div
+        role="group"
+        aria-labelledby="qty-label"
+        className="qty-grid md:qty-grid-wide gap-2"
+      >
         {QUANTITY_OPTIONS.map((option) => {
           const selected = option.value === quantity;
 

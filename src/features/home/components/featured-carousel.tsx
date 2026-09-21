@@ -191,9 +191,18 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
             Tablet: `sm:grid sm:grid-cols-3 sm:gap-4` (DESIGN.md §8 "3-up");
             the 4th card wraps to a second row, which reads fine here.
             Desktop: `md:grid-cols-4 md:gap-4 md:overflow-visible`. */}
+        {/* `tabIndex`/`role`/`aria-label`: below `sm:` this is a horizontal
+            scroll region, and Chrome will not focus a plain scrolling `<div>`,
+            so a keyboard user could not scroll it and AT announced four cards
+            in an unnamed container. The `Next` button is the tap alternative
+            the gesture rule wants, but not a way to reach the region itself.
+            The only paint this adds is the global focus ring. D66. */}
         <div
           ref={trackRef}
           data-probe="featured-track"
+          tabIndex={0}
+          role="group"
+          aria-label="Featured tires"
           className="hide-scrollbar flex gap-3 overflow-x-auto snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible md:grid-cols-4"
         >
           {products.map((product) => (

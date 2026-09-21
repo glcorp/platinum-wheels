@@ -40,10 +40,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   fitment is not a user filter. **Fitment is per category (D58):** tires borrow `width`/`profile`/`rim`,
   wheels borrow `bolt` only — a car determines its bolt pattern, not the rim size its owner wants — and
   accessories borrow nothing. It reads `productsIn(category)`, not `PRODUCTS`. **Brand matching is
-  case-insensitive since D65**, in `matchesBrands` *and* in `brandFacets`'s `selected` flag — they must
-  agree or the grid filters while the row stays unticked. D44 makes the URL shareable state, so
-  `?brand=zeta` is something a person types; exact matching returned 0 for it and 2 for `?brand=Zeta`.
-  Facet values still ship in the seed's own casing, so no rendered label changes.
+  case-insensitive since D65** — in `matchesBrands` *and* `brandFacets`'s `selected` flag, which must
+  agree or the grid filters while the row stays unticked. Facet values keep the seed's own casing.
 - [`components/results-toolbar.tsx`](components/results-toolbar.tsx) — `ResultsToolbar({ view })`, Server.
   Breadcrumb, then a `<details>` whose `<summary>` is the vehicle chip plus the `Change vehicle` /
   `Add vehicle` link (D45, D47(5)) opening a `<VehicleFinder variant="inline">` that submits to **this**
@@ -54,8 +52,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   "toolbar" | "bar", id })`: native `<select name="sort">`; on change `router.replace(resultsHref(withSort(…)))`.
   The `bar` variant prefixes each option with `Sort: ` (D47(4)). Since **D65** a `refocusRef` +
   `useEffect` re-focus the select **by `id`** after the `key={query.sort}` re-mount, which otherwise
-  dropped keyboard focus to `<body>` on every sort change — `filter-panel.tsx`'s pattern for its keyed
-  form. The `id` prop is load-bearing, not decorative.
+  dropped keyboard focus to `<body>` — so `id` is load-bearing, not decorative. **D65** adds
+  `aria-busy={isPending}` and `autoComplete="off"`, for the reasons under `filter-panel.tsx`.
 - [`components/filter-sort-bar.tsx`](components/filter-sort-bar.tsx) — `FilterSortBar({ view })`, Server.
   The mobile sticky bar (`top:68` / `sm:top-22`, `md:hidden`): `FilterSheet` + `SortSelect variant="bar"`.
 - [`components/filter-panel.tsx`](components/filter-panel.tsx) — `"use client"`. `FilterPanel({ view, variant:
@@ -67,6 +65,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   Brand `Checkbox variant="facet"` rows, Price = two `range-input`s over a track — navigating on native
   `change`, re-focusing the changed control after the URL re-renders. Exports `CLEAR_ALL_CLASS`.
   Nothing here is spelled in tire vocabulary; every label, param and option comes off `view.facets`.
+  Since **D66** `useTransition`'s `isPending` is kept rather than discarded and surfaced as `aria-busy`
+  on the form — a filter change had no busy affordance at all. It renders `aria-busy="false"` at rest
+  and was **not observed flipping to `true`**: the form is keyed on `href`, so the pending instance is
+  replaced on arrival. The size selects take `autoComplete="off"` — bfcache restoration must not seat a
+  value the query string does not hold (D44).
 - [`components/filter-rail.tsx`](components/filter-rail.tsx) — `FilterRail({ view })`, Server. `<aside
   aria-label="Filters">`, `hidden md:flex`, sticky `top:96`; the 32px group gap sits on the form.
 - [`components/filter-sheet.tsx`](components/filter-sheet.tsx) — `"use client"`. `FilterSheet({ view })`: the
@@ -88,13 +91,10 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 - **State is the URL.** No component holds filter state; islands call `router.replace(resultsHref(q))`
   with `scroll: false`. The server is the only place results are computed (D44, `docs/decisions.md` §4).
 - **Counts are computed from the seed, never typed** (D42). No artboard number ships as a count.
-- **The `Filters` title is a `<p>` in both the rail and the sheet** (D65). `results-page.tsx` renders the
-  rail before the grid, so an `<h2>` there opened the outline at level 2 and pushed the page `<h1>Best
-  matches</h1>` (`results-grid.tsx`) into second place on all three routes at ≥1100px. `<aside
-  aria-label="Filters">` / `<dialog aria-label="Filters">` already name the region, and the artboard's
-  own element is a `<span>` (`results-desktop.html`) — so `<p>` is **closer** to what is drawn. **Not a
-  deviation; no `design/DEVIATIONS.md` row.** Preflight zeroes both elements' margins and the probe
-  matches on every property (78.9×28 vs 79×28): no pixel moves.
+- **The `Filters` title is a `<p>` in both the rail and the sheet** (D65). An `<h2>` there opened the
+  outline at level 2 and pushed the page `<h1>Best matches</h1>` into second place at ≥1100px; `<aside
+  aria-label="Filters">` / `<dialog aria-label="Filters">` already name the region and the artboard's own
+  element is a `<span>`. **Not a deviation, no `DEVIATIONS.md` row** — measured 78.9×28 vs 79×28.
 - **No per-category fork.** A component here may branch on the *shape* of `view.facets` (is there a size
   group?) but must never branch on `view.query.category`. Anything that genuinely differs per category is
   data, and data belongs in `catalog/categories.ts`. The moment a `if (category === "wheels")` appears in

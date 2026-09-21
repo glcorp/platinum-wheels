@@ -53,7 +53,10 @@ function Chevron({ className }: { className: string }) {
 
 export function SortSelect({ query, variant, id }: SortSelectProps) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  /* `isPending` was discarded, so the sort control gave no feedback between
+     the change and the re-render. `aria-busy`, not a spinner: no motion, no
+     new visual. D66. */
+  const [isPending, startTransition] = useTransition();
 
   /* `key={query.sort}` below re-mounts the select once the server confirms the
      new sort, which drops keyboard focus to <body> — a keyboard user had to Tab
@@ -92,6 +95,10 @@ export function SortSelect({ query, variant, id }: SortSelectProps) {
         id={id}
         name="sort"
         aria-label="Sort"
+        aria-busy={isPending}
+        /* Same bfcache reasoning as the size selects: a restored value would
+           silently disagree with `?sort=`. D66. */
+        autoComplete="off"
         /* Uncontrolled + `key`: a controlled `value` would snap back to the old
            sort for as long as the transition is pending. `key` re-mounts the
            select once the server has confirmed the new sort. */

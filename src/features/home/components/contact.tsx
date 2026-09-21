@@ -49,7 +49,9 @@ export function Contact() {
     <section
       id="contact"
       data-probe="contact"
-      className="px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30 md:pb-30"
+      /* `scroll-mt-*`: `ROUTES.contact` points the nav at this anchor — see
+         how-it-works.tsx for why. D66. */
+      className="scroll-mt-14 sm:scroll-mt-20 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30 md:pb-30"
     >
       <div className="flex flex-col gap-6 sm:grid sm:grid-cols-20 sm:gap-x-8 sm:gap-y-6 md:contact-grid md:gap-y-4 lg:mx-auto lg:max-w-content">
         {/* A — eyebrow, h2, paragraph. `design/inventory/home.md:77,347`. */}

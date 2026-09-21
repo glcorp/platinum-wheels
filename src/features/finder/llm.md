@@ -22,8 +22,11 @@ Built at `page home`, 2026-09-20.
   home panel unchanged — the −72px mobile / −120px desktop hero overlap, side margins and container cap
   (`:34-38`); `inline` (D45) drops all three so the finder sits in flow inside the `/results` toolbar's
   `Change vehicle` disclosure (`:39-41`).
-- [`data.ts`](data.ts) — `FINDER_YEARS` (current year down 11) and `FINDER_MAKES` (15 makes, 3-5 models
-  each), the seed Year/Make/Model list (D27), flagged sample in its own header comment. Built from public
+- [`data.ts`](data.ts) — `finderYears()` (current year down 11, **computed on call** — **D66** replaced
+  the module-scope `CURRENT_YEAR` / `FINDER_YEARS` pair, which froze the list for the life of the server
+  process, baked it into every prerender, and would have become a hydration mismatch the moment a
+  `"use client"` file imported it; its own comment cited D32 while defeating it) and `FINDER_MAKES`
+  (15 makes, 3-5 models each), the seed Year/Make/Model list (D27), flagged sample in its header. Built from public
   manufacturer model pages checked 2026-09-20, not from the wheel CSV (D9).
   Also `FitmentSize`, `FITMENT` (`"<Make>|<Model>"` → one tire size **and one bolt pattern**, all 60 seed
   pairs, year ignored) and `findFitment(make, model)`: the **placeholder** vehicle → fitment map (D48(4)),
@@ -40,6 +43,8 @@ Built at `page home`, 2026-09-20.
 - No JavaScript required to submit: plain GET form to `ROUTES.results` with `year`, `make`, `model`
   query params. Progressive enhancement only, if ever.
 - `data.ts` is sample data until real fitment data exists; say so in its header comment.
+- **The year list is computed per render, never a module constant** — `finderYears()` is called in
+  `vehicle-finder.tsx`'s JSX, not read from a binding (D32, D66).
 - Measured values cite `design/inventory/home.md` §2.3 (lines 152–165).
 
 ## Decisions

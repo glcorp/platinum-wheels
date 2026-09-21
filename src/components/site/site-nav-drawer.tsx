@@ -117,9 +117,18 @@ export function SiteNavDrawer({
           </button>
         </div>
 
+        {/* `pb-safe` (globals.css), not `pb-4`: the drawer is full-bleed
+            `inset-0 h-dvh`, so the bottom `tel:` CTA sat 16px off the viewport
+            edge and fell under the home indicator on a notched phone
+            (docs/decisions.md §5 makes the inset a project rule; the filter
+            sheet already used this utility). D66, 2026-09-22. This moves the
+            base padding 16px → 20px, which needs no DEVIATIONS row: the drawer
+            is undrawn and its layout is the coordinator's call (D31). No left,
+            right or top inset — a landscape-notch utility does not exist and is
+            reserved for the owner. */}
         <nav
           aria-label="Primary"
-          className="flex flex-1 flex-col justify-between px-4 pb-4"
+          className="flex flex-1 flex-col justify-between px-4 pb-safe"
         >
           {/* Links: display 40px, stacked left, 16px gap — DESIGN.md §4 Nav (~line 192) */}
           <ul className="flex flex-col gap-4">

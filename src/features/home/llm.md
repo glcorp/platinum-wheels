@@ -15,6 +15,9 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
 - [`components/how-it-works.tsx`](components/how-it-works.tsx) — `HowItWorks`, `id="how-it-works"`. Four steps as data; eyebrow only, no h2. home.md §2.6.
 - [`components/featured-tires.tsx`](components/featured-tires.tsx) — `FeaturedTires`. Server shell: spacing, hands `FEATURED_PRODUCTS` to the island. home.md §2.7.
 - [`components/featured-carousel.tsx`](components/featured-carousel.tsx) — `FeaturedCarousel`, **the one `"use client"` file** (D30): heading row with prev/next, scroll-snap track, dot progress.
+  The track is `tabIndex={0} role="group" aria-label="Featured tires"` (**D66**): Chrome will not focus
+  a plain scrolling `<div>`, so below `sm:` a keyboard user could not scroll it and AT announced four
+  cards in an unnamed container. The only paint it adds is the global focus ring.
 - [`components/brand-strip.tsx`](components/brand-strip.tsx) — `BrandStrip`. `<ul aria-label="Brands">` banded row from `BRANDS`. home.md §2.8.
 - [`components/contact.tsx`](components/contact.tsx) — `Contact`, `id="contact"`. One DOM, four blocks placed by grid per width (D22). home.md §2.9.
 
@@ -28,7 +31,9 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
 - Every measured value cites `design/inventory/home.md:<line>` in a comment. Missing token → report,
   never invent (`.claude/rules/ui.md`).
 - Section anchors: `contact.tsx` renders `id="contact"`, `how-it-works.tsx` renders
-  `id="how-it-works"` — `ROUTES.contact` / `ROUTES.howItWorks` depend on them.
+  `id="how-it-works"` — `ROUTES.contact` / `ROUTES.howItWorks` depend on them. Both carry
+  `scroll-mt-14 sm:scroll-mt-20` (**D66**, measured 80px): `scroll-margin-top` was set nowhere in the
+  build, so following either link landed the section flush at y=0.
 
 ## Decisions
 | ID | Date | Decision | Why | Authority |
@@ -49,4 +54,6 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
 ## Open
 - Parity table: `design/reports/home.md`.
 - Finder `Model` select lists every make's models under `<optgroup>` (no JS); see `src/features/finder/llm.md`.
-- Mobile carousel shows the native scrollbar on platforms that draw one; no hide utility exists. Owner's call.
+- ~~Mobile carousel shows the native scrollbar; no hide utility exists.~~ **Closed 2026-09-21 by D57
+  (audit finding S1):** the shared `hide-scrollbar` utility (`globals.css`) is worn by both this track
+  and `similar-track`, which no longer hides its own.

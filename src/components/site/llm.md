@@ -17,7 +17,9 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   `{ variant: "over-hero" | "solid"; active?: "tires" | "wheels" | "accessories" | "contact" }`
   (`active` defaults `"tires"`). Renders `<header><nav aria-label="Primary">`: logo (`next/image`,
   no wordmark, D7), the four nav links (desktop, `md:flex`), the phone CTA (`ui/button.tsx`
-  `accent`/`compact`, D40, visible `sm:`), a 44×44 circular mobile call button, and the
+  `accent`/`compact`, D40, visible `sm:`), a 44×44 circular mobile call button (which carries
+  `hover:bg-accent-hover` since **D66** — it was `bg-accent` in every state, the only accent CTA in the
+  build with no hover fill, and `--accent-hover` is the token `Button` `primary` already uses), and the
   `SiteNavDrawer` trigger (`md:hidden`). Shared by `/`, `/results` and `/products/[slug]`
   (unbuilt routes may still import it per D26/D39). 88px bar from `sm:` / 68px below.
 - [`site-footer.tsx`](site-footer.tsx) — Server Component, named export `SiteFooter`, no props.
@@ -30,7 +32,11 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   (D31). The only client island in this folder. The `<dialog>` carries **`overscroll-contain`**
   (**D65**, 2026-09-22): `overscroll-behavior` was declared nowhere in the build, so scrolling past
   either end of the open drawer chained to the page behind it. The filter sheet took the same fix
-  through the `sheet-panel` utility (`src/app/llm.md` Rules).
+  through the `sheet-panel` utility (`src/app/llm.md` Rules). The `<nav>` closes on **`pb-safe`, not
+  `pb-4`** (**D66**, 2026-09-22): the drawer is `inset-0 h-dvh`, so the bottom `tel:` CTA sat 16px off
+  the viewport edge and fell under the home indicator on a notched phone. Base padding moves 16px →
+  20px and needs **no `design/DEVIATIONS.md` row** — the drawer is undrawn, so its layout is the
+  coordinator's call (D31).
 
 - [`page-stub.tsx`](page-stub.tsx) — `PageStub`, props `{ title; active?; children? }`. Solid header + one `h1` + one line + footer, behind every planned-but-undesigned route (D26, D39). Replace each stub with its designed page.
 - [`route-error.tsx`](route-error.tsx) — `"use client"`. `RouteError({ error, retry })`, the storefront's

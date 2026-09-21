@@ -87,6 +87,15 @@ export type ChipProps = Omit<ComponentPropsWithoutRef<"button">, "children"> & {
   /** Renders a trailing `×`. The whole chip is then the remove control, so it
    *  stays one `<button>` and the mark is decorative. */
   removable?: boolean;
+  /**
+   * The removable chip's action word, read before the value — "Remove
+   * 215/55R16". D66: the `×` is `aria-hidden` and nothing else named the
+   * action, so the button's whole accessible name was the facet value and a
+   * screen reader announced a size, not a control. Defaulted rather than
+   * required so every existing call site gains the name with no change, the
+   * same shape as `Price`'s `unit` (D58).
+   */
+  removeLabel?: string;
 };
 
 export function Chip({
@@ -94,6 +103,7 @@ export function Chip({
   selected = false,
   count,
   removable = false,
+  removeLabel = "Remove",
   className,
   type = "button",
   ...rest
@@ -109,6 +119,10 @@ export function Chip({
         className,
       )}
     >
+      {/* Named before the value so the button reads "Remove 215/55R16". It is
+          `sr-only` — absolutely positioned and clipped, so it is out of the
+          flex flow and contributes no gap: nothing on screen moves. */}
+      {removable && <span className="sr-only">{removeLabel}</span>}
       {children}
       {count !== undefined && (
         /* Facet count type, measured: `font:400 13px/1 var(--font-body);

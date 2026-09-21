@@ -28,9 +28,13 @@ One line each; measurements and per-variant tables live in each file's header co
   (`docs/decisions.md:118`). `facet` is the `/results` filter row: an 18px box
   (`results-desktop.html:141` / `results-mobile-filters.html:80`) with the copy passed through untouched
   (`:138-140`), because a facet row is two spans with two type recipes and the row height and gap differ
-  between rail and sheet — they arrive on `labelClassName` (`:31-39`).
+  between rail and sheet — they arrive on `labelClassName` (`:31-39`). Hover is
+  `enabled:hover:border-ink` (**D66**): the box had rest, checked, focus and disabled recipes and none
+  for hover, and it reuses the checked row's own token, so only an unchecked box changes.
 - [`chip.tsx`](chip.tsx) — `Chip`, the filter chip and the one control in the system that is **not**
-  uppercase. `ChipProps`: `children`, `selected?`, `count?: number`, `removable?`. The box and both
+  uppercase. `ChipProps`: `children`, `selected?`, `count?: number`, `removable?`, `removeLabel?`
+  (**D66**, default `"Remove"` — an `sr-only` span rendered *before* `children`, so a removable chip
+  announces "Remove 215/55R16" and not a bare facet value; the `×` stays `aria-hidden`). The box and both
   state recipes are exported as `chipBox` (`:44`), `chipRestClass` (`:70`) and `chipSelectedClass`
   (`:73`) so a non-`<button>` can wear them. `ChipCheckbox` (`:161-184`) is that consumer: a `<label>`
   wrapping a native `sr-only` `<input type="checkbox">` (`:218-226`), with `size?: "touch" | "auto"`
@@ -40,7 +44,9 @@ One line each; measurements and per-variant tables live in each file's header co
   `FieldError` (`id` required), the label above a control and the helper line below it.
 - [`input.tsx`](input.tsx) — `Input`, `Textarea`, and the exported `fieldBoxClasses()` + `FieldDensity`
   that `Select` reuses so "same box as Input" is one string. `InputProps`: `id` (required), `density?`,
-  `invalid?`.
+  `invalid?`. `INPUT_TYPE_DEFAULTS` seeds `inputMode`, `autoComplete` and — since **D66** —
+  `spellCheck` per `type`, all applied *before* the `{...rest}` spread so a caller still wins;
+  `email`/`tel`/`url` set `spellCheck: false`, the attribute's first use anywhere in the build.
 - [`price.tsx`](price.tsx) — `Price` and `formatPrice()`. `PriceProps`: `amount: number`,
   `currency: string`, `context?: "card" | "pdp"`, `unit?: string`, `unavailable?`. Takes a number, never
   a string. `unit` (**D58**) is the suffix copy — `/ tire`, `/ wheel`, `/ each`, `per tire · before tax`
@@ -105,8 +111,7 @@ disabled — come from `design/DESIGN.md` §4 under DEVIATIONS #9, because the e
   (`Checkbox variant="facet"`, `ChipCheckbox`, `Select`, `Button size="load"`); and
   `src/features/product/components/*` — `Badge`, `Price context="pdp"`, `Button size="panel"`,
   `Input`/`Textarea`/`Select`, `FieldLabel`/`FieldError`, `Checkbox variant="consent"`. The PDP needed
-  **no new primitive and no new variant**: `Price context="pdp"` and `Button size="panel"` were measured
-  from these artboards when the primitives were built, and both landed exact at 1440 and 390
+  **no new primitive and no new variant** — both its sizes were measured here first and landed exact
   (`design/reports/product.md`).
 
 ## Don't
@@ -124,14 +129,12 @@ disabled — come from `design/DESIGN.md` §4 under DEVIATIONS #9, because the e
 - **Don't demote a second accent** to satisfy the one-accent rule (`docs/decisions.md` §1.1, D5).
 
 ## Open
-1. **Six copies of `cx()` in two signatures, plus three copies of `join()` — in this folder.**
-   **Corrected by the D56 audit:** the build total is **13** helpers, because four more `cx()` copies
-   live outside `ui/` (`catalog/components/product-card`, `home/components/featured-carousel`,
-   `product/components/quote-form`, `results/components/filter-panel`). Canonical row: root `llm.md`
-   §7.10; measured scope in `design/reports/audit.md` §4 S2. Owner or the coordinating session (D25)
-   rules whether one helper moves to `src/lib/`; **nobody may refactor it in passing**, and any
-   consolidation must not change a single emitted class string — several of these files carry
-   parity-measured class output.
+1. ~~**Six copies of `cx()` in two signatures, plus three copies of `join()` — in this folder.**~~
+   **Closed 2026-09-21 by D63 (audit finding S2):** all 13 helpers consolidated into `src/lib/cx.ts`,
+   which keeps `cx` and `join` as separate functions because they are not interchangeable. The standing
+   "nobody may refactor it in passing" prohibition in root `llm.md` §7.10 is lifted by that row. It was
+   proven behaviour-preserving rather than assumed: every `class="…"` attribute on all six rendered
+   pages was extracted before and after and diffed, empty on all six.
 2. ~~**`chip.tsx` contradicts itself.**~~ **Deleted 2026-09-21 (D61, audit finding S4): re-read and the
    contradiction is genuinely gone.** The radius paragraph now argues one thing only — the exports
    declare no `border-radius` on any chip while the Sort select and the tire-size `Apply` button beside

@@ -94,6 +94,9 @@ export function fieldBoxClasses({
 type InputTypeDefaults = {
   inputMode?: ComponentPropsWithRef<"input">["inputMode"];
   autoComplete?: ComponentPropsWithRef<"input">["autoComplete"];
+  /** D66: nothing in the build set `spellCheck`, so the UA spellchecker was
+   *  red-underlining every address, number and URL typed into these fields. */
+  spellCheck?: ComponentPropsWithRef<"input">["spellCheck"];
 };
 
 /**
@@ -103,9 +106,9 @@ type InputTypeDefaults = {
  * `autoComplete="name"` from the caller.
  */
 const INPUT_TYPE_DEFAULTS: Partial<Record<string, InputTypeDefaults>> = {
-  email: { inputMode: "email", autoComplete: "email" },
-  tel: { inputMode: "tel", autoComplete: "tel" },
-  url: { inputMode: "url", autoComplete: "url" },
+  email: { inputMode: "email", autoComplete: "email", spellCheck: false },
+  tel: { inputMode: "tel", autoComplete: "tel", spellCheck: false },
+  url: { inputMode: "url", autoComplete: "url", spellCheck: false },
   search: { inputMode: "search" },
   number: { inputMode: "numeric" },
 };
@@ -139,6 +142,7 @@ export function Input({
       aria-invalid={invalid ? true : undefined}
       inputMode={typeDefaults.inputMode}
       autoComplete={typeDefaults.autoComplete}
+      spellCheck={typeDefaults.spellCheck}
       {...rest}
     />
   );
