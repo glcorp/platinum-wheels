@@ -117,12 +117,19 @@ disabled — come from `design/DESIGN.md` §4 under DEVIATIONS #9, because the e
 - **Don't demote a second accent** to satisfy the one-accent rule (`docs/decisions.md` §1.1, D5).
 
 ## Open
-1. **Six copies of `cx()` in two signatures, plus a third `join()` helper.** Canonical row: root
-   `llm.md` §7.10. Owner or the coordinating session (D25) rules whether one helper moves to
-   `src/lib/`; nobody may refactor it in passing.
+1. **Six copies of `cx()` in two signatures, plus three copies of `join()` — in this folder.**
+   **Corrected by the D56 audit:** the build total is **13** helpers, because four more `cx()` copies
+   live outside `ui/` (`catalog/components/product-card`, `home/components/featured-carousel`,
+   `product/components/quote-form`, `results/components/filter-panel`). Canonical row: root `llm.md`
+   §7.10; measured scope in `design/reports/audit.md` §4 S2. Owner or the coordinating session (D25)
+   rules whether one helper moves to `src/lib/`; **nobody may refactor it in passing**, and any
+   consolidation must not change a single emitted class string — several of these files carry
+   parity-measured class output.
 2. **`chip.tsx:30-43` contradicts itself.** The paragraph rules radius 0 because "Artboards win on a
    measured value", then a stranded fragment beginning mid-sentence ("and globals.css's rule that…")
    concludes the opposite, that this is "the spec filling a silence". D12 settles the outcome; the
-   comment needs the dead half deleted. Whoever next edits the file.
+   comment needs the dead half deleted. Whoever next edits the file. **The D56 audit (finding S4) reports
+   this contradiction is no longer present in the current `chip.tsx`** — re-read before acting, and if it
+   is genuinely gone, delete this item. Not verified by the coordinator.
 3. **Stale line citations in header comments** — see the discrepancy list; they need re-pointing, and
    nothing enforces it but root `llm.md` §1.2.

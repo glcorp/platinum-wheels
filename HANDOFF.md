@@ -1,24 +1,26 @@
 # Platinum Wheels — session handoff
 
-**Last updated 2026-09-21 (session 5).** All three designed routes are built — `/`, `/results`,
-`/products/[slug]` — each with a measured parity report. Scope is **UI only** (D54). The
-`/design-to-code audit` pass is **done** (D56, `design/reports/audit.md`), and **six of its findings are
-applied and verified** (D57): the five accessibility defects C1–C5 plus S1. Four items (S2–S5) and the
-four taste items remain unauthorised. Next is the last undrawn states (loading, error).
+**Last updated 2026-09-21 (session 5).** All three designed routes are built and audited. The
+`/design-to-code audit` pass is **done** (D56) and **six of its findings are applied and verified**
+(D57). Scope is **UI only** (D54). **Next: the two remaining undrawn states, `loading` and route
+`error`** — nothing else is owed before them. Start at §6.
 
-**How to use this file.** It is the single current record of how to work in this repo. It replaced the old
-frozen `Part A` / `Part B` split on 2026-09-21 (**D55**), because the split pinned Part A to exactly 135
-lines so that line-number citations into Part B would not move — and those citations had drifted and broken
-anyway. **Cite this file by section (`HANDOFF.md §7`), never by line number.** Sections are stable; line
-numbers are not.
+**How to use this file.** It is the single current record of how to work in this repo. **Cite it by
+section (`HANDOFF.md §7`), never by line number** — sections are stable, line numbers are not (D55).
 
-It is not a log (root `llm.md` §1.7). It records what is true now. The decision register lives in root
-`llm.md` §5b (**D23–D56**); §11 below holds the frozen canonical text of **D1–D22** and is never edited.
+It is **not a log** (root `llm.md` §1.7). It records what is true now; finished work is deleted from
+§6 rather than struck through. The decision register lives in root `llm.md` §5b (**D23–D57**); §11 below
+holds the frozen canonical text of **D1–D22** and is **never edited**, and §10 and §12 are likewise
+archive — edit §1–§9 freely and leave §10–§12 alone.
 
-**Git (D55, superseding D3).** The tree is a git repository: branch `main`, initial commit `60fa3e8`
-(251 files), tracking `origin/main` at `github.com/glcorp/platinum-wheels` (private). Everything before
-that commit has no history, so for the three built pages `design/reports/` and `design/DEVIATIONS.md`
-remain the only record of how they got there. §11's D3 row keeps its original text and is never edited.
+**Git (D55, superseding D3).** Branch `main`, tracking `origin/main` at
+`github.com/glcorp/platinum-wheels` (private). Three commits: `60fa3e8` initial (251 files, made by the
+owner mid-session-5), `0a4a3aa` the audit + D57 fixes, and the session-5 handoff commit on top of it.
+`origin/main` is at `0a4a3aa`, so **the handoff commit is the only one unpushed** — a commit cannot cite
+its own hash, so it is named here by description. This repo is main-only with no PR workflow; commits go
+straight to `main`, and the owner pushes.
+Everything before `60fa3e8` has no history, so for the three built pages `design/reports/` and
+`design/DEVIATIONS.md` remain the only record of how they got there.
 
 ---
 
@@ -27,8 +29,7 @@ remain the only record of how they got there. §11's D3 row keeps its original t
 ```bash
 cd /Users/raghavvirmani/platinum-wheels
 npm run check          # tsc + eslint — must exit 0 before touching anything
-npm run dev            # app on :3000 (preview_start name=app; it carries "autoPort",
-                       # so a second session gets a free port instead of colliding)
+npm run dev            # app on :3000 (preview_start name=app; "autoPort" frees a colliding port)
 npm run design         # artboard baseline on :4000 (design/serve.json rewrites, D36)
 ```
 
@@ -36,48 +37,60 @@ Pages worth opening: `/`, `/results?year=2021&make=Honda&model=Civic`,
 `/products/zeta-antarctica-sport?year=2021&make=Honda&model=Civic&qty=4`, `/styleguide`.
 
 Baseline artboard URLs are **extensionless** (`npx serve` strips `.html`):
-`http://localhost:4000/product-desktop`, `/product-mobile`, `/home-desktop`, `/results-mobile-filters`.
+`http://localhost:4000/home-desktop`, `/product-mobile`, `/results-mobile-filters`.
 
 Parity is measured with `scripts/parity-probe.js` against that `:4000` baseline — never by eye, never by
 reading source. After any `globals.css` edit: `rm -rf .next`, `npx next typegen`, restart `next dev`.
 Lighthouse runs on the production build; recipe in `design/reports/README.md` (Chrome is at
 `/Applications`, not on `PATH`).
 
+**Open your own browser tab** (`tabs_create`) before driving the pane. A second Claude session can be
+sharing it and will navigate your tab out from under you mid-measurement — this happened repeatedly in
+session 5 and invalidated several readings before it was spotted (§8.17).
+
 ---
 
 ## §2. Read in this order
 
-1. **`llm.md` (root)** — §1 library rules, §4 authority chain, §5b register **D23–D56**, §6 folder map,
-   §7 open items.
+1. **`llm.md` (root)** — §1 library rules, §4 authority chain, §5b register **D23–D57**, §6 folder map,
+   §7 open items (20 of them; §7.17–§7.20 are the live audit questions).
 2. The `llm.md` of every folder you will touch. Rule §1.1: read before write. Rule §1.2: update it in the
    same change.
-3. **`design/manifest.md`** — artboards → routes → sections. This is the **build queue** that the
-   `/design-to-code page` and `section` modes consume.
-4. **`design/reports/{home,results,product}.md`** — the three parity baselines. `product.md` is the newest
-   and shows the shape to copy, including a *Behaviour verified* section.
-5. **`design/DEVIATIONS.md`** — **43 rows**. #1–#24 shared and home, #25–#35 `/results`, #36–#43 the PDP.
-   Check it before "fixing" anything that looks off-spec: nearly all of it is deliberate and sourced.
-6. `design/inventory/{home,results,product}.md` — the measured baseline, only if you are re-measuring.
+3. **`design/manifest.md`** — artboards → routes → sections. The build queue for `page` and `section`.
+4. **`design/reports/audit.md`** — the consolidated audit: the measured gate table, a **checked and
+   cleared** list of things that look like defects and are not, the fix list with what is applied vs
+   still open, and the pass's coverage limits. Read this before "fixing" anything.
+5. **`design/reports/{home,results,product}.md`** — the three parity baselines. `product.md` shows the
+   shape to copy, including a *Behaviour verified* section.
+6. **`design/DEVIATIONS.md`** — **48 rows**. #1–#24 shared and home, #25–#35 `/results`, #36–#43 the PDP,
+   #44–#48 the D57 accessibility fixes. Nearly all of it is deliberate and sourced.
+7. `design/inventory/{home,results,product}.md` — the measured baseline, only if re-measuring.
 
 ---
 
-## §3. How the owner runs sessions (D23–D25, D48, D54)
+## §3. How the owner runs sessions (D23–D25, D48, D54, D56)
 
 - The main session is the **coordinator**: it grounds, plans, writes the contract and the agent briefs,
-  measures parity in the browser, and merges the docs. Implementation is delegated to sub-agents. **The
-  model is the owner's call each session** — Opus for `page results`, Sonnet for `page product`. Ask if
-  unstated.
+  **measures everything in the browser**, and merges the docs. Implementation is delegated to sub-agents.
+  **The model is the owner's call each session** — Opus for `page results`, Sonnet for `page product` and
+  for both session-5 passes. Ask if unstated.
 - **Ask, don't assume — but batch.** One `AskUserQuestion` with ≤4 genuine blockers, recommended option
-  first. The owner has taken the recommendation every time so far, and rules data gaps as "use placeholder
-  data" (D48). Rulings made without asking are labelled *derived* and are vetoable.
-- **The pattern that works:** the coordinator writes the register rows, the folder `llm.md` and a
-  `types.ts` contract **before** any agent starts; agents then work on strictly disjoint files. The
-  coordinator is the single writer for `globals.css`, every `page.tsx` and every `llm.md`.
-- **Agent output is a claim, not a fact.** Verify in the browser. Across this project several agent
-  findings were wrong or had to be overridden — and in session 4 three *coordinator* probe selectors also
-  grabbed the wrong element and nearly produced "fixes" to correct code. Measure the element you named.
+  first. The owner has taken the recommendation nearly every time, and rules data gaps as "use
+  placeholder data" (D48). Rulings made without asking are labelled *derived* and are vetoable.
+- **Report before you change.** Session 5's ruling: audit first, present the findings, and apply only
+  what the owner names item by item. Do not bundle "while I was in there" fixes into an approved one.
+- **The pattern that works:** the coordinator writes the register rows, the folder `llm.md` and any
+  contract **before** any agent starts; agents then work on **strictly disjoint files**. The coordinator
+  is the single writer for `globals.css`, every `page.tsx` and every `llm.md`. When a fix needs a new
+  utility, the coordinator writes the utility first and names it in the agent brief.
+- **Forbid the browser in agent briefs.** There is one shared pane; concurrent agents driving it collide.
+  Agents do static analysis, the coordinator measures.
+- **Agent output is a claim, not a fact.** Verify it. Several agent findings across this project were
+  wrong, and *coordinator* probes have grabbed the wrong element more than once — in session 5 a probe's
+  result keys collided so hidden duplicates masked the visible elements, and a "no commit" finding went
+  stale mid-session. Measure the element you named, then re-check before writing it down.
 - Sub-agents can die on a session rate limit **after** writing their files. Check the disk before
-  relaunching; both PDP agents had finished writing and only lost their verify step.
+  relaunching.
 - Replies short. This library is the shared memory with the co-founder.
 
 ---
@@ -86,74 +99,86 @@ Lighthouse runs on the production build; recipe in `design/reports/README.md` (C
 
 | Area | State |
 |---|---|
-| Library | 26 `llm.md` files. Root = register (D1–D55) + template + folder map. |
+| Library | 26 `llm.md` files. Root = register (D1–D57) + template + folder map + 20 open items. |
 | `/` | `SiteHeader over-hero`, 8 home sections, `SiteFooter` (D38). Parity `design/reports/home.md`. |
 | `/results` | URL-driven search over the seed (D44): `ResultsToolbar`, `FilterSortBar`, `md:results-grid` (rail + grid), `CallCtaPanel`. Parity `design/reports/results.md`. |
 | `/products/[slug]` | `productView(product, searchParams)` → one `ProductView`; breadcrumb, `pdp-split` gallery + sticky buy panel, specs, quote band, similar row. Parity `design/reports/product.md`. |
-| `src/features/product/` | `types.ts` (contract), `view.ts` (all derivation), `actions.ts` (`"use server"`), 9 components; one island `quote-form.tsx`. D50–D53. |
+| `src/features/product/` | `types.ts`, `view.ts` (all derivation), `actions.ts` (`"use server"`), **10** components; one island `quote-form.tsx`. Two authored states in their own modules so `/styleguide` renders the real thing: `quote-success.tsx` (D51) and `quote-error-summary.tsx` (D57). |
 | `src/features/results/` | `types.ts`, `query.ts`, `search.ts`, 8 components; islands `sort-select`, `filter-panel`, `filter-sheet`. D42–D49. |
 | Finder | `src/features/finder/` — native selects, GET to `/results` (D27/D28); `variant="inline"` for `Change vehicle` (D45); **placeholder `FITMENT` map** (D48). |
 | Catalog | `FEATURED_PRODUCTS` (4) and `PRODUCTS` (9 SKUs, one unavailable, D43); optional `Product.image` and `studdable` (D53). `ProductCard` is the most reused component in the build. |
-| Chrome | `site-header`, `site-nav-drawer`, `site-footer` (no social row, D34), `page-stub`. |
-| Primitives | **Ten**, hand-built and token-only in `src/components/ui/` — button, badge, chip, checkbox, field-label, input, price, section-heading, select, stripe-divider. Every variant and state is on `/styleguide`. The PDP needed no new primitive and no new variant. |
-| `globals.css` | 711 ln: tokens, role utilities, and the home / results / product layout utilities, plus the three D57 accessibility utilities (`tap-extend-lg`, `hide-scrollbar`, `skip-link`). **Single writer: the coordinator.** See §9. |
-| `.claude/rules/ui.md` | Taste dials + JSX non-negotiables. **Auto-loads on every `src/**/*.tsx` edit** — so it governs `src/components/ui/`, `src/components/site/`, `src/features/*/components/` and the route files under `src/app/(storefront)/`. Nothing imports it; it loads by glob, and its length is paid on every UI edit. |
+| Chrome | `site-header`, `site-nav-drawer`, `site-footer` (no social row, D34), `page-stub`. Skip link in `layout.tsx` (D57). |
+| Primitives | **Ten**, hand-built and token-only in `src/components/ui/`. Every variant and state is on `/styleguide`. Neither the PDP nor D57 needed a new primitive. |
+| `globals.css` | **715 ln**: tokens, role utilities, the home/results/product layout utilities, and the three D57 accessibility utilities (`tap-extend-lg`, `hide-scrollbar`, `skip-link`). **Single writer: the coordinator.** See §9. |
+| `/styleguide` | §11 carries the undrawn states: empty results, open `Change vehicle`, quote-form **success** and **error**, and the **skip link** (Tab into its demo box to reveal it). |
+| `design/reports/` | 10 files: `README.md` (protocol), three `<page>.md` parity baselines, `audit.md` + four `*-audit.md`, and `llm.md`. |
+| `.claude/rules/ui.md` | Taste dials + JSX non-negotiables. **Auto-loads on every `src/**/*.tsx` edit.** Nothing imports it; it loads by glob, and its length is paid on every UI edit. |
 | Stubs left | `/wheels`, `/accessories`, `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). |
 
 ---
 
 ## §5. Verification state
 
+Everything below was measured, not asserted. Re-verified after D57.
+
 - `npm run check` clean; `npx next build` clean; slop grep **zero**.
-- **Six** `"use client"` files and **one** `"use server"`; none under `src/app/`. Re-counted after D57 —
-  the accessibility fixes added no client boundary.
-- Parity: every row on all three pages is exact at 1440 and 390, or linked to a `DEVIATIONS.md` row.
-  No horizontal overflow 375–1440 on any page.
-- `/results`: Esc, backdrop, focus return and scroll lock verified; sort and filter rewrite the URL with
-  focus kept.
-- `/products/[slug]`: `?qty=` round-trips into the quote form; invalid submit keeps typed values and sets
-  `aria-invalid`; the success panel takes focus; the unavailable SKU returns 200.
-- Lighthouse (mobile, production build): PDP perf 93/95, `/results` 93–97, `/` 91. **a11y 100 and CLS 0 on
-  all three.** The 2.5 s LCP row is red everywhere (3.0–3.5 s) — one build-wide cause, parked (D54).
-
-**Re-measured by the D56 audit, 2026-09-21** (`design/reports/audit.md` §2):
-
-- No horizontal overflow at 375/768/1280/1440 on `/`, `/results`, `/products/[slug]` *or* `/styleguide` —
-  13 measurements, `scrollWidth === clientWidth` every time.
-- Both `<dialog>`s measured `:modal`, lock `body`, close on Esc and return focus to their trigger. The
-  nav drawer's `aria-expanded` round-trips. Focus ring is `2px solid rgb(201,242,58)` at offset 0 (D16).
-- `/results` renders the filter form twice: across 41 ids there are **zero** duplicate ids, zero orphan
-  `label[for]` and zero orphan `aria-describedby`. The `idPrefix` namespacing works.
-- D44's no-JS path is real: three `<form method="get" action="/results">` with `Apply` submits and the
-  vehicle preserved in hidden inputs. **`sort` is the one exception** (Open §7, root `llm.md` §7.20).
-- No parity drift: home `h1` at 1440 is identical to the `:4000` baseline on all seven properties.
-- **`a11y 100` from Lighthouse did not catch any of the five accessibility defects C1–C5.** Its `bypass`
-  audit is satisfied by a `<main>` landmark alone, so a missing skip link scores clean. **Do not treat
-  that number as evidence of accessibility.**
+- **Six** `"use client"` files and **one** `"use server"`; none under `src/app/`. D57 added no client
+  boundary. Count with `rg -l '^"use client"' src/ --glob '*.tsx' --glob '*.ts'` — an **unglobbed** `rg -l`
+  also matches the `llm.md` files that merely *mention* the directive, and reports 19.
+- **Parity: no drift.** Every row on all three pages is exact at 1440 and 390 or linked to a
+  `DEVIATIONS.md` row; home `h1` at 1440 re-measured identical to the `:4000` baseline on all seven
+  properties after the `globals.css` changes.
+- **No horizontal overflow** at 375/768/1280/1440 on `/`, `/results`, `/products/[slug]` *or*
+  `/styleguide`.
+- **Dialogs:** both the filter sheet and the nav drawer are `:modal`, lock `body` scroll, close on Esc
+  and return focus to their trigger; the drawer's `aria-expanded` round-trips. Focus ring is
+  `2px solid rgb(201,242,58)` at offset 0 (D16).
+- **`/results`:** the filter form renders twice (rail + sheet) with **zero** duplicate ids, zero orphan
+  `label[for]`, zero orphan `aria-describedby` — the `idPrefix` namespacing works. Counts read
+  `4 matches · 5 similar` with the sheet's `Show 9 matches`, exactly D49.
+- **D44's no-JS path is real:** three `<form method="get" action="/results">` with `Apply` submits and
+  the vehicle preserved in hidden inputs. **`sort` is the one exception, ruled deliberate by D57.**
+- **PDP:** `?qty=` round-trips into the quote form and `aria-current` marks the selected cell; an invalid
+  submit keeps typed values, sets `aria-invalid`, announces via `role="alert"` and focuses the **first
+  invalid** field; the success panel replaces the form and takes focus; the unavailable SKU returns 200.
+- **Skip link:** one Tab from a fresh load lands on it, it reveals, and Enter moves focus into
+  `<main id="main">`. Breadcrumb tap targets hit-test **45px** against the 44px floor.
+- Lighthouse (mobile, production build): PDP perf 93/95, `/results` 93–97, `/` 91. a11y 100 and CLS 0 on
+  all three. The 2.5 s LCP row is red everywhere (3.0–3.5 s) — one build-wide cause, parked (D54).
+  **Lighthouse a11y 100 did not catch any of C1–C5.** Its `bypass` audit is satisfied by a `<main>`
+  landmark alone, so a site with no skip link scores clean. **Never treat that number as evidence of
+  accessibility.**
 
 ---
 
 ## §6. Next steps, in order
 
-**Scope is UI only (D54).** Owner, 2026-09-21: *"we are just building ui so park these"*. Three items are
-**parked, not owed** — see §7. Do not reopen one as a blocker and do not quietly implement it. A page is
-done when the `docs/decisions.md` §9 gates are green *except* a parked row.
+**Scope is UI only (D54).** Three items are **parked, not owed** — see §7. Do not reopen one as a blocker
+and do not quietly implement it. A page is done when the `docs/decisions.md` §9 gates are green *except* a
+parked row.
 
-1. ~~**`/design-to-code audit`** across the three built pages.~~ **Done 2026-09-21 (D56)** —
-   `design/reports/audit.md` plus four per-scope `*-audit.md` files. Report-only: **no file under `src/`
-   was modified**, and nothing on the fix list may be applied until the owner names it.
-2. ~~**Work the audit fix list**, once approved.~~ **Six applied 2026-09-21 (D57)** — C1–C5 and S1, each
-   verified in the browser, with `DEVIATIONS.md` #41 corrected and #44–#48 added. **Still unauthorised:**
-   S2 (the 13 class-merge helpers — reserved to the owner, root `llm.md` §7.10), S3 (missing DEVIATIONS
-   row for the solid-header background), S4 (three stale comments), S5 (the dead `--container-rail`
-   token), and T1–T4. Do not apply any of them without the owner naming it.
-3. Remaining undrawn states: **loading** and **route error** (no `loading.tsx` or `error.tsx` exists
-   anywhere in `src/app/`). `/styleguide` §11 carries empty results, the open `Change vehicle`
-   disclosure, the quote-form success panel, and — added by D57 — the quote-form **error** summary and
-   the **skip link**. Anything authored for an undrawn state lands there in the same change
-   (`.claude/rules/ui.md` "States the design doesn't show").
-4. Replace the five stub routes when the client supplies copy — they are undesigned, so they need the
-   owner before they need a session.
+1. **Author the two remaining undrawn states: `loading` and route `error`.** No `loading.tsx` or
+   `error.tsx` exists anywhere in `src/app/` — verified. Build them from existing tokens and primitives
+   at the same finish as the happy path, and **add both to `/styleguide` §11 in the same change**
+   (`.claude/rules/ui.md` "States the design doesn't show"; the D57 additions are the pattern to copy).
+   **`error.tsx` must be a Client Component** — verified in this version's own docs, not assumed:
+   `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md:21` reads
+   *"Error boundaries must be Client Components"*. It would therefore be the **seventh** `"use client"`
+   file and the **first under `src/app/`**, which `.claude/rules/ui.md` ("never inside `src/app/`") and
+   the slop grep both forbid. **Raise this with the owner before writing it** — it breaks a stated
+   invariant, and the grep in §7 of the skill treats a client directive under `src/app/` as a failure.
+   `loading.tsx` has no such constraint. Related newer API in this canary worth reading first:
+   `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/catchError.md`.
+2. **The unapplied audit items, only if the owner names one.** From `design/reports/audit.md` §4:
+   **S2** the 13 class-merge helpers (reserved to the owner, root `llm.md` §7.10), **S3** the missing
+   DEVIATIONS row for the solid-header background, **S4** three stale in-repo comments, **S5** the dead
+   `--container-rail` token, and taste items **T1–T4**.
+3. **Finish the `DEVIATIONS.md` sweep.** The audit traced 18 of the then-43 rows; the rest are untested,
+   not certified clean (`design/reports/audit.md` §6).
+4. **Push.** `origin/main` is at `0a4a3aa`; the handoff commit on top of it is local only.
+   Confirm with `git status -sb` — the owner may already have pushed it.
+5. Replace the five stub routes when the client supplies copy — undesigned, so they need the owner before
+   they need a session.
 
 ---
 
@@ -161,16 +186,24 @@ done when the `docs/decisions.md` §9 gates are green *except* a parked row.
 
 **Parked by D54 — recorded, not owed, not blockers:**
 
-1. **The quote form has no destination.** `src/features/product/actions.ts` validates and returns success,
-   then discards the inquiry; delivery is a marked `TODO`. The UI half is complete and measured. Must be
-   wired before the site is public, but that needs a backend. (root `llm.md` §7.15)
+1. **The quote form has no destination.** `actions.ts` validates and returns success, then discards the
+   inquiry; delivery is a marked `TODO`. The UI half is complete and measured. (root `llm.md` §7.15)
 2. **No unavailable state on the PDP.** No artboard draws one, so none was authored. (§7.16)
 3. **The LCP gate**, 3.0–3.5 s against 2.5 s on all three routes, one build-wide cause. (§7.12)
 
-**Awaiting an owner decision, from the D56 audit (root `llm.md` §7.17–§7.20):** the 10-item fix list,
-item by item · whether `sort` must work without JS · the home carousel's scrollbar · whether a live region
-is wanted · the category-tile imagery · **two rows are both numbered `D55`**, which rule §1.5 forbids
-fixing unilaterally.
+**Awaiting an owner decision (root `llm.md` §7.17–§7.19):**
+
+- The **unapplied audit items** S2–S5 and T1–T4, item by item (§7.17).
+- **Two register rows are both numbered `D55`** — the git ruling and the `HANDOFF.md`-shape ruling. Rule
+  §1.5 forbids renumbering and D24 cites "D55" for the HANDOFF half, so this was deliberately **not**
+  fixed unilaterally (§7.18).
+- **Category-tile imagery**: both home artboards use product cut-outs where `tires-tile.png` /
+  `wheels-tile.png` exist unused on disk. The code correctly matches the artboard; the owner decides
+  whether the artboard is right (§7.19).
+
+**Settled in session 5, do not reopen:** whether `sort` needs a no-JS path (**no** — D57, a D44
+addendum) · the home carousel's scrollbar (**hidden**, shared `hide-scrollbar`, D57) · whether live
+regions are wanted (**yes** — D57, now on the results count and the quote form).
 
 **Live — full list in root `llm.md` §7:** any D24 default · social links · street address · brand stock
 confirmation · which contact receives call taps · **13** class-merge helpers, not six (§7.10, corrected by
@@ -207,8 +240,28 @@ are stocked.
 14. This is Next.js **16.4 canary** — breaking changes vs. training data. `AGENTS.md` requires reading
     `node_modules/next/dist/docs/` before using an API. `proxy.ts`, not `middleware.ts`.
 15. Package manager is **npm**. The skill's `pnpm check` means `npm run check` here.
-16. `launch.json` resolves correctly only when the session starts in this directory. An earlier failure
-    came from a session started in `/Users/raghavvirmani/code/platinum-wheels`, an unrelated project.
+16. `launch.json` resolves correctly only when the session starts in this directory.
+
+**Added in session 5 — all four cost a verification round:**
+
+17. **Another Claude session can share the browser pane** and will navigate your tab mid-measurement.
+    `tabs_create` your own tab first, and put `navigate → act → measure` in **one** `browser_batch` so no
+    other session can interleave. A viewport note reading "another Claude session set this" is the tell.
+18. **`:focus` only matches while the document itself has focus.** In a background tab
+    `document.activeElement === el` can be true while `el.matches(':focus')` is false, so a focus style
+    looks broken when it is fine. Front the tab and use a **real key press**; scripted `.focus()` also
+    fails to trigger `:focus-visible` at all, which is why `skip-link` reveals on `:focus`.
+19. **Sequential focus navigation has its own starting point.** `blur()` does not reset it, so a Tab
+    after a scripted `.focus()` lands on the *next* element, not the first. Reload before a tab-order
+    test.
+20. **Verify a token exists before using it.** `--font-body` does **not** exist here — the face token is
+    `--font-body-face`. An undefined `var()` in a new `@utility` fails silently to a browser default.
+    Read the computed value in the browser, per `design/reports/README.md` "Gotcha".
+21. **`globals.css` line numbers shift, and `llm.md` files cite them.** Inserting a utility moved every
+    citation in `src/app/llm.md` after it; they were repointed in the same change (rule §1.2). Check the
+    citing files after any insertion, and prefer citing a utility by **name**.
+22. Building a result object keyed by element text **collides** when a responsive pair renders twice —
+    the hidden copy silently overwrites the visible one and every reading reads zero. Key by index.
 
 ---
 
