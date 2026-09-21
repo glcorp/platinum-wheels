@@ -3,7 +3,7 @@
 ## Purpose
 The results engine and its sections — serving **three** routes since **D58** (2026-09-21): `/results`
 (tires), `/wheels` and `/accessories`. One composition, one set of components, one query/search pair;
-the only things that differ per category are the filter groups and the seed, and both are read from
+the only things that differ per category are the filter groups, the finder CTA and the seed, all read from
 `src/features/catalog/categories.ts`. The owner's instruction was *"keep them same as tires. only
 filters and skus change but everything else remains as it is"*, so there is deliberately **no** per-route
 fork anywhere in this folder.
@@ -37,16 +37,20 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   best/similar split runs against an internal `SizeFilter`: an explicit URL size wins, otherwise a vehicle
   borrows one from the placeholder `FITMENT` map in `src/features/finder/data.ts` (D48(4)) — `query` is
   never mutated, the size selects stay `Any` and `facets.activeGroups` is unchanged, because a derived
-  fitment is not a user filter. **Fitment is per category (D58):** tires borrow `width`/`profile`/`rim`,
-  wheels borrow `bolt` only — a car determines its bolt pattern, not the rim size its owner wants — and
-  accessories borrow nothing. It reads `productsIn(category)`, not `PRODUCTS`. **Brand matching is
-  case-insensitive since D65** — in `matchesBrands` *and* `brandFacets`'s `selected` flag, which must
-  agree or the grid filters while the row stays unticked. Facet values keep the seed's own casing.
+  fitment is not a user filter. **Fitment is per category (D58, D67):** tires borrow `width`/`profile`/
+  `rim`, wheels borrow `bolt` only — a car determines its bolt pattern, not the rim size its owner wants
+  — and accessories, which have no size group, narrow on the spec string instead via
+  `accessoryFitsVehicle()`: a stated thread pitch or TPMS frequency must equal the vehicle's, and a
+  product stating neither (centre caps) stays a best match. Both sides are normalised before comparing —
+  the map spells `12x1.5`, the card `12×1.5` (U+00D7) — because a silent non-match would leave every
+  accessory "best" and hide the whole feature. It reads `productsIn(category)`, not `PRODUCTS`.
+  **Brand matching is case-insensitive since D65** — in `matchesBrands` *and* in `brandFacets`'s
+  `selected` flag, which must agree or the grid filters while the row stays unticked. Facet values keep
+  the seed's own casing.
 - [`components/results-toolbar.tsx`](components/results-toolbar.tsx) — `ResultsToolbar({ view })`, Server.
   Breadcrumb, then a `<details>` whose `<summary>` is the vehicle chip plus the `Change vehicle` /
   `Add vehicle` link (D45, D47(5)) opening a `<VehicleFinder variant="inline">` that submits to **this**
-  category's route with its own CTA — and which does not render at all on `/accessories` (D59(2)),
-  the computed count
+  category's route with its own CTA — on **all three** routes since **D67** vetoed D59(2) — the count
   (`1 match` / `N matches` / `N matches · M similar`, D42) and the desktop `Sort` label + `SortSelect`.
 - [`components/sort-select.tsx`](components/sort-select.tsx) — `"use client"`. `SortSelect({ query, variant:
   "toolbar" | "bar", id })`: native `<select name="sort">`; on change `router.replace(resultsHref(withSort(…)))`.
@@ -65,11 +69,9 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   Brand `Checkbox variant="facet"` rows, Price = two `range-input`s over a track — navigating on native
   `change`, re-focusing the changed control after the URL re-renders. Exports `CLEAR_ALL_CLASS`.
   Nothing here is spelled in tire vocabulary; every label, param and option comes off `view.facets`.
-  Since **D66** `useTransition`'s `isPending` is kept rather than discarded and surfaced as `aria-busy`
-  on the form — a filter change had no busy affordance at all. It renders `aria-busy="false"` at rest
-  and was **not observed flipping to `true`**: the form is keyed on `href`, so the pending instance is
-  replaced on arrival. The size selects take `autoComplete="off"` — bfcache restoration must not seat a
-  value the query string does not hold (D44).
+  Since **D66** `isPending` surfaces as `aria-busy` on the form; it renders `false` at rest and was not
+  observed flipping to `true`, because the form is keyed on `href` and the pending instance is replaced
+  on arrival. Size selects take `autoComplete="off"`: bfcache must not seat a value the URL lacks (D44).
 - [`components/filter-rail.tsx`](components/filter-rail.tsx) — `FilterRail({ view })`, Server. `<aside
   aria-label="Filters">`, `hidden md:flex`, sticky `top:96`; the 32px group gap sits on the form.
 - [`components/filter-sheet.tsx`](components/filter-sheet.tsx) — `"use client"`. `FilterSheet({ view })`: the
@@ -139,23 +141,21 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 - Don't move `call-cta-panel` to `src/components/site/` (D47 closes root `llm.md` §7.9).
 - Don't import `search.ts` from a client file — it carries the seed. The same goes for `catalog/data.ts`;
   `catalog/categories.ts` is the client-safe half and is what `filter-panel.tsx` imports.
-- Don't branch a component on `view.query.category`. See the rule above — that is what
-  `catalog/categories.ts` is for.
+- Don't branch a component on `view.query.category`. That is what `catalog/categories.ts` is for — the
+  one `category === "accessories"` test in `search.ts` is server logic, not a component fork (D67).
 - Don't promote either `Filters` title back to an `<h2>`; it breaks the page's heading order (D65).
 - Don't put a fourth select in the size group. The artboard draws three tracks; wheel offset is a spec
   row for exactly this reason (owner, 2026-09-21).
 
 ## Open
-1. Vehicle params drive the best/similar split through the **placeholder** `FITMENT` map (D48(4)); real
-   year-specific fitment data is still owed by the client (root `llm.md` §7.13).
-2. ~~`Wheels` / `Accessories` category rows link to their stub routes with no count.~~ Closed by **D58**:
-   both are real results routes now. They still carry no count — only the current category does, by
-   D59(3).
-3. ~~No-JS mobile filter sheet~~ — closed by D48(1): the `<dialog>` stays; no `<details>` fallback. The
-   desktop rail, `Apply`, `Clear all` and `Show N matches` work without JS; below 1100px the sheet needs
-   `showModal()` (`filter-sheet.tsx` header comment).
-4. Parity: `design/reports/results.md`. Deviations: `design/DEVIATIONS.md` #25–#35, and #49–#53 for the
-   two new categories.
+1. Vehicle params drive the best/similar split on all three routes through the **placeholder** `FITMENT`
+   map (D48(4), D67 adds `thread`/`tpms`); real fitment data is owed by the client (root `llm.md` §7.13).
+2. ~~`Wheels` / `Accessories` rows link to stubs.~~ Closed by **D58**: both are real routes. Still no
+   count on either — only the current category carries one (D59(3)).
+3. ~~No-JS mobile filter sheet~~ — closed by D48(1): the `<dialog>` stays, no `<details>` fallback. Rail,
+   `Apply`, `Clear all` and `Show N matches` work without JS; below 1100px the sheet needs `showModal()`.
+4. Parity: `design/reports/results.md`. Deviations: #25–#35, and #49–#53 for the two new categories
+   (#52 superseded in place by D67).
 5. **`/wheels` and `/accessories` have no parity report and are not parity rows** (#49) — they inherit
    `/results`' parity by rendering the same tree, which stops holding the moment either diverges visually.
 6. Every wheel and accessory SKU, brand, finish and price is **placeholder data** (D58 under D48), and

@@ -20,7 +20,7 @@ import {
   type SizeFieldConfig,
 } from "@/features/catalog/categories";
 import type { Product, ProductCategory } from "@/features/catalog/types";
-import { findFitment } from "@/features/finder/data";
+import { findFitment, type FitmentSize } from "@/features/finder/data";
 import { parseResultsQuery } from "./query";
 import type {
   CategoryFacet,
@@ -31,7 +31,6 @@ import type {
   ResultsQuery,
   ResultsView,
   SizeOption,
-  Vehicle,
 } from "./types";
 
 /* --- Size ------------------------------------------------------------------
@@ -81,14 +80,13 @@ function matchesSize(
  * goods (owner, 2026-09-21): **tires** derive `width`/`profile`/`rim`
  * straight off the fitment entry; **wheels** derive `bolt` only — diameter
  * and width are the buyer's choice, not the car's; **accessories** derive no
- * size at all (`config.size` is `null` for them).
+ * size at all (`config.size` is `null` for them), and since D67 narrow on the
+ * spec string instead — `accessoryFitsVehicle()` below.
  */
 function fitmentSize(
   category: ProductCategory,
-  vehicle: Vehicle | null,
+  fit: FitmentSize | null,
 ): SizeFilter {
-  if (vehicle === null) return NO_SIZE;
-  const fit = findFitment(vehicle.make, vehicle.model);
   if (fit === null) return NO_SIZE;
   switch (category) {
     case "tires":
@@ -97,6 +95,87 @@ function fitmentSize(
       return { bolt: fit.bolt };
     case "accessories":
       return NO_SIZE;
+  }
+}
+
+/* --- Accessory fitment (D67) -----------------------------------------------
+ *
+ * The owner vetoed D59(2) on 2026-09-22: the seed sells lug nuts in 12×1.5 and
+ * 12×1.25 and TPMS sensors at 315 MHz and 433 MHz, so an accessory plainly
+ * does derive something from a vehicle. It just does not derive a SIZE —
+ * accessories draw no size group (D58, four filter groups not five) — so the
+ * vehicle cannot narrow them the way it narrows a tire or a wheel. It drives
+ * the best/similar split (D47(8)) off the product's own spec string instead.
+ *
+ * This lives here, not in `categories.ts`, for the same reason `fitmentSize()`
+ * does: the match needs `FitmentSize`, and `categories.ts` is imported by a
+ * `"use client"` island and by `catalog/`, which must not take an edge back
+ * into `finder/` (D37). `search.ts` already imports both.
+ * -------------------------------------------------------------------------- */
+
+/**
+ * `12×1.5` / `12x1.50` / ` 12 X 1.5 ` → `12x1.5`; anything with no pitch in it
+ * → `null`.
+ *
+ * Both sides are normalised rather than compared raw, because they are spelled
+ * differently on purpose: the fitment map carries ASCII `12x1.5` (a URL- and
+ * code-safe value, like `WheelSpec.bolt`), while the card renders the
+ * typographic `Set of 20 · 12×1.5` with U+00D7. A raw comparison would never
+ * match and the whole feature would be invisible — every accessory would stay
+ * a "best match" and nothing on screen would say why. Numbers round-trip
+ * through `Number` so `1.50` and `1.5` are the same pitch.
+ */
+function threadPitch(raw: string): string | null {
+  const match = /(\d+(?:\.\d+)?)\s*[x\u00D7]\s*(\d+(?:\.\d+)?)/i.exec(raw);
+  if (match === null) return null;
+  return `${Number(match[1])}x${Number(match[2])}`;
+}
+
+/** `Programmable · 315 MHz` → `315`; a spec string with no frequency → `null`. */
+function sensorFrequency(raw: string): string | null {
+  const match = /(\d{3})\s*MHz/i.exec(raw);
+  return match === null ? null : match[1];
+}
+
+/**
+ * Is this accessory a best match for the vehicle the URL names?
+ *
+ * The rule is per `accessoryType`, and it is deliberately asymmetric: a
+ * product is demoted to `similar` ONLY when it states a vehicle-specific fact
+ * that contradicts the vehicle. Stating nothing keeps it a best match.
+ *
+ *   `lug-nuts`, `wheel-locks` — thread onto the car's studs, so a stated
+ *       pitch must equal the vehicle's. Both types are stocked in two pitches
+ *       in the seed, which is the whole reason D59(2) was wrong.
+ *   `tpms`          — pairs with the car's receiver, so a stated frequency
+ *       must equal the vehicle's. Stocked at 315 and 433.
+ *   `centre-caps`   — sized to the WHEEL's bore, not to the car; the seed
+ *       spells that as `Fits 5-lug · 74 mm`, which names no vehicle fact at
+ *       all. Vehicle-agnostic, stays best.
+ *   anything else   — a new type is vehicle-agnostic until someone teaches
+ *       this function otherwise. The failure mode of that default is a too-
+ *       generous `Best matches` list, which is what the page did before D67;
+ *       the failure mode of the opposite default is silently hiding stock.
+ *
+ * The same "states nothing → stays best" escape applies inside a type: an
+ * unbranded lock set whose spec string carries no pitch is not demoted, and
+ * neither is anything at all when the placeholder fitment entry itself is
+ * unreadable.
+ */
+function accessoryFitsVehicle(product: Product, fit: FitmentSize): boolean {
+  switch (product.accessoryType) {
+    case "lug-nuts":
+    case "wheel-locks": {
+      const wanted = threadPitch(fit.thread);
+      const stated = threadPitch(product.size);
+      return wanted === null || stated === null || stated === wanted;
+    }
+    case "tpms": {
+      const stated = sensorFrequency(product.size);
+      return stated === null || stated === fit.tpms;
+    }
+    default:
+      return true;
   }
 }
 
@@ -336,26 +415,43 @@ export function searchResults(
       matchesPrice(product, query),
   );
 
+  /* The vehicle's placeholder fitment entry, read once (D48(4)). `null` for
+     no vehicle and for a vehicle the map does not cover — both mean the page
+     behaves exactly as it did before a vehicle was named. */
+  const fit =
+    query.vehicle === null
+      ? null
+      : findFitment(query.vehicle.make, query.vehicle.model);
+
   /* The size that decides best vs similar. An explicit size in the URL always
-     wins; otherwise a vehicle may lend one from the placeholder fitment map,
-     mapped per category (D48(4)). `query` is NOT mutated: the URL's size
-     selects stay `Any`, the rail and sheet keep reading `Any`, and
-     `facets.activeGroups` is computed from `query` alone — a derived fitment
-     is not a user filter. */
+     wins; otherwise a vehicle may lend one, mapped per category (D48(4)).
+     `query` is NOT mutated: the URL's size selects stay `Any`, the rail and
+     sheet keep reading `Any`, and `facets.activeGroups` is computed from
+     `query` alone — a derived fitment is not a user filter. */
   const size: SizeFilter = hasSizeFilter(query)
     ? query.size
-    : fitmentSize(category, query.vehicle);
+    : fitmentSize(category, fit);
 
-  /* No size at all → everything filtered is a best match and `Similar
-     matches` does not render (D47(8)). */
-  const sizeGiven = hasSize(size);
+  /* What puts a product in `best`, or `null` when nothing narrows — then
+     everything filtered is a best match and `Similar matches` does not render
+     (D47(8)).
+
+     Two ways to narrow, in precedence order. A size (chosen in the rail, or
+     derived from the vehicle) is the tire and wheel path and is unchanged.
+     An accessory has no size group at all (D58), so when a vehicle is named
+     it narrows on the spec string instead (D67). The branches cannot both
+     fire: `fitmentSize()` returns nothing for accessories and `query.size` is
+     empty for them, so `sizeGiven` is always false there. */
   const sizeFields = config.size?.fields ?? [];
-  const best = sizeGiven
-    ? filtered.filter((product) => matchesSize(product, sizeFields, size))
-    : filtered;
-  const similar = sizeGiven
-    ? filtered.filter((product) => !matchesSize(product, sizeFields, size))
-    : [];
+  const isBest: ((product: Product) => boolean) | null = hasSize(size)
+    ? (product) => matchesSize(product, sizeFields, size)
+    : category === "accessories" && fit !== null
+      ? (product) => accessoryFitsVehicle(product, fit)
+      : null;
+
+  const best = isBest === null ? filtered : filtered.filter(isBest);
+  const similar =
+    isBest === null ? [] : filtered.filter((product) => !isBest(product));
 
   return {
     query,

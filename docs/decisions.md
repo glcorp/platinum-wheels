@@ -121,7 +121,13 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
   the footer repeats. `Price` takes a number plus a currency code and formats it itself, so a
   pre-formatted string can never reintroduce superscript cents or a shrunken `$`.
   Footer states "Brampton, Ontario · Prices in CAD, before tax".
-- Fitment trust line on results and product pages.
+- Fitment trust line on **product pages**. *(Amended 2026-09-22, D67. This line read "on results and
+  product pages" until then, and **D47(2) had already removed it from `/results`** on the grounds that no
+  results artboard draws one — which let authority level 2 overrule level 1 on a business rule. The owner
+  settled it by ratifying D47(2) and correcting this line to match what ships, rather than by restoring
+  the trust line. **What that does not settle:** the PDP quote band still promises "We check the fitment
+  against your vehicle" while the quote form collects no vehicle at all, so the promise outruns the form.
+  That stays open — root `llm.md` §7.23(a).)*
 - Unavailable product = dimmed card, "Currently unavailable" badge, "Inquire about restock" CTA.
   The page still returns HTTP 200.
 - A CASL consent checkbox renders **unticked**.

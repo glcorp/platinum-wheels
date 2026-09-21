@@ -37,8 +37,14 @@ export function QuoteSuccess({ role, tabIndex, ref }: QuoteSuccessProps) {
       ref={ref}
       role={role}
       tabIndex={tabIndex}
+      /* Fades in, resting state fully opaque — a failed stylesheet can never
+         hide it. The most consequential action on the site used to report its
+         own rejection with no visual event at all; D65 fixed the focus and
+         announcement half of that, this is the matching visual half.
+         `role="alert"` announces content, not opacity, so the 150ms does not
+         delay the announcement. D67. */
       data-probe="quote-success"
-      className="bg-surface border-border-strong flex flex-col items-start gap-3 border p-5 sm:gap-4 sm:p-8"
+      className="bg-surface border-border-strong flex flex-col items-start gap-3 border p-5 sm:gap-4 sm:p-8 opacity-100 transition-opacity duration-150 ease-[var(--ease-card)] starting:opacity-0"
     >
       {/* `h3`: the band's own `h2` is `Tell us where to send it.`, and this
           replaces the form beneath it rather than the heading. */}

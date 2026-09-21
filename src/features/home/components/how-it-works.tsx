@@ -96,10 +96,15 @@ export function HowItWorks() {
       className="scroll-mt-14 sm:scroll-mt-20 pt-14 px-4 sm:pt-20 sm:px-8 md:pt-30 md:px-12"
     >
       <div className="flex flex-col gap-5 md:gap-10 lg:mx-auto lg:max-w-content">
-        {/* Eyebrow only — no title on this section (home.md:215). */}
-        <p className="label text-ink-dim text-11 tracking-14 sm:text-12">
+        {/* The artboard draws this as an eyebrow with no heading (home.md:215),
+            which left the section out of the page outline entirely and gave it
+            no accessible name. Element-type-only deviation for accessibility,
+            on the `featured-carousel` precedent where drawn inert `<span>`s
+            ship as real `<button>`s. Every style is in the classes, so no pixel
+            moves. D67, design/DEVIATIONS.md #59. */}
+        <h2 className="label text-ink-dim text-11 tracking-14 sm:text-12">
           02 — How it works
-        </p>
+        </h2>
 
         <div
           data-probe="hiw"
@@ -115,9 +120,11 @@ export function HowItWorks() {
                 {step.n}
               </span>
               <div className="flex flex-col gap-1.5 md:gap-5">
-                <span className="font-display font-bold uppercase leading-display text-display-24 md:display md:text-display-28">
+                {/* `<h3>` under the section `<h2>` above — same reason, same
+                    zero visual change. D67. */}
+                <h3 className="font-display font-bold uppercase leading-display text-display-24 md:display md:text-display-28">
                   {step.title}
-                </span>
+                </h3>
                 <span className="text-14 leading-body text-ink-muted md:text-15">
                   {step.body}
                 </span>

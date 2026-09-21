@@ -104,6 +104,42 @@ export const FINDER_MAKES: ReadonlyArray<FinderMake> = [
  *     `5x114.3`
  *   - Tesla is not covered by any named rule; treated as a car/crossover and
  *     given `5x114.3` too, noted per-entry below.
+ *
+ * **`thread` and `tpms` join every entry (D67, 2026-09-22).** The owner vetoed
+ * D59(2) — "an accessory derives nothing from a vehicle" — because the seed
+ * contradicts it: it sells lug nuts in 12×1.5 and 12×1.25 and TPMS sensors at
+ * 315 MHz and 433 MHz, and the car decides both. `/accessories` now renders
+ * the finder, and these two fields are what a vehicle there resolves to.
+ *
+ * **They are placeholder in exactly the sense the rest of this map is (D48),
+ * and MUST be replaced with real data before launch.** They are plausible per
+ * make, not verified per trim: a real thread pitch is model- and
+ * generation-specific (a 2014 and a 2024 of the same nameplate can differ),
+ * and a real TPMS frequency is market- and model-year-specific. Nothing here
+ * was looked up against a fitment database. Assigned by make, coordinator
+ * 2026-09-22:
+ *   `thread` — lug-nut thread pitch, ASCII `<diameter>x<pitch>`, the spelling
+ *   the accessory seed's spec strings carry in typographic form (`12×1.5`):
+ *   - Honda, Toyota, Mazda, Hyundai, Kia → `12x1.5`
+ *   - Nissan, Subaru → `12x1.25`
+ *   - Jeep Compass → `12x1.25`; Grand Cherokee and Wrangler → `14x1.5`
+ *   - Chevrolet and GMC cars/crossovers → `12x1.5`; Silverado, Sierra 1500
+ *     and Yukon → `14x1.5`
+ *   - Ford (all, including the cars — modern Ford is `14x1.5` throughout),
+ *     Ram, Dodge, Tesla → `14x1.5`
+ *   - **Volkswagen → `14x1.5`, and it is a simplification.** VW and Audi
+ *     hold the wheel on with BOLTS threaded into the hub, not nuts on studs,
+ *     so a "lug nut thread pitch" is not the right fact about the car at all.
+ *     The bolt's own thread is `14x1.5`, so that is what is recorded; a real
+ *     catalogue would sell a VW owner bolts, not nuts, and this map has no
+ *     way to say so. Flagged rather than hidden.
+ *   - `14x1.5` is carried by NO accessory in the seed, which is deliberate in
+ *     the same way the VW bolt pattern is: a Ford or Ram submit exercises the
+ *     "no exact fit, here is what still fits" path.
+ *   `tpms` — sensor radio frequency in MHz, `"315"` or `"433"`, matching the
+ *   two frequencies the accessory seed stocks:
+ *   - Hyundai, Kia, Volkswagen, Tesla → `433`
+ *   - every other make → `315`
  */
 
 export interface FitmentSize {
@@ -113,101 +149,112 @@ export interface FitmentSize {
   /** Placeholder bolt pattern, ASCII exactly as `WheelSpec.bolt` spells it
    *  (`5x114.3`). Drives the best/similar split on `/wheels` (D58). */
   bolt: string;
+  /** Placeholder lug-nut thread pitch, ASCII `<diameter>x<pitch>` —
+   *  `12x1.5`, `12x1.25`, `14x1.5`. The accessory seed spells the same fact
+   *  typographically inside a spec string (`Set of 20 · 12×1.5`, U+00D7), so
+   *  `results/search.ts` normalises both sides before comparing rather than
+   *  matching raw text. Drives half the best/similar split on `/accessories`
+   *  (D67). */
+  thread: string;
+  /** Placeholder TPMS sensor frequency in MHz — `"315"` or `"433"`, the two
+   *  the accessory seed stocks. Drives the other half of the
+   *  `/accessories` split (D67). */
+  tpms: string;
 }
 
 /** Keyed `"<Make>|<Model>"`. Sample data — see the block comment above. */
 export const FITMENT: Readonly<Record<string, FitmentSize>> = {
   /* Chevrolet — car/crossover → 5x114.3; Silverado is a truck → 6x139.7 */
-  "Chevrolet|Equinox": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Chevrolet|Malibu": { width: "225", profile: "45", rim: "17", bolt: "5x114.3" },
-  "Chevrolet|Silverado": { width: "265", profile: "70", rim: "17", bolt: "6x139.7" },
-  "Chevrolet|Traverse": { width: "255", profile: "65", rim: "18", bolt: "5x114.3" },
-  "Chevrolet|Trax": { width: "215", profile: "50", rim: "17", bolt: "5x114.3" },
+  "Chevrolet|Equinox": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Chevrolet|Malibu": { width: "225", profile: "45", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Chevrolet|Silverado": { width: "265", profile: "70", rim: "17", bolt: "6x139.7", thread: "14x1.5", tpms: "315" },
+  "Chevrolet|Traverse": { width: "255", profile: "65", rim: "18", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Chevrolet|Trax": { width: "215", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
 
   /* Dodge — car/crossover, none are trucks → 5x114.3 */
-  "Dodge|Charger": { width: "225", profile: "45", rim: "17", bolt: "5x114.3" },
-  "Dodge|Durango": { width: "265", profile: "60", rim: "18", bolt: "5x114.3" },
-  "Dodge|Hornet": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
+  "Dodge|Charger": { width: "225", profile: "45", rim: "17", bolt: "5x114.3", thread: "14x1.5", tpms: "315" },
+  "Dodge|Durango": { width: "265", profile: "60", rim: "18", bolt: "5x114.3", thread: "14x1.5", tpms: "315" },
+  "Dodge|Hornet": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "14x1.5", tpms: "315" },
 
   /* Ford — car/crossover → 5x114.3; F-150 is a truck → 6x139.7 */
-  "Ford|Bronco": { width: "255", profile: "70", rim: "16", bolt: "5x114.3" },
-  "Ford|Edge": { width: "235", profile: "65", rim: "18", bolt: "5x114.3" },
-  "Ford|Explorer": { width: "255", profile: "65", rim: "18", bolt: "5x114.3" },
-  "Ford|F-150": { width: "275", profile: "65", rim: "18", bolt: "6x139.7" },
-  "Ford|Mustang": { width: "225", profile: "45", rim: "17", bolt: "5x114.3" },
+  "Ford|Bronco": { width: "255", profile: "70", rim: "16", bolt: "5x114.3", thread: "14x1.5", tpms: "315" },
+  "Ford|Edge": { width: "235", profile: "65", rim: "18", bolt: "5x114.3", thread: "14x1.5", tpms: "315" },
+  "Ford|Explorer": { width: "255", profile: "65", rim: "18", bolt: "5x114.3", thread: "14x1.5", tpms: "315" },
+  "Ford|F-150": { width: "275", profile: "65", rim: "18", bolt: "6x139.7", thread: "14x1.5", tpms: "315" },
+  "Ford|Mustang": { width: "225", profile: "45", rim: "17", bolt: "5x114.3", thread: "14x1.5", tpms: "315" },
 
   /* GMC — car/crossover → 5x114.3; Sierra 1500 and Yukon are trucks → 6x139.7 */
-  "GMC|Acadia": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "GMC|Sierra 1500": { width: "265", profile: "70", rim: "17", bolt: "6x139.7" },
-  "GMC|Terrain": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "GMC|Yukon": { width: "275", profile: "60", rim: "20", bolt: "6x139.7" },
+  "GMC|Acadia": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "GMC|Sierra 1500": { width: "265", profile: "70", rim: "17", bolt: "6x139.7", thread: "14x1.5", tpms: "315" },
+  "GMC|Terrain": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "GMC|Yukon": { width: "275", profile: "60", rim: "20", bolt: "6x139.7", thread: "14x1.5", tpms: "315" },
 
   /* Honda → 5x114.3 */
-  "Honda|Accord": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Honda|CR-V": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Honda|Civic": { width: "215", profile: "55", rim: "16", bolt: "5x114.3" },
-  "Honda|HR-V": { width: "215", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Honda|Pilot": { width: "245", profile: "60", rim: "18", bolt: "5x114.3" },
+  "Honda|Accord": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Honda|CR-V": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Honda|Civic": { width: "215", profile: "55", rim: "16", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Honda|HR-V": { width: "215", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Honda|Pilot": { width: "245", profile: "60", rim: "18", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
 
   /* Hyundai → 5x114.3 */
-  "Hyundai|Elantra": { width: "215", profile: "55", rim: "16", bolt: "5x114.3" },
-  "Hyundai|Kona": { width: "215", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Hyundai|Santa Fe": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Hyundai|Tucson": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
+  "Hyundai|Elantra": { width: "215", profile: "55", rim: "16", bolt: "5x114.3", thread: "12x1.5", tpms: "433" },
+  "Hyundai|Kona": { width: "215", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "433" },
+  "Hyundai|Santa Fe": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "433" },
+  "Hyundai|Tucson": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "433" },
 
   /* Jeep — car/crossover → 5x114.3; Wrangler is on the truck/off-road list → 6x139.7 */
-  "Jeep|Compass": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Jeep|Grand Cherokee": { width: "265", profile: "60", rim: "18", bolt: "5x114.3" },
-  "Jeep|Wrangler": { width: "245", profile: "75", rim: "17", bolt: "6x139.7" },
+  "Jeep|Compass": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.25", tpms: "315" },
+  "Jeep|Grand Cherokee": { width: "265", profile: "60", rim: "18", bolt: "5x114.3", thread: "14x1.5", tpms: "315" },
+  "Jeep|Wrangler": { width: "245", profile: "75", rim: "17", bolt: "6x139.7", thread: "14x1.5", tpms: "315" },
 
   /* Kia → 5x114.3 */
-  "Kia|Forte": { width: "215", profile: "55", rim: "16", bolt: "5x114.3" },
-  "Kia|Sorento": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Kia|Sportage": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Kia|Telluride": { width: "245", profile: "60", rim: "18", bolt: "5x114.3" },
+  "Kia|Forte": { width: "215", profile: "55", rim: "16", bolt: "5x114.3", thread: "12x1.5", tpms: "433" },
+  "Kia|Sorento": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "433" },
+  "Kia|Sportage": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "433" },
+  "Kia|Telluride": { width: "245", profile: "60", rim: "18", bolt: "5x114.3", thread: "12x1.5", tpms: "433" },
 
   /* Mazda → 5x114.3 */
-  "Mazda|CX-30": { width: "215", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Mazda|CX-5": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Mazda|CX-90": { width: "255", profile: "55", rim: "19", bolt: "5x114.3" },
-  "Mazda|Mazda3": { width: "225", profile: "45", rim: "17", bolt: "5x114.3" },
+  "Mazda|CX-30": { width: "215", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Mazda|CX-5": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Mazda|CX-90": { width: "255", profile: "55", rim: "19", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Mazda|Mazda3": { width: "225", profile: "45", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
 
   /* Nissan — Titan/Frontier are excluded by the rule but neither is in this
      seed, so every Nissan model here → 5x114.3 */
-  "Nissan|Kicks": { width: "215", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Nissan|Pathfinder": { width: "255", profile: "65", rim: "18", bolt: "5x114.3" },
-  "Nissan|Rogue": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Nissan|Sentra": { width: "215", profile: "55", rim: "16", bolt: "5x114.3" },
+  "Nissan|Kicks": { width: "215", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.25", tpms: "315" },
+  "Nissan|Pathfinder": { width: "255", profile: "65", rim: "18", bolt: "5x114.3", thread: "12x1.25", tpms: "315" },
+  "Nissan|Rogue": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.25", tpms: "315" },
+  "Nissan|Sentra": { width: "215", profile: "55", rim: "16", bolt: "5x114.3", thread: "12x1.25", tpms: "315" },
 
   /* Ram — all Ram is a truck family → 6x139.7 */
-  "Ram|1500": { width: "275", profile: "65", rim: "18", bolt: "6x139.7" },
-  "Ram|2500": { width: "275", profile: "70", rim: "18", bolt: "6x139.7" },
-  "Ram|3500": { width: "235", profile: "80", rim: "17", bolt: "6x139.7" },
+  "Ram|1500": { width: "275", profile: "65", rim: "18", bolt: "6x139.7", thread: "14x1.5", tpms: "315" },
+  "Ram|2500": { width: "275", profile: "70", rim: "18", bolt: "6x139.7", thread: "14x1.5", tpms: "315" },
+  "Ram|3500": { width: "235", profile: "80", rim: "17", bolt: "6x139.7", thread: "14x1.5", tpms: "315" },
 
   /* Subaru → 5x100 */
-  "Subaru|Crosstrek": { width: "225", profile: "50", rim: "17", bolt: "5x100" },
-  "Subaru|Forester": { width: "225", profile: "50", rim: "17", bolt: "5x100" },
-  "Subaru|Impreza": { width: "215", profile: "50", rim: "17", bolt: "5x100" },
-  "Subaru|Outback": { width: "225", profile: "50", rim: "17", bolt: "5x100" },
+  "Subaru|Crosstrek": { width: "225", profile: "50", rim: "17", bolt: "5x100", thread: "12x1.25", tpms: "315" },
+  "Subaru|Forester": { width: "225", profile: "50", rim: "17", bolt: "5x100", thread: "12x1.25", tpms: "315" },
+  "Subaru|Impreza": { width: "215", profile: "50", rim: "17", bolt: "5x100", thread: "12x1.25", tpms: "315" },
+  "Subaru|Outback": { width: "225", profile: "50", rim: "17", bolt: "5x100", thread: "12x1.25", tpms: "315" },
 
   /* Tesla — not covered by a named rule; treated as a car/crossover → 5x114.3 */
-  "Tesla|Model 3": { width: "235", profile: "40", rim: "18", bolt: "5x114.3" },
-  "Tesla|Model S": { width: "235", profile: "40", rim: "18", bolt: "5x114.3" },
-  "Tesla|Model X": { width: "265", profile: "45", rim: "20", bolt: "5x114.3" },
-  "Tesla|Model Y": { width: "235", profile: "40", rim: "18", bolt: "5x114.3" },
+  "Tesla|Model 3": { width: "235", profile: "40", rim: "18", bolt: "5x114.3", thread: "14x1.5", tpms: "433" },
+  "Tesla|Model S": { width: "235", profile: "40", rim: "18", bolt: "5x114.3", thread: "14x1.5", tpms: "433" },
+  "Tesla|Model X": { width: "265", profile: "45", rim: "20", bolt: "5x114.3", thread: "14x1.5", tpms: "433" },
+  "Tesla|Model Y": { width: "235", profile: "40", rim: "18", bolt: "5x114.3", thread: "14x1.5", tpms: "433" },
 
   /* Toyota → 5x114.3; Tacoma is a truck → 6x139.7 */
-  "Toyota|Camry": { width: "225", profile: "45", rim: "17", bolt: "5x114.3" },
-  "Toyota|Corolla": { width: "215", profile: "55", rim: "16", bolt: "5x114.3" },
-  "Toyota|Highlander": { width: "235", profile: "65", rim: "18", bolt: "5x114.3" },
-  "Toyota|RAV4": { width: "225", profile: "50", rim: "17", bolt: "5x114.3" },
-  "Toyota|Tacoma": { width: "265", profile: "70", rim: "16", bolt: "6x139.7" },
+  "Toyota|Camry": { width: "225", profile: "45", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Toyota|Corolla": { width: "215", profile: "55", rim: "16", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Toyota|Highlander": { width: "235", profile: "65", rim: "18", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Toyota|RAV4": { width: "225", profile: "50", rim: "17", bolt: "5x114.3", thread: "12x1.5", tpms: "315" },
+  "Toyota|Tacoma": { width: "265", profile: "70", rim: "16", bolt: "6x139.7", thread: "12x1.5", tpms: "315" },
 
   /* Volkswagen → 5x112 — deliberately a pattern no wheel in the seed carries,
      so a VW submit exercises the "no exact fit, here are similar" path. */
-  "Volkswagen|Atlas": { width: "245", profile: "60", rim: "18", bolt: "5x112" },
-  "Volkswagen|Jetta": { width: "215", profile: "55", rim: "16", bolt: "5x112" },
-  "Volkswagen|Tiguan": { width: "225", profile: "50", rim: "17", bolt: "5x112" },
+  "Volkswagen|Atlas": { width: "245", profile: "60", rim: "18", bolt: "5x112", thread: "14x1.5", tpms: "433" },
+  "Volkswagen|Jetta": { width: "215", profile: "55", rim: "16", bolt: "5x112", thread: "14x1.5", tpms: "433" },
+  "Volkswagen|Tiguan": { width: "225", profile: "50", rim: "17", bolt: "5x112", thread: "14x1.5", tpms: "433" },
 };
 
 /** Case-insensitive, trimmed lookup into `FITMENT`. Returns `null` when the

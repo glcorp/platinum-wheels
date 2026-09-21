@@ -30,8 +30,10 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   `productImageSrc()` (shared by `ProductCard` and `PdpGallery`).
 - [`categories.ts`](categories.ts) — `CATEGORY_CONFIG`, the per-category table (**D58**): route, nav
   item, Category-row label, breadcrumb crumb, the three size fields (param, caption, label prefix, strip
-  regex, `read`), the chip group (label, param, options, `match`), the finder, the price label, the unit
-  copy and the two authored copy strings. `categoryConfig()`, `configFor(product)`, `sizeParams()` and
+  regex, `read`), the chip group (label, param, options, `match`), the finder (`{ cta }` — **non-null on
+  all three categories since D67**, which vetoed D59(2)'s omission on `/accessories`; `null` stays legal
+  and is taken by nobody), the price label, the unit copy and the two authored copy strings.
+  `categoryConfig()`, `configFor(product)`, `sizeParams()` and
   `parseTireSize()`. **It lives here, not in `results/`,** because three features need it —
   `results/` for facets, `product/` for the spec table and units, `ProductCard` for the price suffix —
   and D37 routes every cross-feature import through `catalog/`. It imports **no seed data**, so
@@ -84,7 +86,13 @@ Delete this folder and every route loses its product surface, and `/results`, `/
 - **A wheel or accessory carries no badge and no 3PMSF.** No artboard draws one for them, so none is
   invented (D59(4), the D7 precedent).
 - **`categories.ts` never imports seed data.** A `"use client"` island imports it; a seed import there
-  would pull the whole catalogue into the browser bundle.
+  would pull the whole catalogue into the browser bundle. It imports nothing from `finder/` either —
+  that would be a back-edge across D37's one-way graph, which is why the accessory-to-vehicle match
+  (D67) lives in `results/search.ts`, where both the config and the fitment map already meet.
+- **A category's `finder` is off only when its data genuinely cannot answer a vehicle.** D59(2) turned
+  it off on accessories for a reason the seed disproved — lug nuts carry a thread pitch, TPMS sensors a
+  frequency — and the owner vetoed it (D67). Before setting `finder: null` on anything, check the seed's
+  own spec strings first.
 
 ## Decisions
 | ID | Date | Decision | Why | Authority |
@@ -95,7 +103,9 @@ Referenced: **D18** (routes, and the one-pair-of-constants derivation), **D19** 
 one 1000×1000 square canvas, never upscaled), **D21** (price suffix), **D29** (planned seed data),
 **D9** (the wheel CSV contributes nothing to `Product` — the D58 wheel seed is authored here, **not**
 derived from that feed), **D58** (three categories, `categories.ts`, the two new seeds), **D59**
-(the seven derived rulings). DEVIATIONS #15 and #16 above.
+(the seven derived rulings, **(2) now vetoed**), **D67** (`/accessories` gets a finder; `nearMiss`
+there becomes `fitment` because the line now renders). DEVIATIONS #15 and #16 above; #52 records D67
+in place.
 
 ## Connects to
 - **Depends on:** `src/components/ui/badge.tsx`, `button.tsx`, `price.tsx` (`product-card.tsx:4-6`);

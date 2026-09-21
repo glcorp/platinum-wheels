@@ -126,12 +126,19 @@ export interface CategoryConfig {
    * The vehicle finder on this category's results page — the `Change vehicle`
    * disclosure in `ResultsToolbar` and the vehicle chip beside it.
    *
-   * `null` means the category renders neither. **Accessories are `null`**: an
-   * accessory derives nothing from a vehicle (`search.ts` `fitmentSize()`
-   * returns no size for them), so a finder there would change no result and a
-   * `Change vehicle` link would be a control that does nothing. Coordinator,
-   * 2026-09-21, on the D47(5) precedent — do not invent an affordance the data
-   * cannot honour. Vetoable.
+   * **All three categories render one (D67, owner, 2026-09-22).** Accessories
+   * used to be `null` on the premise that "an accessory derives nothing from a
+   * vehicle" (D59(2)). The seed contradicts the premise: it sells lug nuts in
+   * 12×1.5 and 12×1.25 and TPMS sensors at 315 MHz and 433 MHz, and the car
+   * decides both — they are the two most vehicle-specific parts on the page.
+   * The owner vetoed D59(2). An accessory still derives no *size*
+   * (`config.size` stays `null`, the rail still draws four groups), so the
+   * vehicle drives the best/similar split off the spec string instead —
+   * `search.ts`, `accessoryFitsVehicle()`.
+   *
+   * `null` stays legal: it is the one switch that turns the affordance off,
+   * and the rule behind D59(2) still stands for a category whose data genuinely
+   * cannot answer a vehicle. No category is `null` today.
    *
    * `cta` is the submit button's copy; the submit target is `route`. Tires
    * keep the artboard-verbatim `Find my tires` (home-desktop.html:161).
@@ -154,7 +161,8 @@ export interface CategoryConfig {
     empty: string;
     /** `Best matches` is empty but `Similar matches` is not: the noun this
      *  category's near-miss is measured on. Tires match on size, wheels on
-     *  bolt pattern; accessories never derive one, so the line never renders. */
+     *  bolt pattern, accessories on thread pitch and TPMS frequency (D67) —
+     *  all three can render the line. */
     nearMiss: string;
     /**
      * The quote form's message placeholder and the CASL consent line.
@@ -331,7 +339,10 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
       nav: "accessories",
       size: null,
       chips: ACCESSORY_TYPES,
-      finder: null,
+      /* New copy under `.claude/rules/ui.md`, in the shape the other two
+         already set (`Find my tires` is artboard-verbatim, `Find my wheels`
+         follows it): same verb, same possessive, the category's own noun. */
+      finder: { cta: "Find my accessories" },
       priceLabel: "Price per item",
       unit: {
         card: "/ each",
@@ -342,9 +353,12 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
       copy: {
         empty:
           "Nothing fits those filters yet. Clear them, or call us and we will check what fits.",
-        /* Accessories derive no size from a vehicle, so the near-miss line
-           never renders for them; the noun is here for completeness only. */
-        nearMiss: "fit",
+        /* An accessory derives no SIZE from a vehicle, but since D67 it does
+           derive a fit — thread pitch and TPMS frequency — so the line does
+           render here. `fitment` rather than `fit`: the sentence pluralises
+           the noun ("Similar fitments are below"), and "fits" reads as a
+           verb. */
+        nearMiss: "fitment",
         quotePlaceholder:
           "Anything we should know — your vehicle, wheel size, install timing…",
         quoteConsent:

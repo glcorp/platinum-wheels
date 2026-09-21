@@ -387,6 +387,11 @@
   font-weight: 700;
   line-height: 1;
 
+  /* Measured resting transform is `translateY(-38px)`, and it used to appear
+     from nothing on the first Tab of every route. One line, same 150ms and
+     same easing as everything else here. D67. */
+  transition: transform 150ms var(--ease-card);
+
   /* `:focus`, not `:focus-visible`. The link is unreachable except by Tab, so
      there is no pointer-focus case to guard against — and `:focus-visible`
      does not match focus moved programmatically, which would leave the link
@@ -596,6 +601,54 @@
      `overflow:hidden` lock the sheet sets is a different guarantee and does not
      stop chaining or iOS rubber-banding. Craft audit P1 #4. */
   overscroll-behavior: contain;
+
+  /* The one motion DESIGN.md names by word: §"Motion" says the filter sheet
+     arrives "from the bottom", and the build did not move it at all — a
+     full-viewport surface appeared with no origin, which on a phone is the
+     most disorienting transition here. 150ms in on the house easing, faster
+     out, per DESIGN.md "decisive and brief" and MOTION_INTENSITY 3. Translate
+     only: compositor-friendly, and it moves nothing in the closed state, so
+     `/results` parity holds by construction. D67. */
+  translate: 0 0;
+  transition:
+    translate 150ms var(--ease-card),
+    display 150ms allow-discrete,
+    overlay 150ms allow-discrete;
+
+  @starting-style {
+    translate: 0 100%;
+  }
+}
+
+/* The sheet's own exit: `dialog.close()` needs the discrete properties on the
+   dialog too, or the panel is removed before it can travel. */
+@utility sheet-dialog {
+  transition:
+    display 150ms allow-discrete,
+    overlay 150ms allow-discrete;
+
+  &:not([open]) .sheet-panel {
+    translate: 0 100%;
+    transition-duration: 120ms;
+  }
+
+  &::backdrop {
+    opacity: 1;
+    transition:
+      opacity 150ms var(--ease-card),
+      display 150ms allow-discrete,
+      overlay 150ms allow-discrete;
+  }
+
+  &:not([open])::backdrop {
+    opacity: 0;
+  }
+
+  @starting-style {
+    &::backdrop {
+      opacity: 0;
+    }
+  }
 }
 
 /* Sheet tire-size row: `grid-template-columns:1fr 1fr 1fr 88px;gap:8px;
@@ -727,6 +780,30 @@
   [role="button"] {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* The `Change vehicle` disclosure is the only control in the build that
+     silently displaces the whole results grid — the panel appeared and the
+     cards below jumped with nothing connecting the tap to the shove. Opacity
+     only, on the open edge: animating height would drive layout, and the
+     `interpolate-size` route is Chrome-only. The closed state is untouched, so
+     `/results` parity holds by construction. D67. */
+  details[open] > :not(summary) {
+    opacity: 1;
+    transition: opacity 150ms var(--ease-card);
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
+  /* Acknowledges a filter or sort change for the whole server round-trip,
+     reusing the `aria-busy` D66 already wired rather than adding a second
+     state channel. No motion, no paint, no geometry. Pointer-only by nature —
+     it does nothing on touch, which is where the filter sheet lives. D67. */
+  form[aria-busy="true"],
+  select[aria-busy="true"] {
+    cursor: progress;
   }
 
 }

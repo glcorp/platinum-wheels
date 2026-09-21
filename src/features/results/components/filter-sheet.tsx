@@ -139,7 +139,12 @@ export function FilterSheet({ view }: FilterSheetProps) {
         onClick={(event) => {
           if (event.target === dialogRef.current) close();
         }}
-        className="backdrop:bg-scrim-mid fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none flex-col justify-end border-0 bg-transparent p-0 open:flex"
+        /* `sheet-dialog` (globals.css) carries the discrete-property
+           transitions the panel's slide and the backdrop's fade need on the
+           exit edge — `dialog.close()` would otherwise remove the panel before
+           it could travel. DESIGN.md names this motion by word: the sheet
+           arrives "from the bottom". D67. */
+        className="sheet-dialog backdrop:bg-scrim-mid fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none flex-col justify-end border-0 bg-transparent p-0 open:flex"
       >
         {/* Panel: bottom-anchored, full width, `background:var(--surface)`,
             `border-top:1px solid var(--border-strong)`, no radius, no side

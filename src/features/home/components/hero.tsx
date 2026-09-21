@@ -75,7 +75,13 @@ export function Hero() {
         <p
           data-probe="hero-lede"
           className={[
-            "text-on-photo opacity-82",
+            /* `opacity-82` removed (D67). The artboard declares `opacity:.82`
+               here, but pixel-sampled against the tread photo the line measured
+               **1.1:1 minimum / 4.7:1 median** — over the bright part of the
+               tread the first sentence on the site was effectively invisible at
+               16px. `--on-photo` already carries the intended tone; the 82% is
+               what pushed it under AA. design/DEVIATIONS.md #58. */
+            "text-on-photo",
             // 16px/1.5 mobile -> 20px/1.5 desktop (home.md:22 mobile, :21 desktop).
             "text-16 leading-body sm:text-20",
             // TOKEN MISSING: --container-hero-lede: 560px -> max-w-hero-lede

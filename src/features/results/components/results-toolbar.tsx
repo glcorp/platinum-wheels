@@ -102,11 +102,12 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
      `Accessories` are new copy (D58, `categories.ts` "crumb"). */
   const config = CATEGORY_CONFIG[category];
   const crumb = config.crumb;
-  /* `null` on accessories: an accessory derives nothing from a vehicle
-     (`search.ts` `fitmentSize()`), so neither the chip nor the disclosure
-     renders there — a `Change vehicle` control that changes no result would be
-     an affordance the data cannot honour (D59(2), vetoable). Tires and wheels
-     both render it, each submitting to its own route. */
+  /* Non-null on all three categories since D67 (owner, 2026-09-22, vetoing
+     D59(2)): an accessory does derive something from a vehicle — lug nuts and
+     wheel locks have a thread pitch, TPMS sensors a frequency — so the chip
+     and the disclosure render here too, each submitting to its own route.
+     The `null` branch below is the switch that turns the affordance off and
+     is currently taken by no category (`categories.ts` "finder"). */
   const finder = config.finder;
   const vehicleLabel =
     vehicle === null

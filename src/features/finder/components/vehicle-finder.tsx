@@ -13,10 +13,11 @@ import { FINDER_MAKES, finderYears } from "@/features/finder/data";
  *
  * Submit target and CTA copy are per category (D58). The home hero and
  * `/results` keep the drawn `ROUTES.results` + `Find my tires`, byte for byte;
- * `/wheels` submits to `/wheels` and reads `Find my wheels`, so the disclosure
- * never throws a visitor back to tires. `/accessories` does not render a
- * finder at all — an accessory derives nothing from a vehicle, so a control
- * that changes no result would be a lie (coordinator, 2026-09-21, D58).
+ * `/wheels` submits to `/wheels` and reads `Find my wheels`, and `/accessories`
+ * to `/accessories` reading `Find my accessories` (D67) — so the disclosure
+ * never throws a visitor back to tires. All three targets come from
+ * `CATEGORY_CONFIG[category].route` and `.finder.cta`; this component only
+ * takes them as props.
  *
  * Two placements, one form:
  * - `hero` (default, unchanged) — the home page panel that overlaps the hero
@@ -36,8 +37,9 @@ export interface VehicleFinderProps {
   action?: string;
   /**
    * CTA copy. Defaults to the artboard-verbatim `Find my tires`
-   * (home-desktop.html:161); `/wheels` passes `Find my wheels`, which is new
-   * copy under `.claude/rules/ui.md` and keeps the same two-word shape.
+   * (home-desktop.html:161); `/wheels` passes `Find my wheels` and
+   * `/accessories` `Find my accessories`, both new copy under
+   * `.claude/rules/ui.md` keeping the drawn phrase's shape.
    */
   cta?: string;
 }

@@ -92,7 +92,12 @@ export function SiteNavDrawer({
             setOpen(false);
           }
         }}
-        className="bg-bg text-ink fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none flex-col overscroll-contain border-0 p-0 open:flex"
+        /* Opacity only, 150ms in / 120ms out on the house easing. The whole
+           viewport used to hard-cut to a different opaque full-screen surface,
+           so on a first open you could not tell whether you had navigated.
+           Deliberately NOT a slide: the design names no drawer direction, and
+           inventing a spatial story is the reflex to avoid. D67. */
+        className="bg-bg text-ink fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none flex-col overscroll-contain border-0 p-0 opacity-100 transition-[opacity,display,overlay] duration-150 ease-[var(--ease-card)] transition-discrete open:flex starting:opacity-0 not-open:opacity-0 not-open:duration-[120ms]"
       >
         {/* 68px top bar echoing the header, with a 44x44 close button — D31 */}
         <div className="flex h-17 items-center justify-end px-4">
