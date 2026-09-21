@@ -8,7 +8,7 @@ imported (`layout.tsx:3`) and the only place the font faces are attached. Break 
 entire site loses its type or its palette at once.
 
 ## Owns
-- [`globals.css`](globals.css) (574 ln) — the token system. See Rules.
+- [`globals.css`](globals.css) (743 ln) — the token system. See Rules.
 - [`layout.tsx`](layout.tsx) (30 ln) — root layout. Metadata `title.default` + `template: "%s · Platinum
   Wheels"` and the site description (`:5-12`); `viewport` `themeColor: "#0B0B0D"`, `colorScheme: "dark"`
   (`:14-17`); font variables + `h-full antialiased` on `<html>` (`:21-24`); `<body>` carries
@@ -52,16 +52,27 @@ entire site loses its type or its palette at once.
     gap and `align-items:start` (`results-desktop.html:119`).
   - `range-input` (`:536`) — a native `<input type="range">` wearing the artboard's price-slider handle;
     two overlap for the min/max pair, so only the 16px thumb takes pointer events.
-  - `sheet-panel` (`:525`) — the filter sheet's height, `calc(100dvh - 144px)`, the 700px of the 844px
-    artboard expressed in `dvh` (`docs/decisions.md` §5: `dvh`, never `vh`).
+  - `sheet-panel` (`:591`) — the filter sheet's height, `calc(100dvh - 144px)`, the 700px of the 844px
+    artboard expressed in `dvh` (`docs/decisions.md` §5: `dvh`, never `vh`), plus
+    `overscroll-behavior: contain` (**D65**, `:598`) — the property was declared nowhere in the build,
+    so scrolling past either end of the sheet chained to the page behind it. The body `overflow:hidden`
+    lock the sheet sets is a different guarantee and does not stop chaining.
   - `size-grid-sheet` (`:533`) — the sheet's tire-size row, `1fr 1fr 1fr 88px` ending in the 88px
     `Apply` (`results-mobile-filters.html:78`).
   - `pb-safe` (`:542`) — the sheet footer's 20px bottom padding plus `env(safe-area-inset-bottom)`.
 - Breakpoints `xs` 400 / `sm` 720 / `md` 1100 / `lg` 1320 (`:243-246`) — **D10**. Container
   `--container-content: 1344px` → `max-w-content` (`:227`) — **D11**. Spacing has no tokens: the
   artboards sit on a 2px grid reachable from Tailwind's 4px step (`:254-257`).
-- `@layer base` (`:546`) sets the body ground/ink and the accent `:focus-visible` ring at offset 0
-  (**D16**), plus a `prefers-reduced-motion` block (`:565`).
+- `@layer base` (`:696`) sets the body ground/ink and the accent `:focus-visible` ring at offset 0
+  (**D16**), plus a `prefers-reduced-motion` block (`:734`).
+- **Tap-target behaviour is declared here once, not per call site** — added 2026-09-22 by **D65**
+  (`:713-730`). One rule gives `a, button, summary, label, select, [role="button"]` both
+  `touch-action: manipulation` (required by `docs/decisions.md` §5, and previously missing on every link
+  that bypasses a primitive — footer, drawer nav, logo, crumbs, quantity cells, card model link, range
+  thumbs) and `-webkit-tap-highlight-color: transparent`, which was set nowhere in the build. **A new
+  component needs no `touch-manipulation` class of its own.** The classes the `ui/` primitives already
+  carry are now **redundant, not wrong**: deleting one changes no rendered behaviour, so don't remove
+  them as a "cleanup" and record it as a change — and don't re-add the pair to a new component either.
 - **`fonts.ts` variables are `--font-display-face` / `--font-body-face` deliberately** — *not* the theme
   key names `--font-display` / `--font-sans`, which `globals.css:137-138` point at. Same names would be a
   circular `var()` (`fonts.ts:19,28`; `HANDOFF.md` §4).

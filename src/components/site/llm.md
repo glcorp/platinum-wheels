@@ -27,7 +27,10 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   `{ links: ReadonlyArray<{ label: string; href: string; active: boolean }>; phone: { display: string;
   tel: string } }`. 44×44 hamburger trigger + a native `<dialog showModal()>` full-screen drawer
   (Esc, focus trap and return-focus are native); the four links plus the phone CTA, nothing else
-  (D31). The only client island in this folder.
+  (D31). The only client island in this folder. The `<dialog>` carries **`overscroll-contain`**
+  (**D65**, 2026-09-22): `overscroll-behavior` was declared nowhere in the build, so scrolling past
+  either end of the open drawer chained to the page behind it. The filter sheet took the same fix
+  through the `sheet-panel` utility (`src/app/llm.md` Rules).
 
 - [`page-stub.tsx`](page-stub.tsx) — `PageStub`, props `{ title; active?; children? }`. Solid header + one `h1` + one line + footer, behind every planned-but-undesigned route (D26, D39). Replace each stub with its designed page.
 - [`route-error.tsx`](route-error.tsx) — `"use client"`. `RouteError({ error, retry })`, the storefront's

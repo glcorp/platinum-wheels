@@ -154,12 +154,14 @@ export function FilterSheet({ view }: FilterSheetProps) {
             {/* Barlow Condensed 700 / 28px / line-height 1 / no tracking —
                 identical to the rail title; see filter-panel.tsx for why the
                 `display` utility is not used. */}
-            <h2
+            {/* `<p>` for the same reason as the rail title — the `<dialog
+                aria-label="Filters">` above already names this region. */}
+            <p
               data-probe="filters-title"
               className="font-display text-display-28 leading-flat font-bold uppercase text-ink"
             >
               Filters
-            </h2>
+            </p>
             {/* Right cluster `display:flex;gap:16px;align-items:center`. */}
             <div className="flex items-center gap-4">
               <Link
@@ -197,7 +199,7 @@ export function FilterSheet({ view }: FilterSheetProps) {
           {/* Body `padding:8px 16px; flex:1` (results.md §4.4). The artboard
               declares `overflow:hidden` because it is a static 844px snapshot
               and the groups happen to fit; a real sheet scrolls. */}
-          <div className="flex flex-1 flex-col overflow-y-auto px-4 py-2">
+          <div className="flex flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-2">
             <FilterPanel
               view={view}
               variant="sheet"

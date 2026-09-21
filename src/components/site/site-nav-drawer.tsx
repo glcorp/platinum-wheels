@@ -92,7 +92,7 @@ export function SiteNavDrawer({
             setOpen(false);
           }
         }}
-        className="bg-bg text-ink fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none flex-col border-0 p-0 open:flex"
+        className="bg-bg text-ink fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none flex-col overscroll-contain border-0 p-0 open:flex"
       >
         {/* 68px top bar echoing the header, with a 44x44 close button — D31 */}
         <div className="flex h-17 items-center justify-end px-4">

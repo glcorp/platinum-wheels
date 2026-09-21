@@ -21,7 +21,7 @@
    --------------------------------------------------------------------------- */
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 
 import { resultsHref, withSort } from "@/features/results/query";
 import { SORT_OPTIONS, type ResultsQuery } from "@/features/results/types";
@@ -55,9 +55,24 @@ export function SortSelect({ query, variant, id }: SortSelectProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
+  /* `key={query.sort}` below re-mounts the select once the server confirms the
+     new sort, which drops keyboard focus to <body> — a keyboard user had to Tab
+     from the top of the document again after every sort change. Measured live
+     before the fix: focus on the select, change, focus lands on BODY. This is
+     the same re-focus-by-id pattern filter-panel.tsx uses for its keyed form.
+     Craft audit P1 #2. */
+  const refocusRef = useRef(false);
+
+  useEffect(() => {
+    if (!refocusRef.current) return;
+    refocusRef.current = false;
+    document.getElementById(id)?.focus({ preventScroll: true });
+  }, [query.sort, id]);
+
   function handleChange(value: string) {
     const sort = SORT_OPTIONS.find((option) => option.value === value);
     if (sort === undefined) return;
+    refocusRef.current = true;
     const href = resultsHref(withSort(query, sort.value));
     startTransition(() => {
       router.replace(href, { scroll: false });

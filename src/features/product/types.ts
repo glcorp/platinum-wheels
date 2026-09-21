@@ -14,7 +14,7 @@
  */
 
 import type { CategoryConfig } from "@/features/catalog/categories";
-import type { Product } from "@/features/catalog/types";
+import type { Product, ProductCategory } from "@/features/catalog/types";
 
 /* --- Quantity (D50) ------------------------------------------------------ */
 
@@ -57,6 +57,26 @@ export function quantityQuoteLabel(
  *  It is the default because the artboard chose it, not because a set of four
  *  is assumed — `Custom` is one click away and the quote form is free text. */
 export const DEFAULT_QUANTITY: QuantityKey = "4";
+
+/** Per-category default for the `How many?` cells.
+ *
+ *  Only the tire PDP is drawn, so `4` is artboard fidelity there and nowhere
+ *  else — on `/wheels` it is also right (a set of four), but on an accessory it
+ *  was an unexamined carry-over: the Acorn Lug Nuts PDP opens on `4` for a
+ *  product whose own size line reads `Set of 20`, so the pre-filled quote asked
+ *  for eighty lug nuts. Accessories are sold by the item or the set and have no
+ *  natural multiple, so they open on `1`.
+ *
+ *  D63 ruled the *labels* stay as drawn on accessories; the selected default
+ *  was not part of that ruling. Craft audit P1. */
+export const DEFAULT_QUANTITY_BY_CATEGORY: Record<
+  ProductCategory,
+  QuantityKey
+> = {
+  tires: DEFAULT_QUANTITY,
+  wheels: DEFAULT_QUANTITY,
+  accessories: "1",
+};
 
 /** Query-string params this route reads. `qty` is its own (D50); the vehicle
  *  trio arrives from `/results` and is passed straight through to the

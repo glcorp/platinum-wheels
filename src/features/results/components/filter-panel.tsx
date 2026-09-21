@@ -515,12 +515,20 @@ export function FilterPanel({
               is reset to `initial` in globals.css so no zero-tracking class
               exists; the properties are spelled out instead, exactly as
               how-it-works.tsx does for the same case (D35(3)). */}
-          <h2
+          {/* A `<p>`, not an `<h2>`: `results-page.tsx` renders the rail before
+              the grid, so an `<h2>` here opened the document outline at level 2
+              and pushed the page `<h1>Best matches>` (results-grid.tsx) into
+              second place on /results, /wheels and /accessories at >=1100px.
+              `<aside aria-label="Filters">` (filter-rail.tsx) already names the
+              region, so nothing is lost. `<p>` and `<h2>` are both block and
+              preflight zeroes both margins, so no pixel moves. Craft audit
+              P1 #3. */}
+          <p
             data-probe="filters-title"
             className="font-display text-display-28 leading-flat font-bold uppercase text-ink"
           >
             Filters
-          </h2>
+          </p>
           <Link
             href={resultsHref(clearFilters(query))}
             data-probe="clear-all"

@@ -3,13 +3,12 @@
 ## Purpose
 The `/products/[slug]` page: gallery, buy panel, spec table, quote band and the similar-products row.
 Since **D58** (2026-09-21) it serves **all three catalogue categories** from one route — a tire, a wheel
-and an accessory are the same page, and everything that differs (the spec rows, the price unit, the
-quantity wording, the breadcrumb crumb and back link, the similar list) is derived from the product's own
-`CategoryConfig` rather than branched in a component.
-It is the only page in the build where a visitor converts — every `Request a quote` CTA on `/` and
-`/results` lands on the `#quote` anchor here (`src/lib/routes.ts` `quoteRoute()`), so this folder owns
-the one form the storefront has. Delete it and the whole quote-first premise
-(`docs/decisions.md:105-107`) has nowhere to land.
+and an accessory are the same page, and everything that differs (spec rows, price unit, quantity
+wording, breadcrumb crumb and back link, similar list) is derived from the product's own
+`CategoryConfig`, never branched in a component. It is the only page in the build where a visitor
+converts — every `Request a quote` CTA on `/` and `/results` lands on the `#quote` anchor here
+(`src/lib/routes.ts` `quoteRoute()`), so this folder owns the storefront's one form. Delete it and the
+quote-first premise (`docs/decisions.md:105-107`) has nowhere to land.
 
 ## Owns
 - [`types.ts`](types.ts) — the contract, written before any component (D25). `ProductView` is what the
@@ -18,6 +17,8 @@ the one form the storefront has. Delete it and the whole quote-first premise
   `ProductSpecRow` are the two shapes derived from `Product` (D53). **D58 added** `ProductView.config`
   (the product's `CategoryConfig`) and replaced `QUANTITY_OPTIONS[].quoteLabel` with
   `quantityQuoteLabel(value, unit)` — the four cells are category-independent, only the wording is not.
+  **D65 added** `DEFAULT_QUANTITY_BY_CATEGORY`, which `view.ts`'s `parseQuantity(params, category)` now
+  reads: an accessory PDP opens on `1`, tires and wheels keep the drawn `4` (`DEFAULT_QUANTITY`).
 - `view.ts` — `productView(product, searchParams)`, pure. The only place any PDP value is computed.
   Per category (D58): a **tire** splits `Product.size` on ` · ` into `sizeCode` + `loadSpeed` and builds
   the six drawn spec rows, the three badges and the season-grouped similar list, exactly as before; a
@@ -38,12 +39,12 @@ the one form the storefront has. Delete it and the whole quote-first premise
   drift (the `ResultsEmpty` precedent) and it stays out of that page's client bundle. `role` and
   `tabIndex` are props: the live form passes them and focuses it; the styleguide renders it inert.
 - `components/quote-error-summary.tsx` — `QuoteErrorSummary`, the authored **failed**-submit
-  announcement (D57, audit finding C2/C3, `DEVIATIONS.md` #46). Exact same shape and reasoning as
-  `quote-success.tsx` above: its own module so `/styleguide` renders the real component, `role` and
-  `tabIndex` as props so the reference page renders it inert. In the live form `role="alert"` is
-  implicitly assertive and atomic, so **mounting the node is the announcement** — the build had no live
-  region anywhere before this. Renders `null` at a count of 0, so the caller needs no guard. It borrows
-  the `FieldError` type role rather than inventing a look; no artboard draws an error state (#9).
+  announcement (D57, audit C2/C3, `DEVIATIONS.md` #46). Same shape and reasoning as `quote-success.tsx`
+  above: its own module so `/styleguide` renders the real component, `role`/`tabIndex` as props so the
+  reference page renders it inert. `role="alert"` is implicitly assertive and atomic, so **mounting the
+  node is the announcement** — the build had no live region before this. Renders `null` at a count of 0,
+  so the caller needs no guard; it borrows `FieldError`'s type role, and no artboard draws an error
+  state (#9). **It is only reachable because the form is `noValidate`** (D65 — see Rules).
 
 ## Rules
 - **Measured baseline is `design/inventory/product.md`** (696 lines). Every number in a component
@@ -67,7 +68,18 @@ the one form the storefront has. Delete it and the whole quote-first premise
   "Do not synthesise a trust line into the panel." The page's one fitment sentence lives in the quote
   band and is **desktop-only**, as drawn.
 - **Quantity is a URL param** (D50). The cells are links that set `?qty=`; the panel stays a Server
-  Component. `qty` never reaches the breadcrumb's `backHref`.
+  Component. `qty` never reaches the breadcrumb's `backHref`. The *selected* cell defaults per category
+  (D65) — only the default, never the four cells or their labels, which stay as drawn (D63).
+- **The quote form is `noValidate`, and that is load-bearing** (D65). With native constraint validation
+  on, the browser's own bubble fired first on the commonest failure — an empty `required` field — so the
+  Server Action never ran and **both already-applied D57 fixes were dead on that path**: the
+  `role="alert"` summary (C2) and focus-first-invalid (C3) were unreachable. `required` stays on the
+  fields for semantics and AT; `actions.ts` was always the real validator and owns the specific messages.
+  Removing `noValidate` silently disables C2 and C3 again.
+- **A `beforeunload` guard protects typed input** (D65). The quantity cells above the form are `?qty=`
+  links, so tapping one is a real navigation that emptied every field already typed. `onInput` arms a
+  `dirtyRef`; `success` disarms it so the confirmation never warns. The owner chose this over changing
+  D50's URL-param mechanism.
 - **Spec table is derived, never typed** (D53) — the same principle as D42 on `/results`. Six rows from
   `Product` + `studdable`; if a value cannot be derived the row is dropped, not invented.
 - **The gallery is one image, no thumbnails** (D53). The desktop column's inert `gap:12px` is the slot
@@ -138,6 +150,7 @@ same season, self excluded), **D53** (the derived-rulings bundle), **D6** (no st
    accessory SKUs** via `productImageSrc()`'s absolute-path branch (D58, `DEVIATIONS.md` #51). A real
    gallery needs per-SKU photography — `HANDOFF.md` §7. **Client.**
 5. **`How many?` reads oddly on an accessory** whose `size` already says `Set of 20`, so the cells offer
-   one, two or four *sets*. The four cells are drawn (D50) and the owner asked for everything but the
-   filters and SKUs to stay as it is, so nothing was changed; `Custom` and the free-text message cover
-   the real case. **Owner**, if the wording should change.
+   one, two or four *sets*. **Half-closed 2026-09-22 by D65:** the *default* no longer pre-fills a
+   request for eighty lug nuts — accessories open on `1`, tires and wheels on the drawn `4`. The four
+   cells and their **labels** are untouched (D50, D63), which is what the owner asked for. Still
+   **owner's**, if the wording should change.

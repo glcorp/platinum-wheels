@@ -116,7 +116,14 @@ function matchesChips(
 
 function matchesBrands(product: Product, query: ResultsQuery): boolean {
   if (query.brands.length === 0) return true;
-  return query.brands.includes(product.brand);
+  /* Case-insensitive: D44 makes the URL the shareable state, so `?brand=` is
+     something a person types, forwards or has normalised to lower case by
+     another system. Exact matching meant `?brand=Zeta` returned 2 and
+     `?brand=zeta` returned 0 with no hint why — measured live. The facet
+     values still ship in the seed's own casing; only the comparison relaxes.
+     Craft audit P2. */
+  const wanted = query.brands.map((brand) => brand.toLowerCase());
+  return wanted.includes(product.brand.toLowerCase());
 }
 
 function matchesPrice(product: Product, query: ResultsQuery): boolean {
@@ -209,7 +216,11 @@ function brandFacets(
         matchesChips(product, query, chipConfig) &&
         matchesPrice(product, query),
     ).length,
-    selected: query.brands.includes(brand),
+    /* Case-insensitive to match `matchesBrands`: otherwise `?brand=zeta` would
+       filter the grid correctly but leave the Zeta row unticked. */
+    selected: query.brands.some(
+      (wanted) => wanted.toLowerCase() === brand.toLowerCase(),
+    ),
   }));
 }
 

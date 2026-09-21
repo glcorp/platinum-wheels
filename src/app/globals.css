@@ -591,6 +591,11 @@
 @utility sheet-panel {
   height: calc(100dvh - 144px);
   max-height: 100dvh;
+  /* Scrolling past either end of the sheet chained to the page behind the
+     modal: `overscroll-behavior` was declared nowhere in the build. The body
+     `overflow:hidden` lock the sheet sets is a different guarantee and does not
+     stop chaining or iOS rubber-banding. Craft audit P1 #4. */
+  overscroll-behavior: contain;
 }
 
 /* Sheet tire-size row: `grid-template-columns:1fr 1fr 1fr 88px;gap:8px;
@@ -703,6 +708,25 @@
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 0;
+  }
+
+  /* Every tap target, once, instead of per call site.
+     `touch-action: manipulation` is required by docs/decisions.md §5 and the
+     `ui/` primitives already carry it as a utility class; the links that do not
+     go through a primitive (footer, drawer nav, header logo, breadcrumbs,
+     quantity cells, card model link, range thumbs) were keeping the UA's
+     ~300ms double-tap-zoom delay. Declaring it here covers them all and makes
+     the per-primitive class redundant rather than wrong.
+     `-webkit-tap-highlight-color` was set nowhere in the build, so every tap
+     painted the UA's blue-grey flash over Track Night. Craft audit P1 #6/#8. */
+  a,
+  button,
+  summary,
+  label,
+  select,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
 }

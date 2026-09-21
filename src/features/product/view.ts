@@ -16,10 +16,10 @@
 
 import { productsIn } from "@/features/catalog/data";
 import { configFor, type CategoryConfig } from "@/features/catalog/categories";
-import type { Product } from "@/features/catalog/types";
+import type { Product, ProductCategory } from "@/features/catalog/types";
 
 import {
-  DEFAULT_QUANTITY,
+  DEFAULT_QUANTITY_BY_CATEGORY,
   PRODUCT_PARAM,
   QUANTITY_OPTIONS,
   type PdpBadge,
@@ -239,11 +239,14 @@ function buildBadges(
 
 /* --- Quantity -------------------------------------------------------------- */
 
-function parseQuantity(params: ProductSearchParams): QuantityKey {
+function parseQuantity(
+  params: ProductSearchParams,
+  category: ProductCategory,
+): QuantityKey {
   const raw = params[PRODUCT_PARAM.qty];
   const value = Array.isArray(raw) ? raw[0] : raw;
   const match = QUANTITY_OPTIONS.find((option) => option.value === value);
-  return match?.value ?? DEFAULT_QUANTITY;
+  return match?.value ?? DEFAULT_QUANTITY_BY_CATEGORY[category];
 }
 
 /* --- Vehicle ----------------------------------------------------------------
@@ -352,7 +355,7 @@ export function productView(
     fullName,
     specs: buildSpecs(product, config, sizeCode, loadSpeed, season),
     badges: buildBadges(product, config, season),
-    quantity: parseQuantity(searchParams),
+    quantity: parseQuantity(searchParams, config.category),
     vehicle,
     backHref: buildBackHref(searchParams, config.route),
     inquiryContext,

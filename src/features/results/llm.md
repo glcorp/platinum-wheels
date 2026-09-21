@@ -8,14 +8,14 @@ the only things that differ per category are the filter groups and the seed, and
 filters and skus change but everything else remains as it is"*, so there is deliberately **no** per-route
 fork anywhere in this folder.
 
-The page's own sections: toolbar, mobile sticky filter/sort bar, the filter rail (desktop) and
-filter sheet (mobile), the best/similar card grids with `Load more`, and the mobile call panel. The route
-file stays thin (`docs/decisions.md` §3); everything the artboards draw for `02 Results` lives here.
-The page is **URL-driven** (D44): every filter, the sort and the load-more window are query params, the
-server filters the catalog seed and renders every state, and the only client code is the leaf islands
-that update the URL. **The category is not a param** — it is the route, so it is an argument to
-`parseResultsQuery()` and `searchResults()` and is carried on `ResultsQuery`, never serialised (D58).
-Delete this folder and all three category routes fall back to nothing.
+The page's own sections: toolbar, mobile sticky filter/sort bar, the filter rail (desktop) and sheet
+(mobile), the best/similar grids with `Load more`, and the mobile call panel; the route file stays thin
+(`docs/decisions.md` §3) and everything the artboards draw for `02 Results` lives here. The page is
+**URL-driven** (D44): every filter, the sort and the load-more window are query params, the server
+filters the seed and renders every state, and the only client code is the leaf islands that update the
+URL. **The category is not a param** — it is the route, an argument to `parseResultsQuery()` /
+`searchResults()` carried on `ResultsQuery`, never serialised (D58). Delete this folder and all three
+category routes fall back to nothing.
 
 ## Owns
 Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results.md` §2–§4 and
@@ -39,7 +39,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   never mutated, the size selects stay `Any` and `facets.activeGroups` is unchanged, because a derived
   fitment is not a user filter. **Fitment is per category (D58):** tires borrow `width`/`profile`/`rim`,
   wheels borrow `bolt` only — a car determines its bolt pattern, not the rim size its owner wants — and
-  accessories borrow nothing. It reads `productsIn(category)`, not `PRODUCTS`.
+  accessories borrow nothing. It reads `productsIn(category)`, not `PRODUCTS`. **Brand matching is
+  case-insensitive since D65**, in `matchesBrands` *and* in `brandFacets`'s `selected` flag — they must
+  agree or the grid filters while the row stays unticked. D44 makes the URL shareable state, so
+  `?brand=zeta` is something a person types; exact matching returned 0 for it and 2 for `?brand=Zeta`.
+  Facet values still ship in the seed's own casing, so no rendered label changes.
 - [`components/results-toolbar.tsx`](components/results-toolbar.tsx) — `ResultsToolbar({ view })`, Server.
   Breadcrumb, then a `<details>` whose `<summary>` is the vehicle chip plus the `Change vehicle` /
   `Add vehicle` link (D45, D47(5)) opening a `<VehicleFinder variant="inline">` that submits to **this**
@@ -48,7 +52,10 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   (`1 match` / `N matches` / `N matches · M similar`, D42) and the desktop `Sort` label + `SortSelect`.
 - [`components/sort-select.tsx`](components/sort-select.tsx) — `"use client"`. `SortSelect({ query, variant:
   "toolbar" | "bar", id })`: native `<select name="sort">`; on change `router.replace(resultsHref(withSort(…)))`.
-  The `bar` variant prefixes each option with `Sort: ` (D47(4)).
+  The `bar` variant prefixes each option with `Sort: ` (D47(4)). Since **D65** a `refocusRef` +
+  `useEffect` re-focus the select **by `id`** after the `key={query.sort}` re-mount, which otherwise
+  dropped keyboard focus to `<body>` on every sort change — `filter-panel.tsx`'s pattern for its keyed
+  form. The `id` prop is load-bearing, not decorative.
 - [`components/filter-sort-bar.tsx`](components/filter-sort-bar.tsx) — `FilterSortBar({ view })`, Server.
   The mobile sticky bar (`top:68` / `sm:top-22`, `md:hidden`): `FilterSheet` + `SortSelect variant="bar"`.
 - [`components/filter-panel.tsx`](components/filter-panel.tsx) — `"use client"`. `FilterPanel({ view, variant:
@@ -59,14 +66,15 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   entirely when that is `null`, the chip row from `facets.chipGroup` (`Season` / `Finish` / `Type`),
   Brand `Checkbox variant="facet"` rows, Price = two `range-input`s over a track — navigating on native
   `change`, re-focusing the changed control after the URL re-renders. Exports `CLEAR_ALL_CLASS`.
-  **Nothing in this file is spelled in tire vocabulary any more**; every label, param and option comes
-  off `view.facets`, which is what keeps one component serving three rails.
+  Nothing here is spelled in tire vocabulary; every label, param and option comes off `view.facets`.
 - [`components/filter-rail.tsx`](components/filter-rail.tsx) — `FilterRail({ view })`, Server. `<aside
   aria-label="Filters">`, `hidden md:flex`, sticky `top:96`; the 32px group gap sits on the form.
 - [`components/filter-sheet.tsx`](components/filter-sheet.tsx) — `"use client"`. `FilterSheet({ view })`: the
   `Filters (n)` trigger (`Filters` at 0) and its `<dialog>` — `sheet-panel` height, `::backdrop`
   `--scrim-mid` over the header too (D47(3)), Esc / ✕ / backdrop close, body scroll lock, closes itself
-  when the viewport crosses to `md:`, footer `Show N matches` submits the panel form via `form=`.
+  when the viewport crosses to `md:`, footer `Show N matches` submits the panel form via `form=`. Its
+  body scroller carries `overscroll-contain` (**D65**), as `sheet-panel` and the nav drawer now do — the
+  body `overflow:hidden` lock is a different guarantee and does not stop scroll chaining.
 - [`components/results-grid.tsx`](components/results-grid.tsx) — `ResultsGrid({ view })` and
   `ResultsEmpty({ clearHref, as?, body? })`, Server. `body` defaults to the tire copy so the
   `/styleguide` call site stays untouched. `Best matches` is the `<h1>` (D47(6)), `Similar matches`
@@ -80,6 +88,13 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 - **State is the URL.** No component holds filter state; islands call `router.replace(resultsHref(q))`
   with `scroll: false`. The server is the only place results are computed (D44, `docs/decisions.md` §4).
 - **Counts are computed from the seed, never typed** (D42). No artboard number ships as a count.
+- **The `Filters` title is a `<p>` in both the rail and the sheet** (D65). `results-page.tsx` renders the
+  rail before the grid, so an `<h2>` there opened the outline at level 2 and pushed the page `<h1>Best
+  matches</h1>` (`results-grid.tsx`) into second place on all three routes at ≥1100px. `<aside
+  aria-label="Filters">` / `<dialog aria-label="Filters">` already name the region, and the artboard's
+  own element is a `<span>` (`results-desktop.html`) — so `<p>` is **closer** to what is drawn. **Not a
+  deviation; no `design/DEVIATIONS.md` row.** Preflight zeroes both elements' margins and the probe
+  matches on every property (78.9×28 vs 79×28): no pixel moves.
 - **No per-category fork.** A component here may branch on the *shape* of `view.facets` (is there a size
   group?) but must never branch on `view.query.category`. Anything that genuinely differs per category is
   data, and data belongs in `catalog/categories.ts`. The moment a `if (category === "wheels")` appears in
@@ -126,6 +141,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `catalog/categories.ts` is the client-safe half and is what `filter-panel.tsx` imports.
 - Don't branch a component on `view.query.category`. See the rule above — that is what
   `catalog/categories.ts` is for.
+- Don't promote either `Filters` title back to an `<h2>`; it breaks the page's heading order (D65).
 - Don't put a fourth select in the size group. The artboard draws three tracks; wheel offset is a spec
   row for exactly this reason (owner, 2026-09-21).
 
@@ -140,8 +156,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
    `showModal()` (`filter-sheet.tsx` header comment).
 4. Parity: `design/reports/results.md`. Deviations: `design/DEVIATIONS.md` #25–#35, and #49–#53 for the
    two new categories.
-5. **`/wheels` and `/accessories` have no parity report and are not parity rows** (#49). They inherit
-   `/results`' parity by rendering the same tree. If either is ever allowed to diverge visually, that
-   inheritance stops holding and they need their own measurement.
+5. **`/wheels` and `/accessories` have no parity report and are not parity rows** (#49) — they inherit
+   `/results`' parity by rendering the same tree, which stops holding the moment either diverges visually.
 6. Every wheel and accessory SKU, brand, finish and price is **placeholder data** (D58 under D48), and
    all nine accessory cards share one photograph (#51). Client, via owner.

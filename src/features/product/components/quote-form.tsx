@@ -108,6 +108,26 @@ export function QuoteForm({
     }
   }, [state]);
 
+  /* The quantity cells above this form are `?qty=` links (D50), so tapping one
+     is a real navigation and it silently emptied every field the user had
+     typed — verified live: name, email and message all came back blank. The
+     owner ruled for a `beforeunload` guard over changing D50's URL-param
+     mechanism. Armed on first input, disarmed on success so the confirmation
+     never warns. Craft audit P1 #1. */
+  const dirtyRef = useRef(false);
+
+  useEffect(() => {
+    if (state.status === "success") dirtyRef.current = false;
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      if (!dirtyRef.current) return;
+      event.preventDefault();
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [state.status]);
+
   if (state.status === "success") {
     /* Authored state — see `quote-success.tsx` for why it has no artboard and
        why it lives in its own module. `role="status"` and `tabIndex={-1}` are
@@ -121,7 +141,23 @@ export function QuoteForm({
   const errorCount = errors ? Object.keys(errors).length : 0;
 
   return (
-    <form action={formAction} data-probe="quote-form" className="flex flex-col gap-8">
+    <form
+      action={formAction}
+      data-probe="quote-form"
+      /* `noValidate` so the authored validation is the one users actually meet.
+         With native constraint validation on, the browser's own bubble fired
+         first on the commonest failure (an empty required field) and the
+         Server Action never ran — which made the `role="alert"` summary (audit
+         C2) and the focus-first-invalid effect (C3) unreachable on that path.
+         `required` stays on the fields for semantics and AT; `actions.ts` was
+         already the real validator and its messages are specific
+         ("Enter a 10-digit Canadian phone number."). Craft audit P1 #3. */
+      noValidate
+      onInput={() => {
+        dirtyRef.current = true;
+      }}
+      className="flex flex-col gap-8"
+    >
       {/* Hidden: which product this inquiry is about. */}
       <input type="hidden" name={QUOTE_FIELD.slug} value={slug} />
 
