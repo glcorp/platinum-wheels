@@ -10,7 +10,26 @@ build, by owner instruction** — *"the project is still in dev with no real use
 into main without testing"* (2026-09-23). If a `main` build breaks, suspect `src/app/admin/` and
 `src/features/admin/` first. See §5, §6 item 0, §7.
 
-**Last updated 2026-09-21 (session 6).** All three designed routes are built and audited; the catalogue
+**Admin sign-in hardened 2026-09-23 on branch `admin-auth-hardening` (D95).** The session cookie was the
+constant `"1"` (anyone could set it by hand) and `createPaymentLink` checked no session at all. The branch
+adds a signed `__Host-` cookie, a scrypt password hash, a CSRF token and origin check on every admin Server
+Action, `/admin` security headers and audit log lines. **This branch is the first time the admin code was
+compiled, built and run:** `npm run check` and `next build` are clean, 43 curl probes against `next start`
+pass, and the JS form path was driven in a browser (§5). It has not run on Vercel, because every
+deployment of a commit authored by `garvbareja` is **blocked** (§7). Not merged to `main`; a parallel
+session is working on admin payments in the `payments` worktree.
+
+**Admin subdomain and host routing 2026-09-23, branch `admin-host-routing` stacked on
+`admin-auth-hardening` (D96–D98).** `admin.platinumwheels.ca` is live on Vercel through one DNS-only
+Cloudflare CNAME, verified from outside: Vercel IPs, a Let's Encrypt certificate, `/admin` → 307 →
+`/admin/login` (D96). `src/proxy.ts` sends every other path on that host to `/admin` and 404s `/admin` on
+every other host, production only (D97). Its rules pass 8 unit tests, but it has **never been built or
+observed on Vercel** — this branch's deployments are blocked exactly like session 7's (§7). Until a build
+runs, the live subdomain serves production `e032b6d`: the storefront at `/`, the pre-D95 admin at `/admin`.
+
+**Last updated 2026-09-23 (session 8: admin subdomain and host routing, D96–D98).**
+
+**Session 6 (2026-09-21).** All three designed routes are built and audited; the catalogue
 now has **three categories, not one** (`/wheels` and `/accessories` are full results pages sharing the
 `/results` composition — **D58**, **D59**); the safe half of the audit fix list is applied (**D61**); and
 **the last two undrawn states, `loading` and route `error`, are authored (**D62**)**, which completes
@@ -24,8 +43,13 @@ and the accessory types re-cut to match it, the **category tiles** use their own
 **How to use this file.** It is the single current record of how to work in this repo. **Cite it by
 section (`HANDOFF.md §7`), never by line number** — sections are stable, line numbers are not (D55).
 
+**Work a session cannot do from the repo** — DNS, dashboards, accounts, API keys — lives in root
+**`todo.md`**, with who does it, why, and how to check it is done. Read it at the start of every session;
+delete an item there once it is verified done. It also holds the live DNS/mail snapshot (DNS is on
+**Cloudflare**, not GoDaddy).
+
 It is **not a log** (root `llm.md` §1.7). It records what is true now; finished work is deleted from
-§6 rather than struck through. The decision register lives in root `llm.md` §5b (**D23–D57**); §11 below
+§6 rather than struck through. The decision register lives in root `llm.md` §5b (**D23 onward**); §11 below
 holds the frozen canonical text of **D1–D22** and is **never edited**, and §10 and §12 are likewise
 archive — edit §1–§9 freely and leave §10–§12 alone.
 
@@ -133,7 +157,7 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | `/admin` | Payment-link builder behind the stub gate: `AdminTopBar` + `PaymentLinkForm`. Amount + description only, no computation (D92). |
 | `/admin/login` | Flush-left 420px sign-in column, username + password (D91). Redirects to `/admin` if already signed in. |
 | `/admin/styleguide` | The admin's authored states (D93), gated. Renders the real components inert. |
-| `src/features/admin/` | `types.ts` (contract), `session.ts` (**stub gate, not auth**), two `"use server"` actions, 6 components; islands `login-form`, `payment-link-form`, `copy-link-button`. |
+| `src/features/admin/` | `types.ts` (contract), `session.ts` (one shared sign-in, hardened by D95: scrypt hash, signed `__Host-` cookie, CSRF + origin checks), two `"use server"` actions that call `requireAdminAction()` first, 6 components; islands `login-form`, `payment-link-form`, `copy-link-button`. `scripts/hash-admin-password.mjs` makes `ADMIN_PASSWORD_HASH`. |
 | Stubs left | `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). `/wheels` and `/accessories` left this list on 2026-09-21 (D58). |
 
 ---
@@ -170,8 +194,14 @@ Everything below was measured, not asserted. Re-verified after D57 and again aft
   slop grep zero new hits, still exactly **six** `"use client"` and **one** `"use server"`, none under
   `src/app/`.
 
-- `npm run check` clean; `npx next build` clean; slop grep **zero** — **as of the last storefront build.
-  The admin (D89–D94) has never been built**; its static checks are in §6 item 0.
+- `npm run check` clean; `npx next build` clean; slop grep **zero** — **as of the last storefront build.**
+  The admin was first built on branch `admin-auth-hardening` (2026-09-23, D95): `npm run check` and
+  `next build` clean there, and a curl harness against `next start` passed 43/43 — forged, expired,
+  tampered and legacy cookies rejected; sign-in refused without a same-origin `Origin`; payment link and
+  sign-out refused without the session's CSRF token; a password change revokes sessions; plaintext and
+  malformed-hash configs behave as documented; no credential ever reaches the log. The JS action path
+  (generate a link, sign out) was driven in the browser pane with a minted session cookie. **Never
+  observed:** the D89 layout items in §6 item 0, and any of it on a Vercel deployment.
 - **Thirteen** `"use client"` files and **three** `"use server"`, recounted 2026-09-23 with the command
   below. Ten client files are storefront — the "eight" this line used to state predates D80's `hash-scroll`
   and the finder's `finder-model-sync` — and three are admin (`login-form`, `payment-link-form`,
@@ -215,13 +245,17 @@ parked row.
 
 **Admin, before anything else on that branch:**
 
-0. **Verify the admin on the first Vercel build of `main`.** Link the repo to a Vercel project first — nothing in the repo
-   does yet — and set `ADMIN_USERNAME` / `ADMIN_PASSWORD` for Preview, or sign-in returns the `unavailable`
-   state by design. Static checks already done: every `@/` import resolves, no new `"use client"` under
-   `src/app/`, slop grep zero, no em dash in authored copy. **Never observed:** the `$` / `CAD` adornments
-   on the amount field at 390 and ~810 (the `pl-*`/`pr-*` longhand must beat `Input`'s `px-*` shorthand —
-   reasoned from Tailwind's emission order, not seen); the top bar's logo sharing a left edge with the
-   page `<h1>` across 720–1099; no horizontal overflow on the three admin routes.
+0. **Verify the admin on Vercel, once deployments are unblocked (§7).** The Vercel project exists:
+   `platinum-wheels` on team `platninumwheels`, production URL `platinum-wheels-one.vercel.app`, and
+   `ADMIN_USERNAME`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` are set for Production and Preview.
+   `admin-auth-hardening` can merge as is: without `ADMIN_PASSWORD_HASH` the plaintext `ADMIN_PASSWORD`
+   keeps working (D95's fallback). Switching to the hash is **deferred by the owner** (§7). **Never observed:** the `$` / `CAD`
+   adornments on the amount field at 390 and ~810 (the `pl-*`/`pr-*` longhand must beat `Input`'s
+   `px-*` shorthand, reasoned from Tailwind's emission order, not seen); the top bar's logo sharing a left
+   edge with the page `<h1>` across 720–1099; no horizontal overflow on the three admin routes. **On the
+   first unblocked production build, check the host rules live (D97):** `admin.platinumwheels.ca/` and
+   `/results` → 307 `/admin`; `admin.platinumwheels.ca/admin/login` → 200; `platinum-wheels-one.vercel.app
+   /admin` → 404; storefront pages on the vercel.app host unchanged.
 
 1. ~~**Author the two remaining undrawn states.**~~ **Done 2026-09-21 (D62).** `loading.tsx` and
    `error.tsx` exist at `(storefront)/`, both are on `/styleguide` §11, and the `"use client"` conflict
@@ -249,14 +283,26 @@ parked row.
 
 ## §7. Open
 
-**Admin (D89–D94):**
+**Admin and hosting (D89–D95):**
 
-- **`session.ts` is a stub gate, not authentication.** No hashing at rest, no per-user accounts, no rate
-  limiting, no session rotation or revocation, no CSRF token, and a constant cookie value. **It must be
-  replaced before `admin.platinumwheels.ca` is public.** The warning block at the top of the file is the
-  canonical list.
-- **`proxy.ts` is not written** (D90). `/admin` is reachable on the apex domain; only `robots: noindex` on
-  the admin layout keeps it out of a search index. Ship it together with real auth.
+- **One shared sign-in, hardened (D95).** scrypt hash at rest, signed `__Host-` session cookie, CSRF
+  token and origin check on every admin Server Action, `/admin` security headers, audit log lines.
+  **Declined by the owner:** a failed-login limit, per-user accounts, 2FA. **Deferred by the owner
+  (2026-09-23):** replacing `ADMIN_PASSWORD` with `ADMIN_PASSWORD_HASH` (`npm run admin:hash-password`) —
+  *"without npm run admin:hash-password will the ADMIN_PASSWORD keep working if yes lets defer it for later"*. Plaintext keeps working meanwhile; each instance logs `admin.config.plaintext_password`. The block at
+  the top of `session.ts` is the canonical list.
+- **`admin.platinumwheels.ca` is wired; the apex is not** (D96). One DNS-only Cloudflare CNAME to
+  `b3b61a760d17a44c.vercel-dns-017.com`. `platinumwheels.ca` and `www` still serve the goodwill site on
+  Cloudflare Pages, and the zone's MX/SPF/DMARC are the shop's Google Workspace email. **Confirmed by the
+  owner (2026-09-23):** *"no i meant admin stays and main website stays deferred"*. D95's *"lets not wire up the website"* is the apex.
+- **`src/proxy.ts` is written but unobserved** (D97). Host routing only — the D95 gate is still the only
+  gate. `noindex` stays in both the layout meta and the `X-Robots-Tag` header.
+- **Every Vercel deployment of our commits is BLOCKED.** The `platninumwheels` team is on Hobby with one
+  member, `platinumwheelsca-5555` (GitHub `glcorp`); commits are authored by GitHub `garvbareja`, who is a
+  collaborator on the GitHub repo but not a member of the Vercel team, and Vercel checks team
+  membership. Pushing works; only the build is refused, and production keeps serving its last good
+  deployment (`e032b6d`, built at import). Fix: move the team to Pro (Hobby is also non-commercial only)
+  and invite `garvbareja`'s Vercel account. Owner.
 - **No PSP.** `createPaymentLink` fabricates a URL (D94); the success panel says so on screen, and that
   notice is mandatory.
 - **Product CRUD** is deferred until the vendor catalogue settles the schema.
@@ -265,10 +311,26 @@ parked row.
 - Session length (12 h) and the admin's `sm:` padding ramp were coordinator calls; both vetoable. Full list:
   `src/features/admin/llm.md` Open.
 
+**Quote delivery by email — unparked 2026-09-23, in progress on branch `enquiry-email`:**
+
+- The owner unparked §7.15: *"Deliver enquiries by email (highest value, and it's part of what you
+  sold)"*. It takes the next free decision ID when the branch lands (**D98**: D95 is PR #1's and
+  D96–D98 are PR #2's, both published first; D99 is next at the time of writing).
+- **Owner rulings, 2026-09-23:**
+  - reuse the goodwill site's Resend account, with a new sending-only key for the storefront
+  - `sales@platinumwheels.ca` as both the From address and the alert recipient
+  - honeypot and timer in the action, plus one Vercel Firewall rule at launch
+  - a fixed auto-reply that never repeats what the visitor typed
+  - the owner alert email is the CASL consent record
+  - the footer reads `Brampton, ON` until the street address arrives
+- **No DNS change is needed:** Resend is already verified on the domain.
+- The owner-side prerequisites (API key, DPA, Google Workspace DKIM, grey cloud, firewall rule) are items
+  1–7 in `todo.md`.
+
 **Parked by D54 — recorded, not owed, not blockers:**
 
-1. **The quote form has no destination.** `actions.ts` validates and returns success, then discards the
-   inquiry; delivery is a marked `TODO`. The UI half is complete and measured. (root `llm.md` §7.15)
+1. **The quote form has no destination** — **unparked 2026-09-23, see the block above.** `actions.ts`
+   still validates and discards on `main`. (root `llm.md` §7.15)
 2. **No unavailable state on the PDP.** No artboard draws one, so none was authored. (§7.16)
 3. **The LCP gate**, 3.0–3.5 s against 2.5 s on all three routes, one build-wide cause. (§7.12)
 
@@ -368,6 +430,34 @@ derived from the wheel CSV — D9 still holds.
     centres text alone in a `pl-2 pr-9` content box. Ranging the artboard's **text node** (centre 274.5)
     against the app's content-box centre (272.5) gives the real answer: exactly 2.0px, and the row is
     right. The wrong comparison would have marked a correct row wrong.
+
+**Added in session 7:**
+
+25. **In a gate helper, call `cookies()` before any early return.** `hasAdminSession()` once returned
+    `false` on a missing env var before touching `cookies()`. `next build` has no env vars, so the call
+    never marked the page dynamic, the login redirect was baked in, and every valid session bounced to
+    `/admin/login` at runtime, while the build table still showed the route as `ƒ`. `session.ts`
+    `readVerifiedSession()` carries the comment.
+26. **This clone ships without `node_modules` and without generated route types.** `npm ci`, then
+    `npx next typegen`, before `npm run check`, or `tsc` fails on `PageProps` / `LayoutProps`, which
+    reads like a real type error and is not one.
+27. **Test the admin's no-JS form posts with curl, and send `Origin`.** A `useActionState` form renders
+    `$ACTION_REF_1`, `$ACTION_1:0`, `$ACTION_1:1` and `$ACTION_KEY` hidden inputs; scrape them, post them
+    back as multipart to the page's own path, and add `Origin: http://localhost:<port>` plus
+    `Sec-Fetch-Site: same-origin`. Without `Origin`, D95's check rejects the request by design.
+28. **Kill a test server by port, not by name.** `pkill -f "next start"` leaves the `next-server` child
+    holding the port, and the next "fresh" server silently fails to bind, so probes hit the old process
+    with the old env. `lsof -tiTCP:<port> -sTCP:LISTEN | xargs kill`.
+29. **DNS for `platinumwheels.ca` is Cloudflare, not GoDaddy, and the zone carries the shop's email.** Add
+    records in Cloudflare. Never switch the nameservers to Vercel, though Vercel's dashboard offers it:
+    that drops the Google Workspace MX records and mail stops arriving (D96).
+30. **A proxied (orange-cloud) record hides the CNAME and breaks Vercel.** `dig` returns Cloudflare IPs
+    (`104.21.x` / `172.67.x`), HTTPS answers **525**, and Vercel's panel can still say the domain is
+    fine. Records that point at Vercel are DNS only. Ask the zone directly —
+    `dig admin.platinumwheels.ca @connie.ns.cloudflare.com` — because a local resolver can keep a cached
+    "no record" answer for minutes.
+31. **Use the per-project CNAME from Vercel's Domains panel** (`…vercel-dns-017.com`). The legacy
+    `cname.vercel-dns.com` "will continue to work", in Vercel's own wording, but is no longer recommended.
 
 ---
 

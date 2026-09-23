@@ -36,6 +36,7 @@
 
 import { randomBytes } from "node:crypto";
 
+import { requireAdminAction } from "@/features/admin/session";
 import {
   AMOUNT_MAX,
   DESCRIPTION_MAX_LENGTH,
@@ -83,6 +84,10 @@ export async function createPaymentLink(
   _prevState: PaymentLinkState,
   formData: FormData,
 ): Promise<PaymentLinkState> {
+  // Session, same-origin and CSRF token, before anything else (D95). A Server
+  // Action is a public POST endpoint: the gated page does not protect it.
+  await requireAdminAction(formData);
+
   const rawAmount = readString(formData, PAYMENT_LINK_FIELD.amount);
   const rawDescription = readString(formData, PAYMENT_LINK_FIELD.description);
 

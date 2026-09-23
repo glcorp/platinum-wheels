@@ -56,6 +56,21 @@ export const LOGIN_FIELD = {
 export type LoginFieldKey = keyof typeof LOGIN_FIELD;
 
 /**
+ * Hidden field every signed-in admin form carries (D95). Its value is derived
+ * from the current session (`session.ts` `requireAdminSession()`), and
+ * `requireAdminAction()` rejects a submit whose token does not match: a page on
+ * another site can make the browser POST here, but it cannot read the token to
+ * put in the form.
+ */
+export const ADMIN_CSRF_FIELD = "csrf_token";
+
+/** What `requireAdminSession()` hands a gated page: the token its forms must
+ *  carry in `ADMIN_CSRF_FIELD`. */
+export interface AdminSession {
+  csrfToken: string;
+}
+
+/**
  * Sign-in result.
  *
  * Shaped like `QuoteFormState` (`src/features/product/types.ts`) so the one
