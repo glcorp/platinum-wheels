@@ -80,7 +80,7 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
    - **Why:** this is the rate-limit half of the promised form protection (owner ruling 2026-09-23).
      The honeypot and timer live in the action.
    - **Depends on:** the Vercel plan. Hobby is non-commercial only, and our deploys are currently
-     blocked. See `llm.md` §7.24 on the `admin-auth-hardening` branch.
+     blocked. See root `llm.md` §7.24.
 
 ## Client, via the owner
 

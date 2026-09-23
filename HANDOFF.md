@@ -314,7 +314,8 @@ parked row.
 **Quote delivery by email — unparked 2026-09-23, in progress on branch `enquiry-email`:**
 
 - The owner unparked §7.15: *"Deliver enquiries by email (highest value, and it's part of what you
-  sold)"*. It will be recorded as **D96** (D95 is taken by PR #1) when the branch lands.
+  sold)"*. It takes the next free decision ID when the branch lands (**D98**: D95 is PR #1's and
+  D96–D98 are PR #2's, both published first; D99 is next at the time of writing).
 - **Owner rulings, 2026-09-23:**
   - reuse the goodwill site's Resend account, with a new sending-only key for the storefront
   - `sales@platinumwheels.ca` as both the From address and the alert recipient
