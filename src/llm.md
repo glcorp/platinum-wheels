@@ -10,6 +10,8 @@ business logic) and *constants*, so that a change lands in exactly one place.
 ## Owns
 - [`app/`](app/llm.md) — App Router root: `layout.tsx`, `fonts.ts`, `globals.css` (the token system),
   `favicon.ico`, and the `(storefront)` route group.
+- [`proxy.ts`](proxy.ts) — Next 16's request proxy (the renamed middleware). Host routing for the admin
+  only (D97); the rules are `features/admin/host-routing.ts`. Routing, never authorisation.
 - [`components/ui/`](components/ui/llm.md) — ten token-only primitives (`badge`, `button`, `checkbox`,
   `chip`, `field-label`, `input`, `price`, `section-heading`, `select`, `stripe-divider`).
 - [`components/site/`](components/site/llm.md) — header, footer, mobile drawer. **Not created yet**;

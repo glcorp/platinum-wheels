@@ -19,7 +19,15 @@ pass, and the JS form path was driven in a browser (§5). It has not run on Verc
 deployment of a commit authored by `garvbareja` is **blocked** (§7). Not merged to `main`; a parallel
 session is working on admin payments in the `payments` worktree.
 
-**Last updated 2026-09-23 (session 7: admin sign-in hardening, D95).**
+**Admin subdomain and host routing 2026-09-23, branch `admin-host-routing` stacked on
+`admin-auth-hardening` (D96–D98).** `admin.platinumwheels.ca` is live on Vercel through one DNS-only
+Cloudflare CNAME, verified from outside: Vercel IPs, a Let's Encrypt certificate, `/admin` → 307 →
+`/admin/login` (D96). `src/proxy.ts` sends every other path on that host to `/admin` and 404s `/admin` on
+every other host, production only (D97). Its rules pass 8 unit tests, but it has **never been built or
+observed on Vercel** — this branch's deployments are blocked exactly like session 7's (§7). Until a build
+runs, the live subdomain serves production `e032b6d`: the storefront at `/`, the pre-D95 admin at `/admin`.
+
+**Last updated 2026-09-23 (session 8: admin subdomain and host routing, D96–D98).**
 
 **Session 6 (2026-09-21).** All three designed routes are built and audited; the catalogue
 now has **three categories, not one** (`/wheels` and `/accessories` are full results pages sharing the
@@ -235,11 +243,14 @@ parked row.
 0. **Verify the admin on Vercel, once deployments are unblocked (§7).** The Vercel project exists:
    `platinum-wheels` on team `platninumwheels`, production URL `platinum-wheels-one.vercel.app`, and
    `ADMIN_USERNAME`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` are set for Production and Preview.
-   Before merging `admin-auth-hardening`, run `npm run admin:hash-password`, set the result as
-   `ADMIN_PASSWORD_HASH` and delete `ADMIN_PASSWORD` (D95). **Never observed:** the `$` / `CAD`
+   `admin-auth-hardening` can merge as is: without `ADMIN_PASSWORD_HASH` the plaintext `ADMIN_PASSWORD`
+   keeps working (D95's fallback). Switching to the hash is **deferred by the owner** (§7). **Never observed:** the `$` / `CAD`
    adornments on the amount field at 390 and ~810 (the `pl-*`/`pr-*` longhand must beat `Input`'s
    `px-*` shorthand, reasoned from Tailwind's emission order, not seen); the top bar's logo sharing a left
-   edge with the page `<h1>` across 720–1099; no horizontal overflow on the three admin routes.
+   edge with the page `<h1>` across 720–1099; no horizontal overflow on the three admin routes. **On the
+   first unblocked production build, check the host rules live (D97):** `admin.platinumwheels.ca/` and
+   `/results` → 307 `/admin`; `admin.platinumwheels.ca/admin/login` → 200; `platinum-wheels-one.vercel.app
+   /admin` → 404; storefront pages on the vercel.app host unchanged.
 
 1. ~~**Author the two remaining undrawn states.**~~ **Done 2026-09-21 (D62).** `loading.tsx` and
    `error.tsx` exist at `(storefront)/`, both are on `/styleguide` §11, and the `"use client"` conflict
@@ -271,13 +282,16 @@ parked row.
 
 - **One shared sign-in, hardened (D95).** scrypt hash at rest, signed `__Host-` session cookie, CSRF
   token and origin check on every admin Server Action, `/admin` security headers, audit log lines.
-  **Declined by the owner:** a failed-login limit, per-user accounts, 2FA. **Owed:** replace
-  `ADMIN_PASSWORD` in Vercel with `ADMIN_PASSWORD_HASH` (`npm run admin:hash-password`). The block at
+  **Declined by the owner:** a failed-login limit, per-user accounts, 2FA. **Deferred by the owner
+  (2026-09-23):** replacing `ADMIN_PASSWORD` with `ADMIN_PASSWORD_HASH` (`npm run admin:hash-password`) —
+  *"without npm run admin:hash-password will the ADMIN_PASSWORD keep working if yes lets defer it for later"*. Plaintext keeps working meanwhile; each instance logs `admin.config.plaintext_password`. The block at
   the top of `session.ts` is the canonical list.
-- **`proxy.ts` is not written and no domain is attached** (D90, reaffirmed by D95: *"lets not wire up the
-  website as of now let it be on vercel app url"*). `platinumwheels.ca` still serves the separate
-  goodwill site. The admin lives at `/admin` on the vercel.app URL, with `noindex` in both the layout
-  meta and the `X-Robots-Tag` header.
+- **`admin.platinumwheels.ca` is wired; the apex is not** (D96). One DNS-only Cloudflare CNAME to
+  `b3b61a760d17a44c.vercel-dns-017.com`. `platinumwheels.ca` and `www` still serve the goodwill site on
+  Cloudflare Pages, and the zone's MX/SPF/DMARC are the shop's Google Workspace email. **Confirmed by the
+  owner (2026-09-23):** *"no i meant admin stays and main website stays deferred"*. D95's *"lets not wire up the website"* is the apex.
+- **`src/proxy.ts` is written but unobserved** (D97). Host routing only — the D95 gate is still the only
+  gate. `noindex` stays in both the layout meta and the `X-Robots-Tag` header.
 - **Every Vercel deployment of our commits is BLOCKED.** The `platninumwheels` team is on Hobby with one
   member, `platinumwheelsca-5555` (GitHub `glcorp`); commits are authored by GitHub `garvbareja`, who is a
   collaborator on the GitHub repo but not a member of the Vercel team, and Vercel checks team
@@ -413,6 +427,16 @@ derived from the wheel CSV — D9 still holds.
 28. **Kill a test server by port, not by name.** `pkill -f "next start"` leaves the `next-server` child
     holding the port, and the next "fresh" server silently fails to bind, so probes hit the old process
     with the old env. `lsof -tiTCP:<port> -sTCP:LISTEN | xargs kill`.
+29. **DNS for `platinumwheels.ca` is Cloudflare, not GoDaddy, and the zone carries the shop's email.** Add
+    records in Cloudflare. Never switch the nameservers to Vercel, though Vercel's dashboard offers it:
+    that drops the Google Workspace MX records and mail stops arriving (D96).
+30. **A proxied (orange-cloud) record hides the CNAME and breaks Vercel.** `dig` returns Cloudflare IPs
+    (`104.21.x` / `172.67.x`), HTTPS answers **525**, and Vercel's panel can still say the domain is
+    fine. Records that point at Vercel are DNS only. Ask the zone directly —
+    `dig admin.platinumwheels.ca @connie.ns.cloudflare.com` — because a local resolver can keep a cached
+    "no record" answer for minutes.
+31. **Use the per-project CNAME from Vercel's Domains panel** (`…vercel-dns-017.com`). The legacy
+    `cname.vercel-dns.com` "will continue to work", in Vercel's own wording, but is no longer recommended.
 
 ---
 
