@@ -256,7 +256,8 @@ assets and are covered by their parent.
 | [`src/features/admin/`](src/features/admin/llm.md) | Staff tool (D89): stub gate, sign-in, payment-link builder. No artboard, no backend |
 | [`src/lib/`](src/lib/llm.md) | Site constants; nothing contact-related is hardcoded elsewhere |
 
-Root-level files without a folder: `HANDOFF.md` (the working session record — start here; cite by `§`, D55), `AGENTS.md`
+Root-level files without a folder: `HANDOFF.md` (the working session record — start here; cite by `§`, D55), `todo.md`
+(actions outside the code — DNS, dashboards, accounts, keys — for the owner or client; delete an item once verified), `AGENTS.md`
 (written by `next dev`; do not edit), `CLAUDE.md` (imports `AGENTS.md` and this file), `README.md`
 (pointer), `package.json` (npm; `check`, `dev`, `design`, `assets` scripts), `next.config.ts`,
 `eslint.config.mjs`, `tsconfig.json`, `skills-lock.json`, `.gitignore` (Next.js default plus the four
