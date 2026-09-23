@@ -43,6 +43,11 @@ and the accessory types re-cut to match it, the **category tiles** use their own
 **How to use this file.** It is the single current record of how to work in this repo. **Cite it by
 section (`HANDOFF.md §7`), never by line number** — sections are stable, line numbers are not (D55).
 
+**Work a session cannot do from the repo** — DNS, dashboards, accounts, API keys — lives in root
+**`todo.md`**, with who does it, why, and how to check it is done. Read it at the start of every session;
+delete an item there once it is verified done. It also holds the live DNS/mail snapshot (DNS is on
+**Cloudflare**, not GoDaddy).
+
 It is **not a log** (root `llm.md` §1.7). It records what is true now; finished work is deleted from
 §6 rather than struck through. The decision register lives in root `llm.md` §5b (**D23 onward**); §11 below
 holds the frozen canonical text of **D1–D22** and is **never edited**, and §10 and §12 are likewise
@@ -306,10 +311,25 @@ parked row.
 - Session length (12 h) and the admin's `sm:` padding ramp were coordinator calls; both vetoable. Full list:
   `src/features/admin/llm.md` Open.
 
+**Quote delivery by email — unparked 2026-09-23, in progress on branch `enquiry-email`:**
+
+- The owner unparked §7.15: *"Deliver enquiries by email (highest value, and it's part of what you
+  sold)"*. It will be recorded as **D96** (D95 is taken by PR #1) when the branch lands.
+- **Owner rulings, 2026-09-23:**
+  - reuse the goodwill site's Resend account, with a new sending-only key for the storefront
+  - `sales@platinumwheels.ca` as both the From address and the alert recipient
+  - honeypot and timer in the action, plus one Vercel Firewall rule at launch
+  - a fixed auto-reply that never repeats what the visitor typed
+  - the owner alert email is the CASL consent record
+  - the footer reads `Brampton, ON` until the street address arrives
+- **No DNS change is needed:** Resend is already verified on the domain.
+- The owner-side prerequisites (API key, DPA, Google Workspace DKIM, grey cloud, firewall rule) are items
+  1–7 in `todo.md`.
+
 **Parked by D54 — recorded, not owed, not blockers:**
 
-1. **The quote form has no destination.** `actions.ts` validates and returns success, then discards the
-   inquiry; delivery is a marked `TODO`. The UI half is complete and measured. (root `llm.md` §7.15)
+1. **The quote form has no destination** — **unparked 2026-09-23, see the block above.** `actions.ts`
+   still validates and discards on `main`. (root `llm.md` §7.15)
 2. **No unavailable state on the PDP.** No artboard draws one, so none was authored. (§7.16)
 3. **The LCP gate**, 3.0–3.5 s against 2.5 s on all three routes, one build-wide cause. (§7.12)
 
