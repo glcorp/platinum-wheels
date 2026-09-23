@@ -255,6 +255,7 @@ assets and are covered by their parent.
 | [`src/features/product/`](src/features/product/llm.md) | PDP sections, the `ProductView` derivation, the quote form island and its Server Action |
 | [`src/features/admin/`](src/features/admin/llm.md) | Staff tool (D89): stub gate, sign-in, payment-link builder. No artboard, no backend |
 | [`src/lib/`](src/lib/llm.md) | Site constants; nothing contact-related is hardcoded elsewhere |
+| [`src/db/`](src/db/llm.md) | Drizzle schema + `pg` client for Neon; payment invariants as DB constraints. Migrations in `/drizzle` |
 
 Root-level files without a folder: `HANDOFF.md` (the working session record — start here; cite by `§`, D55), `AGENTS.md`
 (written by `next dev`; do not edit), `CLAUDE.md` (imports `AGENTS.md` and this file), `README.md`
