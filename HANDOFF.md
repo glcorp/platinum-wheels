@@ -1,5 +1,12 @@
 # Platinum Wheels — session handoff
 
+**Admin section — branch `admin-ui`, built 2026-09-21, integrated onto `main` 2026-09-23 (D89–D94).** A
+staff tool at `/admin` (destined for `admin.platinumwheels.ca`): a stub sign-in gate and a payment-link
+builder, UI only. It was built in a parallel session against the pre-D58 tree, first numbered D58–D63 and
+renumbered at integration — **those numbers were never published for admin**; D58–D63 are the storefront
+rows. **None of the admin code has been compiled, typechecked or rendered**: the machine it was written on
+has no `node_modules`, and the owner verifies on Vercel previews. See §5, §6 item 0, §7.
+
 **Last updated 2026-09-21 (session 6).** All three designed routes are built and audited; the catalogue
 now has **three categories, not one** (`/wheels` and `/accessories` are full results pages sharing the
 `/results` composition — **D58**, **D59**); the safe half of the audit fix list is applied (**D61**); and
@@ -120,6 +127,10 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | Undrawn states | `loading.tsx` and `error.tsx` at `(storefront)/` (D62). The boundary component is `src/components/site/route-error.tsx`; `error.tsx` is the directive plus a re-export and is the **only** `"use client"` under `src/app/` — a framework requirement, named as an exception in `.claude/rules/ui.md` and `docs/decisions.md` §4. `loading.tsx` renders a `<div>`, not a second `<main id="main">`. |
 | `design/reports/` | 11 files: `README.md` (protocol), three `<page>.md` parity baselines, `audit.md` + four `*-audit.md`, **`deviations-sweep.md`** (D64) and `llm.md`. |
 | `.claude/rules/ui.md` | Taste dials + JSX non-negotiables. **Auto-loads on every `src/**/*.tsx` edit.** Nothing imports it; it loads by glob, and its length is paid on every UI edit. |
+| `/admin` | Payment-link builder behind the stub gate: `AdminTopBar` + `PaymentLinkForm`. Amount + description only, no computation (D92). |
+| `/admin/login` | Flush-left 420px sign-in column, username + password (D91). Redirects to `/admin` if already signed in. |
+| `/admin/styleguide` | The admin's authored states (D93), gated. Renders the real components inert. |
+| `src/features/admin/` | `types.ts` (contract), `session.ts` (**stub gate, not auth**), two `"use server"` actions, 6 components; islands `login-form`, `payment-link-form`, `copy-link-button`. |
 | Stubs left | `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). `/wheels` and `/accessories` left this list on 2026-09-21 (D58). |
 
 ---
@@ -156,9 +167,13 @@ Everything below was measured, not asserted. Re-verified after D57 and again aft
   slop grep zero new hits, still exactly **six** `"use client"` and **one** `"use server"`, none under
   `src/app/`.
 
-- `npm run check` clean; `npx next build` clean; slop grep **zero**.
-- **Eight** `"use client"` files and **one** `"use server"` (D62 added two: the boundary component and
-  the `error.tsx` that re-exports it). **Exactly one is under `src/app/`** —
+- `npm run check` clean; `npx next build` clean; slop grep **zero** — **as of the last storefront build.
+  The admin (D89–D94) has never been built**; its static checks are in §6 item 0.
+- **Thirteen** `"use client"` files and **three** `"use server"`, recounted 2026-09-23 with the command
+  below. Ten client files are storefront — the "eight" this line used to state predates D80's `hash-scroll`
+  and the finder's `finder-model-sync` — and three are admin (`login-form`, `payment-link-form`,
+  `copy-link-button`); the two extra server files are admin's `auth-actions` and `payment-link-actions`.
+  (D62 added two client files: the boundary component and the `error.tsx` that re-exports it.) **Exactly one is under `src/app/`** —
   `(storefront)/error.tsx`, which Next requires (D62) and which holds no component code. Any *other*
   occurrence under `src/app/` is still the failure the slop grep was written to catch. Count with
   `rg -l '^"use client"' src/ --glob '*.tsx' --glob '*.ts'` — an **unglobbed** `rg -l` also matches the
@@ -195,6 +210,16 @@ Everything below was measured, not asserted. Re-verified after D57 and again aft
 and do not quietly implement it. A page is done when the `docs/decisions.md` §9 gates are green *except* a
 parked row.
 
+**Admin, before anything else on that branch:**
+
+0. **Verify `admin-ui` on a Vercel preview.** Link the repo to a Vercel project first — nothing in the repo
+   does yet — and set `ADMIN_USERNAME` / `ADMIN_PASSWORD` for Preview, or sign-in returns the `unavailable`
+   state by design. Static checks already done: every `@/` import resolves, no new `"use client"` under
+   `src/app/`, slop grep zero, no em dash in authored copy. **Never observed:** the `$` / `CAD` adornments
+   on the amount field at 390 and ~810 (the `pl-*`/`pr-*` longhand must beat `Input`'s `px-*` shorthand —
+   reasoned from Tailwind's emission order, not seen); the top bar's logo sharing a left edge with the
+   page `<h1>` across 720–1099; no horizontal overflow on the three admin routes.
+
 1. ~~**Author the two remaining undrawn states.**~~ **Done 2026-09-21 (D62).** `loading.tsx` and
    `error.tsx` exist at `(storefront)/`, both are on `/styleguide` §11, and the `"use client"` conflict
    that this item flagged for the owner was delegated and ruled: Next rejects every alternative, so
@@ -220,6 +245,22 @@ parked row.
 ---
 
 ## §7. Open
+
+**Admin (D89–D94):**
+
+- **`session.ts` is a stub gate, not authentication.** No hashing at rest, no per-user accounts, no rate
+  limiting, no session rotation or revocation, no CSRF token, and a constant cookie value. **It must be
+  replaced before `admin.platinumwheels.ca` is public.** The warning block at the top of the file is the
+  canonical list.
+- **`proxy.ts` is not written** (D90). `/admin` is reachable on the apex domain; only `robots: noindex` on
+  the admin layout keeps it out of a search index. Ship it together with real auth.
+- **No PSP.** `createPaymentLink` fabricates a URL (D94); the success panel says so on screen, and that
+  notice is mandatory.
+- **Product CRUD** is deferred until the vendor catalogue settles the schema.
+- **No `/admin` error or loading boundary** — `(storefront)/error.tsx` does not reach it, and its component
+  speaks to customers. `src/app/admin/llm.md` Open #3.
+- Session length (12 h) and the admin's `sm:` padding ramp were coordinator calls; both vetoable. Full list:
+  `src/features/admin/llm.md` Open.
 
 **Parked by D54 — recorded, not owed, not blockers:**
 
