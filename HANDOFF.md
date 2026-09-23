@@ -216,7 +216,9 @@ parked row.
 **Admin, before anything else on that branch:**
 
 0. **Verify the admin on the first Vercel build of `main`.** Link the repo to a Vercel project first — nothing in the repo
-   does yet — and set `ADMIN_USERNAME` / `ADMIN_PASSWORD` for Preview, or sign-in returns the `unavailable`
+   does yet — and set `ADMIN_USERNAME`, `ADMIN_SESSION_SECRET` (≥32 chars, `openssl rand -base64 32`) and
+   `ADMIN_PASSWORD_HASH` (`npm run admin:hash-password`; `ADMIN_PASSWORD` still works until then, D95)
+   for Preview, or sign-in returns the `unavailable`
    state by design. Static checks already done: every `@/` import resolves, no new `"use client"` under
    `src/app/`, slop grep zero, no em dash in authored copy. **Never observed:** the `$` / `CAD` adornments
    on the amount field at 390 and ~810 (the `pl-*`/`pr-*` longhand must beat `Input`'s `px-*` shorthand —
@@ -249,12 +251,13 @@ parked row.
 
 ## §7. Open
 
-**Admin (D89–D94):**
+**Admin (D89–D95):**
 
-- **`session.ts` is a stub gate, not authentication.** No hashing at rest, no per-user accounts, no rate
-  limiting, no session rotation or revocation, no CSRF token, and a constant cookie value. **It must be
-  replaced before `admin.platinumwheels.ca` is public.** The warning block at the top of the file is the
-  canonical list.
+- **One shared sign-in, hardened (D95).** scrypt hash at rest, signed `__Host-` session cookie, CSRF
+  token and origin check on every admin Server Action, `/admin` security headers, audit log lines.
+  **Declined by the owner:** a failed-login limit, per-user accounts, 2FA. **Owed:** replace
+  `ADMIN_PASSWORD` in Vercel with `ADMIN_PASSWORD_HASH` (`npm run admin:hash-password`). The block at
+  the top of `session.ts` is the canonical list.
 - **`proxy.ts` is not written** (D90). `/admin` is reachable on the apex domain; only `robots: noindex` on
   the admin layout keeps it out of a search index. Ship it together with real auth.
 - **No PSP.** `createPaymentLink` fabricates a URL (D94); the success panel says so on screen, and that

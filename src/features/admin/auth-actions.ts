@@ -17,32 +17,20 @@
    `.claude/rules/ui.md` "Copy" and "States the design doesn't show", not from
    a design export.
 
-   ⚠️  TODO(auth) — `verifyAdminCredentials` (`src/features/admin/session.ts`)
-   is a STUB GATE, not authentication (D91, and the loud warning at the top of
-   `session.ts`). Before `admin.platinumwheels.ca` is public, real auth must
-   replace it and add everything this stub is missing:
-     - password hashing at rest — today the credential is a plaintext
-       `ADMIN_PASSWORD` env var, compared in `session.ts`'s `safeEqual`
-     - per-user accounts and roles — today it is one shared username/password
-       for the whole shop, with no identity behind either
-     - rate limiting / lockout on repeated failed attempts — the owner
-       declined this state this session (`llm.md` Open #6), and a shared
-       credential on a public subdomain is exactly the case brute-forcing
-       suits
-     - session rotation and server-side revocation — today the session cookie
-       is a constant (`SESSION_VALUE = "1"`, `session.ts`) that never changes
-       per sign-in and cannot be revoked individually, only cleared entirely
-     - a CSRF token — today there is none; the gate relies entirely on the
-       cookie's own `sameSite: "lax"` (`session.ts`)
-   Do not treat this file as a model for how the real gate should validate a
-   credential. It exists only so the sign-in flow can be walked end to end and
-   demonstrated on a preview deployment before real auth is built.
+   Hardening lives in `session.ts` (D95, and the block at the top of that
+   file): scrypt password hash, signed `__Host-` cookie, same-origin check and
+   CSRF token, audit log lines. What is deliberately absent, by owner ruling:
+   a failed-login limit ("lets not build limit failed login"), per-user
+   accounts ("only one login account password works") and a second factor.
    --------------------------------------------------------------------------- */
 
 import { redirect } from "next/navigation";
 
 import {
+  assertSameOriginRequest,
   endAdminSession,
+  logAdminAuthEvent,
+  requireAdminAction,
   startAdminSession,
   verifyAdminCredentials,
 } from "@/features/admin/session";
@@ -72,6 +60,10 @@ export async function signIn(
   _prevState: AdminLoginState,
   formData: FormData,
 ): Promise<AdminLoginState> {
+  // No session exists yet, so there is no CSRF token to check; the origin
+  // check is what stops another site posting a login on the owner's behalf.
+  await assertSameOriginRequest();
+
   const username = readTrimmed(formData, LOGIN_FIELD.username);
   const password = readRawPassword(formData, LOGIN_FIELD.password);
 
@@ -91,20 +83,23 @@ export async function signIn(
     return { status: "invalid", errors, values: { username } };
   }
 
-  const result = verifyAdminCredentials(username, password);
+  const result = await verifyAdminCredentials(username, password);
 
   if (result === "unavailable") {
     // The env vars are missing server-side — our misconfiguration, not the
     // visitor's mistake. Must never read as "wrong password" (`session.ts`).
+    await logAdminAuthEvent("signin.unavailable");
     return { status: "unavailable" };
   }
 
   if (result === "rejected") {
+    await logAdminAuthEvent("signin.rejected");
     return { status: "rejected", values: { username } };
   }
 
   // result === "ok"
   await startAdminSession();
+  await logAdminAuthEvent("signin.ok");
 
   // `redirect()` throws by design — it is Next's control-flow signal for a
   // navigation, not an error. It must not be wrapped in a `try`/`catch`, and
@@ -113,7 +108,10 @@ export async function signIn(
   redirect(ADMIN_ROUTES.home);
 }
 
-export async function signOut(): Promise<void> {
+export async function signOut(formData: FormData): Promise<void> {
+  // A forged sign-out is a nuisance rather than a breach, but it is still a
+  // state change another site should not be able to trigger.
+  await requireAdminAction(formData);
   await endAdminSession();
   redirect(ADMIN_ROUTES.login);
 }

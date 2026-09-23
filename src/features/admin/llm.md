@@ -8,19 +8,23 @@ and destined for `admin.platinumwheels.ca`. It exists because the shop's selling
 money. Delete this folder and the owner has no way to raise a payment link, and the storefront's
 quote-first model terminates in a phone call with nothing to send.
 
-It is **UI only** (D54 extended by D89). No database, no payment provider, no real authentication.
+It is **UI only** (D54 extended by D89). No database and no payment provider. Sign-in is one shared
+account, hardened by D95 rather than replaced by an auth system.
 
 ## Owns
 
 - [`types.ts`](types.ts) — the contract. Route map, field names, form-state unions, validation ceilings.
   Written by the coordinator before any implementation file (D25). Both actions and both forms code
   against it; nothing here invents a field name.
-- [`session.ts`](session.ts) — the stub gate. Credential check, cookie open/close, `requireAdminSession()`.
-  **Read the warning block at the top before touching anything auth-shaped.**
-- [`auth-actions.ts`](auth-actions.ts) — `"use server"`. `signIn` (validates, opens a session, redirects)
-  and `signOut`.
-- [`payment-link-actions.ts`](payment-link-actions.ts) — `"use server"`. `createPaymentLink`: validates
-  an amount and a description, returns a placeholder URL. Connects to no provider.
+- [`session.ts`](session.ts) — the gate (D95). scrypt credential check, the signed `__Host-` session
+  cookie, `requireAdminSession()` for pages (returns the CSRF token), `requireAdminAction()` for Server
+  Actions, `assertSameOriginRequest()`, `logAdminAuthEvent()`. **Read the block at the top before
+  touching anything auth-shaped.**
+- [`auth-actions.ts`](auth-actions.ts) — `"use server"`. `signIn` (origin check, validates, opens a
+  session, logs, redirects) and `signOut` (`requireAdminAction()`, then clears the cookie).
+- [`payment-link-actions.ts`](payment-link-actions.ts) — `"use server"`. `createPaymentLink`: calls
+  `requireAdminAction()` first, validates an amount and a description, returns a placeholder URL.
+  Connects to no provider.
 - [`components/login-form.tsx`](components/login-form.tsx) — client island. `useActionState` + focus
   management, the `quote-form.tsx` idiom.
 - [`components/login-error-summary.tsx`](components/login-error-summary.tsx) — authored error state,
@@ -49,8 +53,15 @@ It is **UI only** (D54 extended by D89). No database, no payment provider, no re
   specific gateway (D92).
 - **Two fields.** The builder takes an amount and a description. No line items, no quantities, no fees,
   no HST, no totals — the owner ruled it a wrapper, not a calculator (D92).
-- Every protected page calls `requireAdminSession()` first. `proxy.ts` is deferred (D90), so there is no
-  single choke point and a page that forgets is simply unprotected.
+- Every protected page calls `requireAdminSession()` first, and **every Server Action here calls
+  `requireAdminAction(formData)` first** (`signIn`, which has no session yet, calls
+  `assertSameOriginRequest()`). An action is a public POST endpoint whether or not its page is gated, and
+  `proxy.ts` is deferred (D90), so there is no single choke point: a page or action that forgets is
+  simply unprotected (D95).
+- **Every signed-in form carries `<input type="hidden" name={ADMIN_CSRF_FIELD}>`** with the token from
+  the page's `requireAdminSession()`, passed down as a `csrfToken` prop (D95).
+- Credentials live only in Vercel env vars: `ADMIN_USERNAME`, `ADMIN_SESSION_SECRET` (32+ characters),
+  `ADMIN_PASSWORD_HASH` from `npm run admin:hash-password` (or `ADMIN_PASSWORD` until that is set).
 - The password is never echoed back to the client, in any state.
 
 ## Decisions
@@ -63,6 +74,7 @@ It is **UI only** (D54 extended by D89). No database, no payment provider, no re
 | D92 | 2026-09-21 | Payment link = amount + description only; no computation | Owner: *"its simply just a payment link generator … basically just a wrapper on top of payment gateway they choose"* | Owner |
 | D93 | 2026-09-21 | Admin authored states go to `/admin/styleguide`, not the storefront's | Staff states do not belong on a public storefront reference page | Owner |
 | D94 | 2026-09-21 | The generated link is a realistic placeholder, visibly labelled as not connected | It must demo convincingly without anyone mistaking it for live | Owner |
+| D95 | 2026-09-23 | One shared sign-in, hardened: scrypt hash, signed `__Host-` cookie, CSRF token + origin check on every action, admin security headers, audit log. No login limit, no per-user accounts, no 2FA | Owner: *"only one login account password works"*, *"lets not build limit failed login"* | Owner |
 
 Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced by ID, never restated.
 
@@ -77,9 +89,12 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 
 ## Don't
 
-- **Don't treat `session.ts` as authentication.** It is a placeholder with no hashing at rest, no
-  per-user accounts, no rate limiting, no session rotation and no CSRF token. It must be replaced before
-  the subdomain is public.
+- **Don't add a Server Action without `requireAdminAction(formData)` as its first statement**, or a
+  signed-in form without the `ADMIN_CSRF_FIELD` hidden input. Either gap reopens what D95 closed.
+- **Don't log a submitted username or password.** `logAdminAuthEvent()` logs the event and the IP only;
+  a password typed into the username box would otherwise land in Vercel's logs.
+- **Don't change the `ADMIN_PASSWORD_HASH` format on one side only.** `session.ts`
+  `parsePasswordHash()` and `scripts/hash-admin-password.mjs` must agree.
 - **Don't use the `Price` primitive for an amount.** `src/components/ui/price.tsx` deliberately forbids
   cents and is parity-measured on all three storefront routes; a payment amount needs `$452.60`.
 - **Don't add fields to the builder.** Customer name, email, reference, expiry and line items were all
@@ -92,13 +107,17 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 
 ## Open
 
-1. **Real authentication.** Who owns it, and which provider. Blocks the subdomain going public. Owner.
+1. **What D95 declined:** per-user accounts, a second factor, per-session revocation (changing the
+   password or `ADMIN_SESSION_SECRET` signs everyone out at once). Revisit if staff beyond the owner
+   need their own logins. Owner.
 2. **PSP selection.** Until one is chosen, `createPaymentLink` fabricates a URL. The client was to come
    back with a demo account. Client, via owner.
 3. **Product CRUD**, deferred until the vendor catalogue lands and the schema is settled. Client, via owner.
-4. **Where `ADMIN_USERNAME` / `ADMIN_PASSWORD` are set**, and who holds them. They are not committed and
-   no `.env` exists in the repo. Owner.
+4. **Switch production to `ADMIN_PASSWORD_HASH`.** `ADMIN_USERNAME`, `ADMIN_PASSWORD` and
+   `ADMIN_SESSION_SECRET` are set in the Vercel project (Production + Preview). Until the hash replaces
+   `ADMIN_PASSWORD`, every instance logs `admin.config.plaintext_password`. Owner.
 5. **Session length.** 12 hours was chosen by the coordinator, not ruled on. Vetoable.
-6. **No rate limiting or lockout** on the sign-in form — the owner declined that state this session. It
-   should be reconsidered when real auth lands, since one shared credential on a public subdomain is
-   exactly the case brute-forcing suits.
+6. **No rate limiting or lockout** on the sign-in form. Declined twice: 2026-09-21, and 2026-09-23 when
+   the storage question was put ("lets not build limit failed login", D95). scrypt's cost per attempt is
+   the only brake, so password length is the defence (the hash script enforces 12+). Reconsider if the
+   `admin.signin.rejected` log lines show guessing.

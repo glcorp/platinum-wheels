@@ -30,12 +30,14 @@ import { FieldError, FieldLabel } from "@/components/ui/field-label";
 import { Input, Textarea } from "@/components/ui/input";
 import { createPaymentLink } from "@/features/admin/payment-link-actions";
 import {
+  ADMIN_CSRF_FIELD,
   PAYMENT_LINK_FIELD,
   PAYMENT_LINK_INITIAL_STATE,
 } from "@/features/admin/types";
 import { PaymentLinkSuccess } from "./payment-link-success";
 
-export function PaymentLinkForm() {
+/** `csrfToken` comes from the page's `requireAdminSession()` (D95). */
+export function PaymentLinkForm({ csrfToken }: { csrfToken: string }) {
   const [state, formAction, isPending] = useActionState(
     createPaymentLink,
     PAYMENT_LINK_INITIAL_STATE,
@@ -107,6 +109,7 @@ export function PaymentLinkForm() {
 
   return (
     <form action={formAction} data-probe="payment-link-form" className="flex flex-col gap-5 sm:gap-6">
+      <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
       <div>
         <FieldLabel htmlFor="payment-amount" required>
           Amount (CAD)
