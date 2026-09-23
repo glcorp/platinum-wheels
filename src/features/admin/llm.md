@@ -13,6 +13,9 @@ account, hardened by D95 rather than replaced by an auth system.
 
 ## Owns
 
+- [`host-routing.ts`](host-routing.ts) — which host may serve `/admin` (D97). A pure function with no
+  imports, so it is testable without Next; `src/proxy.ts` is its only caller. `ADMIN_HOST` is duplicated
+  as a literal in the proxy's `matcher` — change both.
 - [`types.ts`](types.ts) — the contract. Route map, field names, form-state unions, validation ceilings.
   Written by the coordinator before any implementation file (D25). Both actions and both forms code
   against it; nothing here invents a field name.
@@ -56,8 +59,8 @@ account, hardened by D95 rather than replaced by an auth system.
 - Every protected page calls `requireAdminSession()` first, and **every Server Action here calls
   `requireAdminAction(formData)` first** (`signIn`, which has no session yet, calls
   `assertSameOriginRequest()`). An action is a public POST endpoint whether or not its page is gated, and
-  `proxy.ts` is deferred (D90), so there is no single choke point: a page or action that forgets is
-  simply unprotected (D95).
+  `src/proxy.ts` (D97) routes by host and is deliberately not a gate, so there is still no single choke
+  point: a page or action that forgets is simply unprotected (D95).
 - **Every signed-in form carries `<input type="hidden" name={ADMIN_CSRF_FIELD}>`** with the token from
   the page's `requireAdminSession()`, passed down as a `csrfToken` prop (D95).
 - Credentials live only in Vercel env vars: `ADMIN_USERNAME`, `ADMIN_SESSION_SECRET` (32+ characters),
@@ -75,6 +78,8 @@ account, hardened by D95 rather than replaced by an auth system.
 | D93 | 2026-09-21 | Admin authored states go to `/admin/styleguide`, not the storefront's | Staff states do not belong on a public storefront reference page | Owner |
 | D94 | 2026-09-21 | The generated link is a realistic placeholder, visibly labelled as not connected | It must demo convincingly without anyone mistaking it for live | Owner |
 | D95 | 2026-09-23 | One shared sign-in, hardened: scrypt hash, signed `__Host-` cookie, CSRF token + origin check on every action, admin security headers, audit log. No login limit, no per-user accounts, no 2FA | Owner: *"only one login account password works"*, *"lets not build limit failed login"* | Owner |
+| D96 | 2026-09-23 | `admin.platinumwheels.ca` wired: a DNS-only Cloudflare CNAME to Vercel; the apex stays on the goodwill site | Owner chose the admin subdomain only; must never proxy the record or move the nameservers (email) | Owner |
+| D97 | 2026-09-23 | `src/proxy.ts`: on the admin host non-`/admin` paths 307 to `/admin`; elsewhere `/admin` is a 404; production only | The subdomain became real, so the D90 deferral no longer applied | Owner |
 
 Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced by ID, never restated.
 
@@ -121,3 +126,5 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
    the storage question was put ("lets not build limit failed login", D95). scrypt's cost per attempt is
    the only brake, so password length is the defence (the hash script enforces 12+). Reconsider if the
    `admin.signin.rejected` log lines show guessing.
+7. **Confirm the D96 reading of D95** (the admin subdomain is wired, the apex is not). Root `llm.md` §7.
+   Owner.
