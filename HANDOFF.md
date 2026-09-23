@@ -1,11 +1,14 @@
 # Platinum Wheels — session handoff
 
-**Admin section — branch `admin-ui`, built 2026-09-21, integrated onto `main` 2026-09-23 (D89–D94).** A
+**Admin section — built 2026-09-21 on branch `admin-ui`, merged to `main` 2026-09-23 (D89–D94).** A
 staff tool at `/admin` (destined for `admin.platinumwheels.ca`): a stub sign-in gate and a payment-link
 builder, UI only. It was built in a parallel session against the pre-D58 tree, first numbered D58–D63 and
 renumbered at integration — **those numbers were never published for admin**; D58–D63 are the storefront
 rows. **None of the admin code has been compiled, typechecked or rendered**: the machine it was written on
-has no `node_modules`, and the owner verifies on Vercel previews. See §5, §6 item 0, §7.
+has no `node_modules`, and the owner verifies on Vercel previews. **It was merged to `main` before any
+build, by owner instruction** — *"the project is still in dev with no real user so we can merge our branch
+into main without testing"* (2026-09-23). If a `main` build breaks, suspect `src/app/admin/` and
+`src/features/admin/` first. See §5, §6 item 0, §7.
 
 **Last updated 2026-09-21 (session 6).** All three designed routes are built and audited; the catalogue
 now has **three categories, not one** (`/wheels` and `/accessories` are full results pages sharing the
@@ -212,7 +215,7 @@ parked row.
 
 **Admin, before anything else on that branch:**
 
-0. **Verify `admin-ui` on a Vercel preview.** Link the repo to a Vercel project first — nothing in the repo
+0. **Verify the admin on the first Vercel build of `main`.** Link the repo to a Vercel project first — nothing in the repo
    does yet — and set `ADMIN_USERNAME` / `ADMIN_PASSWORD` for Preview, or sign-in returns the `unavailable`
    state by design. Static checks already done: every `@/` import resolves, no new `"use client"` under
    `src/app/`, slop grep zero, no em dash in authored copy. **Never observed:** the `$` / `CAD` adornments
