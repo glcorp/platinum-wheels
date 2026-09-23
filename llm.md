@@ -269,10 +269,9 @@ machine-local paths added by D55).
 ## 7. Open — needs the owner or the client
 
 1. **Co-founder access.** Closed in part by D55: the repo is private at
-   `github.com/glcorp/platinum-wheels` and pushed, so an off-machine copy now exists and §3's "sharing
-   mechanism" question is answered — the co-founder clones it. What is left is **the invite**: nobody has
-   been added as a collaborator, so today `glcorp` is the only account that can read or write it, and a
-   lost account means a lost repo. Owner, via GitHub's Settings → Collaborators.
+   `github.com/glcorp/platinum-wheels` and pushed. As of 2026-09-23 the owner's own account `garvbareja`
+   is a collaborator (owner: *"in the repo i have my account garvbareja as collaborator"*) and authors
+   the commits. Whether the co-founder has an invite is unrecorded. Owner.
 2. **Client blockers** (unchanged from `HANDOFF.md` §7): two low-res product photos; sample personal
    data in the PDP form; facet counts that do not reconcile; four images covering nine SKUs; brand
    logos and stock confirmation.
@@ -315,6 +314,8 @@ machine-local paths added by D55).
    the delivery call is a marked `TODO` (D51). The UI half is complete and measured; only the wiring is
    missing, and wiring needs a backend. It must be done before the site is public, but this build does
    not owe it. Owner, then client.
+   **Picked up 2026-09-23:** the owner is starting it in a separate session. That session records its
+   decisions (provider, sender, consent storage) as new rows and closes this item.
 16. **PARKED (D54). No unavailable state on the PDP.** `docs/decisions.md:116` specifies the dimmed media,
    `Currently unavailable` badge and `Inquire about restock` CTA for a *card*; neither product artboard
    draws an unavailable PDP, so none was authored and `/products/zmax-winterhawk-215-50r17` shows a normal
@@ -387,3 +388,9 @@ machine-local paths added by D55).
    **Most of (f) is now applied — see D66.** What is left of it: the `fetchpriority` item (parked-adjacent,
    D54) and left/right landscape safe-area insets (needs a new `globals.css` utility, single-writer).
    Full detail and evidence: the craft-audit and critique reports from the D65 session. Owner.
+24. **Vercel blocks every deployment of our commits.** Team `platninumwheels` is on Hobby with one member
+   (`platinumwheelsca-5555`, GitHub `glcorp`); commits are authored by GitHub `garvbareja`, a repo
+   collaborator but not a Vercel team member, so each push creates a `BLOCKED` deployment and production
+   stays on `e032b6d`. Hobby is also non-commercial only. Fix: Pro, plus an invite for `garvbareja`'s
+   Vercel account. Owner decided 2026-09-23 to leave it for now: *"lets ignore deployments for now"*.
+   `HANDOFF.md` §7.
