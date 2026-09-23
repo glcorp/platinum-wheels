@@ -37,8 +37,11 @@ import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/features/admin/auth-actions";
+import { ADMIN_CSRF_FIELD } from "@/features/admin/types";
 
-export function AdminTopBar() {
+/** `csrfToken` comes from the page's `requireAdminSession()`; sign out is a
+ *  Server Action and checks it like any other (D95). */
+export function AdminTopBar({ csrfToken }: { csrfToken: string }) {
   return (
     <header className="bg-surface border-border-strong border-b">
       <div className="flex h-17 items-center justify-between px-4 sm:h-22 sm:px-8 md:px-12 lg:mx-auto lg:max-w-content">
@@ -75,6 +78,7 @@ export function AdminTopBar() {
             `sizeBox`), which clears the tap-target floor on its own, so no
             `tap-extend` is needed here. */}
         <form action={signOut}>
+          <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
           <Button type="submit" variant="tertiary" size="compact">
             Sign out
           </Button>

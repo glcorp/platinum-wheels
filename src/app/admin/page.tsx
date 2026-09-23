@@ -33,11 +33,11 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminHomePage() {
-  await requireAdminSession();
+  const { csrfToken } = await requireAdminSession();
 
   return (
     <>
-      <AdminTopBar />
+      <AdminTopBar csrfToken={csrfToken} />
       {/* Horizontal padding and the content cap mirror `AdminTopBar`'s inner
           box exactly — `px-4 sm:px-8 md:px-12 lg:mx-auto lg:max-w-content`,
           which is also `site-header.tsx`'s and `page-stub.tsx`'s. They must
@@ -69,7 +69,7 @@ export default async function AdminHomePage() {
           </p>
 
           <div className="mt-10 sm:mt-12">
-            <PaymentLinkForm />
+            <PaymentLinkForm csrfToken={csrfToken} />
           </div>
         </div>
       </main>

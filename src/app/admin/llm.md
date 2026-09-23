@@ -22,8 +22,10 @@ and emails it to the customer. Delete this folder and `src/features/admin/` has 
   `src/features/admin/`.
 - **No `"use client"` in this folder, ever** (`docs/decisions.md` §4 — a client boundary under `src/app/`
   is a build failure by policy). The three client islands all live in the feature folder.
-- **Every gated page calls `requireAdminSession()` as its first statement.** `proxy.ts` is deferred
-  (D90), so there is no single choke point; a page that forgets it is simply unprotected.
+- **Every gated page calls `requireAdminSession()` as its first statement** and passes the `csrfToken`
+  it returns to every form it renders (D95). `proxy.ts` is deferred (D90), so there is no single choke
+  point; a page that forgets it is simply unprotected. Response headers for every `/admin` path are set
+  in `next.config.ts` (D95), not here.
 - **`/admin/login` is deliberately not gated** and deliberately renders no `AdminTopBar` — there is no
   session to sign out of, so the bar would offer a control that cannot work.
 - One `<h1>` per page. `<main id="main" tabIndex={-1}>` on every route, so the root layout's skip link
@@ -66,7 +68,8 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b.
 
 1. **`proxy.ts`** — the subdomain rewrite, plus blocking `/admin` on the apex domain. Deferred to when
    the domain is wired and it can actually be tested (D90). Owner.
-2. **Real authentication** before the subdomain is public. See `src/features/admin/llm.md` Open #1.
+2. **What D95 declined** (per-user accounts, a second factor, a login limit). See
+   `src/features/admin/llm.md` Open #1 and #6.
 3. **No `loading.tsx` or `error.tsx` for `/admin`.** An error here falls through to Next's default
    boundary. Adding one means a staff-facing copy of the route-error state, and an `error.tsx` must
    carry `"use client"` itself — the one exception `.claude/rules/ui.md` and `docs/decisions.md` §4

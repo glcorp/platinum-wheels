@@ -1,9 +1,10 @@
 # scripts/
 
 ## Purpose
-Two standalone Node programs that sit *beside* the app rather than inside it. `prepare-assets.mjs`
+Three standalone Node programs that sit *beside* the app rather than inside it. `prepare-assets.mjs`
 turns the frozen PNG export into the shipped webp set; `parity-probe.js` is the measurement half of the
-`docs/decisions.md` §9 quality gate. Delete this folder and `public/images/` can never be regenerated
+`docs/decisions.md` §9 quality gate. `hash-admin-password.mjs` makes the admin's
+`ADMIN_PASSWORD_HASH` (D95). Delete this folder and `public/images/` can never be regenerated
 from `design/assets/`, and parity becomes eyeballing — which
 `design/reports/README.md:4` forbids outright.
 
@@ -11,6 +12,10 @@ from `design/assets/`, and parity becomes eyeballing — which
 - [`prepare-assets.mjs`](prepare-assets.mjs) (137 ln) — `design/assets/*.png` → `public/images/*.webp`,
   plus the product cut-out canvas normalisation. Invoked as `npm run assets` → `node
   scripts/prepare-assets.mjs` (`package.json:13`). Prints a per-file before/after table and a total.
+- [`hash-admin-password.mjs`](hash-admin-password.mjs) — `npm run admin:hash-password`. Reads the
+  password twice from the keyboard with echo off (never an argument or a pipe, so it stays out of shell
+  history), refuses under 12 characters, prints `scrypt:<N>:<r>:<p>:<salt>:<hash>`. The format is
+  parsed by `src/features/admin/session.ts` `parsePasswordHash()`; change both or neither (D95).
 - [`parity-probe.js`](parity-probe.js) (140 ln) — three browser functions: `probe(pairs)` (30 computed
   properties + bounding box per labelled selector, `:20-51`), `overflowers()` (the 375/768/1280 no-
   horizontal-scroll gate, `:89`), `accentCount(root, accent)` (the one-accent-per-frame audit, `:109`).
