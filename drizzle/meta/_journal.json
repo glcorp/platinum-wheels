@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790179295897,
+      "tag": "0000_payments_init",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790179296586,
+      "tag": "0001_payment_events_append_only",
+      "breakpoints": true
+    }
+  ]
+}

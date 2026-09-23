@@ -259,11 +259,12 @@ assets and are covered by their parent.
 | [`src/features/product/`](src/features/product/llm.md) | PDP sections, the `ProductView` derivation, the quote form island and its Server Action |
 | [`src/features/admin/`](src/features/admin/llm.md) | Staff tool (D89): one shared sign-in hardened by D95, payment-link builder. No artboard, no backend |
 | [`src/lib/`](src/lib/llm.md) | Site constants; nothing contact-related is hardcoded elsewhere |
+| [`src/db/`](src/db/llm.md) | Drizzle schema + `pg` client for Neon; payment invariants as DB constraints. Migrations in `/drizzle` |
 
 Root-level files without a folder: `HANDOFF.md` (the working session record — start here; cite by `§`, D55), `todo.md`
 (actions outside the code — DNS, dashboards, accounts, keys — for the owner or client; delete an item once verified), `AGENTS.md`
 (written by `next dev`; do not edit), `CLAUDE.md` (imports `AGENTS.md` and this file), `README.md`
-(pointer), `package.json` (npm; `check`, `dev`, `design`, `assets`, `admin:hash-password` scripts), `next.config.ts`
+(pointer), `package.json` (npm; `check`, `dev`, `design`, `assets`, `admin:hash-password`, `db:*` scripts; `build` runs `db-migrate.mjs` first), `next.config.ts`
 (the `/admin` security headers, D95),
 `eslint.config.mjs`, `tsconfig.json`, `skills-lock.json`, `.gitignore` (Next.js default plus the four
 machine-local paths added by D55).

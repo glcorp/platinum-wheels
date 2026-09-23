@@ -4,25 +4,35 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/db-migrate.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "check": "tsc --noEmit && eslint .",
     "typecheck": "tsc --noEmit",
     "design": "npx --yes serve design -l 4000",
     "assets": "node scripts/prepare-assets.mjs",
-    "admin:hash-password": "node scripts/hash-admin-password.mjs"
+    "admin:hash-password": "node scripts/hash-admin-password.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node scripts/db-migrate.mjs",
+    "db:check": "drizzle-kit check",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@vercel/functions": "3.9.9",
+    "drizzle-orm": "0.45.3",
     "next": "16.4.0-canary.37",
+    "pg": "8.23.0",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "undici": "8.11.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
+    "@types/pg": "8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.0-canary.37",
     "sharp": "^0.35.4",
