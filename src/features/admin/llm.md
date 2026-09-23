@@ -120,11 +120,13 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 3. **Product CRUD**, deferred until the vendor catalogue lands and the schema is settled. Client, via owner.
 4. **Switch production to `ADMIN_PASSWORD_HASH`.** `ADMIN_USERNAME`, `ADMIN_PASSWORD` and
    `ADMIN_SESSION_SECRET` are set in the Vercel project (Production + Preview). Until the hash replaces
-   `ADMIN_PASSWORD`, every instance logs `admin.config.plaintext_password`. Owner.
+   `ADMIN_PASSWORD`, every instance logs `admin.config.plaintext_password`. **Deferred by the owner,
+   2026-09-23:** *"without npm run admin:hash-password will the ADMIN_PASSWORD keep working if yes lets defer it for later"*. It does: plaintext is the documented fallback while no hash is set. A
+   *malformed* hash never falls back, so set the hash only from the script.
 5. **Session length.** 12 hours was chosen by the coordinator, not ruled on. Vetoable.
 6. **No rate limiting or lockout** on the sign-in form. Declined twice: 2026-09-21, and 2026-09-23 when
    the storage question was put ("lets not build limit failed login", D95). scrypt's cost per attempt is
    the only brake, so password length is the defence (the hash script enforces 12+). Reconsider if the
    `admin.signin.rejected` log lines show guessing.
-7. **Confirm the D96 reading of D95** (the admin subdomain is wired, the apex is not). Root `llm.md` §7.
-   Owner.
+7. ~~**Confirm the D96 reading of D95**~~ **Closed 2026-09-23:** *"no i meant admin stays and main website stays deferred"*. Admin subdomain wired, apex
+   deferred.

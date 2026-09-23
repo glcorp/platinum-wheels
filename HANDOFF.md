@@ -243,8 +243,8 @@ parked row.
 0. **Verify the admin on Vercel, once deployments are unblocked (§7).** The Vercel project exists:
    `platinum-wheels` on team `platninumwheels`, production URL `platinum-wheels-one.vercel.app`, and
    `ADMIN_USERNAME`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` are set for Production and Preview.
-   Before merging `admin-auth-hardening`, run `npm run admin:hash-password`, set the result as
-   `ADMIN_PASSWORD_HASH` and delete `ADMIN_PASSWORD` (D95). **Never observed:** the `$` / `CAD`
+   `admin-auth-hardening` can merge as is: without `ADMIN_PASSWORD_HASH` the plaintext `ADMIN_PASSWORD`
+   keeps working (D95's fallback). Switching to the hash is **deferred by the owner** (§7). **Never observed:** the `$` / `CAD`
    adornments on the amount field at 390 and ~810 (the `pl-*`/`pr-*` longhand must beat `Input`'s
    `px-*` shorthand, reasoned from Tailwind's emission order, not seen); the top bar's logo sharing a left
    edge with the page `<h1>` across 720–1099; no horizontal overflow on the three admin routes. **On the
@@ -282,14 +282,14 @@ parked row.
 
 - **One shared sign-in, hardened (D95).** scrypt hash at rest, signed `__Host-` session cookie, CSRF
   token and origin check on every admin Server Action, `/admin` security headers, audit log lines.
-  **Declined by the owner:** a failed-login limit, per-user accounts, 2FA. **Owed:** replace
-  `ADMIN_PASSWORD` in Vercel with `ADMIN_PASSWORD_HASH` (`npm run admin:hash-password`). The block at
+  **Declined by the owner:** a failed-login limit, per-user accounts, 2FA. **Deferred by the owner
+  (2026-09-23):** replacing `ADMIN_PASSWORD` with `ADMIN_PASSWORD_HASH` (`npm run admin:hash-password`) —
+  *"without npm run admin:hash-password will the ADMIN_PASSWORD keep working if yes lets defer it for later"*. Plaintext keeps working meanwhile; each instance logs `admin.config.plaintext_password`. The block at
   the top of `session.ts` is the canonical list.
 - **`admin.platinumwheels.ca` is wired; the apex is not** (D96). One DNS-only Cloudflare CNAME to
   `b3b61a760d17a44c.vercel-dns-017.com`. `platinumwheels.ca` and `www` still serve the goodwill site on
-  Cloudflare Pages, and the zone's MX/SPF/DMARC are the shop's Google Workspace email. **Open:** D95 quotes
-  *"lets not wire up the website as of now let it be on vercel app url"*; D96 reads that as the apex only.
-  Owner to confirm (root `llm.md` §7).
+  Cloudflare Pages, and the zone's MX/SPF/DMARC are the shop's Google Workspace email. **Confirmed by the
+  owner (2026-09-23):** *"no i meant admin stays and main website stays deferred"*. D95's *"lets not wire up the website"* is the apex.
 - **`src/proxy.ts` is written but unobserved** (D97). Host routing only — the D95 gate is still the only
   gate. `noindex` stays in both the layout meta and the `X-Robots-Tag` header.
 - **Every Vercel deployment of our commits is BLOCKED.** The `platninumwheels` team is on Hobby with one
