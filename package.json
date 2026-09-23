@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/db-migrate.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "check": "tsc --noEmit && eslint .",
@@ -12,7 +12,7 @@
     "design": "npx --yes serve design -l 4000",
     "assets": "node scripts/prepare-assets.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "node scripts/db-migrate.mjs",
     "db:check": "drizzle-kit check",
     "db:studio": "drizzle-kit studio"
   },

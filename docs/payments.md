@@ -1,6 +1,7 @@
 # Payments — design (Converge, via Costco / Elavon)
 
-Status: **draft on branch `payments`**, 2026-09-23. Schema, migrations and DB client exist; the gateway
+Status: **draft on branch `payments`**, 2026-09-23. Neon connected 2026-09-24. Schema, migrations, DB client
+and build-time migration exist; the gateway
 adapter, `/pay` page and admin wiring do not yet. Decision IDs are **not yet assigned** — §9 lists the
 proposed rows; they are numbered into root `llm.md` §5b at merge time so they cannot collide with rows
 the parallel admin session adds on `main`.
@@ -121,6 +122,12 @@ calls** through **Fixie** (HTTPS `CONNECT` tunnel — TLS is end-to-end, the pro
 | `CRON_SECRET` | Vercel | **yes** | authenticates the daily reconcile |
 
 Local development uses a **Neon `dev` branch** URL in `.env.local` (gitignored), never production.
+
+Connected 2026-09-24: the Vercel Neon integration (prefix `DATABASE`, Sensitive, Production + Preview,
+branch per preview deployment, no branch per production deployment) created `DATABASE_URL` and
+`DATABASE_URL_UNPOOLED` plus unused `DATABASE_PG*` / `DATABASE_POSTGRES_*` aliases. Because Sensitive
+values cannot be pulled, **migrations run in the build** (`scripts/db-migrate.mjs`): a preview build
+migrates its own Neon branch, the production build migrates main.
 
 ## 8. Open items
 

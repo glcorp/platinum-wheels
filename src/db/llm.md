@@ -24,6 +24,9 @@ must be recorded exactly once. Delete it and the payment-link builder goes back 
   `npm run db:check` must pass.
 - **Migrations use `DATABASE_URL_UNPOOLED`; the app uses `DATABASE_URL`** (pooled). DDL must not go
   through PgBouncer.
+- **Migrations run in the Vercel build** (`scripts/db-migrate.mjs`, first step of `npm run build`). Both
+  Neon URLs are Sensitive and cannot be pulled locally, so there is no manual production migrate step.
+  Migrations must be backward-compatible with the code already live: the build migrates, then deploys.
 - **`payment_events` is append-only** — enforced by trigger. Corrections are new events.
 - Full design and reasoning: [`docs/payments.md`](../../docs/payments.md). Pointers, not copies.
 

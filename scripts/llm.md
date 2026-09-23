@@ -1,7 +1,7 @@
 # scripts/
 
 ## Purpose
-Two standalone Node programs that sit *beside* the app rather than inside it. `prepare-assets.mjs`
+Standalone Node programs that sit *beside* the app rather than inside it. `prepare-assets.mjs`
 turns the frozen PNG export into the shipped webp set; `parity-probe.js` is the measurement half of the
 `docs/decisions.md` §9 quality gate. Delete this folder and `public/images/` can never be regenerated
 from `design/assets/`, and parity becomes eyeballing — which
@@ -14,6 +14,9 @@ from `design/assets/`, and parity becomes eyeballing — which
 - [`parity-probe.js`](parity-probe.js) (140 ln) — three browser functions: `probe(pairs)` (30 computed
   properties + bounding box per labelled selector, `:20-51`), `overflowers()` (the 375/768/1280 no-
   horizontal-scroll gate, `:89`), `accentCount(root, accent)` (the one-accent-per-frame audit, `:109`).
+- [`db-migrate.mjs`](db-migrate.mjs) — applies `drizzle/*.sql` via `DATABASE_URL_UNPOOLED`. Runs first in
+  `npm run build`, so every Vercel build migrates its own Neon branch (preview) or main (production)
+  before `next build`. Exits 1 on Vercel with no URL; skips locally. Also `npm run db:migrate`.
 
 ## Rules
 - **`client-assets/` is where client material supplied AFTER the design export goes** (D63).
@@ -51,6 +54,8 @@ from `design/assets/`, and parity becomes eyeballing — which
   `design/reports/README.md` §"Running a measurement", `docs/decisions.md` §9.
 
 ## Don't
+- Don't move migrations out of the build without a replacement: the Neon URLs are Vercel **Sensitive**,
+  so the build is the only place they can be read (`docs/payments.md` §7).
 - Don't rewrite these in TypeScript "for consistency". They are executed by `node` directly and are
   deliberately outside the compile graph (`tsconfig.json:25-32`).
 - Don't remove or relax the upscale guard to make two blurry cut-outs fill the canvas. The warning *is*
