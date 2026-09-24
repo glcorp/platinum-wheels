@@ -501,6 +501,17 @@ export default function StyleguidePage() {
           </div>
         </div>
 
+        {/* Send failed (D104): every field passed but the owner alert could
+            not be sent. Same component, same type role, fallback phone. */}
+        <div className="mt-10">
+          <p className="numeral text-12 text-ink-dim mb-4">
+            Quote form send failed · src/features/product/components/quote-error-summary.tsx
+          </p>
+          <div className="border-border-strong border p-4">
+            <QuoteErrorSummary count={0} sendFailed />
+          </div>
+        </div>
+
         {/* Skip link. The first focusable element on every route and the only
             thing allowed before the header (D57, DEVIATIONS #44). It is
             `position:absolute` and parked at `translateY(-100%)` until focus,

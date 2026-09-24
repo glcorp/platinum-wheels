@@ -211,7 +211,20 @@ export const QUOTE_FIELD = {
   consent: "consent",
   /** Hidden: which product this inquiry is about. */
   slug: "slug",
+  /** Hidden: the vehicle from the page URL, `2021 Honda Civic`, or blank.
+   *  Goes into the owner alert only (D104). */
+  vehicle: "vehicle",
+  /** Hidden: when the server rendered the form, epoch ms. A submit sooner
+   *  than `QUOTE_MIN_FILL_MS` after it is treated as a bot (D104). */
+  renderedAt: "renderedAt",
+  /** Honeypot (D104). Off-screen and out of the tab order; a person never
+   *  fills it, a form-filling bot usually does. Named like the goodwill
+   *  site's own honeypot field. */
+  website: "website",
 } as const;
+
+/** The timer half of the form protection (owner ruling 2026-09-23, D104). */
+export const QUOTE_MIN_FILL_MS = 3_000;
 
 /** The segmented control, artboard-verbatim and in drawn order
  *  (`product-desktop.html:147`). `Phone` is drawn selected; it is the default
@@ -237,9 +250,12 @@ export const DEFAULT_CONTACT_METHOD: ContactMethod = "phone";
  * `.claude/rules/ui.md` and goes on `/styleguide` (`HANDOFF.md` §6).
  */
 export interface QuoteFormState {
-  status: "idle" | "invalid" | "success";
+  /** `failed` (D104): the inquiry was valid but the owner alert could not be
+   *  sent, so the lead would be lost. The form stays up with what was typed
+   *  and asks the visitor to try again or call. */
+  status: "idle" | "invalid" | "failed" | "success";
   errors?: Partial<Record<QuoteField, string>>;
-  /** Echoed back on `invalid` only. Never echoed on `success`. */
+  /** Echoed back on `invalid` and `failed`. Never echoed on `success`. */
   values?: Partial<Record<QuoteField, string>>;
 }
 

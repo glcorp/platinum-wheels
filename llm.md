@@ -228,6 +228,7 @@ All dated 2026-09-20 unless stated. Owner quotes are verbatim.
 | **D101** | **ORM = Drizzle + node-postgres on Neon.** Migrations live in `drizzle/`, and every Vercel build applies them first (`scripts/db-migrate.mjs`, over `DATABASE_URL_UNPOOLED`). | Owner chose *"Drizzle (Recommended)"* (2026-09-23): the team is SQL-fluent, and constraints, partial unique indexes and row locks are first-class. | `src/db/llm.md`. A failed migration fails the deploy. Production Neon was migrated by the 2026-09-24 build. |
 | **D102** | **Static outbound IP via Fixie, free tier.** Converge filters merchants by IP. | Owner: *"go with your recommendation with whatever free option is available"* (2026-09-23). | `docs/payments.md` §6. The owner still has to sign up and send the IPs to Elavon (§8). |
 | **D103** | **Payment links carry an expiry chosen by staff. This amends D92,** which had declined an expiry. | Owner chose *"Add an expiry field"* (2026-09-23). | The field lands in `src/features/admin/` together with the payments wiring, not before. |
+| **D104** | **Quote enquiries are delivered by email through Resend, behind the flag `AUTO_EMAIL_LEAD_CAPTURE_ENABLED`.** Only the exact string `true` sends; anything else validates, logs `quote.email.disabled` and shows success. The shop's address, sender of both emails and recipient of the alert, is env `LEAD_CAPTURE_EMAIL` (`sales@platinumwheels.ca`; owner 2026-09-24: *"sales@platinumwheels.ca move to env variable"*); with the flag on, a missing key or address is a `failed` send. Per inquiry: a plain-text **owner alert** to that address (reply-to the customer; carries the CASL consent record: yes/no, checkbox wording, time, page URL, plus the URL's vehicle) and a **fixed auto-reply** that repeats nothing the visitor typed. A failed owner alert returns the new `failed` state (form kept, fallback phone); a failed auto-reply is only logged. Spam: an off-screen honeypot `website` and a 3 s fill timer from a server-rendered `renderedAt`; both answer a bot with a normal success. REST via `fetch`, no SDK. | Owner rulings 2026-09-23 (`HANDOFF.md` §7). Flag, owner 2026-09-24: *"make sure they are behind a flag in env variable AUTO_EMAIL_LEAD_CAPTURE_ENABLED because we will be testing the request a quote on live website and dont want the emails to be sent when testing"*. The `failed` state and the plain-text-only body are *derived*. | `src/features/product/quote-email.ts`, `actions.ts`. Closes §7.15. In Vercel (Production + Preview): the flag is `false` and `LEAD_CAPTURE_EMAIL` is set; `RESEND_API_KEY` was added by the owner 2026-09-24. Going live = flag `true` + redeploy (`todo.md` item 2). Flip the flag to `true` and redeploy to go live. |
 
 ---
 
@@ -319,13 +320,8 @@ machine-local paths added by D55).
 13. **Real fitment data for the finder** (D27 seed is 15 makes, 3–5 models each, 12 model years; D48 adds a placeholder vehicle → size map). Client, later — owner ruled placeholder data until then (D48).
 14. **`PRIMARY_CONTACT`** is `CONTACTS[0]` (Inderpal Singh) because the header CTA is drawn with that
    number (D7). Nobody confirmed he should receive every header and mobile call tap. Owner.
-15. **PARKED (D54). Where a submitted quote goes.** `src/features/product/actions.ts` validates an
-   inquiry and returns a success state, then **discards it** — no inbox, CRM or form endpoint exists, so
-   the delivery call is a marked `TODO` (D51). The UI half is complete and measured; only the wiring is
-   missing, and wiring needs a backend. It must be done before the site is public, but this build does
-   not owe it. Owner, then client.
-   **Picked up 2026-09-23:** the owner is starting it in a separate session. That session records its
-   decisions (provider, sender, consent storage) as new rows and closes this item.
+15. ~~**Where a submitted quote goes.**~~ **Closed 2026-09-24 by D104:** delivered by email through
+   Resend, behind `AUTO_EMAIL_LEAD_CAPTURE_ENABLED`. All three env vars are in Vercel; what is left is the owner's (`todo.md` items 2–5): flip the flag after testing.
 16. **PARKED (D54). No unavailable state on the PDP.** `docs/decisions.md:116` specifies the dimmed media,
    `Currently unavailable` badge and `Inquire about restock` CTA for a *card*; neither product artboard
    draws an unavailable PDP, so none was authored and `/products/zmax-winterhawk-215-50r17` shows a normal
