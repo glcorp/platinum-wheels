@@ -1,10 +1,9 @@
 # Payments — design (Converge, via Costco / Elavon)
 
-Status: **draft on branch `payments`**, 2026-09-23. Neon connected 2026-09-24. Schema, migrations, DB client
-and build-time migration exist; the gateway
-adapter, `/pay` page and admin wiring do not yet. Decision IDs are **not yet assigned** — §9 lists the
-proposed rows; they are numbered into root `llm.md` §5b at merge time so they cannot collide with rows
-the parallel admin session adds on `main`.
+Status: **on `main` since 2026-09-24** (merged via PR #5). Neon was connected on 2026-09-24, and that
+day's production build applied both migrations to production Neon. The schema, migrations, DB client and
+build-time migration exist. The gateway adapter, the `/pay` page and the admin wiring do not yet. The
+decisions are **D99–D103** in root `llm.md` §5b (§9).
 
 ---
 
@@ -142,7 +141,11 @@ migrates its own Neon branch, the production build migrates main.
 6. **Expiry field** amends D92: the owner chose *"Add an expiry field"* (2026-09-23). The admin form
    change is in the parallel admin session's area — coordinate before editing `src/features/admin/`.
 
-## 9. Proposed decision rows (numbered at merge)
+## 9. Decision rows, numbered D99–D103 at the 2026-09-24 merge
+
+The canonical text is in root `llm.md` §5b. In order: **D99** PSP = Converge HPP · **D100** the link is
+ours · **D101** Drizzle + node-postgres · **D102** Fixie · **D103** staff-chosen expiry. The original
+proposals follow.
 
 - **PSP = Converge (Elavon, via Costco Payment Processing), Hosted Payment Page.** Owner: client chose
   Costco; Elavon issued a Converge demo account 2026-09-18. Supersedes D92's "provider-agnostic" rule

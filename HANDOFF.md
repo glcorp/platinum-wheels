@@ -1,33 +1,26 @@
 # Platinum Wheels — session handoff
 
-**Admin section — built 2026-09-21 on branch `admin-ui`, merged to `main` 2026-09-23 (D89–D94).** A
-staff tool at `/admin` (destined for `admin.platinumwheels.ca`): a stub sign-in gate and a payment-link
-builder, UI only. It was built in a parallel session against the pre-D58 tree, first numbered D58–D63 and
-renumbered at integration — **those numbers were never published for admin**; D58–D63 are the storefront
-rows. **None of the admin code has been compiled, typechecked or rendered**: the machine it was written on
-has no `node_modules`, and the owner verifies on Vercel previews. **It was merged to `main` before any
-build, by owner instruction** — *"the project is still in dev with no real user so we can merge our branch
-into main without testing"* (2026-09-23). If a `main` build breaks, suspect `src/app/admin/` and
-`src/features/admin/` first. See §5, §6 item 0, §7.
+**Production runs `main` at `2df8092` (2026-09-24).** PR #5 combined four PRs into one merge:
+**#1** hardened the admin sign-in (D95), **#2** wired `admin.platinumwheels.ca` and host routing (D96–D98),
+**#3** brought `todo.md` and the unparked quote-delivery rulings (docs only; the Resend code is not
+built), and **#4** brought the payments database (D99–D103). It was the first Vercel build since the
+project was imported. The build ran both migrations against production Neon and went live on
+`admin.platinumwheels.ca` and `platinum-wheels-one.vercel.app`, with no runtime errors. It was verified
+from outside:
+- The pre-D95 cookie `pw_admin_session=1`, which opened `/admin` until this deploy, now bounces to
+  sign-in, and so does a forged signed token.
+- The owner signed in with the real credentials.
+- The D97 host rules behave as specified (§5).
 
-**Admin sign-in hardened 2026-09-23 on branch `admin-auth-hardening` (D95).** The session cookie was the
-constant `"1"` (anyone could set it by hand) and `createPaymentLink` checked no session at all. The branch
-adds a signed `__Host-` cookie, a scrypt password hash, a CSRF token and origin check on every admin Server
-Action, `/admin` security headers and audit log lines. **This branch is the first time the admin code was
-compiled, built and run:** `npm run check` and `next build` are clean, 43 curl probes against `next start`
-pass, and the JS form path was driven in a browser (§5). It has not run on Vercel, because every
-deployment of a commit authored by `garvbareja` is **blocked** (§7). Not merged to `main`; a parallel
-session is working on admin payments in the `payments` worktree.
+**The admin section itself (D89–D94) reached `main` on 2026-09-23 before it had ever been built**, on
+the owner's instruction: *"the project is still in dev with no real user so we can merge our branch into
+main without testing"*. It has since been built, deployed and verified. It was drafted as D58–D63, and
+those numbers were never published for the admin (D98).
 
-**Admin subdomain and host routing 2026-09-23, branch `admin-host-routing` stacked on
-`admin-auth-hardening` (D96–D98).** `admin.platinumwheels.ca` is live on Vercel through one DNS-only
-Cloudflare CNAME, verified from outside: Vercel IPs, a Let's Encrypt certificate, `/admin` → 307 →
-`/admin/login` (D96). `src/proxy.ts` sends every other path on that host to `/admin` and 404s `/admin` on
-every other host, production only (D97). Its rules pass 8 unit tests, but it has **never been built or
-observed on Vercel** — this branch's deployments are blocked exactly like session 7's (§7). Until a build
-runs, the live subdomain serves production `e032b6d`: the storefront at `/`, the pre-D95 admin at `/admin`.
+**Production deploys only when `glcorp` authors the merge commit on `main`** (§7). Commits authored by
+`garvbareja` are still blocked, and so are PR previews.
 
-**Last updated 2026-09-23 (session 8: admin subdomain and host routing, D96–D98).**
+**Last updated 2026-09-24 (session 9: #1–#4 merged via #5 and deployed; docs synced).**
 
 **Session 6 (2026-09-21).** All three designed routes are built and audited; the catalogue
 now has **three categories, not one** (`/wheels` and `/accessories` are full results pages sharing the
@@ -199,9 +192,29 @@ Everything below was measured, not asserted. Re-verified after D57 and again aft
   `next build` clean there, and a curl harness against `next start` passed 43/43 — forged, expired,
   tampered and legacy cookies rejected; sign-in refused without a same-origin `Origin`; payment link and
   sign-out refused without the session's CSRF token; a password change revokes sessions; plaintext and
-  malformed-hash configs behave as documented; no credential ever reaches the log. The JS action path
-  (generate a link, sign out) was driven in the browser pane with a minted session cookie. **Never
-  observed:** the D89 layout items in §6 item 0, and any of it on a Vercel deployment.
+  malformed-hash configs behave as documented; no credential ever reaches the log.
+- **Admin on production, verified 2026-09-24** (`2df8092`, the first Vercel build since import):
+  - **Gate:** no cookie, the legacy `pw_admin_session=1` cookie and a forged `v1` token all 307 to
+    `/admin/login`.
+  - **Headers:** `/admin/login` carries `X-Frame-Options: DENY`, `frame-ancestors 'none'`,
+    `Referrer-Policy: no-referrer` and `X-Robots-Tag: noindex, nofollow`. The storefront carries none of
+    them.
+  - **D97 host rules:**
+    - `admin.platinumwheels.ca/` and `/results` → 307 `/admin`.
+    - `platinum-wheels-one.vercel.app/admin*` → 404, rendered by the site's not-found page.
+    - `/`, `/results`, `/wheels`, `/accessories` and a PDP on the vercel.app host → 200.
+    - The apex `platinumwheels.ca` still serves the goodwill site.
+  - **Sign-in:** the owner signed in with the real credentials.
+  - **Build log:** `db-migrate: migrations up to date.`, and no runtime errors afterwards.
+- **Admin layout, measured 2026-09-24** on a local production build of `2df8092`, signed in (the D89
+  items that were reasoned from Tailwind's emission order and never seen):
+  - **Amount field:** the `$` / `CAD` adornments clear the input text at every width. `$` has
+    5.8px of clearance at 390 and 7.3px at 720–1440 (`pl` 28/32px); `CAD` has 18.7px and 24.7px
+    (`pr` 56/64px).
+  - **Alignment:** the top bar's logo shares its left edge with the page `<h1>` at 390 (16), 720, 810,
+    960 and 1099 (32), 1100 (48) and 1440 (96).
+  - **Overflow:** there is no horizontal overflow on `/admin`, `/admin/login` and `/admin/styleguide`
+    at 375, 390, 768 and 1440.
 - **Thirteen** `"use client"` files and **three** `"use server"`, recounted 2026-09-23 with the command
   below. Ten client files are storefront — the "eight" this line used to state predates D80's `hash-scroll`
   and the finder's `finder-model-sync` — and three are admin (`login-form`, `payment-link-form`,
@@ -243,9 +256,11 @@ Everything below was measured, not asserted. Re-verified after D57 and again aft
 and do not quietly implement it. A page is done when the `docs/decisions.md` §9 gates are green *except* a
 parked row.
 
-**Admin, before anything else on that branch:**
+**Admin:**
 
-0. **Verify the admin on Vercel, once deployments are unblocked (§7).** The Vercel project exists:
+0. ~~**Verify the admin on Vercel, once deployments are unblocked (§7).**~~ **Done 2026-09-24**. Every
+   item below was observed on production or on a production build (§5), and the text is kept only for
+   the record. ~~ The Vercel project exists:
    `platinum-wheels` on team `platninumwheels`, production URL `platinum-wheels-one.vercel.app`, and
    `ADMIN_USERNAME`, `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` are set for Production and Preview.
    `admin-auth-hardening` can merge as is: without `ADMIN_PASSWORD_HASH` the plaintext `ADMIN_PASSWORD`
@@ -255,7 +270,7 @@ parked row.
    edge with the page `<h1>` across 720–1099; no horizontal overflow on the three admin routes. **On the
    first unblocked production build, check the host rules live (D97):** `admin.platinumwheels.ca/` and
    `/results` → 307 `/admin`; `admin.platinumwheels.ca/admin/login` → 200; `platinum-wheels-one.vercel.app
-   /admin` → 404; storefront pages on the vercel.app host unchanged.
+   /admin` → 404; storefront pages on the vercel.app host unchanged.~~
 
 1. ~~**Author the two remaining undrawn states.**~~ **Done 2026-09-21 (D62).** `loading.tsx` and
    `error.tsx` exist at `(storefront)/`, both are on `/styleguide` §11, and the `"use client"` conflict
@@ -274,8 +289,8 @@ parked row.
    **0 wrong, 3 stale (corrected in place), 1 measured.** `design/reports/deviations-sweep.md`.
    Rows #44–#57 were verified as they were written. **The file is certified** — a future session can
    cite a row without re-deriving it, which was not true before today.
-5. **Push.** `origin/main` is at `0a4a3aa`; the handoff commit on top of it is local only.
-   Confirm with `git status -sb` — the owner may already have pushed it.
+5. ~~**Push.**~~ **Done.** `origin/main` is at `2df8092` or later. To land work on `main` so that it
+   deploys, open a PR and have `glcorp` merge it with **Create a merge commit** (§7).
 6. Replace the **three** remaining stub routes when the client supplies copy — undesigned, so they need the owner before
    they need a session.
 
@@ -283,7 +298,7 @@ parked row.
 
 ## §7. Open
 
-**Admin and hosting (D89–D95):**
+**Admin and hosting (D89–D98):**
 
 - **One shared sign-in, hardened (D95).** scrypt hash at rest, signed `__Host-` session cookie, CSRF
   token and origin check on every admin Server Action, `/admin` security headers, audit log lines.
@@ -295,27 +310,43 @@ parked row.
   `b3b61a760d17a44c.vercel-dns-017.com`. `platinumwheels.ca` and `www` still serve the goodwill site on
   Cloudflare Pages, and the zone's MX/SPF/DMARC are the shop's Google Workspace email. **Confirmed by the
   owner (2026-09-23):** *"no i meant admin stays and main website stays deferred"*. D95's *"lets not wire up the website"* is the apex.
-- **`src/proxy.ts` is written but unobserved** (D97). Host routing only — the D95 gate is still the only
-  gate. `noindex` stays in both the layout meta and the `X-Robots-Tag` header.
-- **Every Vercel deployment of our commits is BLOCKED.** The `platninumwheels` team is on Hobby with one
-  member, `platinumwheelsca-5555` (GitHub `glcorp`); commits are authored by GitHub `garvbareja`, who is a
-  collaborator on the GitHub repo but not a member of the Vercel team, and Vercel checks team
-  membership. Pushing works; only the build is refused, and production keeps serving its last good
-  deployment (`e032b6d`, built at import). Fix: move the team to Pro (Hobby is also non-commercial only)
-  and invite `garvbareja`'s Vercel account. Owner.
-- **No PSP.** `createPaymentLink` fabricates a URL (D94); the success panel says so on screen, and that
-  notice is mandatory.
+- **`src/proxy.ts` is live and verified on production** (D97, 2026-09-24, §5). Host routing only — the
+  D95 gate is still the only gate. `noindex` stays in both the layout meta and the `X-Robots-Tag` header.
+- **Vercel builds only commits authored by `glcorp`.**
+  - **Why:** the `platninumwheels` team is on Hobby with one member, `platinumwheelsca-5555` (GitHub
+    `glcorp`), and Vercel checks the commit author against team membership. Commits authored by
+    GitHub `garvbareja`, a repo collaborator who is not a Vercel team member, create `BLOCKED`
+    deployments. That covers every PR preview.
+  - **What works:** a PR merged by `glcorp` with GitHub's **Create a merge commit** gives `main` a head
+    commit authored by `glcorp`, and that commit builds. This is how `2df8092` deployed on 2026-09-24.
+  - **What doesn't:** rebase-merge keeps `garvbareja` as the author, so it stays blocked. Squash-merge
+    may too, because GitHub can credit the squash commit to the PR author.
+  - **Fix:** move the team to Pro (Hobby is also non-commercial only) and invite `garvbareja`'s Vercel
+    account. Owner.
+- **PSP chosen, not wired.** Converge, via Costco / Elavon (D99). Until the adapter lands,
+  `createPaymentLink` still fabricates a URL (D94). The success panel says so on screen, and that notice
+  is mandatory.
 - **Product CRUD** is deferred until the vendor catalogue settles the schema.
 - **No `/admin` error or loading boundary** — `(storefront)/error.tsx` does not reach it, and its component
   speaks to customers. `src/app/admin/llm.md` Open #3.
 - Session length (12 h) and the admin's `sm:` padding ramp were coordinator calls; both vetoable. Full list:
   `src/features/admin/llm.md` Open.
 
-**Quote delivery by email — unparked 2026-09-23, in progress on branch `enquiry-email`:**
+**Payments (D99–D103):**
+
+- The schema, migrations and DB client are on `main`. The 2026-09-24 production build migrated
+  production Neon. Each Vercel build migrates its own Neon branch first (`scripts/db-migrate.mjs`).
+- **Not built yet:** the Converge adapter, the `/pay/<token>` page, and the admin wiring, including the
+  D103 expiry field. The design is in `docs/payments.md`. Owner actions (the `ssl_pin` rotation,
+  Fixie, and a demo extension by **2026-10-13**) are in `docs/payments.md` §8.
+- **Local database work needs a Neon dev branch in `.env.local`.** The Vercel database variables are
+  Sensitive and target Production and Preview only, so `vercel env pull` cannot fetch them.
+
+**Quote delivery by email — unparked 2026-09-23. The docs are on `main` (via #5); the code is not built:**
 
 - The owner unparked §7.15: *"Deliver enquiries by email (highest value, and it's part of what you
-  sold)"*. It takes the next free decision ID when the branch lands (**D98**: D95 is PR #1's and
-  D96–D98 are PR #2's, both published first; D99 is next at the time of writing).
+  sold)"*. It takes the next free decision ID when its code lands (**D98**). D95–D103 are taken, so
+  **D104** is next at the time of writing.
 - **Owner rulings, 2026-09-23:**
   - reuse the goodwill site's Resend account, with a new sending-only key for the storefront
   - `sales@platinumwheels.ca` as both the From address and the alert recipient
@@ -458,6 +489,15 @@ derived from the wheel CSV — D9 still holds.
     "no record" answer for minutes.
 31. **Use the per-project CNAME from Vercel's Domains panel** (`…vercel-dns-017.com`). The legacy
     `cname.vercel-dns.com` "will continue to work", in Vercel's own wording, but is no longer recommended.
+
+**Added in session 9:**
+
+32. **`next build` can fail with a bare `next/font: error` that is not a code problem.** `src/app/fonts.ts`
+    uses `next/font/google`, which downloads Barlow at build time, so a network blip fails the build.
+    Re-run it once before debugging.
+33. **The Bash tool's shell is zsh, and zsh does not word-split `$var`.** `for x in "host /path"; do set --
+    $x; …` leaves `$1` holding the whole string, so a probe loop quietly requests the wrong URL and
+    "finds" a regression. Split with `${x%% *}` / `${x##* }`.
 
 ---
 
