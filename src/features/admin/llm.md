@@ -52,8 +52,9 @@ account, hardened by D95 rather than replaced by an auth system.
   storefront).
 - **No hover-only affordances.** Hover is scoped to `@media (hover: hover)` repo-wide (D17), so anything
   revealed only on hover is permanently unreachable on his devices. Every control is persistently visible.
-- **Provider-agnostic.** The PSP is unchosen. No file here may name, import or be shaped around a
-  specific gateway (D92).
+- **No gateway in this folder.** The PSP is Converge (D99), but that code lives outside
+  `src/features/admin/`, and nothing here may name, import or be shaped around a gateway (D92, as
+  amended by D99).
 - **Two fields.** The builder takes an amount and a description. No line items, no quantities, no fees,
   no HST, no totals — the owner ruled it a wrapper, not a calculator (D92).
 - Every protected page calls `requireAdminSession()` first, and **every Server Action here calls
@@ -104,6 +105,8 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
   cents and is parity-measured on all three storefront routes; a payment amount needs `$452.60`.
 - **Don't add fields to the builder.** Customer name, email, reference, expiry and line items were all
   offered to the owner and declined this session. Adding one is a scope change, not an improvement.
+  **One exception:** D103 (2026-09-23) adds a staff-chosen expiry. It lands with the payments wiring, not
+  before.
 - **Don't add a local class-merge helper.** The 13 hand-rolled copies the D56 audit found were
   consolidated into [`src/lib/cx.ts`](../../lib/cx.ts) by D63. Import `cx` / `join` from `@/lib/cx`
   when a conditional class list needs one; the admin currently needs neither.

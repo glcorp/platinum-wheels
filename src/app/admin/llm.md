@@ -68,8 +68,8 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b.
 
 ## Open
 
-1. ~~**`proxy.ts`**~~ **Written 2026-09-23 (D97).** Unit-tested, never observed on Vercel: deployments of
-   our commits are blocked (`HANDOFF.md` §7). Verify the live 307/404 on the first unblocked build.
+1. ~~**`proxy.ts`**~~ **Written 2026-09-23 (D97), verified live 2026-09-24** on production `2df8092`:
+   the admin host's 307s and the vercel.app host's 404 behave as specified (`HANDOFF.md` §5).
 2. **What D95 declined** (per-user accounts, a second factor, a login limit). See
    `src/features/admin/llm.md` Open #1 and #6.
 3. **No `loading.tsx` or `error.tsx` for `/admin`.** An error here falls through to Next's default
