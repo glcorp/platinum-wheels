@@ -53,6 +53,14 @@ const HEADING = "display text-ink text-display-40 sm:text-display-56";
    draws any (`product.md` §2.7). */
 const TRACK = "similar-track hide-scrollbar md:similar-grid gap-3 md:gap-4";
 
+/* The card photo's `sizes`, crossing where `TRACK` does (D91b, WDG-06):
+   below 1100 each column of `similar-track` is a fixed 260px; from 1100
+   `similar-grid` is 4-up across the viewport less the section's 48px side
+   padding and three 16px gaps, with no container cap — measured 239px at
+   1100, 324 at 1440, 444 at 1920, 604 at 2560 — so the value is that
+   formula, not a fixed width. */
+const CARD_SIZES = "(min-width: 1100px) calc((100vw - 144px) / 4), 260px";
+
 export function SimilarProducts({ products }: SimilarProductsProps) {
   if (products.length === 0) {
     return null;
@@ -85,7 +93,12 @@ export function SimilarProducts({ products }: SimilarProductsProps) {
              with the same slug would otherwise pair and fly alongside the
              real card→gallery morph. The cost is deliberate: PDP → PDP
              through this row slides the page but does not morph the photo. */
-          <ProductCard key={product.slug} product={product} morph={false} />
+          <ProductCard
+            key={product.slug}
+            product={product}
+            morph={false}
+            sizes={CARD_SIZES}
+          />
         ))}
       </div>
     </section>

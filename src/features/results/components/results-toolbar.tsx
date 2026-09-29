@@ -133,8 +133,17 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
               D58 — `CATEGORY_CONFIG[category].crumb`). A flex container
               discards whitespace-only text nodes, so the span has to stay an
               inline formatting context at every width and the flexing moves
-              out one level. */}
-          <div className="md:flex md:min-h-11 md:shrink-0 md:items-center">
+              out one level.
+              D91b (VPE-4, restores the drawn value): below `md:` the wrapper
+              is a plain block, so its line box took the BODY strut — 16px ×
+              1.5 = 24px — around an 11px/1 breadcrumb, and the whole mobile
+              toolbar sat 13px below `results-mobile.html:93`. The wrapper now
+              carries the breadcrumb's own size and `leading-none`, so the
+              strut is 11px and the drawn 11px row returns. From `md:` it is a
+              flex container and the span is its own flex item, so the desktop
+              row is unchanged. The link's 45px hit band is `tap-extend-lg`'s
+              `::after` (D57 C4), independent of this line box. */}
+          <div className="text-11 leading-none md:flex md:min-h-11 md:shrink-0 md:items-center md:text-12">
             <span
               data-probe="breadcrumb"
               className="label text-ink-dim text-11 tracking-10 md:text-12"
@@ -172,8 +181,14 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
                  (results-desktop.html:111, chip :113, link :114).
                  `active:opacity-70`: the whole summary row is the toggle
                  (consequence 1 in the header), so the whole row takes the
-                 D92b text-link press. */
-              className="flex list-none items-center justify-between gap-3 active:opacity-70 md:min-h-11 md:justify-start md:gap-5 [&::-webkit-details-marker]:hidden"
+                 D92b text-link press.
+                 D91b (NJR-9/NJR-10, WDG-16, KBD-8): `flex-wrap` so the row
+                 can never push past the gutter. The drawn row is one line
+                 with a short vehicle, and it still is — a line only breaks
+                 when chip + gap + link would overflow, e.g. `2024 Jeep Grand
+                 Cherokee` at 320, where `Change vehicle` drops under the
+                 chip instead of running 45px off-screen. */
+              className="flex list-none flex-wrap items-center justify-between gap-3 active:opacity-70 md:min-h-11 md:justify-start md:gap-5 [&::-webkit-details-marker]:hidden"
             >
               {vehicleLabel === null ? null : (
                 /* Vehicle chip — `height:44px` M / `40px` D, `padding:0 14px`,
@@ -198,13 +213,26 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
                    bans in `.claude/rules/ui.md` rule out every other way of
                    making an element louder, which is why the answer is the
                    colour pair and nothing else. D5: a second accent in the
-                   frame is not a defect here. Deviation #61. */
+                   frame is not a defect here. Deviation #61.
+
+                   D91b (NJR-10): the year/make/model come from the URL
+                   unvalidated, so the label has no length bound. The chip is
+                   `max-w-full min-w-0` (was `shrink-0`) and the label sits in
+                   its own `truncate` span: a label wider than the row ends in
+                   an ellipsis inside the drawn 44px box instead of running
+                   the chip off-screen. CSS truncation leaves the whole string
+                   in the DOM, so the accessible name is still the full
+                   vehicle. At a drawn width the label fits and nothing is
+                   clipped — the span is the same flex item the bare text node
+                   was. `py-1` gives the clip box room for descenders
+                   (`overflow:hidden` at `leading-flat` would crop the `g` of
+                   `Tiguan`); the chip centres the span, so no glyph moves. */
                 <span
                   data-probe="vehicle-chip"
-                  className="bg-accent-subtle border-accent text-ink inline-flex h-11 shrink-0 items-center gap-2.5 border px-3.5 font-sans text-14 leading-flat font-bold md:h-10"
+                  className="bg-accent-subtle border-accent text-ink inline-flex h-11 max-w-full min-w-0 items-center gap-2.5 border px-3.5 font-sans text-14 leading-flat font-bold md:h-10"
                 >
                   <CarIcon />
-                  {vehicleLabel}
+                  <span className="min-w-0 truncate py-1">{vehicleLabel}</span>
                 </span>
               )}
               {/* `Change vehicle` — `500 12px/1 +.06em uppercase --text-muted`

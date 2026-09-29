@@ -46,6 +46,7 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D91b | 2026-09-29 | Hero: `min-h-*` in place of fixed heights, copy in flow; brand strip: 6 columns from `sm:` to `lg:`, the drawn 8 from 1320 (DEVIATIONS #82); contact: phone numbers never wrap, cards stack from `sm:` and pair from `md:`, 24px card padding at 1100–1319; the desktop hero scrim's upper band is `--scrim-mid` (DEVIATIONS #79, in `globals.css`). 390 and 1440 unchanged except the scrim. | WCAG 1.4.12 clipped the hero copy by up to 216px; brand marks and phone pills collided or wrapped at rest in the undrawn bands; the eyebrow and h1 measured 2.03 and 2.29:1 over the photo. | QA pass KBD-1/2/6, NJR-7; owner rulings 2026-09-29; D91b |
 None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root `llm.md` §5b).
 
 ## Connects to

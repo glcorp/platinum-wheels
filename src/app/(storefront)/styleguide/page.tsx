@@ -455,9 +455,10 @@ export default function StyleguidePage() {
             <code className="text-ink">:hover</code>. Focus, active and disabled are
             authored above from DESIGN.md §4. Form success and form error are
             authored below with the PDP quote band (D51, D57), together with the
-            skip link the artboards never drew (D57). Loading and route error are
-            authored below (D62), which closes the set: every state the design
-            never drew now has a home here.
+            skip link the artboards never drew (D57). The route error is authored
+            below (D62). The loading skeleton that sat beside it was removed
+            (D91b): it hid every page from visitors without JavaScript and
+            turned 404s and 500s into 200s.
           </p>
 
           {/* Empty results — `/results` with a filter set that matches nothing.
@@ -574,33 +575,6 @@ export default function StyleguidePage() {
             </div>
           </div>
 
-          {/* Loading. No artboard draws one (D62). Not rendered from
-              `src/app/(storefront)/loading.tsx` itself — that file renders the
-              real `SiteHeader` and `SiteFooter`, and a second header and footer
-              inside this page would be wrong in the DOM and in the a11y tree.
-              The blocks below are the same recipe that file uses, at the same
-              tokens, which is the one place in §11 where a copy is the right
-              call rather than the wrong one. If the recipe there changes, change
-              it here. */}
-          <div className="mt-10">
-            <p className="numeral text-12 text-ink-dim mb-4">
-              Loading · src/app/(storefront)/loading.tsx · body only, without its chrome
-            </p>
-            <div aria-hidden="true" className="border-border-strong border p-4">
-              <div className="flex flex-col gap-4">
-                <div className="bg-surface border-border h-14 w-2/3 max-w-measure border sm:h-22" />
-                <div className="bg-surface border-border h-4 w-1/3 max-w-measure border" />
-              </div>
-              <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3">
-                {Array.from({ length: 6 }, (_, index) => (
-                  <div
-                    key={index}
-                    className="bg-surface border-border aspect-square border"
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
         </section>
 
         {/* ---------------------------------------------------------------

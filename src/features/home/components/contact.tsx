@@ -73,13 +73,23 @@ export function Contact() {
           </p>
         </div>
 
-        {/* C — two contact cards. `design/inventory/home.md:77,323,331`. */}
-        <div className="order-2 flex flex-col gap-3 sm:order-none sm:col-span-11 sm:col-start-10 sm:row-start-1 sm:grid sm:grid-cols-2 sm:gap-4 md:col-span-1 md:col-start-2">
+        {/* C — two contact cards. `design/inventory/home.md:77,323,331`.
+            D91b (NJR-7): the cards stack in the undrawn tablet band (D41) and
+            sit side by side again from `md:`. At 720–1099 the 11/20 column
+            gives each of two cards 99–203px inside its padding, and the
+            phone pill needs 215.5px on one line — so the number broke across
+            2–4 lines (Firefox refused the break and overflowed the page).
+            Stacked, a card is 278px+ inside. 390 and 1440 are unchanged. */}
+        <div className="order-2 flex flex-col gap-3 sm:order-none sm:col-span-11 sm:col-start-10 sm:row-start-1 sm:grid sm:grid-cols-1 sm:gap-4 md:col-span-1 md:col-start-2 md:grid-cols-2">
           {CONTACTS.map((contact, index) => (
             <div
               key={contact.tel}
               data-probe={index === 0 ? "contact-card-1" : undefined}
-              className="bg-surface border-border-strong flex flex-col items-start gap-3.5 border p-5 sm:gap-5 sm:p-8"
+              /* `md:p-6 lg:p-8` (D91b, NJR-7): at 1100 two cards leave 205px
+                 inside a 32px padding, 10px short of the one-line pill; 24px
+                 gives 221px. The drawn 32px (1440) returns from `lg:` 1320,
+                 where it leaves 269px. */
+              className="bg-surface border-border-strong flex flex-col items-start gap-3.5 border p-5 sm:gap-5 sm:p-8 md:p-6 lg:p-8"
             >
               {/* `calc(40px * var(--scale-h2))` desktop, `calc(28px * var(--scale-h3))`
                   mobile — `design/inventory/home.md:77`. */}
@@ -91,11 +101,13 @@ export function Contact() {
                   desktop in the artboard but Tailwind's `hover:` is already
                   `@media (hover: hover)`-scoped, so it stays unprefixed
                   (D17). `active:translate-y-px` is the D92b boxed-control
-                  press. */}
+                  press. `whitespace-nowrap` (D91b, NJR-7): a phone number
+                  never breaks mid-number — the card layout above makes room
+                  for it instead. */}
               <a
                 href={`tel:${contact.tel}`}
                 data-probe={index === 0 ? "contact-phone-1" : undefined}
-                className="numeral border-accent text-ink hover:bg-accent hover:text-on-accent inline-flex h-13 w-full touch-manipulation items-center justify-center gap-2.5 rounded-ctl border text-17 leading-flat active:translate-y-px sm:mt-auto sm:h-14 sm:w-auto sm:justify-start sm:gap-3 sm:px-5 sm:text-18"
+                className="numeral border-accent text-ink hover:bg-accent hover:text-on-accent inline-flex h-13 w-full touch-manipulation items-center whitespace-nowrap justify-center gap-2.5 rounded-ctl border text-17 leading-flat active:translate-y-px sm:mt-auto sm:h-14 sm:w-auto sm:justify-start sm:gap-3 sm:px-5 sm:text-18"
               >
                 <svg
                   aria-hidden="true"

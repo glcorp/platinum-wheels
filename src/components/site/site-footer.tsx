@@ -89,8 +89,12 @@ export function SiteFooter() {
                      floor without changing the measured box (DEVIATIONS #16).
                      `active:opacity-70` is the text-link press (D92b); the
                      hover colour itself eases over `--duration-feedback` in
-                     the base layer (DEVIATIONS #75). */
-                  className="tap-extend text-15 leading-normal text-ink-muted hover:text-ink py-1 active:opacity-70"
+                     the base layer (DEVIATIONS #75). `break-words` (D91b,
+                     KBD-7): at 768 a column is 86px and `Accessories` needs
+                     79px, so a reader's text-spacing override pushed the word
+                     13px past it; it now breaks only when it would overflow,
+                     which at default spacing is never. */
+                  className="tap-extend text-15 leading-normal text-ink-muted hover:text-ink py-1 break-words active:opacity-70"
                 >
                   {link.label}
                 </Link>

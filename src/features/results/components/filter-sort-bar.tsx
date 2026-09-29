@@ -30,6 +30,9 @@ export function FilterSortBar({ view }: FilterSortBarProps) {
   return (
     <div
       data-probe="sticky-bar"
+      /* Hook for `globals.css`'s scroll-padding rule, which keeps a keyboard
+         focus target from landing under this bar (WCAG 2.4.11, D91b). */
+      data-sticky-filter-bar=""
       className="sticky top-17 z-3 mt-4 grid grid-cols-2 gap-2 border-y border-border bg-scrim-strong px-4 py-3 sm:top-22 sm:px-8 md:hidden"
     >
       {/* Left cell: the trigger; its `<dialog>` is `position:fixed`, so it is

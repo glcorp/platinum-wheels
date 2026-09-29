@@ -23,23 +23,27 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   **no artboards** and are not parity rows: they inherit `/results`' parity by rendering the same
   component tree (`design/manifest.md` Routes).
 - [`products/[slug]/page.tsx`](products/[slug]/page.tsx) — route `/products/[slug]`, **built**
-  2026-09-21. `async`, takes `PageProps<"/products/[slug]">`, resolves the slug from the seed (404 if
-  unknown, but an *unavailable* product still returns 200) and turns `productView(product, query)` into
+  2026-09-21. `async`, takes `PageProps<"/products/[slug]">`, resolves the slug from the seed (a real 404 if
+  unknown since D91b, but an *unavailable* product still returns 200) and turns `productView(product, query)` into
   one `ProductView`; composition only. The breadcrumb is rendered once and placed twice — mobile above
   the gallery, desktop inside the buy panel — with the visibility classes owned here, not by the
   component. The header's active nav item follows the product's category (D58), so a wheel PDP marks
   Wheels. No `generateStaticParams` — reading `searchParams` for `?qty=` makes the route dynamic (D50).
   Parity: `design/reports/product.md`.
-- [`loading.tsx`](loading.tsx) — the group's loading UI (**D62**), a Server Component: the real
-  `SiteHeader` and `SiteFooter` around a motion-free skeleton (heading bar + six `--surface` blocks on
-  the `results-grid` steps). It renders a **`<div>`, not `<main id="main">`** — Next emits this fallback
-  into the same document as the page, and an earlier version produced two `<main id="main">` elements on
-  `/styleguide`. A transient fallback does not own the page's landmark.
+- ~~`loading.tsx`~~ — **removed 2026-09-29 (D91b, owner ruling).** Its group-level Suspense boundary
+  streamed every page into `<div hidden id="S:0">` behind the skeleton, so with JavaScript off every
+  route showed only the skeleton (every no-JS promise in D44/D45/D50/D83 was void while the served HTML
+  looked right), an unknown product slug returned 200 and a render error returned 200. Measured on a
+  build without it: 404 and 500. No route here suspends, so nothing replaced it.
+- [`qa-error/page.tsx`](qa-error/page.tsx) — **a test fixture, not a page** (D91b). Throws only when the
+  server was started with `QA_ERROR_ROUTE=1` (the Playwright config sets it); otherwise `notFound()`. It
+  exists so `tests/e2e/error-boundary.spec.ts` can prove the boundary end to end (a real 500).
 - [`error.tsx`](error.tsx) — the group's route error boundary (**D62**). The directive plus one
   re-export of `src/components/site/route-error.tsx`; **no component code lives here.** This is the
   build's only `"use client"` under `src/app/` and it is a framework requirement, not a choice — Next
   fails the build on a bare re-export. It does not wrap `src/app/layout.tsx`; that would need
-  `global-error.tsx`, which does not exist and is not owed.
+  `global-error.tsx`, which does not exist and is not owed. Since D91b a render error here returns a real
+  **500** (measured on `/qa-error`), not a 200 with the boundary streamed into it.
 - [`about/page.tsx`](about/page.tsx), [`privacy/page.tsx`](privacy/page.tsx) and
   [`terms/page.tsx`](terms/page.tsx) — the three **written** pages. Undesigned (D26, D39): no artboard
   draws any of them, so they are not parity rows and there is nothing for them to deviate from. They
@@ -90,8 +94,7 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   (`HANDOFF.md` §6).
 - **Every page shell wraps `<main>` and the footer in `PageTransition` (D92b)** — never the header, which
   is pinned by its own `site-header` name, and never a layout, which persists and so never enters or
-  exits. `loading.tsx` rides the same wrapper, which is what turns the skeleton → content swap into a
-  crossfade; its root structure is otherwise unchanged (the QA pass owns a pending no-JS fix there).
+  exits. (The `loading.tsx` skeleton that also rode it is gone, D91b.)
   `page.tsx` (`/`) renders `ScrollReveal`. `/styleguide` §12 shows the motion tokens and states.
 
 ## Decisions

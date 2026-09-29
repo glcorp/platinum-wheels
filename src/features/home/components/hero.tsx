@@ -9,12 +9,28 @@ import Image from "next/image";
  *
  * Measured: design/inventory/home.md §2.1 lines 113-128 (element table),
  * lines 18-23 (manifest), lines 397-399 (gradients).
+ *
+ * D91b (KBD-2, WCAG 1.4.12): the drawn heights are a MINIMUM, not a fixed
+ * box. The copy used to be `absolute … bottom-*` inside `h-* overflow-hidden`,
+ * so a reader's text-spacing override grew the stack upward past the clip
+ * (eyebrow lost by 216px at 1440). Now the copy is in flow, bottom-anchored by
+ * `justify-end` + the same bottom inset as padding, and the hero grows when
+ * the copy needs more room. `pt-17 sm:pt-22` reserves the absolute over-hero
+ * header's own height (site-header.tsx `h-17 sm:h-22`) so grown copy never
+ * slides under it. At default spacing the copy fits well inside the minimum,
+ * so rest geometry at 390 and 1440 is unchanged.
  */
 export function Hero() {
   return (
     <div
       data-probe="hero"
-      className="relative overflow-hidden h-180 sm:h-190 md:h-225"
+      className={[
+        "relative flex flex-col justify-end overflow-hidden",
+        "min-h-180 sm:min-h-190 md:min-h-225",
+        // Insets: 16px mobile -> 48px desktop; bottom 100px -> 200px
+        // (home.md:22 mobile, :21 desktop). Were the copy's absolute offsets.
+        "px-4 pt-17 pb-25 sm:px-12 sm:pt-22 sm:pb-50",
+      ].join(" ")}
     >
       {/* Photo: hero-tread.webp (D4), not the artboard's hotlinked Vossen/Ferrari
           shot (ASSET-CREDITS.md). Because the shipped photo differs from the
@@ -48,9 +64,9 @@ export function Hero() {
 
       <div
         className={[
-          // Insets: 16px mobile -> 48px desktop; bottom 100px -> 200px
-          // (home.md:22 mobile, :21 desktop).
-          "absolute left-4 right-4 bottom-25 sm:left-12 sm:right-12 sm:bottom-50",
+          // `relative` keeps the in-flow copy painted above the absolute
+          // photo and scrim (positioned boxes paint over static ones).
+          "relative",
           // Stack gap: 16px mobile -> 28px desktop (home.md:21-22).
           "flex flex-col gap-4 sm:gap-7",
           // TOKEN MISSING: --container-hero: 1100px -> max-w-hero (home.md:21

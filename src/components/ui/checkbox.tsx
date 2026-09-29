@@ -77,8 +77,9 @@ export function Checkbox({
               // gap:12px, align-items:flex-start — product-desktop.html:151
               "group/check flex cursor-pointer items-start gap-3",
               // 44px floor so the tap target clears docs/decisions.md §5. The
-              // artboard row has no min-height; the shipped consent copy wraps well
-              // past 44px, so this only ever engages for short labels.
+              // artboard row has no min-height. At 1440 the consent copy is one
+              // 21px line, so the floor does engage there: the row is 44px and
+              // the quote band 26px taller than drawn (DEVIATIONS #80, D91b).
               "min-h-11",
             ].join(" "),
         labelClassName,

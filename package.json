@@ -10,7 +10,8 @@
     "check": "tsc --noEmit && eslint .",
     "typecheck": "tsc --noEmit",
     "design": "npx --yes serve design -l 4000",
-    "assets": "node scripts/prepare-assets.mjs"
+    "assets": "node scripts/prepare-assets.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "next": "16.4.0-canary.37",
@@ -18,6 +19,8 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

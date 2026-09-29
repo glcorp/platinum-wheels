@@ -16,7 +16,9 @@
  * exist, their param names and `strip` regexes, the chip group's param and
  * option order — comes from `@/features/catalog/categories`, which (like this
  * file) imports no seed data and stays safe for `filter-panel.tsx`, a
- * `"use client"` island, to import.
+ * `"use client"` island, to import. It also imports `isFinderVehicle` from
+ * `@/features/finder/data` (D91b): placeholder vehicle data, no product seed,
+ * so the islands that import this file carry the finder list (a few KB).
  *
  * **Tires are unchanged.** The tires row of `CATEGORY_CONFIG` reproduces the
  * measured param names (`width` / `profile` / `rim` / `season`) and the
@@ -29,6 +31,7 @@ import {
   type SizeFieldConfig,
 } from "@/features/catalog/categories";
 import type { ProductCategory } from "@/features/catalog/types";
+import { isFinderVehicle } from "@/features/finder/data";
 import {
   DEFAULT_SORT,
   RESULTS_PARAM,
@@ -108,9 +111,13 @@ export function parseResultsQuery(
   const model = firstValue(params, RESULTS_PARAM.model);
 
   /* All three or none: a half-filled finder submit names no vehicle, and the
-     chip and page title read off this one field (D47(5)). */
+     chip and page title read off this one field (D47(5)). And only a vehicle
+     the finder offers — anything else would be printed verbatim (D91b). */
   const vehicle =
-    year !== null && make !== null && model !== null
+    year !== null &&
+    make !== null &&
+    model !== null &&
+    isFinderVehicle(year, make, model)
       ? { year, make, model }
       : null;
 

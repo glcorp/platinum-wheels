@@ -106,6 +106,7 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D91b | 2026-09-29 | (1) `view.ts` accepts a vehicle only via `isFinderVehicle` — the one cross-feature import outside `catalog/`, on `results/search.ts`'s precedent; (2) after an invalid submit the quantity select still follows `?qty=` (resync from the prop only; D84 had regressed); (3) the `beforeunload` guard ignores `tel:`/`mailto:` clicks; (4) `Custom quantity` is `type="text" inputMode="numeric"` and the action accepts only `/^\d{1,2}$/` then 1–99, reusing the D75 message; (5) cells 1/2/4 are `scroll={false}` (a phone tap threw the page to the top, measured 515 → 0) and every cell carries `data-qty-cell`; (6) the h1 is `text-ink` and `wrap-anywhere`, the size numeral `leading-flat`, the mobile price row loses a stray `pt-2`, the breadcrumb row is its drawn height — all restoring measured values. | QA pass WDG-03/04/05/11, HPD-2/3, VPE-2/3/4/5, NJR-8 (`design/reports/qa.md`). | D91b |
 | — | — | None folder-scoped. | Every PDP ruling is global. | root `llm.md` §5b |
 
 Referenced: **D50** (quantity is `?qty=`), **D51** (Server Action + success state), **D52** (similar =

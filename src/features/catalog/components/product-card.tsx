@@ -68,7 +68,11 @@ const BADGE_PRESENTATION: Record<
 const MAX_BADGES = 2;
 
 /**
- * `sizes` for the square cut-out. The card has a hard ceiling: it is 328px at
+ * Default `sizes` for the square cut-out — what an un-passed caller gets
+ * (`/styleguide`). The three storefront homes pass their own through the
+ * `sizes` prop, because their grids cross at different widths (D91b, WDG-06;
+ * `HANDOFF.md` §8.7 "`sizes` must cross at the layout's breakpoint"). The
+ * card has a hard ceiling: it is 328px at
  * the 1440 artboard (3-up in a 1016px results column) and 324px 4-up in the
  * 1344px container, and 358px at the 390 artboard (full width less 2×16px)
  * — `design/inventory/results.md:571`. So above the 720px crossover the box
@@ -86,11 +90,12 @@ const IMAGE_SIZES = "(min-width: 720px) 348px, (min-width: 400px) 50vw, 100vw";
   * space (`in oklab`) that a computed-style parity read would catch.
   *
   * All three overlays in this box — this vignette, the badge row, and the
-  * brand stamp — carry `pointer-events-none`. They are `position:absolute`
-  * siblings painted *after* the image anchor below, and CSS paints positioned
-  * boxes above non-positioned in-flow ones regardless of DOM order — so
-  * without `pointer-events-none` each one sits, invisibly, on top of the
-  * anchor and swallows the click meant for it. The vignette alone covers the
+  * brand stamp — carry `pointer-events-none`. They are positioned siblings
+  * painted *above* the image anchor (when #69 was found the anchor was static,
+  * and CSS paints positioned boxes above non-positioned in-flow ones
+  * regardless of DOM order; since D91b all four are positioned and paint in
+  * DOM order, anchor first) — so without `pointer-events-none` each one sits,
+  * invisibly, on top of the anchor and swallows the click meant for it. The vignette alone covers the
   * full `inset-0` box, which is why its missing `pointer-events-none` made
   * the *entire* photo dead to clicks (DEVIATIONS #69, corrected). Confirmed
   * with `elementFromPoint` before and after — see the amended row. */
@@ -160,12 +165,24 @@ export interface ProductCardProps {
    * D52; best and similar partition the results).
    */
   morph?: boolean;
+  /**
+   * The photo's `sizes` for THIS caller's grid (D91b, WDG-06). One card, three
+   * layouts: the results grid is 1-up / 2-up / 3-up at 720 and 1100, the home
+   * featured row a fixed 260px track below 720, the PDP similar row the same
+   * 260px track below 1100 — so one string cannot cross at every caller's
+   * breakpoints, and an under-declared `sizes` makes the browser fetch a
+   * candidate smaller than the box it paints. Each value must be ≥ the
+   * rendered card width at every viewport. Defaults to `IMAGE_SIZES`, so a
+   * caller that passes nothing is unchanged.
+   */
+  sizes?: string;
 }
 
 export function ProductCard({
   product,
   priority = false,
   morph = true,
+  sizes = IMAGE_SIZES,
 }: ProductCardProps) {
   const {
     slug,
@@ -198,7 +215,7 @@ export function ProductCard({
       alt={`${brand} ${model}`}
       width={1000}
       height={1000}
-      sizes={IMAGE_SIZES}
+      sizes={sizes}
       /* See `priority` in ProductCardProps for why this is eager +
          fetchPriority rather than `preload`. Both stay undefined when
          the prop is false, so the default lazy behaviour is
@@ -228,8 +245,23 @@ export function ProductCard({
     >
       {/* `position:relative;aspect-ratio:1/1;background:var(--bg);
           overflow:hidden` — results-desktop.html:157. The square is the
-          reserved aspect box, so the photo costs no layout shift. */}
-      <div className="bg-bg relative aspect-square overflow-hidden">
+          reserved aspect box, so the photo costs no layout shift.
+
+          D91b (NJR-6): the badge row and the brand stamp share this box's
+          flow instead of being two independent `absolute` layers. Absolute,
+          the full-width badge row could not see the stamp, and at 1100–1180
+          (3-up beside the rail, D46 — the narrowest card) `Currently
+          unavailable` ran up to 34.6px under it. Now the box is a wrapping
+          flex row, padded by the drawn 10px / 16px insets that used to be
+          the two `top`/`left`/`right` offsets: badges left, stamp pushed
+          right by `ml-auto`, and when both do not fit the stamp takes the
+          next line instead of overlapping. At the drawn widths both fit on
+          one line, so every badge and the stamp land exactly where the
+          absolute insets put them. `content-start` stops a wrapped second
+          line being stretched down the photo. The image anchor and the
+          vignette stay `absolute inset-0` over the padding box, which the
+          square's `border-box` sizing leaves the same size. */}
+      <div className="bg-bg relative flex aspect-square flex-wrap content-start items-start gap-1.5 overflow-hidden p-2.5 sm:p-4">
         {/* `width:100%;height:100%;object-fit:contain;padding:6%;
             box-sizing:border-box;display:block` — results-desktop.html:158.
             `photo-inset-card` is that 6% (globals.css:284); the percentage
@@ -280,7 +312,10 @@ export function ProductCard({
             intercept every click on the photo (DEVIATIONS #69, corrected —
             confirmed with `elementFromPoint` before and after). The three
             overlays now carry `pointer-events-none`; this anchor's box is
-            unchanged.
+            unchanged. (Since D91b the anchor is itself `absolute` and the
+            badge row and stamp are `relative` flex items; all four are
+            positioned and paint in DOM order, anchor first, so the overlays
+            still sit on top and still need `pointer-events-none`.)
 
             D92b (owner, "Expressive", 2026-09-29): the photo is the shared
             element that morphs into the PDP gallery, which wraps its own
@@ -307,8 +342,9 @@ export function ProductCard({
             card's list-identity VT in `results-grid.tsx` animates the whole
             card instead — the skill's "composing shared elements with list
             identity" pattern. The morph only forms if the PDP renders in the
-            same commit as the navigation, i.e. fully prefetched rather than
-            suspended into `loading.tsx` — hence `prefetch={true}` on both PDP
+            same commit as the navigation, with the PDP payload already in
+            hand (the storefront has had no `loading.tsx` fallback since
+            D91b) — hence `prefetch={true}` on both PDP
             links (`vercel-react-view-transitions` nextjs.md "When Content
             Must Be Ready"). `nav-forward` types the page slide. Press is
             `active:opacity-70`, the text-link/photo half of the D92b press
@@ -319,7 +355,10 @@ export function ProductCard({
           aria-hidden="true"
           transitionTypes={["nav-forward", "product-open"]}
           prefetch={true}
-          className="block h-full w-full active:opacity-70"
+          /* `absolute inset-0` (was in-flow `h-full w-full`) since D91b:
+             the box's padding now carries the overlay insets, and the photo
+             must still fill the whole square. Same box, same hit area. */
+          className="absolute inset-0 block active:opacity-70"
         >
           {morph ? (
             <ViewTransition
@@ -346,8 +385,11 @@ export function ProductCard({
         {/* `position:absolute;top:16px;left:16px;right:16px;display:flex;
             gap:6px;flex-wrap:wrap` — results-desktop.html:160; mobile inset
             10px — results-mobile.html:110. Rows wrap rather than overflow
-            (`design/DESIGN.md:201`). */}
-        <div className="pointer-events-none absolute top-2.5 right-2.5 left-2.5 flex flex-wrap gap-1.5 sm:top-4 sm:right-4 sm:left-4">
+            (`design/DESIGN.md:201`). The insets are the parent's padding
+            since D91b; `relative` keeps it painted above the positioned image
+            anchor and vignette (DOM order among positioned boxes), and
+            `min-w-0` lets it narrow so its own badges wrap. */}
+        <div className="pointer-events-none relative flex min-w-0 flex-wrap gap-1.5">
           {available ? (
             seasonBadges.map((badge) => (
               <Badge key={badge} variant={BADGE_PRESENTATION[badge].variant}>
@@ -366,8 +408,11 @@ export function ProductCard({
             10px — results-mobile.html:117. Barlow *Condensed*, unlike every
             other 11px label on the page (`design/inventory/results.md:310`),
             which is what the `display` role utility carries; `leading-badge`
-            (24px) and `tracking-8` override its display leading and tracking. */}
-        <span className="display text-ink-muted leading-badge pointer-events-none absolute top-2.5 right-2.5 text-11 tracking-8 sm:top-4 sm:right-4">
+            (24px) and `tracking-8` override its display leading and tracking.
+            D91b: a flex item pushed right by `ml-auto` rather than an
+            absolute layer (see the photo box), `relative` for paint order,
+            `min-w-0 break-words` so a long brand wraps inside the photo. */}
+        <span className="display text-ink-muted leading-badge pointer-events-none relative ml-auto min-w-0 break-words text-11 tracking-8">
           {brand}
         </span>
       </div>

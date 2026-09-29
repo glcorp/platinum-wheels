@@ -278,7 +278,14 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
                  set — the drawn mobile card. */
               className="w-65 shrink-0 snap-start sm:featured-card-3 md:featured-card-4"
             >
-              <ProductCard product={product} />
+              {/* `sizes` crosses where this track does (D91b, WDG-06):
+                  the fixed 260px `w-65` card below 720, a third of the
+                  content box 720–1099, and from 1100 a quarter of at most
+                  the 1344px container, i.e. ≤324px (`home.md:248`). */}
+              <ProductCard
+                product={product}
+                sizes="(min-width: 1100px) 324px, (min-width: 720px) 33vw, 260px"
+              />
             </div>
           ))}
         </div>

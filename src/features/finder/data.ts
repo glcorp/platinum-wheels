@@ -37,6 +37,23 @@ export function finderYears(): readonly number[] {
   return Array.from({ length: 12 }, (_, index) => currentYear - index);
 }
 
+/**
+ * True only for a vehicle the finder itself offers (D91b, owner ruling
+ * 2026-09-29: "Accept finder vehicles only"). `year`, `make` and `model` come
+ * from the URL (D44), and every surface that names the vehicle — the results
+ * chip, the best-none note, the PDP quote chip and fitment sentence — printed
+ * whatever the link said, so any link could put its own text and phone number
+ * on the page (escaped, never executed, but on the site). Anything else is "no
+ * vehicle", the generic D47(5) path. This narrows D79: a mismatched pair such
+ * as Toyota Civic used to name itself and miss the fitment map harmlessly; it
+ * now names nothing. Exact match, because the finder submits these strings.
+ */
+export function isFinderVehicle(year: string, make: string, model: string): boolean {
+  if (!finderYears().some((known) => String(known) === year)) return false;
+  const entry = FINDER_MAKES.find((known) => known.make === make);
+  return entry?.models.includes(model) ?? false;
+}
+
 export interface FinderMake {
   make: string;
   models: readonly string[];

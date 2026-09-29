@@ -17,6 +17,10 @@
 import { productsIn } from "@/features/catalog/data";
 import { configFor, type CategoryConfig } from "@/features/catalog/categories";
 import type { Product, ProductCategory } from "@/features/catalog/types";
+/* The one cross-feature import outside `catalog/` (D37), on the precedent of
+   `results/search.ts`: the finder's list is the only authority on what counts
+   as a vehicle (D91b). */
+import { isFinderVehicle } from "@/features/finder/data";
 
 import {
   DEFAULT_QUANTITY_BY_CATEGORY,
@@ -264,6 +268,10 @@ function parseVehicle(params: ProductSearchParams): Vehicle | null {
   const model = read(PRODUCT_PARAM.model);
 
   if (year === "" || make === "" || model === "") return null;
+  /* Only a vehicle the finder offers: this one is printed in the quote chip
+     and the fitment sentence, so an unchecked URL could write its own copy
+     onto the page (D91b). */
+  if (!isFinderVehicle(year, make, model)) return null;
   return { year, make, model };
 }
 

@@ -5,17 +5,23 @@ import Script from "next/script";
 import { HashScroll } from "@/components/site/hash-scroll";
 import { NavProgress } from "@/components/site/nav-progress";
 
-/* D92b motion bootstrap — runs before the first `<img>` parses, so it needs no
-   hydration and adds no `"use client"`.
+/* D92b motion bootstrap — needs no hydration and adds no `"use client"`.
    (1) Image fade-in: sets `data-img-fade` on <html> and marks each image
    `data-loaded` on its `load` or `error` (capture phase — neither event
    bubbles). `globals.css` holds a lazy image at opacity 0 until it is marked,
    then eases it in over its own ground. Without this script neither attribute
    exists and every image renders exactly as before.
+   It does NOT run before the first `<img>` parses: Next 16 serves a
+   `beforeInteractive` script as a `self.__next_s` push that its runtime
+   executes at hydration, after the document has parsed. Any image already
+   loaded by then had fired its `load` unseen, stayed unmarked and so stayed
+   at opacity 0 for good — measured on `/results` at 1440, the second row of
+   cards painted blank (D91b). So after arming the listeners it also marks
+   every image that is already `complete`; the listener covers the rest.
    (2) Press feedback on iOS: Safari applies `:active` only when a touch
    listener exists, so every `active:` press state in the build is dead on an
    iPhone without this one passive no-op. */
-const MOTION_BOOT = `(function(){var d=document;d.documentElement.setAttribute("data-img-fade","");function m(e){var t=e.target;if(t&&t.tagName==="IMG")t.setAttribute("data-loaded","")}d.addEventListener("load",m,true);d.addEventListener("error",m,true);d.addEventListener("touchstart",function(){},{passive:true})})();`;
+const MOTION_BOOT = `(function(){var d=document;d.documentElement.setAttribute("data-img-fade","");function m(e){var t=e.target;if(t&&t.tagName==="IMG")t.setAttribute("data-loaded","")}d.addEventListener("load",m,true);d.addEventListener("error",m,true);for(var i=d.images,k=0;k<i.length;k++)if(i[k].complete)i[k].setAttribute("data-loaded","");d.addEventListener("touchstart",function(){},{passive:true})})();`;
 
 export const metadata: Metadata = {
   title: {
@@ -29,6 +35,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#0B0B0D",
   colorScheme: "dark",
+  /* Without `cover`, iOS reports every safe-area inset as 0 and `pb-safe`
+     (D66) never engaged on a real iPhone. The side insets it exposes are
+     handled in globals.css (D91b). */
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -60,11 +70,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        {/* Makes `/#contact` and `/#how-it-works` work. `loading.tsx`'s Suspense
-            boundary (D62) means the section arrives after the browser has
-            already resolved the fragment, so nothing scrolls — measured, ten
-            seconds, `scrollY` 0, in a production build. A leaf island, so this
-            file stays a Server Component. D80. */}
+        {/* Made `/#contact` and `/#how-it-works` work while `loading.tsx`'s
+            Suspense boundary (D62) streamed the section in after the browser
+            had resolved the fragment (D80). That boundary is gone (D91b), so
+            the page arrives whole; this stays as a bounded, harmless safety net
+            for any future boundary. A leaf island, so this file stays a Server
+            Component. */}
         <HashScroll />
         {/* The top loading bar for any wait longer than 150ms — a page change,
             a GET form, or a filter/sort round-trip. Here, not in a page,

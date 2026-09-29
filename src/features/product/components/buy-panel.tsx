@@ -90,7 +90,10 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
   const { product } = view;
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-8 sm:gap-5 sm:px-8 sm:pt-8 md:sticky md:top-24 md:gap-5 md:px-0 md:pt-0">
+    /* `min-w-0` (D91b, NJR-8): this is the `pdp-split` grid item, and an
+       `fr` track's floor is its item's min-content — one long word in the
+       h1 grew the 576px column to 606px and squeezed the gallery. */
+    <div className="flex min-w-0 flex-col gap-4 px-4 pt-8 sm:gap-5 sm:px-8 sm:pt-8 md:sticky md:top-24 md:gap-5 md:px-0 md:pt-0">
       {breadcrumb}
 
       {/* Badge row — desktop only (`product-desktop.html:108`); mobile's
@@ -119,25 +122,35 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
         </span>
 
         {/* `<h1>` — the page's only h1. `700 calc(56px)/0.92` mobile →
-            `700 calc(88px)/0.92` desktop (`product.md` §3.2). */}
-        <h1 className="display text-display-56 sm:text-display-88">
+            `700 calc(88px)/0.92` desktop (`product.md` §3.2). `text-ink`
+            restores the drawn `--text` white: with no colour of its own it
+            inherited the body's `--text-muted` grey (D91b, VPE-2).
+            `wrap-anywhere` breaks a single word longer than the column
+            (`Ganzjahresreifen` overflowed 320/375 and widened the desktop
+            track, D91b NJR-8/KBD-8); every seed name fits, so no rest pixel
+            moves. */}
+        <h1 className="display text-ink text-display-56 wrap-anywhere sm:text-display-88">
           {product.model}
         </h1>
 
         {/* Size numeral — `font:700 18px/1;tabular-nums;color:var(--text-muted)`
             mobile, `22px` desktop (`product-mobile.html:94`,
-            `product-desktop.html:109`). */}
-        <span className="numeral text-ink-muted text-18 sm:text-22">
+            `product-desktop.html:109`). `leading-flat` is the drawn `/1`:
+            `numeral` sets no line-height, so it read 1.5 (D91b, VPE-3). */}
+        <span className="numeral text-ink-muted text-18 leading-flat sm:text-22">
           {view.sizeLine}
         </span>
       </div>
 
       {/* Price — built for this exact element already; do not restyle it
-          (`product.md` §3.3). Wrapper `padding-top:8px`. `unit` is the
+          (`product.md` §3.3). Wrapper `padding-top:8px` on desktop only
+          (`product-desktop.html:110`); the mobile price row has none
+          (`product-mobile.html:95`), so `sm:pt-2` — the tablet band takes the
+          desktop value from `sm:` per D41 (D91b, VPE-5). `unit` is the
           category's PDP suffix (D58, `CategoryConfig.unit.pdp`) — a tire's is
           `per tire · before tax`, `Price`'s own default, so this is a no-op
           for the built page; a wheel renders `per wheel · before tax`. */}
-      <div className="pt-2">
+      <div className="sm:pt-2">
         <Price
           amount={product.price}
           context="pdp"

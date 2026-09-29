@@ -102,6 +102,7 @@ One line each; measurements and per-variant tables live in each file's header co
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D91b | 2026-09-29 | Checkbox consent variant: the comment on its 44px floor corrected; the floor itself is recorded as DEVIATIONS #80. | The comment claimed the floor never engaged; at 1440 it does (quote band +26px). | D91b |
 | — | — | None folder-scoped. | Every ruling here is already global. | — |
 
 Referenced: **D12** (chip radius 0), **D13** (button tracking .08/.04em), **D14**, **D15** (mobile

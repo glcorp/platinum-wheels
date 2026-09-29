@@ -44,6 +44,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  *  a generous ceiling, not a design value. */
 const MESSAGE_MAX_LENGTH = 1000;
 
+/** One or two decimal digits — `CUSTOM_QUANTITY_MAX` is 99 (D75). */
+const CUSTOM_QUANTITY_PATTERN = /^\d{1,2}$/;
+
 const QUANTITY_VALUES = new Set<string>(QUANTITY_OPTIONS.map((option) => option.value));
 const CONTACT_VALUES = new Set<string>(CONTACT_METHODS.map((method) => method.value));
 
@@ -124,10 +127,15 @@ export async function submitQuote(
   // eyebrow governs. Only a non-blank value is held to the bound, and only
   // this server check enforces it: the form is `noValidate` (D65), so the
   // Input's `min`/`max` are affordance, not validation.
+  //
+  // Decimal digits only, then the bound (D91b, WDG-11/HPD-3). `Number()` alone
+  // accepted `1e1`, `0x10`, `+5` and `5.0`, and the raw string is what a
+  // future delivery payload would carry. The field is `type="text"` now, so a
+  // non-numeric entry arrives here as typed and meets the same D75 message.
   if (customQuantity !== "") {
     const parsed = Number(customQuantity);
     const inBounds =
-      Number.isInteger(parsed) &&
+      CUSTOM_QUANTITY_PATTERN.test(customQuantity) &&
       parsed >= CUSTOM_QUANTITY_MIN &&
       parsed <= CUSTOM_QUANTITY_MAX;
     if (!inBounds) {

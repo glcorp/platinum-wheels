@@ -45,6 +45,16 @@ const SECTION =
    `grid-cols-<n>` already emits. */
 const CARD_GRID = "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3";
 
+/* The card photo's `sizes`, crossing where `CARD_GRID` does (D91b, WDG-06;
+   `HANDOFF.md` §8.7). Below 720 the grid is 1-up, so a card is the viewport
+   less the 16px gutters — `100vw` covers it; the card's old default claimed
+   `50vw` from 400, so a 412px phone at DPR 2.6 fetched a candidate half the
+   size it painted. 720–1099 is 2-up with 32px padding and a 16px gap, under
+   `50vw`. From 1100 it is 3-up beside the 280px rail in the 1344px
+   container, which never exceeds 328px (the 1440 artboard), so `348px`
+   keeps the headroom the default already carried. */
+const CARD_SIZES = "(min-width: 1100px) 348px, (min-width: 720px) 50vw, 100vw";
+
 /* Heading type: Barlow Condensed 700 / 0.92 / -0.015em / uppercase at 32px M,
    40px D (`results.md` §2.5) — the `display` utility carries all four, the
    size stays an explicit token (DESIGN.md §3). `text-ink` is explicit because
@@ -156,7 +166,11 @@ function CardGrid({
           update="card-move"
           default="none"
         >
-          <ProductCard product={product} priority={index < priorityCount} />
+          <ProductCard
+            product={product}
+            priority={index < priorityCount}
+            sizes={CARD_SIZES}
+          />
         </ViewTransition>
       ))}
     </div>

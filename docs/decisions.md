@@ -170,7 +170,11 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
 
 ## 10. Explicitly out of scope
 
-- Visual-regression screenshot tests and axe in CI. The parity report is the evidence.
+- ~~Visual-regression screenshot tests and axe in CI. The parity report is the evidence.~~ *(Brought into
+  scope 2026-09-29, D91b. The owner's QA brief asked for "toHaveScreenshot baselines of rest states at 390
+  and 1440" and "axe on every route × state", so both now run in the committed Playwright suite
+  (`tests/`, `npm run test:e2e`). The parity reports stay the evidence for measured values; the
+  screenshots catch drift between measurements. There is still no CI: the suite runs locally.)*
 - Per-section commits. The repository was initialised on 2026-09-21 (D55) with the whole tree as one
   commit, so `/`, `/results` and `/products/[slug]` have no per-section history and nothing before that
   date is recoverable. Rollback safety for the built pages still comes from the parity reports and the

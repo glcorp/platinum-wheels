@@ -28,8 +28,6 @@ import { Select } from "@/components/ui/select";
 import { submitQuote } from "@/features/product/actions";
 import {
   CONTACT_METHODS,
-  CUSTOM_QUANTITY_MAX,
-  CUSTOM_QUANTITY_MIN,
   DEFAULT_CONTACT_METHOD,
   QUANTITY_OPTIONS,
   QUOTE_FIELD,
@@ -99,12 +97,20 @@ export function QuoteForm({
   // prop changes" pattern (not an Effect: a `setState` in an Effect body would
   // commit the stale value first and fix it a tick later; this corrects it
   // before that first paint).
-  const quantityFromProps = values?.quantity ?? quantity;
-  const [selectedQuantity, setSelectedQuantity] = useState<string>(quantityFromProps);
-  const [syncedQuantity, setSyncedQuantity] = useState(quantityFromProps);
-  if (quantityFromProps !== syncedQuantity) {
-    setSyncedQuantity(quantityFromProps);
-    setSelectedQuantity(quantityFromProps);
+  //
+  // Synced from the `quantity` PROP only (D91b, WDG-04). It used to track
+  // `values?.quantity ?? quantity`, and the invalid-submit echo then shadowed
+  // the prop for as long as the error state lived — one rejected submit and
+  // the select stopped following the cells (the D84 symptom again). The echo
+  // is only a seed: it is the select's own submitted value, which this
+  // controlled select still holds after an in-place submit.
+  const [selectedQuantity, setSelectedQuantity] = useState<string>(
+    values?.quantity ?? quantity,
+  );
+  const [syncedQuantity, setSyncedQuantity] = useState(quantity);
+  if (quantity !== syncedQuantity) {
+    setSyncedQuantity(quantity);
+    setSelectedQuantity(quantity);
   }
 
   // Move focus to the confirmation once it replaces the form, so a screen
@@ -150,13 +156,44 @@ export function QuoteForm({
 
   useEffect(() => {
     if (state.status === "success") dirtyRef.current = false;
+
+    /* D91b, HPD-2: Blink and Gecko dispatch `beforeunload` for an
+       external-protocol navigation (`tel:`, `mailto:`) although nothing
+       unloads — so tapping `Call us`, the page's other way to ask for a
+       quote, raised "Leave site?" over a half-typed form. A capture-phase
+       click on any non-http(s) link sets a one-shot flag: the next
+       `beforeunload` consumes it, and a short timer drops it if none comes
+       (WebKit dispatches none). Not cleared on the next task: Gecko fires
+       the event later than that (a 0ms clear still prompted in Firefox,
+       measured). A real unload after that window still warns. */
+    let externalProtocolClick = false;
+    let clearTimer: number | undefined;
+    function onClickCapture(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (anchor.protocol === "http:" || anchor.protocol === "https:") return;
+      externalProtocolClick = true;
+      window.clearTimeout(clearTimer);
+      clearTimer = window.setTimeout(() => {
+        externalProtocolClick = false;
+      }, 1000);
+    }
     function onBeforeUnload(event: BeforeUnloadEvent) {
+      if (externalProtocolClick) {
+        externalProtocolClick = false;
+        return;
+      }
       if (!dirtyRef.current) return;
       event.preventDefault();
     }
+    document.addEventListener("click", onClickCapture, true);
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => {
+      document.removeEventListener("click", onClickCapture, true);
       window.removeEventListener("beforeunload", onBeforeUnload);
+      window.clearTimeout(clearTimer);
     };
   }, [state.status]);
 
@@ -381,10 +418,16 @@ export function QuoteForm({
             <Input
               id="quote-custom-quantity"
               name={QUOTE_FIELD.customQuantity}
-              type="number"
+              /* `text` + `inputMode="numeric"`, not `type="number"` (D91b,
+                 HPD-3/WDG-11): a number field holding `abc` reports `badInput`
+                 and serialises as "", so Firefox submitted the visible text as
+                 a legal blank. As text, the server sees what was typed and
+                 answers with the D75 message. `pattern` is affordance only —
+                 the form is `noValidate`; `actions.ts` is the validator. */
+              type="text"
               inputMode="numeric"
-              min={CUSTOM_QUANTITY_MIN}
-              max={CUSTOM_QUANTITY_MAX}
+              pattern="[0-9]*"
+              autoComplete="off"
               ref={customQuantityRef}
               defaultValue={values?.customQuantity}
               invalid={Boolean(errors?.customQuantity)}

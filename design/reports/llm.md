@@ -66,6 +66,7 @@ Without this folder a page can be called "done" on an opinion, which is exactly 
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D91b | 2026-09-29 | `qa.md` is the QA-pass report: the test matrix with pass/fail, every finding with evidence and status, checked-and-cleared, and what is parked or artboard-mandated. Its evidence is the committed suite in `tests/`, rerunnable with `npm run test:e2e`. | Owner QA brief, 2026-09-29. | D91b |
 No folder-scoped rows. Governing: `docs/decisions.md` §9 (the gate) and §10 (visual-regression tests and
 axe-in-CI are explicitly out of scope — "the parity report is the evidence"). Global IDs that will appear
 as report rows rather than failures: **D11, D12, D13, D15, D16**.

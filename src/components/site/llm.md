@@ -24,8 +24,8 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   "site-header"`, so route transitions pin it instead of sliding it; inactive nav items carry the
   `nav-rule` hover (DEVIATIONS #76); the active item paints its lime underline as a `nav-indicator` span
   inside `<ViewTransition name="nav-indicator">` so it travels on a category change; the three nav links
-  are `prefetch={true}` because the indicator only travels if the destination does not suspend into
-  `loading.tsx`; the logo is typed `nav-back`. Shared by `/`, `/results` and `/products/[slug]`
+  are `prefetch={true}` because the indicator only travels if the destination renders in the same
+  transition; the logo is typed `nav-back`. Shared by `/`, `/results` and `/products/[slug]`
   (unbuilt routes may still import it per D26/D39). 88px bar from `sm:` / 68px below.
 - [`site-footer.tsx`](site-footer.tsx) — Server Component, named export `SiteFooter`, no props.
   120px logo badge, Shop/Company/Legal link columns (`ROUTES`), a computed `Winter <year>` link
@@ -71,7 +71,8 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   container.
 - [`page-transition.tsx`](page-transition.tsx) — Server Component, `PageTransition({ children })`: the
   page-level `<ViewTransition>` (**D92b**). Typed links (`nav-forward`, `nav-back`) slide; untyped
-  navigation and the `loading.tsx` → content handover crossfade (`route-in` / `route-out`);
+  navigation crossfades (`route-in` / `route-out`; the `loading.tsx` handover it also carried went with
+  that file, D91b);
   `default="none"` so same-route changes never animate the whole page. Every page shell wraps `<main>`
   **and** the footer in it — never the header, which is pinned by its own name — and it lives in pages,
   not a layout, because a layout persists and never enters or exits.
@@ -85,9 +86,17 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 - [`scroll-reveal.tsx`](scroll-reveal.tsx) — `"use client"` leaf island rendering `null` (**D92b**). Arms
   only `[data-reveal]` elements that are below the fold at mount (`data-reveal="pending"`), reveals each
   once via IntersectionObserver. Never arms under reduced motion or without IntersectionObserver, and
-  its cleanup un-hides anything still pending. Rendered by `/` only.
+  its cleanup un-hides anything still pending. Rendered by `/` only. **D91b:** a same-page fragment link
+  (capture-phase click), `hashchange` or `popstate` that targets a pending section reveals it at once with
+  its transition suppressed, and a cold load never arms the section holding the `location.hash` target —
+  otherwise the scroll lands on the 12px-translated box and the section ends 12px above its
+  `scroll-margin-top` (measured `top 68 vs 80`, FIN-3 in `design/reports/qa.md`).
 - [`hash-scroll.tsx`](hash-scroll.tsx) — `"use client"` leaf island (D80). **D92b:** a cold landing on a
-  fragment stays instant; a `hashchange` scrolls smoothly unless reduced motion is on.
+  fragment stays instant; a `hashchange` scrolls smoothly unless reduced motion is on. **D91b:** it also
+  re-lands `instant` on every committed route change that arrives with a fragment (`usePathname()`), because
+  Next 16's own hash scroll glides under `scroll-behavior: smooth` — `disableSmoothScrollDuringRouteTransition`
+  runs with `dontForceLayout: true` and the hash branch never reads layout — and the glide can be cut short
+  (card `Request a quote` → PDP `#quote` stopped at 1558–1638 against 1486, FIN-4).
 - [`route-error.tsx`](route-error.tsx) — `"use client"`. `RouteError({ error, retry })`, the storefront's
   route error boundary (**D62**), plus `RouteErrorPanel({ digest?, retry?, as? })`, its contents without
   the `<main>` wrapper so `/styleguide` §11 can render the real component instead of a copy that drifts
@@ -143,6 +152,8 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D91b | 2026-09-29 | `hash-scroll` stays as a safety net (its cause, `loading.tsx`, is gone); `site-footer` links may wrap (`break-words`); stale "suspends into `loading.tsx`" comments corrected across the folder. | QA pass HPD-1, KBD-7. | D91b |
+| D91b | 2026-09-30 | `scroll-reveal` reveals a fragment target instantly (link, `hashchange`, `popstate`, cold load); `nav-progress` drops the inert `[data-route-loading]` settle check, which only `loading.tsx` ever set; `hash-scroll` re-lands a fragment on route arrival. | QA pass: `/#contact` landed 12px short on `/`; the check could never fire after D91b. | D91b |
 | — | — | None folder-scoped. | Every ruling that shapes this folder is global. | — |
 
 **D92b** (motion) governs `page-transition.tsx`, `scroll-reveal.tsx`, the header's pinned name and

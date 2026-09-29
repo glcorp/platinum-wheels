@@ -17,7 +17,10 @@ entire site loses its type or its palette at once.
   `bg-bg text-ink-muted flex min-h-full flex-col font-sans` (`:25`). **D92b:** the first child of `<body>`
   is a `next/script` `beforeInteractive` inline bootstrap (`MOTION_BOOT`) that marks images
   `data-loaded` for the lazy-image fade-in and registers the passive `touchstart` listener iOS Safari
-  needs before it applies `:active`. Not a client component; no hydration. After `HashScroll`, the
+  needs before it applies `:active`. Not a client component; no hydration. **Next 16 runs it at
+  hydration, not before the first `<img>` parses** (it is served as a `self.__next_s` push), so it also
+  marks every image already `complete` — without that, images loaded first stayed at opacity 0 for good
+  (D91b, measured: the second card row on `/results` @1440 painted blank). After `HashScroll`, the
   layout mounts `NavProgress`, the centred loader (D92b addendum) — here because the root layout
   persists across navigations and the bar must outlive the page that started it.
 - [`fonts.ts`](fonts.ts) (29 ln) — Barlow Condensed 600/700 and Barlow 400/500/700, self-hosted via
@@ -103,6 +106,9 @@ entire site loses its type or its palette at once.
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D91b | 2026-09-29 | `layout.tsx`: `viewportFit: "cover"`; `fonts.ts`: Barlow Condensed 700 only (600 was unused and preloaded); `globals.css`: a D91b block at the end — scroll padding under the results sticky bar (2.4.11), forced-colours states for the range, nav indicator and quantity cell, side safe-area insets on `body` and modal dialogs — plus the landscape `sheet-panel` height, `*::backdrop` in the reduced-motion kill, and the desktop hero scrim (#79). `(storefront)/loading.tsx` removed. | QA pass (`design/reports/qa.md`); owner rulings 2026-09-29. | D91b |
+| D91b | 2026-09-30 | `globals.css`: `details[open]::details-content` transitions opacity only, so an opened disclosure is focusable at once (the close edge keeps `content-visibility` allow-discrete). | Enter-then-Tab on `Change vehicle` skipped the finder (FIN-5). | D91b |
+| D91b | 2026-09-30 | `MOTION_BOOT` also marks already-`complete` images `data-loaded`. | Next 16 executes `beforeInteractive` at hydration; images that loaded first never got their fade released. | D91b |
 | — | — | No folder-scoped rows. | Governed by **D10** (breakpoints), **D11** (1344 container), **D14** (`--border-control`), **D16** (focus offset 0), **D17** (hover scoped), **D20** (two self-hosted families). | root `llm.md` §5 |
 
 ## Connects to

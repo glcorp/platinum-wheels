@@ -67,7 +67,7 @@ routes 280–350 (250–400). Longest single animation measured: **350ms**; long
 | Page, typed forward (card, tile, winter promo CTA, "Try it" on `/styleguide`) | `nav-forward` | hard cut | old slides −60px and fades; new slides from +60px and fades in | slide `--duration-route` `--ease-arrive`; out-fade 150 `--ease-leave`; in-fade 200 after 100 | 0s | `/results → PDP`: old `0 → −51.8 → −58.6 → −60px`, opacity `1 → .48 → 0`; new `60 → 8.15 → 1.40 → 0px`, opacity `0 → .95 → 1` |
 | Page, typed back (logo, Home crumbs, Results crumb) | `nav-back` | hard cut | mirrored | same | 0s | `PDP → /results`: old `0 → 37.9 → 55.8 → 60px`; new `−60 → −22.1 → −4.2 → 0px` |
 | Page, untyped (header nav between categories, footer, drawer) | navigation | hard cut | crossfade, arriving view rises 6px | out 150 `--ease-leave`; in 200 + 6px over 280, after 100 | 0s | `/results → /wheels`: old opacity `1 → 0` by 150ms; new `0 → .95` at 183ms, `translate 6 → 0.76px` |
-| `loading.tsx` skeleton → content | Suspense reveal | hard swap | skeleton fades out, page fades up (`route-out`/`route-in`) | as untyped | 0s | same classes as the row above; see Limits for when the skeleton shows at all |
+| ~~`loading.tsx` skeleton → content~~ | — | — | **Removed 2026-09-29 with `loading.tsx` (D91b):** no skeleton, so no handover | — | — | — |
 | Card photo → PDP gallery | open a product from a card | photo vanished, gallery appeared | **one photo morphs** (`product-photo-<slug>`, only on `product-open`/`product-back` types) | `--duration-overlay` `--ease-arrive` | 0s | 326px at (377,287) → 681.9 at (66.5,129.9) → 700.6 → **702px at (49,121)**; reverse 702 → 433 → 339 → **326 at (377,301)**. Exactly one photo group on each trip |
 | Result cards | filter, sort, `Load more` (same-route) | cards popped | leavers fade; survivors travel; arrivals fade up 12px, 30ms apart, ≤150ms | out 150; travel 280 `--ease-arrive`; in 200 + rise 280 | 0s | `?season=winter`: leavers `1 → 0` at 150ms; survivor `(376,864) → (1062.9,300.9) → (1064,300)`; arrivals rise `12 → 1.05px`, finishing at 400 and 430ms (delays 120 and 150ms). `Load more`: arrivals run `vt-fade-in` + `vt-rise` |
 | Lazy images | image `load` | popped in | fade in over their own ground | `--duration-state` `--ease-card` | 0.01ms | from the frame `data-loaded` lands: `0 → .10 → .61 → .82 → .92 → .98 → 1` over ~230ms. `loading="eager"` (LCP) images never held |
@@ -117,8 +117,8 @@ Headless Chromium, `reducedMotion: 'reduce'`, production build:
 3. **`Request a quote` on a card does not morph.** Its href ends in `#quote`; typed transitions plus a
    fragment jump, so it stays untyped and crossfades.
 4. **The morph and the travelling indicator need a full prefetch.** Card links, the three nav links, the
-   tiles and the results crumb are `prefetch={true}`; without it the destination suspends into
-   `loading.tsx` first and no pair can form. Cost: every visible card fully prefetches its PDP in
+   tiles and the results crumb are `prefetch={true}`; without it the destination could render
+   late and no pair can form (it suspended into `loading.tsx` until D91b removed that file). Cost: every visible card fully prefetches its PDP in
    production (10 payloads measured on `/results` at 1440 before any click).
 5. **The nav hover rule was verified by its compiled rule and rest state, not by a live hover** (see "How
    this was measured").

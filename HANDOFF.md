@@ -1,6 +1,7 @@
 # Platinum Wheels — session handoff
 
-**Last updated 2026-09-21 (session 6).** All three designed routes are built and audited; the catalogue
+**Last updated 2026-09-30 (the D91b QA pass: a committed Playwright + axe suite, §5).** Earlier summary
+from 2026-09-21 (session 6) follows. All three designed routes are built and audited; the catalogue
 now has **three categories, not one** (`/wheels` and `/accessories` are full results pages sharing the
 `/results` composition — **D58**, **D59**); the safe half of the audit fix list is applied (**D61**); and
 **the last two undrawn states, `loading` and route `error`, are authored (**D62**)**, which completes
@@ -125,6 +126,37 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 ---
 
 ## §5. Verification state
+
+**The verification of record is the committed QA suite (D91b), not a hand measurement.** `tests/` is a
+Playwright + `@axe-core/playwright` suite against the **production build only** (never `next dev`, D88), on
+15 projects: Chromium, Firefox and WebKit at 1280/1440/1920, plus `iphone-se`, `iphone-15-pro`, `pixel-7`,
+`ipad-mini`, `ipad-pro-landscape` and `floor-320`. Read `tests/llm.md` before touching it.
+
+```bash
+rm -rf .next && npx next build && QA_ERROR_ROUTE=1 npx next start -p 3100   # or let webServer do it
+npm run test:e2e -- --workers=5                                             # everything, ~21 min
+npx playwright test --project=chromium-1440 tests/e2e/results.spec.ts      # one spec, one project
+```
+
+- **What it covers**, one spec per concern: `smoke` (every route, one h1, no overflow, real 404s, every
+  loaded image paints), `error-boundary` (`/qa-error` throws only with `QA_ERROR_ROUTE=1`), `finder`,
+  `results` (filters, counts, URL state, price range, sort, Load more, rapid changes, history), `home`,
+  `product` (quantity, quote form), `nojs`, `responsive` (17-width sweep, long content, landscape),
+  `a11y-axe` (WCAG 2.2 AA on every route and state, 2.4.11 focus not obscured), `a11y-interaction`
+  (keyboard walk, 1.4.12 text spacing, 1.4.10 reflow, contrast over CSS **and** pixel-sampled over
+  photos, forced colours, reduced motion), `visual` (Chromium-1440 baselines at 390 and 1440), `parity`
+  (against the `:4000` artboards, with every accepted deviation cited), `perf` (CLS, INP proxy, LCP
+  reported only — parked, D54) and `engines`.
+- **Last gate run, 2026-09-30:** 2,785 passed, **0 failed, 0 flaky**, 3,290 skipped (project gating and
+  nine fixmes, each citing its row). Matrix, every finding and Lighthouse: `design/reports/qa.md`.
+- **Lighthouse (production, 2026-09-30):** a11y 100 on `/`, `/results`, a PDP and `/about` at mobile and
+  desktop, except `/results` desktop 96 (the known D69 range thumbs); perf 91–100; CLS 0; mobile LCP
+  3.2–3.5 s — parked (D54).
+- **Rules the suite taught** (each cost a run): hit-test and use real input; wait for the smooth scroll to
+  rest before acting on what it moved (`scrollSettled`); an opacity-0 overlay is not content; a baseline
+  changes only with a DEVIATIONS or D row. Real Mobile Safari is **not** covered (needs full Xcode).
+
+The blocks below are earlier hand measurements. They are still true where the suite has not superseded them.
 
 **D92b motion pass (2026-09-29), measured in a production build, not claimed** — full samples in
 `design/reports/motion.md`:

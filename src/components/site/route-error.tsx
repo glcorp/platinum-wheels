@@ -32,8 +32,8 @@ import { PRIMARY_CONTACT } from "@/lib/site";
    protecting in the first place.
 
    --- Why it renders no SiteHeader or SiteFooter ----------------------------
-   Deliberate, and the one place this build's undrawn states are asymmetric:
-   `loading.tsx` renders full chrome, this does not.
+   Deliberate. (`loading.tsx`, which rendered full chrome, was removed in
+   D91b, so this boundary is now the only route-level fallback.)
 
    1. Chrome is composed per page, not in a group layout (D38), so an
       `error.tsx` replaces the whole page — header included. To show the

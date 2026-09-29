@@ -48,20 +48,12 @@
          (D66). That covers the in-page filter updates, which prevent the
          form's default and so never reach (b).
 
-   It is DONE when all three hold, checked once per animation frame and only
+   It is DONE when both hold, checked once per animation frame and only
    while loading:
      (1) For a click or submit start, `location.href` has moved off the URL it
          started from — the navigation committed. An aria-busy start skips
          this: `router.replace` to the same list is still a real update.
-     (2) No `[data-route-loading]` element exists. That marks the wrapper of
-         `(storefront)/loading.tsx`'s skeleton (D62); on a slow dynamic route
-         the URL commits while the skeleton is still up, and the page is not
-         loaded until the real content replaces it. D91b removed that
-         skeleton, so this check is now always clear — inert, kept only in
-         case a loading boundary ever returns. If it is ever absent this still ends —
-         on URL commit, while a skeleton is visible — so it degrades to early,
-         never to stuck.
-     (3) No `[aria-busy="true"]` element exists: a transition is still running.
+     (2) No `[aria-busy="true"]` element exists: a transition is still running.
 
    Safety: 15s after the last start it goes to `done` regardless. A link that
    resolves to the current URL, a cancelled navigation, or a submit that never
@@ -201,7 +193,6 @@ export function NavProgress() {
       if (startHref !== null && window.location.href === startHref) {
         return false;
       }
-      if (document.querySelector("[data-route-loading]") !== null) return false;
       if (document.querySelector('[aria-busy="true"]') !== null) return false;
       return true;
     }

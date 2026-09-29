@@ -464,13 +464,18 @@
     var(--scrim-soft) 100%
   );
 }
+/* D91b, DEVIATIONS #79: the upper band is `--scrim-mid`, not the drawn
+   `--scrim-soft`. Pixel-sampled over `hero-tread.webp` at 1440, the drawn 38%
+   left the lime eyebrow at 2.03:1 min and the 120px h1 at 2.29:1 min — the
+   artboard's scrim was tuned for its own photo, not the one that ships (D4),
+   the same lesson as #58. */
 @utility hero-scrim-desktop {
   background-image: linear-gradient(
     to top,
     var(--bg) 0%,
     var(--scrim-strong) 22%,
-    var(--scrim-soft) 55%,
-    var(--scrim-soft) 100%
+    var(--scrim-mid) 55%,
+    var(--scrim-mid) 100%
   );
 }
 
@@ -667,6 +672,14 @@
 @utility sheet-panel {
   height: calc(100dvh - 144px);
   max-height: 100dvh;
+
+  /* Landscape phones (D91b, NJR-3): at 375px tall the 144px offset left the
+     scrolling body 60px — one 44px control at a time. On a short viewport the
+     sheet takes the whole height instead. The artboard's 844px portrait value
+     (700px) is untouched, so /results parity holds. */
+  @media (max-height: 500px) {
+    height: 100dvh;
+  }
   /* Scrolling past either end of the sheet chained to the page behind the
      modal: `overscroll-behavior` was declared nowhere in the build. The body
      `overflow:hidden` lock the sheet sets is a different guarantee and does not
@@ -877,8 +890,15 @@
         content-visibility var(--duration-state) allow-discrete;
     }
 
+    /* D91b: the open edge transitions opacity ONLY. With `content-visibility`
+       in this list too, the panel stayed `hidden` for the length of the
+       transition after opening, and a keyboard user's Enter-then-Tab skipped
+       the whole finder and landed on Sort (measured at 1440 and 1920). A
+       transition is taken from the destination style, so the close edge above
+       still holds the box for its fade. */
     details[open]::details-content {
       opacity: 1;
+      transition: opacity var(--duration-state) var(--ease-card);
     }
   }
 
@@ -1325,7 +1345,8 @@
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
-  *::after {
+  *::after,
+  *::backdrop {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -1349,4 +1370,78 @@
     opacity: 1;
     translate: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   D91b — accessibility fixes from the QA pass (design/reports/qa.md). None of
+   these moves a pixel in the measured rest state: each engages only under a
+   condition the artboards do not draw (a keyboard landing, forced colours).
+   --------------------------------------------------------------------------- */
+
+/* WCAG 2.4.11 Focus Not Obscured (AXE-1). Below `md:` the results pages pin a
+   filter/sort bar at top 68px (88px from `sm:`), 70px tall
+   (`filter-sort-bar.tsx`, `results-mobile.html:98`). Nothing reserved that
+   band, so Shift+Tab parked `Load more` and the card links fully under it
+   (measured 68.3-120.3 under a 68-138 bar). Scroll padding makes the browser
+   bring focus targets in below the bar's bottom edge. Rest scroll positions
+   are unaffected. */
+@media (max-width: 1099.98px) {
+  html:has([data-sticky-filter-bar]) {
+    scroll-padding-top: 138px;
+  }
+}
+@media (min-width: 720px) and (max-width: 1099.98px) {
+  html:has([data-sticky-filter-bar]) {
+    scroll-padding-top: 158px;
+  }
+}
+
+/* Forced colours (KBD-3, KBD-4). The system palette replaces every background
+   with `Canvas`, so anything that signals state with a fill disappears: the
+   price slider's thumbs and fill, the current nav item's bar, the selected
+   quantity cell. `forced-color-adjust: none` + system colours keeps each one
+   visible in the user's own palette. Transparent borders are forced visible
+   too, which drew the "current" underline under every nav link; the rule
+   slot is hidden instead. */
+@media (forced-colors: active) {
+  .range-input::-webkit-slider-thumb {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  .range-input::-moz-range-thumb {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  [data-price-fill] {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+  .nav-rule,
+  a:has(> .nav-indicator) {
+    border-bottom-style: hidden;
+  }
+  .nav-indicator {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+  [data-qty-cell][aria-current="true"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+}
+
+/* Safe areas (D91b, owner ruling 2026-09-29; closes the landscape half of
+   root llm.md §7.23(f)). `layout.tsx` now sets `viewport-fit=cover`: without
+   it iOS reports every inset as 0, so `pb-safe` (D66) never engaged on a real
+   iPhone. With it, landscape content could run under the notch, so the page
+   and both full-screen dialogs are inset by the side safe areas. Unlayered on
+   purpose: the dialogs carry `p-0`, and on any flat screen `env()` is 0, so
+   this resolves to the same 0 and nothing measured moves. */
+body {
+  padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
+}
+dialog:modal {
+  padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
 }

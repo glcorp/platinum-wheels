@@ -46,7 +46,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -299,6 +299,7 @@ function PriceGroup({
         {/* Fill: 2px, --text, between the handles. */}
         <span
           aria-hidden="true"
+          data-price-fill=""
           className="absolute top-1/2 h-0.5 -translate-y-1/2 bg-ink"
           style={{ left: `${leftPercent}%`, right: `${rightPercent}%` }}
         />
@@ -448,8 +449,22 @@ export function FilterPanel({
   const href = resultsHref(query);
 
   /* Commit: the form's own FormData is the single source of the next URL, so a
-     scripted change and a no-JS submit can never disagree. */
-  useEffect(() => {
+     scripted change and a no-JS submit can never disagree.
+
+     `useLayoutEffect`, not `useEffect` (D91b). The form is keyed on `href`, so
+     every committed URL change mounts a brand-new `<form>` with no listener on
+     it. A passive effect runs *after* paint, and the browser is free to
+     dispatch the next input event in between: a click on the next control
+     toggled it, fired `change` at a form nobody was listening to, and
+     committed nothing — measured in WebKit at ~1 in 4 when a brand was ticked
+     the instant `season=winter` reached the URL, and the cause of the flaky
+     "filter survives a PDP and Back", price-arrow and every-group tests. A
+     layout effect runs synchronously inside the commit that inserts the form,
+     before the browser can paint or dispatch anything, so the window is gone.
+     `formRef.current` is already attached by then (child refs attach before a
+     parent's layout effects). The native `change` event stays, for the reason
+     in the header. */
+  useLayoutEffect(() => {
     const form = formRef.current;
     if (form === null) return;
 
@@ -472,8 +487,14 @@ export function FilterPanel({
   }, [href, query.category, router, startTransition]);
 
   /* The href has changed, so the keyed form has just re-mounted: put focus back
-     on the control the user operated, and only then tell the sheet to close. */
-  useEffect(() => {
+     on the control the user operated, and only then tell the sheet to close.
+     A layout effect for the same commit-time reason as above (D91b): the new
+     DOM is already in the document, so `getElementById` finds the fresh
+     control, and focus is back before the first paint of the new form rather
+     than a frame after it, so focus is never observably on <body>. Nothing
+     here reads layout, and `onNavigate` only sets the sheet's open state, so
+     running it synchronously in the commit is safe. */
+  useLayoutEffect(() => {
     const id = refocusRef.current;
     refocusRef.current = null;
     if (id !== null) {

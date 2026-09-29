@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site/site-footer";
 import { PageTransition } from "@/components/site/page-transition";
 import { SiteHeader } from "@/components/site/site-header";
-import { ALL_PRODUCTS, findProduct } from "@/features/catalog/data";
+import { findProduct } from "@/features/catalog/data";
 import { BuyPanel } from "@/features/product/components/buy-panel";
 import { PdpBreadcrumb } from "@/features/product/components/pdp-breadcrumb";
 import { PdpGallery } from "@/features/product/components/pdp-gallery";
@@ -51,19 +51,12 @@ import { productView } from "@/features/product/view";
    2026-09-21 (D61, audit taste item T1).
    --------------------------------------------------------------------------- */
 
-/* `generateStaticParams` + `dynamicParams = false` is the 404 gate, not a
-   prerender. Reading `searchParams` for `?qty=` (D50) still makes the route
-   dynamic (`ƒ`). What the list buys is the status code: without it, an unknown
-   slug reached `notFound()` only after `loading.tsx`'s Suspense boundary (D62)
-   had already streamed a 200, so `/products/not-a-slug` was a soft 404 —
-   the right page on a 200 (D91, measured). With it, Next rejects the slug
-   before anything streams. Every seed slug is listed, unavailable ones
-   included: an unavailable product is still a 200 (`docs/decisions.md` §7). */
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return ALL_PRODUCTS.map((product) => ({ slug: product.slug }));
-}
+/* No `generateStaticParams` here, deliberately. Reading `searchParams` for
+   `?qty=` (D50) makes this route dynamic — `next build` reports it as `ƒ`, not
+   `○` — so prerendering the nine seed slugs would be dead code. If the quantity
+   ever stops living in the URL, add it back. An unknown slug is a real 404
+   (measured) since D91b removed the group's `loading.tsx`: until then
+   `notFound()` ran after a 200 shell had already streamed — a soft 404. */
 
 export async function generateMetadata({
   params,
@@ -132,8 +125,14 @@ export default async function ProductPage({
             </div>
           </div>
 
-          <div className="px-4 sm:px-8 md:mx-auto md:max-w-content md:px-12">
-            <Specifications rows={view.specs} />
+          {/* Padding and the 1344px cap on separate elements, like the split
+              above. On one element `max-w-content` is border-box, so the 48px
+              padding came out of the 1344 and the table sat at x=96, w=1248
+              against the drawn 48/1344 (D91b, VPE-1, measured). */}
+          <div className="px-4 sm:px-8 md:px-12">
+            <div className="lg:mx-auto lg:max-w-content">
+              <Specifications rows={view.specs} />
+            </div>
           </div>
 
           <QuoteBand view={view} />

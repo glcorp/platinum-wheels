@@ -131,11 +131,13 @@ export function SiteHeader({
 
                    `prefetch={true}`: a shared `nav-indicator` morph only forms
                    if the destination renders in the same transition. A route
-                   that suspends into `loading.tsx` renders the skeleton
-                   instead, and the incoming half of the pair never exists
+                   that is not ready at the click renders nothing new yet, and
+                   the incoming half of the pair never exists
                    (vercel-react-view-transitions, references/nextjs.md "When
                    Content Must Be Ready"). A full prefetch makes the three
-                   category pages ready before the click. */
+                   category pages ready before the click. (This comment used
+                   to name `loading.tsx`'s skeleton as the cause; that file was
+                   removed in D91b, and the prefetch still earns its place.) */
                 prefetch={true}
                 className={
                   isActive

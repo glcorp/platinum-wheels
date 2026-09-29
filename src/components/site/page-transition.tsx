@@ -18,8 +18,8 @@ import { ViewTransition, type ReactNode } from "react";
      - an untyped navigation (header nav between categories, footer links)
        crossfades: `route-out` on the
        leaving view, `route-in` — a fade with a small rise — on the arriving
-       one. The `loading.tsx` skeleton handing over to real content is also a
-       Suspense reveal with no type, so it takes the same `route-in`.
+       one. (There is no route-level Suspense reveal any more:
+       `(storefront)/loading.tsx` was removed in D91b.)
      - browser Back/Forward animate nothing: Next restores a history traversal
        outside a React transition, so no boundary fires — measured, zero
        view-transition frames (design/reports/motion.md "Limits").

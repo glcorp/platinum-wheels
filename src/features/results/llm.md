@@ -124,6 +124,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D91b | 2026-09-29 | (1) `query.ts` accepts a vehicle only via `isFinderVehicle` (a new import of `finder/data`, a few KB in the islands' bundle); (2) the toolbar's vehicle row wraps and the chip truncates (`min-w-0`), so a long real vehicle no longer widens the page at 320 (was 333px); (3) the crumb wrapper is `text-11 leading-none md:text-12`, restoring the drawn 11px row (the mobile toolbar had sat 13px low); (4) `filter-sort-bar` carries `data-sticky-filter-bar`, the hook for the `globals.css` scroll padding that keeps keyboard focus out from under it (WCAG 2.4.11); (5) `results-grid` passes a `sizes` matching its 1/2/3-up grid; (6) the price fill carries `data-price-fill` for forced colours. | QA pass WDG-03, NJR-9, VPE-4, AXE-1, WDG-06, KBD-3 (`design/reports/qa.md`). | D91b |
+| D91b | 2026-09-30 | `filter-panel` attaches its native `change` listener (and the refocus/close-on-arrival step) in `useLayoutEffect`, not `useEffect`: the form is keyed on `href`, and a click landing between the commit that re-mounts it and a passive effect toggled a control with no listener, so the change never reached the URL. `sort-select` has no such gap (React's delegated `onChange`). | QA pass FIN-2: 22 of 36 rapid chip/brand sequences dropped a click before the fix, 36/36 after (`results.spec.ts` › rapid filter changes). | D91b |
 | — | — | None folder-scoped. | Governing rows: **D42–D49**, **D58**, **D59** (root `llm.md` §5b), D37, D39, D41. | — |
 
 ## Connects to

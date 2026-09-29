@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { ProductView } from "@/features/product/types";
+import { cx } from "@/lib/cx";
 import { ROUTES } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
@@ -40,7 +41,25 @@ export interface PdpBreadcrumbProps {
 
 export function PdpBreadcrumb({ view, className }: PdpBreadcrumbProps) {
   return (
-    <nav aria-label="Breadcrumb" className={className}>
+    /* The nav sets its own line box (D91b, VPE-4). As a plain block around an
+       inline `<ol>` it inherited the body's 16px x 1.5 strut, 24px tall, and
+       pushed every row below it down. The two artboards draw different boxes,
+       and each is reproduced:
+       - Desktop: the crumb `<span>` is a flex item of the panel column, so
+         it is blockified to `12px/1` and the row is 12px tall
+         (`product-desktop.html:107`). Hence `md:text-12 md:leading-flat`.
+       - Mobile: the `<span>` sits inline in a plain `<div>` at the page's
+         16px Barlow with `line-height: normal` (`product-mobile.html:91`), a
+         19px row measured on :4000. Barlow's `normal` is 1.2, which is the
+         `leading-tight` token, so `text-16 leading-tight` gives the same row
+         with the same baseline (crumb y 89, brand y 541, as drawn).
+       The `<ol>`/`<li>` stay inline. The crumbs' `tap-extend-lg` band is an
+       `::after` on each link, so the hit area (13 + 32 = 45px, D57 C4) does
+       not depend on this line box. */
+    <nav
+      aria-label="Breadcrumb"
+      className={cx("text-16 leading-tight md:text-12 md:leading-flat", className)}
+    >
       <ol className="label text-ink-dim tracking-10 m-0 inline list-none p-0 text-11 sm:text-12">
         {/* `tap-extend-lg` on both crumb links. The box is ~13px tall
             (11/12px type at line-height 1), which clears WCAG 2.5.8's 24px AA
@@ -60,9 +79,9 @@ export function PdpBreadcrumb({ view, className }: PdpBreadcrumbProps) {
             `prefetch={true}`: the
             reverse morph — gallery photo back into its card — only forms if
             the results page renders in the same commit as the navigation
-            rather than suspending into `loading.tsx`
-            (`vercel-react-view-transitions` nextjs.md "When Content Must Be
-            Ready"). Home has no card to morph into, so it keeps the default
+            rather than suspending first (`vercel-react-view-transitions`
+            nextjs.md "When Content Must Be Ready"; `loading.tsx` itself was
+            removed in D91b). Home has no card to morph into, so it keeps the default
             prefetch. This breadcrumb is instantiated once and placed twice
             (mobile + desktop copies, `page.tsx`); neither copy holds a named
             VT, so the duplicate is harmless. */}

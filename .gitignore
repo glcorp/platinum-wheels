@@ -44,3 +44,9 @@ next-env.d.ts
 /.claude/settings.local.json
 /.claude/skills/impeccable/scripts/bin/
 /.impeccable/
+
+# playwright (D91b)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
