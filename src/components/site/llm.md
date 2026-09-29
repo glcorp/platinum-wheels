@@ -34,7 +34,7 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   `{ links: ReadonlyArray<{ label: string; href: string; active: boolean }>; phone: { display: string;
   tel: string } }`. 44×44 hamburger trigger + a native `<dialog showModal()>` full-screen drawer
   (Esc, focus trap and return-focus are native); the four links plus the phone CTA, nothing else
-  (D31). One of three client islands in this folder (with `hash-scroll.tsx` and `scroll-reveal.tsx`;
+  (D31). One of four client islands in this folder (with `hash-scroll.tsx`, `scroll-reveal.tsx` and `nav-progress.tsx`;
   `route-error.tsx` is a client *boundary*). The `<dialog>` carries **`overscroll-contain`**
   (**D65**, 2026-09-22): `overscroll-behavior` was declared nowhere in the build, so scrolling past
   either end of the open drawer chained to the page behind it. The filter sheet took the same fix
@@ -75,6 +75,12 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   `default="none"` so same-route changes never animate the whole page. Every page shell wraps `<main>`
   **and** the footer in it — never the header, which is pinned by its own name — and it lives in pages,
   not a layout, because a layout persists and never enters or exits.
+- [`nav-progress.tsx`](nav-progress.tsx) — `"use client"` leaf island, the top loading bar (**D92b**
+  addendum). No React state: one effect writes `data-state` (`idle`/`loading`/`done`) on a
+  `nav-progress` div. Starts on an internal link click, a GET submit or `aria-busy="true"`; ends when the
+  URL has committed, no `[data-route-loading]` skeleton remains and nothing is busy; 15s safety. Mounted
+  in the root layout. Its listeners survive `pagehide` on purpose, so a bfcache-restored page still has
+  a working bar.
 - [`scroll-reveal.tsx`](scroll-reveal.tsx) — `"use client"` leaf island rendering `null` (**D92b**). Arms
   only `[data-reveal]` elements that are below the fold at mount (`data-reveal="pending"`), reveals each
   once via IntersectionObserver. Never arms under reduced motion or without IntersectionObserver, and

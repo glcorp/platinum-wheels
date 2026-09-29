@@ -17,7 +17,9 @@ entire site loses its type or its palette at once.
   `bg-bg text-ink-muted flex min-h-full flex-col font-sans` (`:25`). **D92b:** the first child of `<body>`
   is a `next/script` `beforeInteractive` inline bootstrap (`MOTION_BOOT`) that marks images
   `data-loaded` for the lazy-image fade-in and registers the passive `touchstart` listener iOS Safari
-  needs before it applies `:active`. Not a client component; no hydration.
+  needs before it applies `:active`. Not a client component; no hydration. After `HashScroll`, the
+  layout mounts `NavProgress`, the top loading bar (D92b addendum) — here because the root layout
+  persists across navigations and the bar must outlive the page that started it.
 - [`fonts.ts`](fonts.ts) (29 ln) — Barlow Condensed 600/700 and Barlow 400/500/700, self-hosted via
   `next/font/google`, `display: "swap"`, `adjustFontFallback` (**D20**; `docs/decisions.md:99`).
 - `favicon.ico` — App Router file convention. It lives here, **not** in `public/`.

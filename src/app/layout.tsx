@@ -3,6 +3,7 @@ import { barlow, barlowCondensed } from "./fonts";
 import "./globals.css";
 import Script from "next/script";
 import { HashScroll } from "@/components/site/hash-scroll";
+import { NavProgress } from "@/components/site/nav-progress";
 
 /* D92b motion bootstrap — runs before the first `<img>` parses, so it needs no
    hydration and adds no `"use client"`.
@@ -65,6 +66,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             seconds, `scrollY` 0, in a production build. A leaf island, so this
             file stays a Server Component. D80. */}
         <HashScroll />
+        {/* The top loading bar for any wait longer than 150ms — a page change,
+            a GET form, or a filter/sort round-trip. Here, not in a page,
+            because the root layout persists across navigations and the bar
+            has to outlive the page that started it. Owner, 2026-09-29. */}
+        <NavProgress />
         {children}
       </body>
     </html>

@@ -655,7 +655,21 @@ export default function StyleguidePage() {
             </nav>
           </Row>
 
-          <Row label="Disclosure: fades both ways">
+          {/* The real bar is `position:fixed` across the top of the viewport, so
+            this is its look only: 2px `--accent`, shown at the 85% it creeps
+            to while waiting. The live one appears only when a wait passes
+            150ms. */}
+        <Row label="Loading bar: waits over 150ms">
+          <div aria-hidden="true" className="bg-surface border-border relative h-6 w-full border sm:w-96">
+            <span className="bg-accent absolute top-0 left-0 block h-0.5 w-5/6" />
+          </div>
+          <p className="text-14 leading-body text-ink-dim max-w-measure">
+            Runs along the top edge during a slow page change or filter update,
+            then fills and fades. A quick one shows nothing.
+          </p>
+        </Row>
+
+        <Row label="Disclosure: fades both ways">
             <details className="border-border-strong w-full border sm:w-96">
               <summary className="label text-12 tracking-6 text-ink cursor-pointer px-4 py-3 active:opacity-70">
                 Open the panel

@@ -136,7 +136,7 @@ session 5 and invalidated several readings before it was spotted (§8.17).
   routes at 390 and 1440 found zero geometry change (only the active nav link's border colour, now
   painted by a span, and `position: relative` on the nav links).
 - No overflow on 10 routes × 375/768/1280/1440; Lighthouse CLS 0 and a11y 100 on `/`, `/results`, the PDP.
-- **`"use client"`: 11 files** (D92b added `scroll-reveal.tsx`), still exactly one under `src/app/`.
+- **`"use client"`: 12 files** (D92b added `scroll-reveal.tsx` and, by addendum, `nav-progress.tsx`), still exactly one under `src/app/`.
 - **How to measure motion here:** the browser pane skips view transitions and stops frames whenever it is
   hidden (§8.23 again), so live samples ran in headless Playwright Chromium against a production build.
   Build that in a scratch copy (APFS-cloned `node_modules`) when another session is serving `.next`.

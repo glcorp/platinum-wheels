@@ -80,6 +80,7 @@ routes 280–350 (250–400). Longest single animation measured: **350ms**; long
 | Cold landing on `/#how-it-works` | first load | instant | **instant** (kept) | — | instant | lands at 2597 in one frame |
 | Route change from deep scroll | navigation | top, instant | **unchanged** | — | — | first frame on `/about` already at `scrollY 0` (Next's `data-scroll-behavior="smooth"` override) |
 | Featured carousel arrows | click | smooth (D30) | unchanged | native | auto | — |
+| Top loading bar (`NavProgress`, D92b addendum) | internal link click, GET submit, or `aria-busy="true"`, lasting past 150ms | nothing (the owner: *"the loading is very abrupt"*) | 2px `--accent` bar creeps to 85%, then fills and fades when the page or result lands | appears after `--progress-delay` 150ms; creep `--progress-trickle` 8s `--ease-arrive`; finish 200ms + fade 150ms | appears static at 85%, disappears | 1.2s injected server delay: `/about → /results` start 4ms, opacity .14 at 170ms, scale .53 at landing (1.30s), 1.0 at 1.49s, opacity 0 by 1.65s; a winter filter the same curve; a prefetched `/about → /privacy` **never visible** (max opacity 0). The "wait for the skeleton" condition was not provoked — the delay held the URL instead of showing `loading.tsx` |
 
 ## Reduced motion
 
@@ -103,7 +104,7 @@ Headless Chromium, `reducedMotion: 'reduce'`, production build:
 | Horizontal overflow | **none** on 10 routes × 375 / 768 / 1280 / 1440 (40 checks, pages scrolled through) |
 | Lighthouse mobile, production, two runs | `/` perf .90/.92, a11y 100, **CLS 0**; `/results` .94/.93, 100, **CLS 0**; PDP .92/.91, 100, **CLS 0**. LCP 3.1–3.4s — inside the pre-existing, parked band (D54) |
 | No JS | no `data-img-fade`, nothing pending, every `method="get"` form and the rail's `<noscript>` submit intact (D44/D83) |
-| `"use client"` | **11** files (was 10): `scroll-reveal.tsx` added, a leaf rendering `null`; still exactly one under `src/app/` |
+| `"use client"` | **12** files (was 10): `scroll-reveal.tsx` and `nav-progress.tsx` added, both leaves; still exactly one under `src/app/` |
 
 ## Limits — recorded, not claimed
 
