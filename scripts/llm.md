@@ -32,7 +32,8 @@ from `design/assets/`, and parity becomes eyeballing — which
 - **Sources in `design/` are never modified** — they stay the frozen design export
   (`prepare-assets.mjs:15`).
 - **The pipeline refuses to upscale.** `Math.min(scale, 1)` caps it and a warning is pushed to the
-  report instead (`prepare-assets.mjs:69-79`). **D19.**
+  report instead (`prepare-assets.mjs:69-79`). **D19.** Vendor catalogue images are the one exception and are
+  not processed here (**D90**).
 - Probe usage pattern, because the two sides differ: the artboard exports carry **no data attributes**,
   so pass real CSS selectors or `nth-of-type` paths for the `:4000` baseline and `[data-probe="…"]`
   hooks for the app (`parity-probe.js:8-17`). Same viewport on both sides, then diff the two JSON blobs
@@ -68,3 +69,8 @@ from `design/assets/`, and parity becomes eyeballing — which
 2. `parity-probe.js` is wired to nothing — no npm script imports or serves it; it is pasted into the
    browser by hand. Whether it should become a script (or a Playwright step) is **owner's call**, and
    `docs/decisions.md:147` currently puts automated visual regression out of scope.
+3. **A 1px rounding slip in `products()` and `clientProducts()`.** Both pad the canvas by the *requested* resize
+   size, but `fit: "inside"` can return 1px less, so a cut-out can land on a 999×1000 canvas. Found and measured on
+   the vendor images (~4% affected) in `~/platinum-wheels-feasibility/tools/web_image.mjs`, which now pads by the
+   size the resize actually produced (D90). Not checked against the current `public/images/products/` output and
+   not fixed here — **owner** decides whether to port the fix.
