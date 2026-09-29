@@ -12,7 +12,7 @@
    right padding, an intentional bleed so the scroll track runs off the edge —
    `design/inventory/home.md:64`, `design/assets/home-mobile.html:135`.
 
-   `data-reveal` marks the section for the below-the-fold reveal (D92): the
+   `data-reveal` marks the section for the below-the-fold reveal (D92b): the
    reveal island arms it only if it starts below the viewport, and without
    JS or with reduced motion it is never hidden.
    --------------------------------------------------------------------------- */

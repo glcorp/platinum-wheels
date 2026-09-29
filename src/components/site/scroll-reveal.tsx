@@ -1,13 +1,13 @@
 "use client";
 
 /* ---------------------------------------------------------------------------
-   ScrollReveal — the below-the-fold section reveal on `/` (D92, owner ruling:
+   ScrollReveal — the below-the-fold section reveal on `/` (D92b, owner ruling:
    "below-fold home sections: fade + 12px rise, 300ms, once").
 
    A leaf island that renders nothing. It arms `[data-reveal]` sections and
    flips them in as they cross into view; the look — opacity plus a
    `--motion-rise` translate over `--duration-reveal` — lives in globals.css
-   ("D92 motion: below-the-fold scroll reveal"), keyed on the attribute value.
+   ("D92b motion: below-the-fold scroll reveal"), keyed on the attribute value.
 
    Three guarantees, each of which is the reason for a line below:
      - **Never above the fold.** Only a section whose top is at or past the

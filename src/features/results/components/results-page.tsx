@@ -47,7 +47,7 @@ import type { RawSearchParams } from "@/features/results/types";
    `padding-bottom:120px` (`results-desktop.html:498`) does that job, so the
    wrapper adds nothing from `md:`.
 
-   Route motion (D92): `<main>` and the footer wrapper sit directly inside
+   Route motion (D92b): `<main>` and the footer wrapper sit directly inside
    `PageTransition`, the page-level type-keyed `<ViewTransition>` that slides
    the page on a `nav-forward` / `nav-back` link. No wrapper element between
    them and it — a VT only animates DOM nodes it directly precedes. The header

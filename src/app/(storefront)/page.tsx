@@ -27,7 +27,7 @@ import { WinterPromo } from "@/features/home/components/winter-promo";
    `<header>` landmark stays before `<main>` in the DOM and the hero is just
    the first block.
 
-   D92 motion: `<main>` and the footer ride one `PageTransition` (the header is
+   D92b motion: `<main>` and the footer ride one `PageTransition` (the header is
    pinned by its own `site-header` name and stays outside it), and
    `ScrollReveal` arms the below-the-fold sections that carry `data-reveal` —
    never the hero or the finder, and nothing at all without JS or with reduced

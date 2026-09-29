@@ -24,7 +24,7 @@ import { cx } from "@/lib/cx";
  * phone CTA (`home-desktop.html:109` `.x1`, `results-desktop.html:102` `.x58`,
  * `product-desktop.html:93` `.x112`), always at `compact` size. DESIGN.md §4
  * has no row for it, so active / disabled / focus are authored: active keeps
- * the fill and, since D92, sinks 1px like every other boxed control (it was
+ * the fill and, since D92b, sinks 1px like every other boxed control (it was
  * "no lift — a link, not a pressed button" until the owner ruled for one
  * consistent press vocabulary), disabled goes to the
  * `--border` outline + `--text-dim` ink like `secondary`, and focus uses the
@@ -111,11 +111,11 @@ const sizePad: Record<ButtonSize, string> = {
    | Hover    | --accent-hover      | --text fill,       | underline 1px |
    |          |                     | --on-accent text   |             |
    | Active   | --accent, +1px y    | --text-muted fill, | opacity .7  |
-   |          |                     | +1px y (D92)       |             |
+   |          |                     | +1px y (D92b)       |             |
    | Disabled | --surface fill,     | --border border,   | --text-dim  |
    |          | --text-dim text     | --text-dim text    |             |
 
-   Press vocabulary (D92, owner ruling "Expressive", 2026-09-29): every
+   Press vocabulary (D92b, owner ruling "Expressive", 2026-09-29): every
    variant with a fill or a border sinks 1px on `:active` — primary,
    secondary and accent alike — and the text variant dims to .7. Tailwind's
    `active:` is not hover-gated, which is exactly what a touch press needs.
@@ -125,7 +125,7 @@ const sizePad: Record<ButtonSize, string> = {
    No `transition-*` class here, still — but no longer because hover is
    instant. product.md/results.md §5 measure zero transition declarations on
    any button (the 30 in the exports all belong to card hover), and the drawn
-   rule was an instant fill swap. D92 replaces that: the globals.css base layer
+   rule was an instant fill swap. D92b replaces that: the globals.css base layer
    eases colour, fill, border, opacity and translate on every `button` and `a`
    over `--duration-feedback` (120ms), so the drawn hover colours below are
    reached in 120ms instead of one frame, and the 1px press glides. Recorded

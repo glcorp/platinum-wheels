@@ -134,7 +134,7 @@ export function RouteErrorPanel({
           the only way back. Same treatment as the breadcrumb's `Home` crumb,
           including `tap-extend-lg` — an 11/12px line hit-tests 37px with the
           smaller band and 45px with this one (D57, audit C4).
-          `active:opacity-70` is the text-link press (D92); the two `Button`s
+          `active:opacity-70` is the text-link press (D92b); the two `Button`s
           above carry the boxed press from the primitive itself. No
           `PageTransition` anywhere in this file: the boundary is a client
           module that renders no chrome (D62), and it replaces the page rather

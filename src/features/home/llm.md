@@ -10,7 +10,7 @@ Delete this folder and `/` renders header and footer around nothing.
 One file per manifest section (`design/manifest.md` §1); each header comment carries its measured
 sources (`design/inventory/home.md` §2.x). All Server Components except the carousel island.
 - [`components/hero.tsx`](components/hero.tsx) — `Hero`, no props. Full-bleed `hero-tread.webp`, scrim, eyebrow / h1 / lede. home.md §2.1.
-- [`components/category-tiles.tsx`](components/category-tiles.tsx) — `CategoryTiles`. "01 — Shop by category", `md:category-grid` 2fr/1fr; the D35 text-colour hover stays suppressed, and since D92 the tiles take the card's border + 2px lift hover (DEVIATIONS #77). home.md §2.4.
+- [`components/category-tiles.tsx`](components/category-tiles.tsx) — `CategoryTiles`. "01 — Shop by category", `md:category-grid` 2fr/1fr; the D35 text-colour hover stays suppressed, and since D92b the tiles take the card's border + 2px lift hover (DEVIATIONS #77). home.md §2.4.
 - [`components/winter-promo.tsx`](components/winter-promo.tsx) — `WinterPromo`. Full-bleed photo + tinted panel, computed `Winter <year>` (D32), spec chips inline (not `Chip`). home.md §2.5.
 - [`components/how-it-works.tsx`](components/how-it-works.tsx) — `HowItWorks`, `id="how-it-works"`. Four steps as data; eyebrow only, no h2. home.md §2.6.
 - [`components/featured-tires.tsx`](components/featured-tires.tsx) — `FeaturedTires`. Server shell: spacing, hands `FEATURED_ROW` (the four artboard SKUs **plus two**, D74) to the island. home.md §2.7.
@@ -38,7 +38,7 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
   `id="how-it-works"` — `ROUTES.contact` / `ROUTES.howItWorks` depend on them. Both carry
   `scroll-mt-14 sm:scroll-mt-20` (**D66**, measured 80px): `scroll-margin-top` was set nowhere in the
   build, so following either link landed the section flush at y=0.
-- **Motion (D92).** Every section below the hero and finder carries `data-reveal=""` on its root; the
+- **Motion (D92b).** Every section below the hero and finder carries `data-reveal=""` on its root; the
   page renders `ScrollReveal`, which arms only the ones below the fold at mount. Never put `data-reveal`
   on the hero or the finder. Category tiles take the card's drawn hover (DEVIATIONS #77), and tiles plus
   the winter-promo CTA are typed `nav-forward`.

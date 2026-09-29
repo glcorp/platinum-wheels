@@ -132,7 +132,7 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
     });
   }
 
-  /* Press (D92): every arrow takes `active:translate-y-px`, the boxed-control
+  /* Press (D92b): every arrow takes `active:translate-y-px`, the boxed-control
      half of the press vocabulary; the base-layer rule in `globals.css` eases
      it over `--duration-feedback`. The dots below are `aria-hidden` spans, a
      readout rather than controls, so they have no press. */

@@ -369,7 +369,7 @@ export function QuoteForm({
             group's own eyebrow says `Optional`, so a required field here
             would contradict drawn copy (`actions.ts`). New copy under
             `.claude/rules/ui.md` "Copy": short, specific, names the unit.
-            `enter-rise` (D92): the field arrives after a `Custom` click
+            `enter-rise` (D92b): the field arrives after a `Custom` click
             rather than popping in — `@starting-style`, no JS, and a server
             render with no transition simply shows it. It only wraps the
             field; the controlled select above (D84) is untouched. */}

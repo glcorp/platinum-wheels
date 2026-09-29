@@ -38,7 +38,7 @@ import {
    No radius on any cell (radius is CTA-only, `product.md` §3.4 "no radius on
    the cells").
 
-   Motion (D92, replacing the old "cells swap instantly" house rule): the
+   Motion (D92b, replacing the old "cells swap instantly" house rule): the
    selected fill eases over `--duration-feedback` through the base-layer
    `a` transition in `globals.css`, so no transition class lives here. Each
    cell takes `active:translate-y-px`, the boxed-control press. The cells are

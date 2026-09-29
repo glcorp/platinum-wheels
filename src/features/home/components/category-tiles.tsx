@@ -48,7 +48,7 @@ import { ROUTES } from "@/lib/routes";
    (tile text stays `--on-photo`); no tile carries an `xN` class on either
    artboard (home.md:187).
 
-   D92 (owner, "Expressive", 2026-09-29) gives the tiles the product card's
+   D92b (owner, "Expressive", 2026-09-29) gives the tiles the product card's
    hover language — `transition-card ease-card duration-150
    hover:-translate-y-0.5 hover:border-accent-hover`, the one hover the
    artboards do draw, on the card (results-desktop.html:48) — so everything

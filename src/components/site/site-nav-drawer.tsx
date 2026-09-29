@@ -56,7 +56,7 @@ export function SiteNavDrawer({
         aria-expanded={open}
         aria-controls="site-nav-drawer"
         onClick={() => setOpen(true)}
-        /* `active:translate-y-px` — the boxed-control press (D92). */
+        /* `active:translate-y-px` — the boxed-control press (D92b). */
         className="text-on-photo inline-flex size-11 touch-manipulation items-center justify-center bg-transparent active:translate-y-px"
       >
         {/* 22x22 three-bar icon, stroke-width 1.6, round caps — home-mobile.html:88-90 */}
@@ -137,7 +137,7 @@ export function SiteNavDrawer({
           className="flex flex-1 flex-col justify-between px-4 pb-safe"
         >
           {/* Links: display 40px, stacked left, 16px gap — DESIGN.md §4 Nav (~line 192).
-              `active:opacity-70` is the text-link press (D92). */}
+              `active:opacity-70` is the text-link press (D92b). */}
           <ul className="flex flex-col gap-4">
             {links.map((link) => (
               <li key={link.href}>

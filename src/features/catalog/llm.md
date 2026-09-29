@@ -117,7 +117,7 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   it off on accessories for a reason the seed disproved — lug nuts carry a thread pitch, TPMS sensors a
   frequency — and the owner vetoed it (D67). Before setting `finder: null` on anything, check the seed's
   own spec strings first.
-- **The card photo is a shared element (D92).** `ProductCard` wraps its `<Image>` in
+- **The card photo is a shared element (D92b).** `ProductCard` wraps its `<Image>` in
   `<ViewTransition name={`product-photo-${slug}`} default="none">` whose `share` is **type-keyed**:
   `{ "product-open": "morph", "product-back": "morph", default: "none" }`. Only a navigation carrying
   one of those types may pair a card with the PDP gallery — the two PDP links carry
@@ -162,7 +162,7 @@ in place.
 - **Don't list `transform` in the hover transition** to match the artboard string — it would be inert
   (DEVIATIONS #15).
 - **Don't make the card photo's `share` a plain string** to "fix" a missing morph. Untyped, every slug
-  present on both pages pairs and flies at once — Home → `/results` flew six photos (D92).
+  present on both pages pairs and flies at once — Home → `/results` flew six photos (D92b).
 
 ## Open
 1. ~~**`data.ts` is not written.**~~ Written: `FEATURED_PRODUCTS` (D29) and the nine-SKU `PRODUCTS`

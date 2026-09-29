@@ -15,12 +15,12 @@ structural rather than advisory (`HANDOFF.md` §9).
 - The taste dials, **verbatim** (`ui.md:10-12`):
   ```
   DESIGN_VARIANCE: 7   # asymmetric 60/40 splits that flip between sections, not centred-everything
-  MOTION_INTENSITY: 6  # D92 "Expressive": eased hover + press, route slides/crossfades, card→PDP morph, grid stagger ≤150ms, below-fold reveal once; no parallax, no magnetic, no page-load choreography
+  MOTION_INTENSITY: 6  # D92b "Expressive": eased hover + press, route slides/crossfades, card→PDP morph, grid stagger ≤150ms, below-fold reveal once; no parallax, no magnetic, no page-load choreography
   VISUAL_DENSITY: 5    # storefront pages; the results grid may go to 6
   ```
   They were pinned here by the skill's `init` step 5 (`.claude/skills/design-to-code/SKILL.md:109-115`).
   Changing a dial is a project decision, not a file edit. `MOTION_INTENSITY` went 3 → 6 on 2026-09-29 by
-  owner ruling **D92** (root `llm.md` §5b), which also supersedes DESIGN.md §4's "instant fill" hover.
+  owner ruling **D92b** (root `llm.md` §5b), which also supersedes DESIGN.md §4's "instant fill" hover.
 - **This folder's authority is subordinate.** Verbatim: *"Taste rules are **subordinate** to
   `design/assets/*.html` and `design/DESIGN.md`. If a taste rule contradicts the design, the design
   wins."* (`ui.md:15-16`). The full order — `docs/decisions.md`, then the design, then supporting skills

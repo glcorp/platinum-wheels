@@ -4,7 +4,7 @@ import "./globals.css";
 import Script from "next/script";
 import { HashScroll } from "@/components/site/hash-scroll";
 
-/* D92 motion bootstrap — runs before the first `<img>` parses, so it needs no
+/* D92b motion bootstrap — runs before the first `<img>` parses, so it needs no
    hydration and adds no `"use client"`.
    (1) Image fade-in: sets `data-img-fade` on <html> and marks each image
    `data-loaded` on its `load` or `error` (capture phase — neither event
@@ -34,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      /* D92: `<html>` scrolls smoothly (globals.css) so a same-page fragment
+      /* D92b: `<html>` scrolls smoothly (globals.css) so a same-page fragment
          link glides; this attribute tells Next 16 to switch that off for route
          navigations, which must land at the top instantly. */
       data-scroll-behavior="smooth"

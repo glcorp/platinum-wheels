@@ -19,7 +19,7 @@ project's primary workflow — the modes the whole build queue runs through (`HA
 - `shadcn/` — `shadcn/ui` (`:28-33`). *"Manages shadcn components and projects…"*
 - `vercel-react-view-transitions/` — `vercel-labs/agent-skills`, `skillPath:
   skills/react-view-transitions/SKILL.md` (`skills-lock.json:34-39`). *"Guide for implementing smooth,
-  native-feeling animations using React's View Transition API…"* Installed 2026-09-29 for the **D92**
+  native-feeling animations using React's View Transition API…"* Installed 2026-09-29 for the **D92b**
   motion pass with `npx skills add vercel-labs/agent-skills --skill vercel-react-view-transitions`, on the
   owner's approval. The installer wrote the skill to a new `.agents/skills/` folder and left a **symlink**
   here; it was replaced with the real directory so this folder stays symlink-free (D36 — Tailwind scans

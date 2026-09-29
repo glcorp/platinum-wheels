@@ -89,7 +89,7 @@ One line each; measurements and per-variant tables live in each file's header co
   `peer-checked:` compiles to a sibling combinator a parent can never match (`chip.tsx:154-160`). The
   selected and focus recipes are written out once in their `has-` spelling because Tailwind scans source
   text — a prefix composed at runtime emits no CSS (`chip.tsx:148-152`).
-- **No per-component `transition-*` for colour.** Since **D92** (DEVIATIONS #75) every control's hover
+- **No per-component `transition-*` for colour.** Since **D92b** (DEVIATIONS #75) every control's hover
   fill eases over `--duration-feedback` from one `@layer base` rule in `globals.css`; a primitive adds
   nothing for that. What a primitive *does* own is its **press** state: filled and outlined `Button`
   variants and every `Chip` take `active:translate-y-px` (guarded by `disabled:translate-y-0`), the text
@@ -125,7 +125,7 @@ disabled — come from `design/DESIGN.md` §4 under DEVIATIONS #9, because the e
 - **Don't import a feature type here.** It inverts the dependency the HLD sets (`docs/decisions.md:65`).
 - **Don't add `rounded-*` to `Badge` or `Chip`.** Radius is an exact-match parity property; 2px fails
   (D12, `badge.tsx:6-10`).
-- **Don't add a colour transition to a primitive.** The base layer owns it (D92); a local
+- **Don't add a colour transition to a primitive.** The base layer owns it (D92b); a local
   `transition-*` would fork the timing. See Rules.
 - **Don't import `@/features/…` into a primitive** to resolve a per-category value. Take a prop with a
   drawn default instead — that is what `Price`'s `unit` is (D37, D58).

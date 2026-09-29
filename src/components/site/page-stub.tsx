@@ -35,7 +35,7 @@ export function PageStub({ title, active = "tires", children }: PageStubProps) {
   return (
     <>
       <SiteHeader variant="solid" active={active} />
-      {/* D92: `<main>` and the footer's wrapper enter and leave together; the
+      {/* D92b: `<main>` and the footer's wrapper enter and leave together; the
           header stays outside, pinned by its own view-transition name. */}
       <PageTransition>
         <main id="main" tabIndex={-1} className="flex-1 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30">

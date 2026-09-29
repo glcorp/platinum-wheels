@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site/site-footer";
 import { PageTransition } from "@/components/site/page-transition";
 import { SiteHeader } from "@/components/site/site-header";
-import { findProduct } from "@/features/catalog/data";
+import { ALL_PRODUCTS, findProduct } from "@/features/catalog/data";
 import { BuyPanel } from "@/features/product/components/buy-panel";
 import { PdpBreadcrumb } from "@/features/product/components/pdp-breadcrumb";
 import { PdpGallery } from "@/features/product/components/pdp-gallery";
@@ -51,10 +51,19 @@ import { productView } from "@/features/product/view";
    2026-09-21 (D61, audit taste item T1).
    --------------------------------------------------------------------------- */
 
-/* No `generateStaticParams` here, deliberately. Reading `searchParams` for
-   `?qty=` (D50) makes this route dynamic — `next build` reports it as `ƒ`, not
-   `○` — so prerendering the nine seed slugs would be dead code. If the quantity
-   ever stops living in the URL, add it back. */
+/* `generateStaticParams` + `dynamicParams = false` is the 404 gate, not a
+   prerender. Reading `searchParams` for `?qty=` (D50) still makes the route
+   dynamic (`ƒ`). What the list buys is the status code: without it, an unknown
+   slug reached `notFound()` only after `loading.tsx`'s Suspense boundary (D62)
+   had already streamed a 200, so `/products/not-a-slug` was a soft 404 —
+   the right page on a 200 (D91, measured). With it, Next rejects the slug
+   before anything streams. Every seed slug is listed, unavailable ones
+   included: an unavailable product is still a 200 (`docs/decisions.md` §7). */
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return ALL_PRODUCTS.map((product) => ({ slug: product.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -90,7 +99,7 @@ export default async function ProductPage({
   return (
     <>
       <SiteHeader variant="solid" active={view.config.nav} />
-      {/* `<main>` + footer ride one `PageTransition` (D92); the gallery image
+      {/* `<main>` + footer ride one `PageTransition` (D92b); the gallery image
           inside it is the other half of the card-photo morph. */}
       <PageTransition>
         <main id="main" tabIndex={-1} className="flex-1">

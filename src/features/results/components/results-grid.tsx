@@ -127,7 +127,7 @@ function CardGrid({
   /** How many leading cards preload their photo instead of lazy-loading it. */
   priorityCount?: number;
 }) {
-  /* D92 — list identity. Every filter, sort and `Load more` change is a
+  /* D92b — list identity. Every filter, sort and `Load more` change is a
      navigation (`router.replace` from the islands, a `<Link>` for `Load
      more`), and every navigation is a React transition, so a keyed
      `<ViewTransition>` per card is what lets the grid say "same cards, new
@@ -138,7 +138,7 @@ function CardGrid({
      — a VT only activates if it precedes the DOM node it wraps.
 
      Stagger is `index % 6`, capped at step 5: 30ms a card, 150ms at most —
-     the owner's D92 ruling. The modulo is why `Load more`'s three new cards
+     the owner's D92b ruling. The modulo is why `Load more`'s three new cards
      (positions 6–8) still stagger 0 / 30 / 60ms instead of all waiting 150ms.
 
      `default="none"` keeps a card out of transitions that are not about the

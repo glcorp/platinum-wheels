@@ -419,7 +419,7 @@ export default function StyleguidePage() {
             {DEMO.map((p) => (
               /* `morph={false}`: these demo cards must not claim the
                  `product-photo-<slug>` view-transition name a real card and the
-                 PDP gallery share (D92). */
+                 PDP gallery share (D92b). */
               <ProductCard key={p.slug} product={p} morph={false} />
             ))}
           </div>
@@ -603,7 +603,7 @@ export default function StyleguidePage() {
         </section>
 
         {/* ---------------------------------------------------------------
-            §12 Motion — D92 (owner, "Expressive", 2026-09-29). The token values
+            §12 Motion — D92b (owner, "Expressive", 2026-09-29). The token values
             are copied from `globals.css` @theme as text, because CSS cannot print
             a custom property; the demo bars read the real tokens, so a changed
             value shows up in the motion even if this label goes stale. If a

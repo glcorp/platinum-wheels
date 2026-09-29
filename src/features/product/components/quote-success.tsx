@@ -41,7 +41,7 @@ export function QuoteSuccess({ role, tabIndex, ref }: QuoteSuccessProps) {
          `--duration-state` via `@starting-style` — resting state fully
          opaque, so a failed stylesheet can never hide it. It replaces the form
          in place, and without motion the swap had no visual event connecting
-         the submit to its result; D67 added a plain fade, D92 swaps it for the
+         the submit to its result; D67 added a plain fade, D92b swaps it for the
          shared small-enter utility the error summary also uses. `role="status"`
          announces content, not opacity or position, so the motion does not
          delay the announcement, and `QuoteForm`'s focus move is untouched. */

@@ -52,7 +52,7 @@ export function QuoteErrorSummary({
          opaque, so a failed stylesheet can never hide it. The most
          consequential action on the site used to report its own rejection
          with no visual event at all; D65 fixed the focus and announcement half
-         of that, D67 added a plain fade, and D92 swaps that fade for the shared
+         of that, D67 added a plain fade, and D92b swaps that fade for the shared
          small-enter utility so every in-place panel arrives the same way.
          `role="alert"` announces content, not opacity or position, so the
          motion does not delay the announcement, and focus is untouched. */

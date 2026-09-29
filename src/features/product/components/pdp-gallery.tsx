@@ -33,7 +33,7 @@ import type { PdpBadge } from "@/features/product/types";
    var(--scrim-mid) 100%)` — `photo-vignette-gallery` (globals.css), the 55%
    stop that distinguishes it from the cards' 50% (`photo-vignette`).
 
-   Shared element (D92): the `<Image>` sits in a `<ViewTransition>` named
+   Shared element (D92b): the `<Image>` sits in a `<ViewTransition>` named
    `product-photo-<slug>` — the SAME name `ProductCard` gives its photo — so
    the card photo in the grid, the home row or the similar row morphs into
    this box on the way in, and back into the card on the way out (the

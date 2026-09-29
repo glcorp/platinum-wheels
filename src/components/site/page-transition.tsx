@@ -1,7 +1,7 @@
 import { ViewTransition, type ReactNode } from "react";
 
 /* ---------------------------------------------------------------------------
-   PageTransition — the route-level view transition (D92, owner ruling
+   PageTransition — the route-level view transition (D92b, owner ruling
    "Expressive", 2026-09-29). Server Component: `<ViewTransition>` from React
    renders in either environment, so no directive and no client bundle cost.
 
@@ -11,7 +11,7 @@ import { ViewTransition, type ReactNode } from "react";
    view-transitions.md, "Put the wrapper in each page.tsx, not the layout").
 
    What each navigation does — the classes are defined in globals.css under
-   "D92 — view transitions":
+   "D92b — view transitions":
      - a `<Link transitionTypes={["nav-forward"]}>` (into a category, into a
        product) slides the leaving view left and the arriving one in from the
        right; `nav-back` (breadcrumbs, the logo) mirrors it;

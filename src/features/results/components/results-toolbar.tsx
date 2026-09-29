@@ -141,7 +141,7 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
             >
               {/* The exports' global `a:hover{color:var(--text-muted)}` is the
                   only hover this link has (`results.md` "Global base rules").
-                  D92: `nav-back` because Home is up the hierarchy from a
+                  D92b: `nav-back` because Home is up the hierarchy from a
                   results page, so the page slides the way it came;
                   `active:opacity-70` is the text-link press. */}
               <Link
@@ -172,7 +172,7 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
                  (results-desktop.html:111, chip :113, link :114).
                  `active:opacity-70`: the whole summary row is the toggle
                  (consequence 1 in the header), so the whole row takes the
-                 D92 text-link press. */
+                 D92b text-link press. */
               className="flex list-none items-center justify-between gap-3 active:opacity-70 md:min-h-11 md:justify-start md:gap-5 [&::-webkit-details-marker]:hidden"
             >
               {vehicleLabel === null ? null : (

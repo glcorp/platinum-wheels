@@ -50,7 +50,7 @@ export const chipBox =
 const chipFocus =
   "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0";
 
-/* `active:translate-y-px` is the boxed-control press (D92), the same 1px sink
+/* `active:translate-y-px` is the boxed-control press (D92b), the same 1px sink
    every filled or bordered `Button` takes. It is kept out of `chipBox` so that
    export stays "box only"; `ChipCheckbox` adds it beside its own classes. */
 const chipPress = "active:translate-y-px";
@@ -73,7 +73,7 @@ const chipBase = `${chipBox} ${chipFocus} ${chipPress} sm:h-10`;
    `@media (hover: hover) { &:hover }` (verified in tailwindcss@4.3.3), the
    project's ratified touch guard (DEVIATIONS #10).
 
-   No `transition-*` class, but the swap is no longer instant: since D92 the
+   No `transition-*` class, but the swap is no longer instant: since D92b the
    globals.css base layer eases colour, fill and border on every `button` and
    `label` over `--duration-feedback` (120ms), so the rest → hover and
    rest → selected colours above are reached in 120ms rather than one frame.

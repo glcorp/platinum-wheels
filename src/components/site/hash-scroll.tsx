@@ -30,7 +30,7 @@
    arrival, and a 4000px smooth scroll before the reader can start reading
    would only delay them.
 
-   D92 (owner ruling "Expressive", 2026-09-29) changes one path: a
+   D92b (owner ruling "Expressive", 2026-09-29) changes one path: a
    `hashchange` — a same-page click such as the header's `Contact` while
    already on `/` — scrolls smoothly, so the reader sees the page travel to
    the section rather than cut to it. Under `prefers-reduced-motion: reduce`
@@ -52,7 +52,7 @@ export function HashScroll() {
     let frame = 0;
     let cancelled = false;
 
-    /** `smooth` only for a same-page `hashchange` (D92); a cold load passes
+    /** `smooth` only for a same-page `hashchange` (D92b); a cold load passes
      *  nothing and lands instantly. */
     function settle(smooth = false) {
       const hash = window.location.hash;
@@ -78,7 +78,7 @@ export function HashScroll() {
             !window.matchMedia("(prefers-reduced-motion: reduce)").matches
               ? "smooth"
               : /* `instant`, not `auto`: `<html>` is `scroll-behavior:smooth`
-                   since D92, and `auto` defers to that — the cold landing
+                   since D92b, and `auto` defers to that — the cold landing
                    would glide 4000px after all. */
                 "instant";
           target.scrollIntoView({ behavior });

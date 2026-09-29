@@ -19,7 +19,7 @@
    (`design/inventory/home.md:70` desktop/mobile deltas).
 
    `data-reveal` on the band's root marks it for the below-the-fold reveal
-   (D92): armed only if it starts below the viewport, never hidden without JS
+   (D92b): armed only if it starts below the viewport, never hidden without JS
    or with reduced motion. No links here, so no press or transition type.
    --------------------------------------------------------------------------- */
 

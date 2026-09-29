@@ -90,7 +90,7 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      /* Below-the-fold reveal (D92): the reveal island arms it only if it
+      /* Below-the-fold reveal (D92b): the reveal island arms it only if it
          starts below the viewport; without JS or with reduced motion it is
          never hidden. */
       data-reveal=""

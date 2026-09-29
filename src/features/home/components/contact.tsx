@@ -49,7 +49,7 @@ export function Contact() {
     <section
       id="contact"
       data-probe="contact"
-      /* Below-the-fold reveal (D92): armed only if it starts below the
+      /* Below-the-fold reveal (D92b): armed only if it starts below the
          viewport, never hidden without JS or with reduced motion. */
       data-reveal=""
       /* `scroll-mt-*`: `ROUTES.contact` points the nav at this anchor — see
@@ -90,7 +90,7 @@ export function Contact() {
                   (`design/inventory/home.md:77,331`). Hover only draws on
                   desktop in the artboard but Tailwind's `hover:` is already
                   `@media (hover: hover)`-scoped, so it stays unprefixed
-                  (D17). `active:translate-y-px` is the D92 boxed-control
+                  (D17). `active:translate-y-px` is the D92b boxed-control
                   press. */}
               <a
                 href={`tel:${contact.tel}`}
@@ -132,7 +132,7 @@ export function Contact() {
             </span>
             <a
               href={`mailto:${SITE.email}`}
-              /* `active:opacity-70`: the D92 text-link press. */
+              /* `active:opacity-70`: the D92b text-link press. */
               className="text-ink-muted leading-body text-16 underline underline-offset-3 active:opacity-70 sm:text-17"
             >
               {SITE.email}

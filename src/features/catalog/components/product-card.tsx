@@ -148,7 +148,7 @@ export interface ProductCardProps {
   priority?: boolean;
   /**
    * Wraps the photo in the named `<ViewTransition>` that morphs it into the
-   * PDP gallery (D92). Default `true`.
+   * PDP gallery (D92b). Default `true`.
    *
    * A view-transition name must be unique on the page: two mounted VTs with
    * one name break the morph. `/styleguide` passes `false` so a reference page
@@ -282,14 +282,14 @@ export function ProductCard({
             overlays now carry `pointer-events-none`; this anchor's box is
             unchanged.
 
-            D92 (owner, "Expressive", 2026-09-29): the photo is the shared
+            D92b (owner, "Expressive", 2026-09-29): the photo is the shared
             element that morphs into the PDP gallery, which wraps its own
             `<Image>` in the identical name (`pdp-gallery.tsx`). `share` is
             explicit because with `default="none"` and no `share` the pair
             silently never morphs.
 
             `share` is TYPE-KEYED on this side (coordinator ruling, derived
-            under D92): only a navigation that opens a product
+            under D92b): only a navigation that opens a product
             (`product-open`, carried by both PDP links below) or returns from
             one (`product-back`, carried by the PDP breadcrumb's results crumb)
             may pair a card with the gallery. Every card on a page holds a
@@ -311,7 +311,7 @@ export function ProductCard({
             suspended into `loading.tsx` — hence `prefetch={true}` on both PDP
             links (`vercel-react-view-transitions` nextjs.md "When Content
             Must Be Ready"). `nav-forward` types the page slide. Press is
-            `active:opacity-70`, the text-link/photo half of the D92 press
+            `active:opacity-70`, the text-link/photo half of the D92b press
             vocabulary. */}
         <Link
           href={productRoute(slug)}
@@ -403,7 +403,7 @@ export function ProductCard({
                fails the 44px floor in docs/decisions.md §5 and WCAG 2.5.8's
                24px AA minimum. The artboards draw every href as "#", so no
                drawn geometry is affected.
-               D92: typed (`nav-forward` for the slide, `product-open` for
+               D92b: typed (`nav-forward` for the slide, `product-open` for
                the morph) and fully prefetched like the photo link above, so
                both routes into the PDP slide the page and form the morph;
                `active:opacity-70` is the text-link press. */
@@ -496,7 +496,7 @@ export function ProductCard({
               context; the visible label stays the link's leading text, so the
               accessible name still contains it.
 
-              Deliberately NOT given `transitionTypes` (D92): `quoteRoute()`
+              Deliberately NOT given `transitionTypes` (D92b): `quoteRoute()`
               ends in a `#quote` fragment, and a typed slide combined with a
               hash-fragment scroll jumps mid-flight (the view-transitions
               skill's warning). It navigates untyped: no directional slide,

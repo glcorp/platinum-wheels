@@ -56,7 +56,7 @@ import { ROUTES } from "@/lib/routes";
 
    Server Component. Year is computed at render (D32), never hard-coded.
 
-   Motion (D92): the section carries `data-reveal` for the below-the-fold
+   Motion (D92b): the section carries `data-reveal` for the below-the-fold
    reveal (armed only if it starts below the viewport; never hidden without
    JS or with reduced motion). The CTA leads into `/results?season=winter`,
    down the hierarchy, so it is typed `nav-forward`; its press comes from the

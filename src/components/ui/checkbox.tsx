@@ -68,7 +68,7 @@ export function Checkbox({
       data-probe={labelProbe}
       /* `group/check` names this row so the box can answer a press anywhere on
          it — the copy included — without reacting to an unrelated `group`
-         further up the tree (a facet row sits inside the filter rail). D92. */
+         further up the tree (a facet row sits inside the filter rail). D92b. */
       className={join(
         facet
           ? // Row height and gap come from the caller — see CheckboxVariant.
@@ -110,7 +110,7 @@ export function Checkbox({
               // `enabled:` keeps it off a disabled control; Tailwind v4's
               // `hover:` is already `@media (hover: hover)` (D17).
               "enabled:hover:border-ink",
-              // Press (D92): while the row is held, the hairline goes to the
+              // Press (D92b): while the row is held, the hairline goes to the
               // same --text it hovers to, so a touch press — which never
               // fires hover — still shows the control was hit. No translate:
               // a checkbox is not a boxed button and must not jump in its row.

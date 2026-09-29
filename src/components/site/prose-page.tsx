@@ -60,7 +60,7 @@ type NavKey = "tires" | "wheels" | "accessories" | "contact";
    `DESIGN.md` §7 forbids. `underline-offset-4` is the exports' own text-link
    offset (`results.md` §2.4, `Clear all`).
 
-   `active:opacity-70` is the text-link press (D92). It is a press, not a hover,
+   `active:opacity-70` is the text-link press (D92b). It is a press, not a hover,
    so the rule above still holds: pointing at the link never dims it. The
    underline-colour change eases over `--duration-feedback` in the base layer
    (DEVIATIONS #75). */
@@ -101,7 +101,7 @@ export function ProsePage({
   return (
     <>
       <SiteHeader variant="solid" active={active} />
-      {/* D92: `<main>` and the footer's wrapper enter and leave together; the
+      {/* D92b: `<main>` and the footer's wrapper enter and leave together; the
           header stays outside, pinned by its own view-transition name. The
           boundary must contain the DOM nodes directly — no wrapper `<div>`
           (see page-transition.tsx). */}

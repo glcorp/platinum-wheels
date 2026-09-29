@@ -249,7 +249,7 @@
        border-color 150ms cubic-bezier(.2,0,0,1), transform 150ms cubic-bezier(.2,0,0,1)
      They belong to card hover only, and `--ease-card` is that curve.
 
-     **D92 (owner, 2026-09-29) replaces the "instant fill, never a fade" rule
+     **D92b (owner, 2026-09-29) replaces the "instant fill, never a fade" rule
      (DESIGN.md §4) with the Expressive motion thesis.** Hover fills now ease
      over `--duration-feedback`; the drawn colours are unchanged, only the time
      it takes to reach them. DEVIATIONS #75. Every value below traces to the
@@ -266,11 +266,11 @@
   --duration-exit: 150ms; /* anything leaving: exits run faster than entries */
   --duration-handoff: 100ms; /* how long an entering view waits for the leaving one */
   --duration-overlay: 280ms; /* sheet, drawer, shared-element morph, card travel */
-  --duration-route: 350ms; /* directional route slide — owner, D92 */
-  --duration-reveal: 300ms; /* below-the-fold scroll reveal — owner, D92 */
-  --stagger-step: 30ms; /* per new card, capped at 5 steps = 150ms — owner, D92 */
-  --motion-slide: 60px; /* route slide distance — owner, D92 */
-  --motion-rise: 12px; /* scroll-reveal and new-card rise — owner, D92 */
+  --duration-route: 350ms; /* directional route slide — owner, D92b */
+  --duration-reveal: 300ms; /* below-the-fold scroll reveal — owner, D92b */
+  --stagger-step: 30ms; /* per new card, capped at 5 steps = 150ms — owner, D92b */
+  --motion-slide: 60px; /* route slide distance — owner, D92b */
+  --motion-rise: 12px; /* scroll-reveal and new-card rise — owner, D92b */
   --motion-nudge: 6px; /* small in-place enters: form panels, route fade */
 
   /* Breakpoints — DESIGN.md §8. Mobile-first: these are min-widths.
@@ -670,7 +670,7 @@
   /* The one motion DESIGN.md names by word: §"Motion" says the filter sheet
      arrives "from the bottom", and the build did not move it at all — a
      full-viewport surface appeared with no origin, which on a phone is the
-     most disorienting transition here. D67 moved it at 150ms; D92 puts it on
+     most disorienting transition here. D67 moved it at 150ms; D92b puts it on
      the overlay band — `--duration-overlay` in on `--ease-arrive`, and
      `--duration-exit` out on `--ease-leave` (below), because the exit should
      get out of the way faster than the entry arrived. Translate only:
@@ -689,7 +689,7 @@
 
 /* The sheet's own exit: `dialog.close()` needs the discrete properties on the
    dialog too, or the panel is removed before it can travel.
-   D67 recorded that this exit "snaps". D92 re-measured it in Chromium on all
+   D67 recorded that this exit "snaps". D92b re-measured it in Chromium on all
    four close paths — the close button, Esc, a scrim click and `Apply` — and
    every one creates the panel's translate transition and holds the dialog's
    `display`; seeked, the panel reads 0% → 61% → 88% → 98% → 100%. The snap
@@ -815,7 +815,7 @@
   html {
     /* Hairlines stay 1px and must not scale with DPR (DESIGN.md §8). */
     -webkit-text-size-adjust: 100%;
-    /* D92: same-page fragment links (`/#contact`, `/#how-it-works` from the
+    /* D92b: same-page fragment links (`/#contact`, `/#how-it-works` from the
        header while on `/`) glide instead of cutting. `layout.tsx` sets
        `data-scroll-behavior="smooth"` so Next keeps route changes instant, and
        the reduced-motion block's `scroll-behavior: auto !important` covers
@@ -859,7 +859,7 @@
      only, on the open edge: animating height would drive layout, and the
      `interpolate-size` route is Chrome-only. The closed state is untouched, so
      `/results` parity holds by construction. D67. */
-  /* D92 adds the close edge: where `::details-content` exists the panel fades
+  /* D92b adds the close edge: where `::details-content` exists the panel fades
      out as well as in, holding its box for the fade via `content-visibility`
      allow-discrete. Still opacity only. Browsers without it keep D67's
      open-edge fade and close instantly, as before. */
@@ -887,7 +887,7 @@
     }
   }
 
-  /* ---- D92 motion: hover and press ease instead of snapping --------------
+  /* ---- D92b motion: hover and press ease instead of snapping --------------
      One rule for every interactive element instead of a class at ~60 call
      sites. It sits in `base`, so any utility that declares its own transition
      (`transition-card`, `skip-link`, `transition-opacity`) still wins.
@@ -918,7 +918,7 @@
     transition-duration: 0s;
   }
 
-  /* ---- D92 motion: lazy images fade in over their ground -----------------
+  /* ---- D92b motion: lazy images fade in over their ground -----------------
      `layout.tsx` runs one inline script before the first `<img>` parses: it
      sets `data-img-fade` on <html> and marks every image `data-loaded` on its
      `load` or `error` event. Without the script neither attribute exists, so a
@@ -935,7 +935,7 @@
     opacity: 0;
   }
 
-  /* ---- D92 motion: below-the-fold scroll reveal (home only) --------------
+  /* ---- D92b motion: below-the-fold scroll reveal (home only) --------------
      `ScrollReveal` (src/components/site/scroll-reveal.tsx) sets
      `data-reveal="pending"` only on `[data-reveal]` sections whose top is
      below the viewport when it mounts, then flips them to `in` as they cross
@@ -972,7 +972,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   D92 — small-scale enter and the nav rules
+   D92b — small-scale enter and the nav rules
    --------------------------------------------------------------------------- */
 
 /* A panel that appears in place — the quote error summary, the success panel,
@@ -1033,7 +1033,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   D92 — view transitions (React `<ViewTransition>`, Next 16.4)
+   D92b — view transitions (React `<ViewTransition>`, Next 16.4)
    Class names are the `enter` / `exit` / `share` / `update` values passed in
    TSX. Opacity and translate only; no blur, which the Next guide's recipes use
    and the no-depth rule forbids.
@@ -1106,7 +1106,7 @@
 
 /* Hierarchical navigation. Forward (into a category, into a product): the old
    view leaves left, the new arrives from the right. Back (breadcrumbs, logo):
-   mirrored. Owner, D92: 60px, 350ms. */
+   mirrored. Owner, D92b: 60px, 350ms. */
 ::view-transition-old(.nav-forward),
 ::view-transition-old(.nav-back) {
   animation:
@@ -1162,7 +1162,7 @@
 }
 
 /* Same-route result changes (filters, sort, Load more). New cards fade up in a
-   capped stagger — owner, D92: 30ms a card, 150ms total — leaving cards fade,
+   capped stagger — owner, D92b: 30ms a card, 150ms total — leaving cards fade,
    and surviving cards travel to their new slot. */
 ::view-transition-old(.card-out) {
   animation: var(--duration-exit) var(--ease-leave) both vt-fade-out;
@@ -1218,7 +1218,7 @@
   /* The `*` kill above does not reach these: view-transition pseudo-elements
      hang off :root, not off any element `*` matches. Without this block every
      slide, morph and stagger would run at full length for a visitor who asked
-     for none. D92. */
+     for none. D92b. */
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {

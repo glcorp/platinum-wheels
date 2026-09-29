@@ -33,7 +33,7 @@ Where the spec asks for an element the artboards do not contain, neither settles
 | The display scale ramp (`--scale-hero/h2/h3`) | DESIGN.md §3; ramp membership measured from the exports' `calc()` bindings |
 | Layout, grid, splits, section rhythm, component measurements | Artboards, measured; DESIGN.md §5 where the artboards are silent |
 | Breakpoint crossovers | **DESIGN.md §8 only** — the exports contain zero `@media` rules (see §5) |
-| Motion | Both agree: instant hover fill, card `border-color`+`transform` 150ms `cubic-bezier(.2,0,0,1)`. **Amended 2026-09-29 by owner ruling D92:** hover fills ease over 120ms, and route, reveal and result-change motion is added under the "Expressive" thesis; the card hover is unchanged. Tokens in `globals.css`, inventory in `design/reports/motion.md`, deviations #75–#78 |
+| Motion | Both agree: instant hover fill, card `border-color`+`transform` 150ms `cubic-bezier(.2,0,0,1)`. **Amended 2026-09-29 by owner ruling D92b:** hover fills ease over 120ms, and route, reveal and result-change motion is added under the "Expressive" thesis; the card hover is unchanged. Tokens in `globals.css`, inventory in `design/reports/motion.md`, deviations #75–#78 |
 | Copy | Artboards, verbatim |
 | Focus / active / disabled | DESIGN.md §4 — the exports contain no such rule |
 | Composition (flush-left, no shadows, no gradients but scrims, radius ≤4px, prices never accent) | DESIGN.md §2/§6/§7 |

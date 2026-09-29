@@ -20,7 +20,7 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   `accent`/`compact`, D40, visible `sm:`), a 44×44 circular mobile call button (which carries
   `hover:bg-accent-hover` since **D66** — it was `bg-accent` in every state, the only accent CTA in the
   build with no hover fill, and `--accent-hover` is the token `Button` `primary` already uses), and the
-  `SiteNavDrawer` trigger (`md:hidden`). **D92:** the `<header>` carries `viewTransitionName:
+  `SiteNavDrawer` trigger (`md:hidden`). **D92b:** the `<header>` carries `viewTransitionName:
   "site-header"`, so route transitions pin it instead of sliding it; inactive nav items carry the
   `nav-rule` hover (DEVIATIONS #76); the active item paints its lime underline as a `nav-indicator` span
   inside `<ViewTransition name="nav-indicator">` so it travels on a category change; the three nav links
@@ -70,16 +70,16 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   numbering is gone; before either pass, a 420px measure sat against the left edge of a 1344px
   container.
 - [`page-transition.tsx`](page-transition.tsx) — Server Component, `PageTransition({ children })`: the
-  page-level `<ViewTransition>` (**D92**). Typed links (`nav-forward`, `nav-back`) slide; untyped
+  page-level `<ViewTransition>` (**D92b**). Typed links (`nav-forward`, `nav-back`) slide; untyped
   navigation and the `loading.tsx` → content handover crossfade (`route-in` / `route-out`);
   `default="none"` so same-route changes never animate the whole page. Every page shell wraps `<main>`
   **and** the footer in it — never the header, which is pinned by its own name — and it lives in pages,
   not a layout, because a layout persists and never enters or exits.
-- [`scroll-reveal.tsx`](scroll-reveal.tsx) — `"use client"` leaf island rendering `null` (**D92**). Arms
+- [`scroll-reveal.tsx`](scroll-reveal.tsx) — `"use client"` leaf island rendering `null` (**D92b**). Arms
   only `[data-reveal]` elements that are below the fold at mount (`data-reveal="pending"`), reveals each
   once via IntersectionObserver. Never arms under reduced motion or without IntersectionObserver, and
   its cleanup un-hides anything still pending. Rendered by `/` only.
-- [`hash-scroll.tsx`](hash-scroll.tsx) — `"use client"` leaf island (D80). **D92:** a cold landing on a
+- [`hash-scroll.tsx`](hash-scroll.tsx) — `"use client"` leaf island (D80). **D92b:** a cold landing on a
   fragment stays instant; a `hashchange` scrolls smoothly unless reduced motion is on.
 - [`route-error.tsx`](route-error.tsx) — `"use client"`. `RouteError({ error, retry })`, the storefront's
   route error boundary (**D62**), plus `RouteErrorPanel({ digest?, retry?, as? })`, its contents without
@@ -117,7 +117,7 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 - **Links point at planned routes** — D26. `/results`, `/products/<slug>` and the stub routes are
   linkable before they exist; every `href` in the exports is `"#"` (`design/inventory/home.md:731`).
 - **Header and footer stay Server Components.** Only leaf islands take `"use client"` (the drawer, and
-  since D80/D92 `hash-scroll` and `scroll-reveal`, which render nothing)
+  since D80/D92b `hash-scroll` and `scroll-reveal`, which render nothing)
   (`docs/decisions.md:73`). The drawer is the four nav links plus the phone CTA, full-screen, Esc
   closes, focus trapped, sized in `dvh` (D31); nothing else about it is drawn or specified.
 - **The written pages state no fact that is not already in the repo.** Everything on `/about`,
@@ -138,7 +138,7 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 |---|---|---|---|---|
 | — | — | None folder-scoped. | Every ruling that shapes this folder is global. | — |
 
-**D92** (motion) governs `page-transition.tsx`, `scroll-reveal.tsx`, the header's pinned name and
+**D92b** (motion) governs `page-transition.tsx`, `scroll-reveal.tsx`, the header's pinned name and
 indicator, and the press states on every link here (`active:opacity-70` for text links,
 `active:translate-y-px` for boxed controls).
 

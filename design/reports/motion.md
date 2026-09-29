@@ -1,11 +1,11 @@
-# Motion — inventory and measurements (D92)
+# Motion — inventory and measurements (D92b)
 
 **Owner instruction, 2026-09-29, verbatim:** *"it feels a bit choppy there are no hover animations or the
 loading is very abrupt … UI is good but It doesn't feel like very clean and smooth."*
 
 **Ruling:** the owner chose the **Expressive** thesis (one `AskUserQuestion`, three levels offered) over
-"Quiet continuity" (recommended) and "Transitions only". Recorded as **D92** — D91 was taken the same day
-by the concurrent QA-suite pass. `MOTION_INTENSITY` 3 → 6 (`.claude/rules/ui.md`). Drawn values that
+"Quiet continuity" (recommended) and "Transitions only". Recorded as **D92b** — suffixed because `origin/main`
+already publishes D89–D104 (root `llm.md` §5b note); D91b is the concurrent QA-suite pass. `MOTION_INTENSITY` 3 → 6 (`.claude/rules/ui.md`). Drawn values that
 change: `design/DEVIATIONS.md` #75–#78.
 
 **Thesis.** Motion explains, it does not decorate. Hover and press acknowledge; route changes say *where

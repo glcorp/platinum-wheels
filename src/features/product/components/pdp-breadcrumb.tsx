@@ -53,7 +53,7 @@ export function PdpBreadcrumb({ view, className }: PdpBreadcrumbProps) {
             utility changes no measured property — no padding, no height, no
             layout shift — so every parity row above is unchanged.
 
-            D92: both crumbs go up the hierarchy, so both carry `nav-back` and
+            D92b: both crumbs go up the hierarchy, so both carry `nav-back` and
             the page slides back the way it came; `active:opacity-70` is the
             text-link press. The results crumb also carries `product-back`,
             the type the card's type-keyed `share` answers to, and is

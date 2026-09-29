@@ -28,7 +28,7 @@ renders empty until the pipeline is re-run.
 - webp only, quality 82 / effort 6 (`scripts/prepare-assets.mjs:38`).
 - The pipeline **refuses to upscale**: `Math.min(scale, 1)` caps it and it prints a per-file warning
   instead of shipping a blurry cut-out (`scripts/prepare-assets.mjs:69-79`; **D19**). Vendor catalogue images,
-  when they arrive, are upscaled by the feasibility study instead (**D90**).
+  when they arrive, are upscaled by the feasibility study instead (**D90b**).
 - Product filenames are the product `slug` (`src/features/catalog/types.ts:40`). Renaming one renames
   a route under `/products/[slug]`.
 - Any new photo is looked at and measured before use, not trusted from its caption

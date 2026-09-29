@@ -13,7 +13,7 @@
    chain (root llm.md §4, "artboards win on any number") the measured value
    governs; see the deviation noted in the build report.
 
-   Motion (D92). The header is per page (D38) but must read as one object
+   Motion (D92b). The header is per page (D38) but must read as one object
    across a navigation, so both variants carry `view-transition-name:
    site-header`, which globals.css pins: never slid, never faded, drawn above
    the content that moves beneath it. The active nav underline is its own
@@ -57,7 +57,7 @@ export function SiteHeader({
 
   return (
     <header
-      /* D92: pinned through every route transition — see the file header and
+      /* D92b: pinned through every route transition — see the file header and
          `::view-transition-group(site-header)` in globals.css. An inline
          style because Tailwind has no utility for the property and an
          arbitrary value is banned (.claude/rules/ui.md "Tokens only"). */
@@ -82,9 +82,9 @@ export function SiteHeader({
         {/* Logo — 512x507 intrinsic (public/images/logo/platinum-wheels-logo-transparent.webp).
             52px mobile → 64px desktop: h-13 (52px, home-mobile.html:79) →
             sm:h-16 (64px, home-desktop.html:97/results-desktop.html:88). No
-            wordmark (D7). `nav-back` (D92): home is the top of the
+            wordmark (D7). `nav-back` (D92b): home is the top of the
             hierarchy, so leaving for it slides the page the way a breadcrumb
-            does. `active:opacity-70` is the text-link press (D92). */}
+            does. `active:opacity-70` is the text-link press (D92b). */}
         <Link
           href={ROUTES.home}
           transitionTypes={["nav-back"]}
@@ -118,9 +118,9 @@ export function SiteHeader({
                    emission verification in the build report. Hover is the global
                    `a:hover` → --text-muted, implemented here as hover:text-ink-muted
                    on inactive links only; the base layer eases it over
-                   `--duration-feedback` since D92 (DEVIATIONS #75).
+                   `--duration-feedback` since D92b (DEVIATIONS #75).
 
-                   D92 (DEVIATIONS #76): inactive links add `nav-rule`, a 2px
+                   D92b (DEVIATIONS #76): inactive links add `nav-rule`, a 2px
                    `--border-strong` rule that draws in from the left on hover
                    in the slot the active underline occupies. The active link's
                    drawn `border-accent border-b-2` becomes `border-b-2
@@ -194,7 +194,7 @@ export function SiteHeader({
               (instant)" token (globals.css:43) and is exactly what the primary
               Button uses (button.tsx:131). Tailwind v4 compiles `hover:` to
               `@media (hover: hover)` itself (D17), so no hand-rolled query.
-              Since D92 the fill eases over `--duration-feedback` (base layer,
+              Since D92b the fill eases over `--duration-feedback` (base layer,
               DEVIATIONS #75) and a press sinks it 1px, the boxed-control press
               `Button` uses. */}
           <a

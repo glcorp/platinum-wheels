@@ -27,7 +27,7 @@ import { SiteHeader } from "@/components/site/site-header";
    arriving rather than as a separate effect. Nothing inside the skeleton
    moves, ever.
 
-   **D92 moves the skeleton as a whole, never inside it.** It rides the same
+   **D92b moves the skeleton as a whole, never inside it.** It rides the same
    `PageTransition` as every page: a typed link slides it in with the page it
    stands in for, and when the content streams in the skeleton fades out
    (`route-out`) while the page fades up (`route-in`), so the handover is a

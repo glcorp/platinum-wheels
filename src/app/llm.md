@@ -10,11 +10,11 @@ entire site loses its type or its palette at once.
 ## Owns
 - [`globals.css`](globals.css) (~1,230 ln) — the token system. See Rules. Cite it by utility or token
   **name**, not line: every insertion shifts the numbers (`HANDOFF.md` §8.21), and several `:NNN` citations
-  below predate the D92 motion block and are approximate.
+  below predate the D92b motion block and are approximate.
 - [`layout.tsx`](layout.tsx) (30 ln) — root layout. Metadata `title.default` + `template: "%s · Platinum
   Wheels"` and the site description (`:5-12`); `viewport` `themeColor: "#0B0B0D"`, `colorScheme: "dark"`
   (`:14-17`); font variables + `h-full antialiased` on `<html>` (`:21-24`); `<body>` carries
-  `bg-bg text-ink-muted flex min-h-full flex-col font-sans` (`:25`). **D92:** the first child of `<body>`
+  `bg-bg text-ink-muted flex min-h-full flex-col font-sans` (`:25`). **D92b:** the first child of `<body>`
   is a `next/script` `beforeInteractive` inline bootstrap (`MOTION_BOOT`) that marks images
   `data-loaded` for the lazy-image fade-in and registers the passive `touchstart` listener iOS Safari
   needs before it applies `:active`. Not a client component; no hydration.
@@ -68,7 +68,7 @@ entire site loses its type or its palette at once.
   artboards sit on a 2px grid reachable from Tailwind's 4px step (`:254-257`).
 - `@layer base` (`:696`) sets the body ground/ink and the accent `:focus-visible` ring at offset 0
   (**D16**), plus a `prefers-reduced-motion` block (the file's last rule).
-- **Motion is a system here, not per call site — D92.** Tokens in `@theme`: `--ease-card` (the
+- **Motion is a system here, not per call site — D92b.** Tokens in `@theme`: `--ease-card` (the
   artboards' card curve), `--ease-arrive`, `--ease-leave`, `--duration-feedback` 120 / `-state` 200 /
   `-exit` 150 / `-handoff` 100 / `-overlay` 280 / `-route` 350 / `-reveal` 300, `--stagger-step` 30,
   `--motion-slide` 60px / `-rise` 12px / `-nudge` 6px. One `@layer base` rule eases colour, fill,
