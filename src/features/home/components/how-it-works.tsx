@@ -90,6 +90,10 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
+      /* Below-the-fold reveal (D92): the reveal island arms it only if it
+         starts below the viewport; without JS or with reduced motion it is
+         never hidden. */
+      data-reveal=""
       /* `scroll-mt-*`: `ROUTES.howItWorks` points the nav at this anchor, and
          `scroll-margin-top` was set nowhere in the build, so following the link
          landed the section flush at y=0 with no breathing room. D66. */

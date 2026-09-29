@@ -126,6 +126,21 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 
 ## §5. Verification state
 
+**D92 motion pass (2026-09-29), measured in a production build, not claimed** — full samples in
+`design/reports/motion.md`:
+- Route slides, the card → PDP photo morph (exactly one photo per trip), the travelling nav underline,
+  staggered result changes, the scroll reveal, the image fade and the sheet exit were each sampled frame
+  by frame. Reduced motion checked in headless Chromium: every view-transition animation reports 0ms,
+  nothing is held pending, transitions are 0.01ms.
+- **No rest-state drift:** a full-DOM computed-style and box diff against the pre-motion build on nine
+  routes at 390 and 1440 found zero geometry change (only the active nav link's border colour, now
+  painted by a span, and `position: relative` on the nav links).
+- No overflow on 10 routes × 375/768/1280/1440; Lighthouse CLS 0 and a11y 100 on `/`, `/results`, the PDP.
+- **`"use client"`: 11 files** (D92 added `scroll-reveal.tsx`), still exactly one under `src/app/`.
+- **How to measure motion here:** the browser pane skips view transitions and stops frames whenever it is
+  hidden (§8.23 again), so live samples ran in headless Playwright Chromium against a production build.
+  Build that in a scratch copy (APFS-cloned `node_modules`) when another session is serving `.next`.
+
 Everything below was measured, not asserted. Re-verified after D57 and again after **D58** (2026-09-21).
 
 **D58 verification, measured in the browser, not claimed:**
@@ -190,6 +205,10 @@ Everything below was measured, not asserted. Re-verified after D57 and again aft
 ---
 
 ## §6. Next steps, in order
+
+0. ~~**Motion pass.**~~ **Done 2026-09-29 (D92).** Open follow-ups in root `llm.md` §7.24: browser
+   Back/Forward animate nothing, Safari/Firefox unmeasured, the prefetch cost the morph needs. Do not
+   re-litigate the thesis; the owner chose "Expressive" over two quieter levels.
 
 **Scope is UI only (D54).** Three items are **parked, not owed** — see §7. Do not reopen one as a blocker
 and do not quietly implement it. A page is done when the `docs/decisions.md` §9 gates are green *except* a

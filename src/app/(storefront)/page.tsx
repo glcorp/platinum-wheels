@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { PageTransition } from "@/components/site/page-transition";
+import { ScrollReveal } from "@/components/site/scroll-reveal";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
@@ -24,6 +26,12 @@ import { WinterPromo } from "@/features/home/components/winter-promo";
    absolutely positioned over the photo (home.md:28, "not sticky"), so the
    `<header>` landmark stays before `<main>` in the DOM and the hero is just
    the first block.
+
+   D92 motion: `<main>` and the footer ride one `PageTransition` (the header is
+   pinned by its own `site-header` name and stays outside it), and
+   `ScrollReveal` arms the below-the-fold sections that carry `data-reveal` —
+   never the hero or the finder, and nothing at all without JS or with reduced
+   motion.
    --------------------------------------------------------------------------- */
 
 export const metadata: Metadata = {
@@ -36,19 +44,22 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader variant="over-hero" active="tires" />
-      <main id="main" tabIndex={-1} className="flex-1">
-        <Hero />
-        <VehicleFinder />
-        <CategoryTiles />
-        <WinterPromo />
-        <HowItWorks />
-        <FeaturedTires />
-        <BrandStrip />
-        <Contact />
-      </main>
-      <div className="mt-14 sm:mt-20 md:mt-0">
-        <SiteFooter />
-      </div>
+      <PageTransition>
+        <main id="main" tabIndex={-1} className="flex-1">
+          <Hero />
+          <VehicleFinder />
+          <CategoryTiles />
+          <WinterPromo />
+          <HowItWorks />
+          <FeaturedTires />
+          <BrandStrip />
+          <Contact />
+        </main>
+        <div className="mt-14 sm:mt-20 md:mt-0">
+          <SiteFooter />
+        </div>
+      </PageTransition>
+      <ScrollReveal />
     </>
   );
 }

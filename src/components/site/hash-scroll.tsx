@@ -26,8 +26,20 @@
    a bounded window so a fragment that never resolves cannot spin. It also
    handles `hashchange`, which covers the header's own `/#contact` link.
 
-   Deliberately no smooth scroll: `prefers-reduced-motion` aside, a fragment
-   landing should be instant, and MOTION_INTENSITY is 3.
+   A cold landing stays instant: the browser itself jumps to a fragment on
+   arrival, and a 4000px smooth scroll before the reader can start reading
+   would only delay them.
+
+   D92 (owner ruling "Expressive", 2026-09-29) changes one path: a
+   `hashchange` — a same-page click such as the header's `Contact` while
+   already on `/` — scrolls smoothly, so the reader sees the page travel to
+   the section rather than cut to it. Under `prefers-reduced-motion: reduce`
+   it is `"instant"`. A same-page click through `next/link` never fires
+   `hashchange` (the router uses `pushState` and scrolls to the fragment
+   itself), so that path is carried by `scroll-behavior: smooth` on `<html>`
+   plus `data-scroll-behavior="smooth"`, which tells Next 16 to keep route
+   changes instant (`layout.tsx`, `globals.css`) — measured, 0 → 4044 in one
+   frame before that pair existed.
    --------------------------------------------------------------------------- */
 
 import { useEffect } from "react";
@@ -40,7 +52,9 @@ export function HashScroll() {
     let frame = 0;
     let cancelled = false;
 
-    function settle() {
+    /** `smooth` only for a same-page `hashchange` (D92); a cold load passes
+     *  nothing and lands instantly. */
+    function settle(smooth = false) {
       const hash = window.location.hash;
       if (hash.length <= 1) return;
 
@@ -59,7 +73,15 @@ export function HashScroll() {
         const target = matches.item(matches.length - 1);
 
         if (target instanceof HTMLElement && target.offsetParent !== null) {
-          target.scrollIntoView();
+          const behavior: ScrollBehavior =
+            smooth &&
+            !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "smooth"
+              : /* `instant`, not `auto`: `<html>` is `scroll-behavior:smooth`
+                   since D92, and `auto` defers to that — the cold landing
+                   would glide 4000px after all. */
+                "instant";
+          target.scrollIntoView({ behavior });
           return;
         }
         if (performance.now() - started < WINDOW_MS) {
@@ -75,12 +97,17 @@ export function HashScroll() {
       frame = 0;
     }
 
+    /* A named handler so the listener can pass the flag and still be
+       removed; `settle` itself must not receive the `HashChangeEvent` as its
+       argument. */
+    const onHashChange = () => settle(true);
+
     settle();
-    window.addEventListener("hashchange", settle);
+    window.addEventListener("hashchange", onHashChange);
     return () => {
       cancelled = true;
       cancel();
-      window.removeEventListener("hashchange", settle);
+      window.removeEventListener("hashchange", onHashChange);
     };
   }, []);
 

@@ -43,15 +43,31 @@ import { ROUTES } from "@/lib/routes";
    photo now, where a focal point would genuinely crop the subject. The class
    is unchanged; only the justification moved. See the Tires tile below.
 
-   Server Component. No hover: D35(2) — the artboard's global `a:hover`
-   colour shift to `--text-muted` is suppressed for category tiles; no tile
-   carries an `xN` class on either artboard (home.md:187), so nothing is
-   drawn here.
+   Server Component. No hover is DRAWN: D35(2) — the artboard's global
+   `a:hover` colour shift to `--text-muted` is suppressed for category tiles
+   (tile text stays `--on-photo`); no tile carries an `xN` class on either
+   artboard (home.md:187).
+
+   D92 (owner, "Expressive", 2026-09-29) gives the tiles the product card's
+   hover language — `transition-card ease-card duration-150
+   hover:-translate-y-0.5 hover:border-accent-hover`, the one hover the
+   artboards do draw, on the card (results-desktop.html:48) — so everything
+   on the site that is a big photo link lifts the same way. New hover on a
+   drawn element: DEVIATIONS #77. Resting border, size and colour unchanged.
+   `hover:` compiles to `@media (hover: hover)` (D17), so a tap never leaves
+   a tile lifted. `overflow-hidden` clips the photo inside the tile, not the
+   tile's own translate. The tiles lead into a category route, down the
+   hierarchy, so each is `nav-forward` and fully prefetched so the results
+   page is ready in the same commit as the slide. The section carries
+   `data-reveal` — it is below the hero, so the reveal island arms it.
    --------------------------------------------------------------------------- */
 
 export function CategoryTiles() {
   return (
-    <section className="pt-14 px-4 sm:pt-20 sm:px-8 md:pt-30 md:px-12">
+    <section
+      data-reveal=""
+      className="pt-14 px-4 sm:pt-20 sm:px-8 md:pt-30 md:px-12"
+    >
       <div className="flex flex-col gap-5 md:gap-10 lg:mx-auto lg:max-w-content">
         {/* Header as drawn, not SectionHeading: on desktop the eyebrow sits
             LEFT and the h2 RIGHT on one `align-items:flex-end;
@@ -80,7 +96,9 @@ export function CategoryTiles() {
           <Link
             href={ROUTES.tires}
             data-probe="tile-tires"
-            className="relative block h-75 overflow-hidden border border-border text-on-photo md:h-auto md:row-span-2"
+            transitionTypes={["nav-forward"]}
+            prefetch={true}
+            className="relative block h-75 overflow-hidden border border-border text-on-photo md:h-auto md:row-span-2 transition-card ease-card duration-150 hover:-translate-y-0.5 hover:border-accent-hover"
           >
             {/* `tires-tile.webp`, NOT the `zeta-antarctica-sport` cut-out the
                 artboards draw here — owner ruling, 2026-09-21 (D63,
@@ -119,7 +137,9 @@ export function CategoryTiles() {
           <Link
             href={ROUTES.wheels}
             data-probe="tile-wheels"
-            className="relative block h-50 overflow-hidden border border-border text-on-photo md:h-auto"
+            transitionTypes={["nav-forward"]}
+            prefetch={true}
+            className="relative block h-50 overflow-hidden border border-border text-on-photo md:h-auto transition-card ease-card duration-150 hover:-translate-y-0.5 hover:border-accent-hover"
           >
             {/* `wheels-tile.webp`, not the `spec1-sp51` cut-out — same ruling
                 as the Tires tile above (D63, DEVIATIONS #57). All three tiles
@@ -148,7 +168,9 @@ export function CategoryTiles() {
           <Link
             href={ROUTES.accessories}
             data-probe="tile-accessories"
-            className="relative block h-50 overflow-hidden border border-border text-on-photo md:h-auto"
+            transitionTypes={["nav-forward"]}
+            prefetch={true}
+            className="relative block h-50 overflow-hidden border border-border text-on-photo md:h-auto transition-card ease-card duration-150 hover:-translate-y-0.5 hover:border-accent-hover"
           >
             <Image
               src="/images/photos/accessories.webp"

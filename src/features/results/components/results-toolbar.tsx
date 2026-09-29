@@ -140,8 +140,15 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
               className="label text-ink-dim text-11 tracking-10 md:text-12"
             >
               {/* The exports' global `a:hover{color:var(--text-muted)}` is the
-                  only hover this link has (`results.md` "Global base rules"). */}
-              <Link href={ROUTES.home} className="tap-extend-lg hover:text-ink-muted">
+                  only hover this link has (`results.md` "Global base rules").
+                  D92: `nav-back` because Home is up the hierarchy from a
+                  results page, so the page slides the way it came;
+                  `active:opacity-70` is the text-link press. */}
+              <Link
+                href={ROUTES.home}
+                transitionTypes={["nav-back"]}
+                className="tap-extend-lg hover:text-ink-muted active:opacity-70"
+              >
                 Home
               </Link>{" "}
               {/* `margin:0 6px` — results-desktop.html:112. */}
@@ -162,8 +169,11 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
                  M row 2: `display:flex;align-items:center;
                  justify-content:space-between;gap:12px` (results-mobile.html:95).
                  D: the chip and the link sit in the 20px left-cluster rhythm
-                 (results-desktop.html:111, chip :113, link :114). */
-              className="flex list-none items-center justify-between gap-3 md:min-h-11 md:justify-start md:gap-5 [&::-webkit-details-marker]:hidden"
+                 (results-desktop.html:111, chip :113, link :114).
+                 `active:opacity-70`: the whole summary row is the toggle
+                 (consequence 1 in the header), so the whole row takes the
+                 D92 text-link press. */
+              className="flex list-none items-center justify-between gap-3 active:opacity-70 md:min-h-11 md:justify-start md:gap-5 [&::-webkit-details-marker]:hidden"
             >
               {vehicleLabel === null ? null : (
                 /* Vehicle chip — `height:44px` M / `40px` D, `padding:0 14px`,

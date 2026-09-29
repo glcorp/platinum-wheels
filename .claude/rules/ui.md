@@ -8,7 +8,7 @@ paths: src/**/*.tsx
 
 ```
 DESIGN_VARIANCE: 7   # asymmetric 60/40 splits that flip between sections, not centred-everything
-MOTION_INTENSITY: 3  # hover fills + 2px card lift, ≤150ms; no scroll, parallax or magnetic effects
+MOTION_INTENSITY: 6  # D92 "Expressive": eased hover + press, route slides/crossfades, card→PDP morph, grid stagger ≤150ms, below-fold reveal once; no parallax, no magnetic, no page-load choreography
 VISUAL_DENSITY: 5    # storefront pages; the results grid may go to 6
 ```
 

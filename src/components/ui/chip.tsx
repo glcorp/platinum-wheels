@@ -50,7 +50,12 @@ export const chipBox =
 const chipFocus =
   "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0";
 
-const chipBase = `${chipBox} ${chipFocus} sm:h-10`;
+/* `active:translate-y-px` is the boxed-control press (D92), the same 1px sink
+   every filled or bordered `Button` takes. It is kept out of `chipBox` so that
+   export stays "box only"; `ChipCheckbox` adds it beside its own classes. */
+const chipPress = "active:translate-y-px";
+
+const chipBase = `${chipBox} ${chipFocus} ${chipPress} sm:h-10`;
 
 /* State table — results.md §2.4 (desktop rail) and §4.4 (mobile sheet), which
    declare the rest and selected states identically:
@@ -68,8 +73,11 @@ const chipBase = `${chipBox} ${chipFocus} sm:h-10`;
    `@media (hover: hover) { &:hover }` (verified in tailwindcss@4.3.3), the
    project's ratified touch guard (DEVIATIONS #10).
 
-   No transition: chips are controls, and controls in this system swap
-   instantly (globals.css, "Buttons declare no transition at all"). */
+   No `transition-*` class, but the swap is no longer instant: since D92 the
+   globals.css base layer eases colour, fill and border on every `button` and
+   `label` over `--duration-feedback` (120ms), so the rest → hover and
+   rest → selected colours above are reached in 120ms rather than one frame.
+   The drawn colours are unchanged. DEVIATIONS #75. */
 export const chipRestClass =
   "border-border-strong bg-transparent text-ink-muted hover:border-ink-dim hover:text-ink";
 
@@ -218,6 +226,7 @@ export function ChipCheckbox({
         chipBox,
         size === "auto" && "sm:h-10",
         "relative cursor-pointer",
+        chipPress,
         chipRestClass,
         /* The `has-checked:` spelling of `chipSelectedClass`. */
         "has-checked:border-ink has-checked:bg-ink has-checked:text-on-accent",

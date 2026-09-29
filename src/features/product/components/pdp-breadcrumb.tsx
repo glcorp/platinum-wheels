@@ -51,9 +51,27 @@ export function PdpBreadcrumb({ view, className }: PdpBreadcrumbProps) {
             covers the card's 22px product-name link (that box alone already
             reaches 46.1px with the smaller band). Like `tap-extend`, the
             utility changes no measured property — no padding, no height, no
-            layout shift — so every parity row above is unchanged. */}
+            layout shift — so every parity row above is unchanged.
+
+            D92: both crumbs go up the hierarchy, so both carry `nav-back` and
+            the page slides back the way it came; `active:opacity-70` is the
+            text-link press. The results crumb also carries `product-back`,
+            the type the card's type-keyed `share` answers to, and is
+            `prefetch={true}`: the
+            reverse morph — gallery photo back into its card — only forms if
+            the results page renders in the same commit as the navigation
+            rather than suspending into `loading.tsx`
+            (`vercel-react-view-transitions` nextjs.md "When Content Must Be
+            Ready"). Home has no card to morph into, so it keeps the default
+            prefetch. This breadcrumb is instantiated once and placed twice
+            (mobile + desktop copies, `page.tsx`); neither copy holds a named
+            VT, so the duplicate is harmless. */}
         <li className="inline">
-          <Link href={ROUTES.home} className="tap-extend-lg hover:text-ink-muted">
+          <Link
+            href={ROUTES.home}
+            transitionTypes={["nav-back"]}
+            className="tap-extend-lg hover:text-ink-muted active:opacity-70"
+          >
             Home
           </Link>
         </li>
@@ -63,7 +81,12 @@ export function PdpBreadcrumb({ view, className }: PdpBreadcrumbProps) {
           <span className="sm:mx-1.5"> / </span>
         </li>
         <li className="inline">
-          <Link href={view.backHref} className="tap-extend-lg hover:text-ink-muted">
+          <Link
+            href={view.backHref}
+            transitionTypes={["nav-back", "product-back"]}
+            prefetch={true}
+            className="tap-extend-lg hover:text-ink-muted active:opacity-70"
+          >
             {view.config.crumb}
           </Link>
         </li>

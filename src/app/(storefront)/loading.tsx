@@ -1,3 +1,4 @@
+import { PageTransition } from "@/components/site/page-transition";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 
@@ -23,8 +24,14 @@ import { SiteHeader } from "@/components/site/site-header";
    — hover fills and a 2px card lift, nothing ambient — and a shimmer would be
    the only perpetually-moving thing in the build. Flat `--surface` blocks on
    `--border` are the card's own rest colours, so this reads as the grid
-   arriving rather than as a separate effect. Nothing here needs
-   `prefers-reduced-motion` because nothing moves.
+   arriving rather than as a separate effect. Nothing inside the skeleton
+   moves, ever.
+
+   **D92 moves the skeleton as a whole, never inside it.** It rides the same
+   `PageTransition` as every page: a typed link slides it in with the page it
+   stands in for, and when the content streams in the skeleton fades out
+   (`route-out`) while the page fades up (`route-in`), so the handover is a
+   reveal rather than a hard swap. No shimmer, still.
 
    --- Accessibility ---------------------------------------------------------
    The blocks are `aria-hidden`: they are shapes, not content, and announcing
@@ -54,36 +61,38 @@ export default function Loading() {
   return (
     <>
       <SiteHeader variant="solid" />
-      <div className="flex-1 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30">
-        <div className="lg:mx-auto lg:max-w-content">
-          <p role="status" className="sr-only">
-            Loading
-          </p>
+      <PageTransition>
+        <div className="flex-1 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30">
+          <div className="lg:mx-auto lg:max-w-content">
+            <p role="status" className="sr-only">
+              Loading
+            </p>
 
-          {/* Heading bar: the height of a `text-display-56` line at mobile and
-              `text-display-88` from `sm:`, so the block below it starts where
-              the real grid starts. */}
-          <div aria-hidden="true" className="flex flex-col gap-4">
-            <div className={`${BLOCK} h-14 w-2/3 max-w-measure sm:h-22`} />
-            <div className={`${BLOCK} h-4 w-1/3 max-w-measure`} />
-          </div>
+            {/* Heading bar: the height of a `text-display-56` line at mobile and
+                `text-display-88` from `sm:`, so the block below it starts where
+                the real grid starts. */}
+            <div aria-hidden="true" className="flex flex-col gap-4">
+              <div className={`${BLOCK} h-14 w-2/3 max-w-measure sm:h-22`} />
+              <div className={`${BLOCK} h-4 w-1/3 max-w-measure`} />
+            </div>
 
-          {/* Card grid, same steps as `results-grid`: 1-up, 2-up from `sm:`
-              720, 3-up from `md:` 1100 (D46). Six blocks is the `RESULTS_WINDOW`
-              best-match window. */}
-          <div
-            aria-hidden="true"
-            className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:mt-14 md:grid-cols-3"
-          >
-            {Array.from({ length: 6 }, (_, index) => (
-              <div key={index} className={`${BLOCK} aspect-square`} />
-            ))}
+            {/* Card grid, same steps as `results-grid`: 1-up, 2-up from `sm:`
+                720, 3-up from `md:` 1100 (D46). Six blocks is the `RESULTS_WINDOW`
+                best-match window. */}
+            <div
+              aria-hidden="true"
+              className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:mt-14 md:grid-cols-3"
+            >
+              {Array.from({ length: 6 }, (_, index) => (
+                <div key={index} className={`${BLOCK} aspect-square`} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="mt-14 sm:mt-20 md:mt-30">
-        <SiteFooter />
-      </div>
+        <div className="mt-14 sm:mt-20 md:mt-30">
+          <SiteFooter />
+        </div>
+      </PageTransition>
     </>
   );
 }

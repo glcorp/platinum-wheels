@@ -1,3 +1,5 @@
+import { ViewTransition } from "react";
+
 import { Button } from "@/components/ui/button";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { ProductCard } from "@/features/catalog/components/product-card";
@@ -125,14 +127,37 @@ function CardGrid({
   /** How many leading cards preload their photo instead of lazy-loading it. */
   priorityCount?: number;
 }) {
+  /* D92 — list identity. Every filter, sort and `Load more` change is a
+     navigation (`router.replace` from the islands, a `<Link>` for `Load
+     more`), and every navigation is a React transition, so a keyed
+     `<ViewTransition>` per card is what lets the grid say "same cards, new
+     arrangement": a surviving card travels to its new cell (`card-move`), a
+     dropped one fades (`card-out`), a new one fades up (`card-in-N`). The key
+     moves from `ProductCard` to the VT, and `ProductCard` renders its
+     `<article>` directly, so no wrapper node sits between the grid and the VT
+     — a VT only activates if it precedes the DOM node it wraps.
+
+     Stagger is `index % 6`, capped at step 5: 30ms a card, 150ms at most —
+     the owner's D92 ruling. The modulo is why `Load more`'s three new cards
+     (positions 6–8) still stagger 0 / 30 / 60ms instead of all waiting 150ms.
+
+     `default="none"` keeps a card out of transitions that are not about the
+     list (e.g. a Suspense reveal). The photo inside the card has its own
+     named VT that morphs into the PDP gallery; the outer keyed VT here and
+     that inner named one are the skill's "composing shared elements with
+     list identity" pattern — two concerns, two boundaries. */
   return (
     <div data-probe={probe} className={CARD_GRID}>
       {products.map((product, index) => (
-        <ProductCard
+        <ViewTransition
           key={product.slug}
-          product={product}
-          priority={index < priorityCount}
-        />
+          enter={`card-in-${Math.min(index % 6, 5)}`}
+          exit="card-out"
+          update="card-move"
+          default="none"
+        >
+          <ProductCard product={product} priority={index < priorityCount} />
+        </ViewTransition>
       ))}
     </div>
   );

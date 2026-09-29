@@ -1,3 +1,4 @@
+import { PageTransition } from "@/components/site/page-transition";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
@@ -45,6 +46,14 @@ import type { RawSearchParams } from "@/features/results/types";
    (`results-mobile.html:302`); on desktop the load-more row's own
    `padding-bottom:120px` (`results-desktop.html:498`) does that job, so the
    wrapper adds nothing from `md:`.
+
+   Route motion (D92): `<main>` and the footer wrapper sit directly inside
+   `PageTransition`, the page-level type-keyed `<ViewTransition>` that slides
+   the page on a `nav-forward` / `nav-back` link. No wrapper element between
+   them and it — a VT only animates DOM nodes it directly precedes. The header
+   stays outside: chrome is not part of the slide. The wrapper lives here,
+   not in a layout, because a layout persists across navigations and its
+   enter/exit never fire.
    --------------------------------------------------------------------------- */
 
 export interface ResultsPageProps {
@@ -59,22 +68,24 @@ export function ResultsPage({ category, searchParams }: ResultsPageProps) {
   return (
     <>
       <SiteHeader variant="solid" active={CATEGORY_CONFIG[category].nav} />
-      <main id="main" tabIndex={-1} className="flex-1">
-        <ResultsToolbar view={view} />
-        {/* Mobile sticky filter/sort bar — owns its own `margin-top:16px` and
-            sticky offset (`results.md` §2.3). */}
-        <FilterSortBar view={view} />
-        <div className="md:px-12 md:pt-10">
-          <div className="md:results-grid lg:mx-auto lg:max-w-content">
-            <FilterRail view={view} />
-            <ResultsGrid view={view} />
+      <PageTransition>
+        <main id="main" tabIndex={-1} className="flex-1">
+          <ResultsToolbar view={view} />
+          {/* Mobile sticky filter/sort bar — owns its own `margin-top:16px` and
+              sticky offset (`results.md` §2.3). */}
+          <FilterSortBar view={view} />
+          <div className="md:px-12 md:pt-10">
+            <div className="md:results-grid lg:mx-auto lg:max-w-content">
+              <FilterRail view={view} />
+              <ResultsGrid view={view} />
+            </div>
           </div>
+          <CallCtaPanel />
+        </main>
+        <div className="mt-14 md:mt-0">
+          <SiteFooter />
         </div>
-        <CallCtaPanel />
-      </main>
-      <div className="mt-14 md:mt-0">
-        <SiteFooter />
-      </div>
+      </PageTransition>
     </>
   );
 }

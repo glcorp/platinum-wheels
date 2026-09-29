@@ -86,8 +86,11 @@ export function SiteFooter() {
                   href={link.href}
                   /* text-15 leading-normal text-ink-muted py-1 hover:text-ink —
                      home.md:347-349. tap-extend recovers the 44px tap-target
-                     floor without changing the measured box (DEVIATIONS #16). */
-                  className="tap-extend text-15 leading-normal text-ink-muted hover:text-ink py-1"
+                     floor without changing the measured box (DEVIATIONS #16).
+                     `active:opacity-70` is the text-link press (D92); the
+                     hover colour itself eases over `--duration-feedback` in
+                     the base layer (DEVIATIONS #75). */
+                  className="tap-extend text-15 leading-normal text-ink-muted hover:text-ink py-1 active:opacity-70"
                 >
                   {link.label}
                 </Link>

@@ -88,6 +88,11 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   parity table, zero slop-grep hits, Lighthouse, keyboard walk-through, reduced-motion.
 - Any state authored that no artboard draws is added to the styleguide placeholder section
   (`HANDOFF.md` §6).
+- **Every page shell wraps `<main>` and the footer in `PageTransition` (D92)** — never the header, which
+  is pinned by its own `site-header` name, and never a layout, which persists and so never enters or
+  exits. `loading.tsx` rides the same wrapper, which is what turns the skeleton → content swap into a
+  crossfade; its root structure is otherwise unchanged (the QA pass owns a pending no-JS fix there).
+  `page.tsx` (`/`) renders `ScrollReveal`. `/styleguide` §12 shows the motion tokens and states.
 
 ## Decisions
 | ID | Date | Decision | Why | Authority |

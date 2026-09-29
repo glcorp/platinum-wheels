@@ -114,6 +114,12 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   padding and the 2-up grid (DESIGN.md §8).
 - **The rail's scroll cap is derived from its sticky offset** — `100dvh - 96px` against `md:top-24`
   (`results-desktop.html:121`), never a guessed height, and in `dvh` (`docs/decisions.md` §5). D68.
+- **Result changes animate through list identity (D92).** `CardGrid` wraps each card in
+  `<ViewTransition key={slug} enter={`card-in-${Math.min(index % 6, 5)}`} exit="card-out"
+  update="card-move" default="none">`: leavers fade, survivors travel, arrivals rise 12px 30ms apart
+  (≤150ms). The index modulo is why `Load more`'s new cards (positions 6–8) still stagger. The live-region
+  structure D72 fixed is untouched — the VTs wrap cards only. `results-page.tsx` wraps `<main>` and the
+  footer in `PageTransition`, which stays mounted across same-route changes and so never animates them.
 
 ## Decisions
 | ID | Date | Decision | Why | Authority |

@@ -66,13 +66,16 @@ export function Checkbox({
     <label
       htmlFor={id}
       data-probe={labelProbe}
+      /* `group/check` names this row so the box can answer a press anywhere on
+         it — the copy included — without reacting to an unrelated `group`
+         further up the tree (a facet row sits inside the filter rail). D92. */
       className={join(
         facet
           ? // Row height and gap come from the caller — see CheckboxVariant.
-            "flex cursor-pointer items-center"
+            "group/check flex cursor-pointer items-center"
           : [
               // gap:12px, align-items:flex-start — product-desktop.html:151
-              "flex cursor-pointer items-start gap-3",
+              "group/check flex cursor-pointer items-start gap-3",
               // 44px floor so the tap target clears docs/decisions.md §5. The
               // artboard row has no min-height; the shipped consent copy wraps well
               // past 44px, so this only ever engages for short labels.
@@ -107,6 +110,13 @@ export function Checkbox({
               // `enabled:` keeps it off a disabled control; Tailwind v4's
               // `hover:` is already `@media (hover: hover)` (D17).
               "enabled:hover:border-ink",
+              // Press (D92): while the row is held, the hairline goes to the
+              // same --text it hovers to, so a touch press — which never
+              // fires hover — still shows the control was hit. No translate:
+              // a checkbox is not a boxed button and must not jump in its row.
+              // The border change eases over `--duration-feedback` in the
+              // globals.css base layer (DEVIATIONS #75).
+              "enabled:group-active/check:border-ink",
               // Focus ring: 2px accent, offset 0 (DESIGN.md §4, globals.css)
               "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0",
               // Disabled: --border hairline, the quiet edge from DESIGN.md §4's

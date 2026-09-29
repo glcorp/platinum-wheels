@@ -133,11 +133,16 @@ export function RouteErrorPanel({
       {/* Escape hatch: no header renders on the real error page, so this is
           the only way back. Same treatment as the breadcrumb's `Home` crumb,
           including `tap-extend-lg` — an 11/12px line hit-tests 37px with the
-          smaller band and 45px with this one (D57, audit C4). */}
+          smaller band and 45px with this one (D57, audit C4).
+          `active:opacity-70` is the text-link press (D92); the two `Button`s
+          above carry the boxed press from the primitive itself. No
+          `PageTransition` anywhere in this file: the boundary is a client
+          module that renders no chrome (D62), and it replaces the page rather
+          than navigating to one. */}
       <p className="mt-6">
         <Link
           href={ROUTES.home}
-          className="label text-ink-dim tap-extend-lg text-11 tracking-10 underline underline-offset-4 hover:text-ink-muted sm:text-12"
+          className="label text-ink-dim tap-extend-lg text-11 tracking-10 underline underline-offset-4 hover:text-ink-muted active:opacity-70 sm:text-12"
         >
           Home
         </Link>

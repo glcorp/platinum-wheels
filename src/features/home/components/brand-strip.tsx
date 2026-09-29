@@ -17,6 +17,10 @@
    here carry `letter-spacing:.02em` (+2%), not `display`'s -0.015em, and
    `line-height:1` at every width — composed explicitly instead
    (`design/inventory/home.md:70` desktop/mobile deltas).
+
+   `data-reveal` on the band's root marks it for the below-the-fold reveal
+   (D92): armed only if it starts below the viewport, never hidden without JS
+   or with reduced motion. No links here, so no press or transition type.
    --------------------------------------------------------------------------- */
 
 import { BRANDS } from "@/lib/site";
@@ -26,6 +30,7 @@ export function BrandStrip() {
     <ul
       aria-label="Brands"
       data-probe="brands"
+      data-reveal=""
       className="border-border bg-surface-2 mt-14 flex items-center gap-7 overflow-hidden border-y px-4 py-5 sm:mt-20 sm:grid sm:grid-cols-8 sm:items-center sm:gap-0 sm:overflow-visible sm:px-8 sm:py-10 md:mt-30 md:px-12"
     >
       {BRANDS.map((brand) => (

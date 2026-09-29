@@ -95,6 +95,13 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
 - **Sample form data does not ship** (`Priya Sandhu` etc., `design/DEVIATIONS.md` "Sample data") — fields render empty, real placeholders only.
 - Server Components by default; one `"use client"` leaf (`quote-form.tsx`). Named exports, no barrel.
   Tokens only, no arbitrary values (`.claude/rules/ui.md`).
+- **Motion (D92).** `pdp-gallery.tsx` wraps its image in the `product-photo-<slug>` view transition with
+  `share="morph"` — a plain string, because the gallery is the fixed end of every pair; the card side is
+  type-keyed (`catalog/llm.md`). The breadcrumb's `Results` crumb carries `["nav-back", "product-back"]`
+  and `prefetch={true}` so the reverse morph can form; `Home` carries `["nav-back"]`. `SimilarProducts`
+  renders `morph={false}`, so PDP → PDP slides but does not morph. Quantity cells press
+  (`active:translate-y-px`) and stay untyped `?qty=` links (D50). The error summary, success panel and
+  `Custom quantity` field arrive with `enter-rise`.
 
 ## Decisions
 | ID | Date | Decision | Why | Authority |

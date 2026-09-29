@@ -247,9 +247,31 @@
      The exports contain exactly 30 transition declarations and all 30 are
      byte-identical:
        border-color 150ms cubic-bezier(.2,0,0,1), transform 150ms cubic-bezier(.2,0,0,1)
-     They belong to card hover only. Buttons declare no transition at all —
-     an instant fill swap, exactly as DESIGN.md §4 requires. Do not add one.  */
+     They belong to card hover only, and `--ease-card` is that curve.
+
+     **D92 (owner, 2026-09-29) replaces the "instant fill, never a fade" rule
+     (DESIGN.md §4) with the Expressive motion thesis.** Hover fills now ease
+     over `--duration-feedback`; the drawn colours are unchanged, only the time
+     it takes to reach them. DEVIATIONS #75. Every value below traces to the
+     owner's ruling or to the brief's timing bands (feedback 100–150ms, state
+     150–250ms, overlays/routes 250–400ms) — see design/reports/motion.md.   */
   --ease-card: cubic-bezier(0.2, 0, 0, 1);
+  /* Confident arrival — impeccable animate.md "natural deceleration". Enters,
+     reveals, morphs and slides-in. */
+  --ease-arrive: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Accelerating exit — the leaving view gets out of the way. */
+  --ease-leave: cubic-bezier(0.4, 0, 1, 1);
+  --duration-feedback: 120ms; /* hover fills, press */
+  --duration-state: 200ms; /* disclosures, small enters, card fade-in, image fade */
+  --duration-exit: 150ms; /* anything leaving: exits run faster than entries */
+  --duration-handoff: 100ms; /* how long an entering view waits for the leaving one */
+  --duration-overlay: 280ms; /* sheet, drawer, shared-element morph, card travel */
+  --duration-route: 350ms; /* directional route slide — owner, D92 */
+  --duration-reveal: 300ms; /* below-the-fold scroll reveal — owner, D92 */
+  --stagger-step: 30ms; /* per new card, capped at 5 steps = 150ms — owner, D92 */
+  --motion-slide: 60px; /* route slide distance — owner, D92 */
+  --motion-rise: 12px; /* scroll-reveal and new-card rise — owner, D92 */
+  --motion-nudge: 6px; /* small in-place enters: form panels, route fade */
 
   /* Breakpoints — DESIGN.md §8. Mobile-first: these are min-widths.
      400  single-column product grid → two-up
@@ -648,15 +670,17 @@
   /* The one motion DESIGN.md names by word: §"Motion" says the filter sheet
      arrives "from the bottom", and the build did not move it at all — a
      full-viewport surface appeared with no origin, which on a phone is the
-     most disorienting transition here. 150ms in on the house easing, faster
-     out, per DESIGN.md "decisive and brief" and MOTION_INTENSITY 3. Translate
-     only: compositor-friendly, and it moves nothing in the closed state, so
-     `/results` parity holds by construction. D67. */
+     most disorienting transition here. D67 moved it at 150ms; D92 puts it on
+     the overlay band — `--duration-overlay` in on `--ease-arrive`, and
+     `--duration-exit` out on `--ease-leave` (below), because the exit should
+     get out of the way faster than the entry arrived. Translate only:
+     compositor-friendly, and it moves nothing in the closed state, so
+     `/results` parity holds by construction. */
   translate: 0 0;
   transition:
-    translate 150ms var(--ease-card),
-    display 150ms allow-discrete,
-    overlay 150ms allow-discrete;
+    translate var(--duration-overlay) var(--ease-arrive),
+    display var(--duration-overlay) allow-discrete,
+    overlay var(--duration-overlay) allow-discrete;
 
   @starting-style {
     translate: 0 100%;
@@ -664,27 +688,34 @@
 }
 
 /* The sheet's own exit: `dialog.close()` needs the discrete properties on the
-   dialog too, or the panel is removed before it can travel. */
+   dialog too, or the panel is removed before it can travel.
+   D67 recorded that this exit "snaps". D92 re-measured it in Chromium on all
+   four close paths — the close button, Esc, a scrim click and `Apply` — and
+   every one creates the panel's translate transition and holds the dialog's
+   `display`; seeked, the panel reads 0% → 61% → 88% → 98% → 100%. The snap
+   does not reproduce (design/reports/motion.md). */
 @utility sheet-dialog {
   transition:
-    display 150ms allow-discrete,
-    overlay 150ms allow-discrete;
+    display var(--duration-overlay) allow-discrete,
+    overlay var(--duration-overlay) allow-discrete;
 
   &:not([open]) .sheet-panel {
     translate: 0 100%;
-    transition-duration: 120ms;
+    transition-duration: var(--duration-exit);
+    transition-timing-function: var(--ease-leave);
   }
 
   &::backdrop {
     opacity: 1;
     transition:
-      opacity 150ms var(--ease-card),
-      display 150ms allow-discrete,
-      overlay 150ms allow-discrete;
+      opacity var(--duration-overlay) var(--ease-card),
+      display var(--duration-overlay) allow-discrete,
+      overlay var(--duration-overlay) allow-discrete;
   }
 
   &:not([open])::backdrop {
     opacity: 0;
+    transition-duration: var(--duration-exit);
   }
 
   @starting-style {
@@ -784,6 +815,12 @@
   html {
     /* Hairlines stay 1px and must not scale with DPR (DESIGN.md §8). */
     -webkit-text-size-adjust: 100%;
+    /* D92: same-page fragment links (`/#contact`, `/#how-it-works` from the
+       header while on `/`) glide instead of cutting. `layout.tsx` sets
+       `data-scroll-behavior="smooth"` so Next keeps route changes instant, and
+       the reduced-motion block's `scroll-behavior: auto !important` covers
+       this too. */
+    scroll-behavior: smooth;
   }
 
   body {
@@ -822,12 +859,104 @@
      only, on the open edge: animating height would drive layout, and the
      `interpolate-size` route is Chrome-only. The closed state is untouched, so
      `/results` parity holds by construction. D67. */
-  details[open] > :not(summary) {
-    opacity: 1;
-    transition: opacity 150ms var(--ease-card);
-
-    @starting-style {
+  /* D92 adds the close edge: where `::details-content` exists the panel fades
+     out as well as in, holding its box for the fade via `content-visibility`
+     allow-discrete. Still opacity only. Browsers without it keep D67's
+     open-edge fade and close instantly, as before. */
+  @supports selector(::details-content) {
+    details::details-content {
       opacity: 0;
+      transition:
+        opacity var(--duration-state) var(--ease-card),
+        content-visibility var(--duration-state) allow-discrete;
+    }
+
+    details[open]::details-content {
+      opacity: 1;
+    }
+  }
+
+  @supports not selector(::details-content) {
+    details[open] > :not(summary) {
+      opacity: 1;
+      transition: opacity var(--duration-state) var(--ease-card);
+
+      @starting-style {
+        opacity: 0;
+      }
+    }
+  }
+
+  /* ---- D92 motion: hover and press ease instead of snapping --------------
+     One rule for every interactive element instead of a class at ~60 call
+     sites. It sits in `base`, so any utility that declares its own transition
+     (`transition-card`, `skip-link`, `transition-opacity`) still wins.
+     Colour, fill, border, underline colour and opacity for hover; `translate`
+     and `scale` for press (`active:translate-y-px`). Never `all`, never a
+     layout property. DEVIATIONS #75 records the drawn "instant" it replaces.
+     Hover itself stays gated by Tailwind's `hover:` → `@media (hover:hover)`
+     (D17), so a tap never leaves a fill stuck on. */
+  a,
+  button,
+  summary,
+  label,
+  select,
+  input,
+  textarea,
+  [role="button"] {
+    transition-property:
+      color, background-color, border-color, text-decoration-color, opacity,
+      translate, scale;
+    transition-duration: var(--duration-feedback);
+    transition-timing-function: var(--ease-card);
+  }
+
+  /* Focus stays instant (DESIGN.md §4 "Focus … 0ms"): a ring or border that
+     fades in is a focus indicator that is briefly not there. */
+  :where(input, select, textarea):focus,
+  :where(a, button, summary, [role="button"]):focus-visible {
+    transition-duration: 0s;
+  }
+
+  /* ---- D92 motion: lazy images fade in over their ground -----------------
+     `layout.tsx` runs one inline script before the first `<img>` parses: it
+     sets `data-img-fade` on <html> and marks every image `data-loaded` on its
+     `load` or `error` event. Without the script neither attribute exists, so a
+     no-JS visitor sees every image exactly as before. Only `loading="lazy"`
+     images take part — `next/image`'s default — so an LCP candidate
+     (`loading="eager"`, gotcha §8.6) is never held back. Opacity only: no blur
+     placeholder (no-depth rule). In `base`, so the unavailable card's
+     `opacity-35` still wins once loaded. */
+  img[loading="lazy"] {
+    transition: opacity var(--duration-state) var(--ease-card);
+  }
+
+  html[data-img-fade] img[loading="lazy"]:not([data-loaded]) {
+    opacity: 0;
+  }
+
+  /* ---- D92 motion: below-the-fold scroll reveal (home only) --------------
+     `ScrollReveal` (src/components/site/scroll-reveal.tsx) sets
+     `data-reveal="pending"` only on `[data-reveal]` sections whose top is
+     below the viewport when it mounts, then flips them to `in` as they cross
+     into view. Above-the-fold content is never armed, and without JS or with
+     reduced motion nothing is ever `pending`, so nothing is ever hidden. */
+  [data-reveal] {
+    transition:
+      opacity var(--duration-reveal) var(--ease-arrive),
+      translate var(--duration-reveal) var(--ease-arrive);
+  }
+
+  [data-reveal="pending"] {
+    opacity: 0;
+    translate: 0 var(--motion-rise);
+  }
+
+  /* A printed page has no scroll to reveal on. */
+  @media print {
+    [data-reveal="pending"] {
+      opacity: 1;
+      translate: none;
     }
   }
 
@@ -842,6 +971,240 @@
 
 }
 
+/* ---------------------------------------------------------------------------
+   D92 — small-scale enter and the nav rules
+   --------------------------------------------------------------------------- */
+
+/* A panel that appears in place — the quote error summary, the success panel,
+   the `Custom quantity` field — fades up a few pixels instead of popping.
+   `@starting-style` needs no JS and no keyframes; a no-JS server render
+   simply shows the element. */
+@utility enter-rise {
+  transition:
+    opacity var(--duration-state) var(--ease-arrive),
+    translate var(--duration-state) var(--ease-arrive);
+
+  @starting-style {
+    opacity: 0;
+    translate: 0 var(--motion-nudge);
+  }
+}
+
+/* Inactive primary-nav hover: a 2px `--border-strong` rule draws in from the
+   left, in exactly the slot the active item's 2px `--accent` underline
+   occupies (`border-b-2`, home-desktop.html:102-108), so hover previews where
+   the indicator would land. New hover affordance, DEVIATIONS #76. Scale, not
+   width: compositor-only. */
+@utility nav-rule {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: -2px;
+    height: 2px;
+    background: var(--border-strong);
+    scale: 0 1;
+    transform-origin: left;
+    transition: scale var(--duration-state) var(--ease-arrive);
+    pointer-events: none;
+  }
+
+  @media (hover: hover) {
+    &:hover::after {
+      scale: 1 1;
+    }
+  }
+}
+
+/* The active item's 2px `--accent` underline as its own element, so a
+   `<ViewTransition name="nav-indicator">` can carry it from one item to the
+   next on a category change. Same box as the `border-b-2` it replaces: the
+   link keeps `border-b-2 border-transparent`, so its geometry is unchanged
+   (DEVIATIONS #76). */
+@utility nav-indicator {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -2px;
+  height: 2px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+   D92 — view transitions (React `<ViewTransition>`, Next 16.4)
+   Class names are the `enter` / `exit` / `share` / `update` values passed in
+   TSX. Opacity and translate only; no blur, which the Next guide's recipes use
+   and the no-depth rule forbids.
+   --------------------------------------------------------------------------- */
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-slide-in {
+  from {
+    translate: var(--vt-from) 0;
+  }
+}
+
+@keyframes vt-slide-out {
+  to {
+    translate: var(--vt-to) 0;
+  }
+}
+
+@keyframes vt-rise {
+  from {
+    translate: 0 var(--vt-rise, var(--motion-rise));
+  }
+}
+
+/* Clicks during a transition reach the live page instead of the overlay. */
+::view-transition {
+  pointer-events: none;
+}
+
+/* Whatever no boundary claims — the toolbar count, the rail, the Load more
+   row on a same-route change — crossfades as the page root, on the house
+   state timing instead of the UA's 250ms ease. */
+::view-transition-group(root) {
+  animation-duration: var(--duration-state);
+  animation-timing-function: var(--ease-card);
+}
+
+/* The header is per page (D38) but reads as one object: pinned, never slid or
+   faded, and drawn above the moving content. */
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+
+::view-transition-old(site-header) {
+  display: none;
+}
+
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+/* The active-nav underline travels between items; above the pinned header. */
+::view-transition-group(nav-indicator) {
+  animation-duration: var(--duration-overlay);
+  animation-timing-function: var(--ease-arrive);
+  z-index: 101;
+}
+
+/* Hierarchical navigation. Forward (into a category, into a product): the old
+   view leaves left, the new arrives from the right. Back (breadcrumbs, logo):
+   mirrored. Owner, D92: 60px, 350ms. */
+::view-transition-old(.nav-forward),
+::view-transition-old(.nav-back) {
+  animation:
+    var(--duration-exit) var(--ease-leave) both vt-fade-out,
+    var(--duration-route) var(--ease-arrive) both vt-slide-out;
+}
+
+::view-transition-new(.nav-forward),
+::view-transition-new(.nav-back) {
+  animation:
+    var(--duration-state) var(--ease-arrive) var(--duration-handoff) both
+      vt-fade-in,
+    var(--duration-route) var(--ease-arrive) both vt-slide-in;
+}
+
+::view-transition-old(.nav-forward) {
+  --vt-to: calc(-1 * var(--motion-slide));
+}
+
+::view-transition-new(.nav-forward) {
+  --vt-from: var(--motion-slide);
+}
+
+::view-transition-old(.nav-back) {
+  --vt-to: var(--motion-slide);
+}
+
+::view-transition-new(.nav-back) {
+  --vt-from: calc(-1 * var(--motion-slide));
+}
+
+/* Untyped navigation — header nav between categories, footer links, browser
+   back — and the loading skeleton handing over to content: a crossfade with a
+   small rise on the arriving view. */
+::view-transition-old(.route-out) {
+  animation: var(--duration-exit) var(--ease-leave) both vt-fade-out;
+}
+
+::view-transition-new(.route-in) {
+  --vt-rise: var(--motion-nudge);
+  animation:
+    var(--duration-state) var(--ease-arrive) var(--duration-handoff) both
+      vt-fade-in,
+    var(--duration-overlay) var(--ease-arrive) var(--duration-handoff) both
+      vt-rise;
+}
+
+/* Card photo → PDP gallery image. The group interpolates box and position;
+   the pair crossfades inside it. */
+::view-transition-group(.morph) {
+  animation-duration: var(--duration-overlay);
+  animation-timing-function: var(--ease-arrive);
+}
+
+/* Same-route result changes (filters, sort, Load more). New cards fade up in a
+   capped stagger — owner, D92: 30ms a card, 150ms total — leaving cards fade,
+   and surviving cards travel to their new slot. */
+::view-transition-old(.card-out) {
+  animation: var(--duration-exit) var(--ease-leave) both vt-fade-out;
+}
+
+::view-transition-new(.card-in-0),
+::view-transition-new(.card-in-1),
+::view-transition-new(.card-in-2),
+::view-transition-new(.card-in-3),
+::view-transition-new(.card-in-4),
+::view-transition-new(.card-in-5) {
+  animation:
+    var(--duration-state) var(--ease-arrive) var(--vt-delay, 0s) both
+      vt-fade-in,
+    var(--duration-overlay) var(--ease-arrive) var(--vt-delay, 0s) both vt-rise;
+}
+
+::view-transition-new(.card-in-1) {
+  --vt-delay: calc(1 * var(--stagger-step));
+}
+
+::view-transition-new(.card-in-2) {
+  --vt-delay: calc(2 * var(--stagger-step));
+}
+
+::view-transition-new(.card-in-3) {
+  --vt-delay: calc(3 * var(--stagger-step));
+}
+
+::view-transition-new(.card-in-4) {
+  --vt-delay: calc(4 * var(--stagger-step));
+}
+
+::view-transition-new(.card-in-5) {
+  --vt-delay: calc(5 * var(--stagger-step));
+}
+
+::view-transition-group(.card-move) {
+  animation-duration: var(--duration-overlay);
+  animation-timing-function: var(--ease-arrive);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -850,5 +1213,23 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* The `*` kill above does not reach these: view-transition pseudo-elements
+     hang off :root, not off any element `*` matches. Without this block every
+     slide, morph and stagger would run at full length for a visitor who asked
+     for none. D92. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+
+  /* Belt and braces: `ScrollReveal` never arms under reduced motion, but if a
+     preference flips mid-session nothing may stay hidden. */
+  [data-reveal="pending"] {
+    opacity: 1;
+    translate: none;
   }
 }

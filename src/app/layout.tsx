@@ -1,7 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import { barlow, barlowCondensed } from "./fonts";
 import "./globals.css";
+import Script from "next/script";
 import { HashScroll } from "@/components/site/hash-scroll";
+
+/* D92 motion bootstrap — runs before the first `<img>` parses, so it needs no
+   hydration and adds no `"use client"`.
+   (1) Image fade-in: sets `data-img-fade` on <html> and marks each image
+   `data-loaded` on its `load` or `error` (capture phase — neither event
+   bubbles). `globals.css` holds a lazy image at opacity 0 until it is marked,
+   then eases it in over its own ground. Without this script neither attribute
+   exists and every image renders exactly as before.
+   (2) Press feedback on iOS: Safari applies `:active` only when a touch
+   listener exists, so every `active:` press state in the build is dead on an
+   iPhone without this one passive no-op. */
+const MOTION_BOOT = `(function(){var d=document;d.documentElement.setAttribute("data-img-fade","");function m(e){var t=e.target;if(t&&t.tagName==="IMG")t.setAttribute("data-loaded","")}d.addEventListener("load",m,true);d.addEventListener("error",m,true);d.addEventListener("touchstart",function(){},{passive:true})})();`;
 
 export const metadata: Metadata = {
   title: {
@@ -21,9 +34,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      /* D92: `<html>` scrolls smoothly (globals.css) so a same-page fragment
+         link glides; this attribute tells Next 16 to switch that off for route
+         navigations, which must land at the top instantly. */
+      data-scroll-behavior="smooth"
       className={`${barlowCondensed.variable} ${barlow.variable} h-full antialiased`}
     >
       <body className="bg-bg text-ink-muted flex min-h-full flex-col font-sans">
+        <Script id="motion-boot" strategy="beforeInteractive">
+          {MOTION_BOOT}
+        </Script>
         {/* Skip link — the first focusable element in the document, and the
             only thing that may precede the header. Without it a keyboard or
             switch user crosses six tab stops of header nav before reaching

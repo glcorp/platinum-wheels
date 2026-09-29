@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ViewTransition } from "react";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -145,9 +146,27 @@ export interface ProductCardProps {
    * `similar-products`, `/styleguide`) keeps the lazy default.
    */
   priority?: boolean;
+  /**
+   * Wraps the photo in the named `<ViewTransition>` that morphs it into the
+   * PDP gallery (D92). Default `true`.
+   *
+   * A view-transition name must be unique on the page: two mounted VTs with
+   * one name break the morph. `/styleguide` passes `false` so a reference page
+   * that renders the same SKU twice never mounts two
+   * `product-photo-<slug>` boundaries. The PDP's `similar-products` row also
+   * passes `false`, so its cards never pair with a results card on a
+   * `product-open` navigation (see the photo link's comment). No storefront
+   * page renders one slug twice (the similar row excludes its own subject,
+   * D52; best and similar partition the results).
+   */
+  morph?: boolean;
 }
 
-export function ProductCard({ product, priority = false }: ProductCardProps) {
+export function ProductCard({
+  product,
+  priority = false,
+  morph = true,
+}: ProductCardProps) {
   const {
     slug,
     brand,
@@ -170,6 +189,28 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         ...badges.filter((badge) => badge !== "winter"),
       ].slice(0, MAX_BADGES)
     : [];
+
+  /* The photo, defined once so the `morph` switch below wraps the same
+     element it would otherwise render bare. */
+  const photo = (
+    <Image
+      src={productImageSrc(product)}
+      alt={`${brand} ${model}`}
+      width={1000}
+      height={1000}
+      sizes={IMAGE_SIZES}
+      /* See `priority` in ProductCardProps for why this is eager +
+         fetchPriority rather than `preload`. Both stay undefined when
+         the prop is false, so the default lazy behaviour is
+         untouched. */
+      loading={priority ? "eager" : undefined}
+      fetchPriority={priority ? "high" : undefined}
+      className={cx(
+        "photo-inset-card block h-full w-full object-contain",
+        !available && "opacity-35",
+      )}
+    />
+  );
 
   return (
     /* `background:var(--surface);border:1px solid var(--border);display:flex;
@@ -238,31 +279,63 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             `pointer-events:none`; the full-box vignette alone was enough to
             intercept every click on the photo (DEVIATIONS #69, corrected —
             confirmed with `elementFromPoint` before and after). The three
-            overlays now carry `pointer-events-none`; this anchor is
-            unchanged. */}
+            overlays now carry `pointer-events-none`; this anchor's box is
+            unchanged.
+
+            D92 (owner, "Expressive", 2026-09-29): the photo is the shared
+            element that morphs into the PDP gallery, which wraps its own
+            `<Image>` in the identical name (`pdp-gallery.tsx`). `share` is
+            explicit because with `default="none"` and no `share` the pair
+            silently never morphs.
+
+            `share` is TYPE-KEYED on this side (coordinator ruling, derived
+            under D92): only a navigation that opens a product
+            (`product-open`, carried by both PDP links below) or returns from
+            one (`product-back`, carried by the PDP breadcrumb's results crumb)
+            may pair a card with the gallery. Every card on a page holds a
+            `product-photo-<slug>` name, so an untyped pairing would also fly
+            every card that exists on both pages — six featured cards into the
+            `/results` grid on a Tires-tile click, results cards into the PDP's
+            similar row. A tile, nav or crumb navigation to a category carries
+            neither type, so those card↔card pairs resolve to `none` and stay
+            put. Browser Back/Forward run no view transition at all (Next
+            restores a traversal outside a React transition — measured, zero
+            frames), so there is no reverse morph there; the breadcrumb's
+            `Results` crumb carries `product-back` and does morph (measured,
+            702 → 326px). `default="none"` keeps the photo out of
+            every unrelated transition (filter, sort, `Load more`), where the
+            card's list-identity VT in `results-grid.tsx` animates the whole
+            card instead — the skill's "composing shared elements with list
+            identity" pattern. The morph only forms if the PDP renders in the
+            same commit as the navigation, i.e. fully prefetched rather than
+            suspended into `loading.tsx` — hence `prefetch={true}` on both PDP
+            links (`vercel-react-view-transitions` nextjs.md "When Content
+            Must Be Ready"). `nav-forward` types the page slide. Press is
+            `active:opacity-70`, the text-link/photo half of the D92 press
+            vocabulary. */}
         <Link
           href={productRoute(slug)}
           tabIndex={-1}
           aria-hidden="true"
-          className="block h-full w-full"
+          transitionTypes={["nav-forward", "product-open"]}
+          prefetch={true}
+          className="block h-full w-full active:opacity-70"
         >
-          <Image
-            src={productImageSrc(product)}
-            alt={`${brand} ${model}`}
-            width={1000}
-            height={1000}
-            sizes={IMAGE_SIZES}
-            /* See `priority` in ProductCardProps for why this is eager +
-               fetchPriority rather than `preload`. Both stay undefined when
-               the prop is false, so the default lazy behaviour is
-               untouched. */
-            loading={priority ? "eager" : undefined}
-            fetchPriority={priority ? "high" : undefined}
-            className={cx(
-              "photo-inset-card block h-full w-full object-contain",
-              !available && "opacity-35",
-            )}
-          />
+          {morph ? (
+            <ViewTransition
+              name={`product-photo-${slug}`}
+              share={{
+                "product-open": "morph",
+                "product-back": "morph",
+                default: "none",
+              }}
+              default="none"
+            >
+              {photo}
+            </ViewTransition>
+          ) : (
+            photo
+          )}
         </Link>
 
         <div
@@ -329,8 +402,14 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
                artboard. Display type at 24px/0.92 is only ~22px tall, which
                fails the 44px floor in docs/decisions.md §5 and WCAG 2.5.8's
                24px AA minimum. The artboards draw every href as "#", so no
-               drawn geometry is affected. */
-            className="display text-ink text-display-24 tap-extend break-words sm:text-display-28"
+               drawn geometry is affected.
+               D92: typed (`nav-forward` for the slide, `product-open` for
+               the morph) and fully prefetched like the photo link above, so
+               both routes into the PDP slide the page and form the morph;
+               `active:opacity-70` is the text-link press. */
+            transitionTypes={["nav-forward", "product-open"]}
+            prefetch={true}
+            className="display text-ink text-display-24 tap-extend break-words active:opacity-70 sm:text-display-28"
           >
             {model}
           </Link>
@@ -415,7 +494,14 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
               The sr-only tail names the product so 30 identical
               `Request a quote` links on one page do not read identically out of
               context; the visible label stays the link's leading text, so the
-              accessible name still contains it. */}
+              accessible name still contains it.
+
+              Deliberately NOT given `transitionTypes` (D92): `quoteRoute()`
+              ends in a `#quote` fragment, and a typed slide combined with a
+              hash-fragment scroll jumps mid-flight (the view-transitions
+              skill's warning). It navigates untyped: no directional slide,
+              and the photo morph forms only if the PDP happens to be
+              prefetched already. */}
           <Button
             href={quoteRoute(slug)}
             variant={available ? "primary" : "secondary"}

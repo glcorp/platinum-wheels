@@ -141,5 +141,5 @@ options). Same streaming mechanism as **D80**, seen from the other side. Verify 
   chosen. Since D79 removed `required` from every field, nothing stops that submit at the browser
   either way — it was never the mechanism that made a mismatch harmless; `findFitment()` returning
   `null` on no match is (see Rules). Owner, if the auto-offer is ever wanted.
-- ~~`@utility finder-grid` is not yet added.~~ Added: `src/app/globals.css:431`. `vehicle-finder.tsx`'s
+- ~~`@utility finder-grid` is not yet added.~~ Added: `@utility finder-grid` in `src/app/globals.css` (cited by name — line numbers there shift, `HANDOFF.md` §8.21). `vehicle-finder.tsx`'s
   `md:finder-grid` compiles.

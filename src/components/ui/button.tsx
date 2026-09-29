@@ -24,7 +24,9 @@ import { cx } from "@/lib/cx";
  * phone CTA (`home-desktop.html:109` `.x1`, `results-desktop.html:102` `.x58`,
  * `product-desktop.html:93` `.x112`), always at `compact` size. DESIGN.md §4
  * has no row for it, so active / disabled / focus are authored: active keeps
- * the fill (no lift — a link, not a pressed button), disabled goes to the
+ * the fill and, since D92, sinks 1px like every other boxed control (it was
+ * "no lift — a link, not a pressed button" until the owner ruled for one
+ * consistent press vocabulary), disabled goes to the
  * `--border` outline + `--text-dim` ink like `secondary`, and focus uses the
  * `--text` ring because an accent ring on an accent border is invisible.
  */
@@ -108,14 +110,27 @@ const sizePad: Record<ButtonSize, string> = {
    | Text     | --on-accent         | --text             | --text      |
    | Hover    | --accent-hover      | --text fill,       | underline 1px |
    |          |                     | --on-accent text   |             |
-   | Active   | --accent, +1px y    | --text-muted fill  | opacity .7  |
+   | Active   | --accent, +1px y    | --text-muted fill, | opacity .7  |
+   |          |                     | +1px y (D92)       |             |
    | Disabled | --surface fill,     | --border border,   | --text-dim  |
    |          | --text-dim text     | --text-dim text    |             |
 
-   No `transition`. product.md/results.md §5 both measure zero transition
-   declarations on any button — the 30 in the exports all belong to card hover.
-   globals.css says it outright: "Buttons declare no transition at all — an
-   instant fill swap … Do not add one."
+   Press vocabulary (D92, owner ruling "Expressive", 2026-09-29): every
+   variant with a fill or a border sinks 1px on `:active` — primary,
+   secondary and accent alike — and the text variant dims to .7. Tailwind's
+   `active:` is not hover-gated, which is exactly what a touch press needs.
+   `disabled:translate-y-0` sits beside each, as it always has on primary, so
+   a disabled button never moves.
+
+   No `transition-*` class here, still — but no longer because hover is
+   instant. product.md/results.md §5 measure zero transition declarations on
+   any button (the 30 in the exports all belong to card hover), and the drawn
+   rule was an instant fill swap. D92 replaces that: the globals.css base layer
+   eases colour, fill, border, opacity and translate on every `button` and `a`
+   over `--duration-feedback` (120ms), so the drawn hover colours below are
+   reached in 120ms instead of one frame, and the 1px press glides. Recorded
+   as DEVIATIONS #75. Adding a transition class here would only fight that
+   one rule.
 
    Hover is written with Tailwind's `hover:` variant, which in v4 compiles to
    `@media (hover: hover) { &:hover }` (verified in tailwindcss@4.3.3), so it
@@ -136,8 +151,8 @@ const variantClass: Record<ButtonVariant, string> = {
   secondary: [
     "border border-ink bg-transparent text-ink",
     "hover:bg-ink hover:text-on-accent",
-    "active:bg-ink-muted active:text-on-accent",
-    "disabled:border-border disabled:bg-transparent disabled:text-ink-dim",
+    "active:translate-y-px active:bg-ink-muted active:text-on-accent",
+    "disabled:translate-y-0 disabled:border-border disabled:bg-transparent disabled:text-ink-dim",
     "focus-visible:outline-accent",
   ].join(" "),
   tertiary: [
@@ -155,8 +170,8 @@ const variantClass: Record<ButtonVariant, string> = {
        and its `.x1` rule at :49. `white-space:nowrap` is on the artboard element. */
     "border border-accent bg-transparent text-on-photo whitespace-nowrap",
     "hover:bg-accent hover:text-on-accent",
-    "active:bg-accent active:text-on-accent",
-    "disabled:border-border disabled:bg-transparent disabled:text-ink-dim",
+    "active:translate-y-px active:bg-accent active:text-on-accent",
+    "disabled:translate-y-0 disabled:border-border disabled:bg-transparent disabled:text-ink-dim",
     "focus-visible:outline-ink",
   ].join(" "),
 };

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { SiteFooter } from "@/components/site/site-footer";
+import { PageTransition } from "@/components/site/page-transition";
 import { SiteHeader } from "@/components/site/site-header";
 import { findProduct } from "@/features/catalog/data";
 import { BuyPanel } from "@/features/product/components/buy-panel";
@@ -89,44 +90,48 @@ export default async function ProductPage({
   return (
     <>
       <SiteHeader variant="solid" active={view.config.nav} />
-      <main id="main" tabIndex={-1} className="flex-1">
-        {/* Mobile only: `padding:16px 16px 0` above the gallery
-            (`product-mobile.html:90`). Desktop's copy lives in the buy panel. */}
-        <div className="px-4 pt-4 sm:px-8 md:hidden">{breadcrumb}</div>
+      {/* `<main>` + footer ride one `PageTransition` (D92); the gallery image
+          inside it is the other half of the card-photo morph. */}
+      <PageTransition>
+        <main id="main" tabIndex={-1} className="flex-1">
+          {/* Mobile only: `padding:16px 16px 0` above the gallery
+              (`product-mobile.html:90`). Desktop's copy lives in the buy panel. */}
+          <div className="px-4 pt-4 sm:px-8 md:hidden">{breadcrumb}</div>
 
-        <div className="md:px-12 md:pt-8">
-          <div className="md:pdp-split lg:mx-auto lg:max-w-content">
-            <PdpGallery
-              brand={product.brand}
-              model={product.model}
-              slug={product.slug}
-              image={product.image}
-              /* Mobile draws the badge row over the image; from `sm:` it moves
-                 into the buy panel, which is where the desktop artboard puts
-                 it (`product.md` §3 "Element order" row 2). The gallery hides
-                 its own copy at the same width, so exactly one renders. */
-              badges={view.badges}
-            />
-            <BuyPanel
-              view={view}
-              /* `BuyPanel` renders whatever it is handed, so the visibility
-                 classes come from here: this copy is the DESKTOP one and the
-                 `md:hidden` block above is the mobile one. Exactly one is in
-                 the layout — and in the a11y tree — at any width. */
-              breadcrumb={<div className="hidden md:block">{breadcrumb}</div>}
-              searchParams={query}
-            />
+          <div className="md:px-12 md:pt-8">
+            <div className="md:pdp-split lg:mx-auto lg:max-w-content">
+              <PdpGallery
+                brand={product.brand}
+                model={product.model}
+                slug={product.slug}
+                image={product.image}
+                /* Mobile draws the badge row over the image; from `sm:` it moves
+                   into the buy panel, which is where the desktop artboard puts
+                   it (`product.md` §3 "Element order" row 2). The gallery hides
+                   its own copy at the same width, so exactly one renders. */
+                badges={view.badges}
+              />
+              <BuyPanel
+                view={view}
+                /* `BuyPanel` renders whatever it is handed, so the visibility
+                   classes come from here: this copy is the DESKTOP one and the
+                   `md:hidden` block above is the mobile one. Exactly one is in
+                   the layout — and in the a11y tree — at any width. */
+                breadcrumb={<div className="hidden md:block">{breadcrumb}</div>}
+                searchParams={query}
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="px-4 sm:px-8 md:mx-auto md:max-w-content md:px-12">
-          <Specifications rows={view.specs} />
-        </div>
+          <div className="px-4 sm:px-8 md:mx-auto md:max-w-content md:px-12">
+            <Specifications rows={view.specs} />
+          </div>
 
-        <QuoteBand view={view} />
-        <SimilarProducts products={view.similar} />
-      </main>
-      <SiteFooter />
+          <QuoteBand view={view} />
+          <SimilarProducts products={view.similar} />
+        </main>
+        <SiteFooter />
+      </PageTransition>
     </>
   );
 }

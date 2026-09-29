@@ -35,6 +35,10 @@ Without this folder a page can be called "done" on an opinion, which is exactly 
   reports behind `audit.md`, one per delegated agent (D25), on strictly disjoint files. `shared-audit.md`
   is the cross-cutting one: chrome, the ten primitives, catalog, `globals.css` integrity and the
   cross-page consistency pass.
+- [`motion.md`](motion.md) — the **D92** motion inventory: tokens, every animated element with its
+  trigger, before/after, token, reduced-motion behaviour and frame-sampled values from the production
+  build, the gate table, and the recorded limits. Its "How this was measured" section is the protocol
+  for motion: sample `getAnimations()` per frame for view transitions, seek paused transitions for CSS.
 
 ## Rules
 - **Never write "matches" or "looks right" here. Every row is a measured number** (`README.md` header

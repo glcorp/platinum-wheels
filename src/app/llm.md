@@ -8,11 +8,16 @@ imported (`layout.tsx:3`) and the only place the font faces are attached. Break 
 entire site loses its type or its palette at once.
 
 ## Owns
-- [`globals.css`](globals.css) (743 ln) — the token system. See Rules.
+- [`globals.css`](globals.css) (~1,230 ln) — the token system. See Rules. Cite it by utility or token
+  **name**, not line: every insertion shifts the numbers (`HANDOFF.md` §8.21), and several `:NNN` citations
+  below predate the D92 motion block and are approximate.
 - [`layout.tsx`](layout.tsx) (30 ln) — root layout. Metadata `title.default` + `template: "%s · Platinum
   Wheels"` and the site description (`:5-12`); `viewport` `themeColor: "#0B0B0D"`, `colorScheme: "dark"`
   (`:14-17`); font variables + `h-full antialiased` on `<html>` (`:21-24`); `<body>` carries
-  `bg-bg text-ink-muted flex min-h-full flex-col font-sans` (`:25`).
+  `bg-bg text-ink-muted flex min-h-full flex-col font-sans` (`:25`). **D92:** the first child of `<body>`
+  is a `next/script` `beforeInteractive` inline bootstrap (`MOTION_BOOT`) that marks images
+  `data-loaded` for the lazy-image fade-in and registers the passive `touchstart` listener iOS Safari
+  needs before it applies `:active`. Not a client component; no hydration.
 - [`fonts.ts`](fonts.ts) (29 ln) — Barlow Condensed 600/700 and Barlow 400/500/700, self-hosted via
   `next/font/google`, `display: "swap"`, `adjustFontFallback` (**D20**; `docs/decisions.md:99`).
 - `favicon.ico` — App Router file convention. It lives here, **not** in `public/`.
@@ -62,7 +67,19 @@ entire site loses its type or its palette at once.
   `--container-content: 1344px` → `max-w-content` (`:227`) — **D11**. Spacing has no tokens: the
   artboards sit on a 2px grid reachable from Tailwind's 4px step (`:254-257`).
 - `@layer base` (`:696`) sets the body ground/ink and the accent `:focus-visible` ring at offset 0
-  (**D16**), plus a `prefers-reduced-motion` block (`:734`).
+  (**D16**), plus a `prefers-reduced-motion` block (the file's last rule).
+- **Motion is a system here, not per call site — D92.** Tokens in `@theme`: `--ease-card` (the
+  artboards' card curve), `--ease-arrive`, `--ease-leave`, `--duration-feedback` 120 / `-state` 200 /
+  `-exit` 150 / `-handoff` 100 / `-overlay` 280 / `-route` 350 / `-reveal` 300, `--stagger-step` 30,
+  `--motion-slide` 60px / `-rise` 12px / `-nudge` 6px. One `@layer base` rule eases colour, fill,
+  border, underline, opacity, translate and scale on every interactive element (focus stays 0s);
+  `img[loading=lazy]` fades in once `layout.tsx` marks it; `[data-reveal]` is the scroll reveal. The
+  `::view-transition-*` block holds every React `<ViewTransition>` class (`nav-forward`, `nav-back`,
+  `route-in`, `route-out`, `morph`, `card-in-0…5`, `card-out`, `card-move`) and the pinned
+  `site-header` / travelling `nav-indicator` groups. Utilities `enter-rise`, `nav-rule`,
+  `nav-indicator`. **The reduced-motion block has two halves and both are load-bearing:** the `*` kill
+  does not reach view-transition pseudo-elements, which hang off `:root`, so they carry their own.
+  Opacity and translate only — no blur, although the Next guide's recipes use one (no-depth rule).
 - **Tap-target behaviour is declared here once, not per call site** — added 2026-09-22 by **D65**
   (`:713-730`). One rule gives `a, button, summary, label, select, [role="button"]` both
   `touch-action: manipulation` (required by `docs/decisions.md` §5, and previously missing on every link

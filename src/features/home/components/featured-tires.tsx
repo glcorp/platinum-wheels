@@ -11,6 +11,10 @@
    Mobile `padding:56px 0 0 16px;gap:20px;overflow:hidden` — NOTE the zero
    right padding, an intentional bleed so the scroll track runs off the edge —
    `design/inventory/home.md:64`, `design/assets/home-mobile.html:135`.
+
+   `data-reveal` marks the section for the below-the-fold reveal (D92): the
+   reveal island arms it only if it starts below the viewport, and without
+   JS or with reduced motion it is never hidden.
    --------------------------------------------------------------------------- */
 
 import { FEATURED_ROW } from "@/features/catalog/data";
@@ -21,6 +25,7 @@ export function FeaturedTires() {
   return (
     <section
       data-probe="featured"
+      data-reveal=""
       className="overflow-hidden pt-14 pl-4 sm:overflow-visible sm:px-8 sm:pt-20 md:px-12 md:pt-30"
     >
       <div className="flex flex-col gap-5 sm:gap-10 lg:mx-auto lg:max-w-content">

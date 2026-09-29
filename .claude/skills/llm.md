@@ -1,7 +1,7 @@
 # .claude/skills/
 
 ## Purpose
-Vendored copies of the skills this project builds with. Eight skill folders sit here; six are pinned in
+Vendored copies of the skills this project builds with. Nine skill folders sit here; seven are pinned in
 the repo-root `skills-lock.json` with their source repo and a `computedHash`, two are not. The folder
 matters for two live reasons beyond authoring help: `impeccable/scripts/impeccable` is the launcher both
 design-detector hooks call (`.claude/settings.json:10`, `:22`), and `design-to-code/SKILL.md` is the
@@ -17,7 +17,14 @@ project's primary workflow — the modes the whole build queue runs through (`HA
 - `next-dev-loop/` — `vercel/next.js` (`:22-27`). *"Verify Next.js runtime behavior after editing app
   code."*
 - `shadcn/` — `shadcn/ui` (`:28-33`). *"Manages shadcn components and projects…"*
-- `web-design-guidelines/` — `vercel-labs/agent-skills` (`:34-39`). *"Review UI code for Web Interface
+- `vercel-react-view-transitions/` — `vercel-labs/agent-skills`, `skillPath:
+  skills/react-view-transitions/SKILL.md` (`skills-lock.json:34-39`). *"Guide for implementing smooth,
+  native-feeling animations using React's View Transition API…"* Installed 2026-09-29 for the **D92**
+  motion pass with `npx skills add vercel-labs/agent-skills --skill vercel-react-view-transitions`, on the
+  owner's approval. The installer wrote the skill to a new `.agents/skills/` folder and left a **symlink**
+  here; it was replaced with the real directory so this folder stays symlink-free (D36 — Tailwind scans
+  the tree, and every other vendored skill is a plain folder) and `.agents/` was removed.
+- `web-design-guidelines/` — `vercel-labs/agent-skills` (`:40-45`). *"Review UI code for Web Interface
   Guidelines compliance."*
 
 **On disk but NOT in `skills-lock.json`** (verified by comparing `find .claude/skills -maxdepth 2` against
@@ -61,7 +68,7 @@ Referenced, not restated: **D3** (no git — vendored copies are the only record
 library), **D25** (delegated implementation).
 
 ## Connects to
-- **Depends on:** `skills-lock.json` (repo root) for the six pinned entries and their hashes; the
+- **Depends on:** `skills-lock.json` (repo root) for the seven pinned entries and their hashes; the
   respective upstream repos for re-installs.
 - **Depended on by:** `.claude/settings.json` hooks → `impeccable/scripts/impeccable`;
   `.claude/agents/*` → `impeccable/scripts` and `reference/` (`.claude/agents/impeccable-asset-producer.md:33`);
@@ -80,6 +87,9 @@ library), **D25** (delegated implementation).
   always the better source (`design-to-code/SKILL.md:138`).
 - Don't add a skill without a `skills-lock.json` entry; two already lack one and cannot be reproduced from
   the lock file alone.
+- Don't accept `npx skills add`'s layout as-is: it installs into `.agents/skills/` and symlinks the
+  folder here. Move the real directory in and delete `.agents/` (see `vercel-react-view-transitions/`
+  above).
 
 ## Open
 - **Is `design-to-code` project-authored?** It is absent from `skills-lock.json` and its text names this

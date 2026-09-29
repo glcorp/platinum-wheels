@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ViewTransition } from "react";
 
 import { productImageSrc } from "@/features/catalog/types";
 
@@ -31,6 +32,25 @@ import type { PdpBadge } from "@/features/product/types";
    Overlay: `radial-gradient(ellipse at center,transparent 55%,
    var(--scrim-mid) 100%)` — `photo-vignette-gallery` (globals.css), the 55%
    stop that distinguishes it from the cards' 50% (`photo-vignette`).
+
+   Shared element (D92): the `<Image>` sits in a `<ViewTransition>` named
+   `product-photo-<slug>` — the SAME name `ProductCard` gives its photo — so
+   the card photo in the grid, the home row or the similar row morphs into
+   this box on the way in, and back into the card on the way out (the
+   breadcrumb's results crumb is fully prefetched for that reason). The name
+   is unique on the page: the gallery renders once and `Similar products`
+   excludes this product (D52). `share="morph"` is a plain string here on
+   purpose: the gallery is the one fixed end of every pair. The CARD side is
+   type-keyed (`product-open` / `product-back`, `product-card.tsx`), so only a
+   navigation that opens a product or returns from one to its results page
+   pairs a card with this box; card↔card pairs between other pages resolve to
+   `none`, and the similar row below renders its cards with `morph={false}`
+   so they never pair at all. `share` must be explicit because with
+   `default="none"` and no `share` the pair silently never morphs;
+   `default="none"` keeps the photo out of every other transition on the
+   page — a `?qty=` click must not crossfade the gallery. Only the `<img>` is
+   named; the frame, vignette and badge row stay part of the page and do not
+   travel.
    --------------------------------------------------------------------------- */
 
 export interface PdpGalleryProps {
@@ -62,24 +82,30 @@ export function PdpGallery({ brand, model, slug, image, badges }: PdpGalleryProp
           It becomes the drawn 704px framed box only once the split activates
           (the same crossover the split itself takes — see `page.tsx`). */}
       <div className="relative mt-4 aspect-square overflow-hidden md:mt-0 md:border md:border-border md:bg-bg">
-        <Image
-          /* One resolver for the card and the gallery, so an accessory
-             cannot render its photo in the grid and a 404 on its own page
-             (`productImageSrc`, D58). */
-          src={productImageSrc({ image, slug })}
-          alt={`${brand} ${model}`}
-          width={1000}
-          height={1000}
-          /* The box is 704px only once the split activates at `md:` 1100 (see
-             the frame comment below); from 0 to 1099 the gallery is full-bleed,
-             so it is `100vw` there. Declaring 704px from 720 made the browser
-             pick a candidate ~1/3 the rendered width in the 720-1099 band and
-             upscale it. Crossover must match the frame's, not the type's. */
-          sizes="(min-width: 1100px) 704px, 100vw"
-          loading="eager"
-          fetchPriority="high"
-          className="photo-inset-gallery block h-full w-full object-contain"
-        />
+        <ViewTransition
+          name={`product-photo-${slug}`}
+          share="morph"
+          default="none"
+        >
+          <Image
+            /* One resolver for the card and the gallery, so an accessory
+               cannot render its photo in the grid and a 404 on its own page
+               (`productImageSrc`, D58). */
+            src={productImageSrc({ image, slug })}
+            alt={`${brand} ${model}`}
+            width={1000}
+            height={1000}
+            /* The box is 704px only once the split activates at `md:` 1100 (see
+               the frame comment below); from 0 to 1099 the gallery is full-bleed,
+               so it is `100vw` there. Declaring 704px from 720 made the browser
+               pick a candidate ~1/3 the rendered width in the 720-1099 band and
+               upscale it. Crossover must match the frame's, not the type's. */
+            sizes="(min-width: 1100px) 704px, 100vw"
+            loading="eager"
+            fetchPriority="high"
+            className="photo-inset-gallery block h-full w-full object-contain"
+          />
+        </ViewTransition>
         <div
           aria-hidden="true"
           className="photo-vignette-gallery absolute inset-0"

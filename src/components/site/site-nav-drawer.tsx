@@ -56,7 +56,8 @@ export function SiteNavDrawer({
         aria-expanded={open}
         aria-controls="site-nav-drawer"
         onClick={() => setOpen(true)}
-        className="text-on-photo inline-flex size-11 touch-manipulation items-center justify-center bg-transparent"
+        /* `active:translate-y-px` — the boxed-control press (D92). */
+        className="text-on-photo inline-flex size-11 touch-manipulation items-center justify-center bg-transparent active:translate-y-px"
       >
         {/* 22x22 three-bar icon, stroke-width 1.6, round caps — home-mobile.html:88-90 */}
         <svg
@@ -105,7 +106,7 @@ export function SiteNavDrawer({
             type="button"
             aria-label="Close menu"
             onClick={() => setOpen(false)}
-            className="text-ink inline-flex size-11 touch-manipulation items-center justify-center bg-transparent"
+            className="text-ink inline-flex size-11 touch-manipulation items-center justify-center bg-transparent active:translate-y-px"
           >
             <svg
               width="22"
@@ -135,7 +136,8 @@ export function SiteNavDrawer({
           aria-label="Primary"
           className="flex flex-1 flex-col justify-between px-4 pb-safe"
         >
-          {/* Links: display 40px, stacked left, 16px gap — DESIGN.md §4 Nav (~line 192) */}
+          {/* Links: display 40px, stacked left, 16px gap — DESIGN.md §4 Nav (~line 192).
+              `active:opacity-70` is the text-link press (D92). */}
           <ul className="flex flex-col gap-4">
             {links.map((link) => (
               <li key={link.href}>
@@ -144,8 +146,8 @@ export function SiteNavDrawer({
                   onClick={() => setOpen(false)}
                   className={
                     link.active
-                      ? "display text-display-40 text-ink border-accent inline-block border-b-2"
-                      : "display text-display-40 text-ink inline-block border-b-2 border-transparent"
+                      ? "display text-display-40 text-ink border-accent inline-block border-b-2 active:opacity-70"
+                      : "display text-display-40 text-ink inline-block border-b-2 border-transparent active:opacity-70"
                   }
                 >
                   {link.label}

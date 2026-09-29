@@ -79,7 +79,13 @@ export function SimilarProducts({ products }: SimilarProductsProps) {
         aria-label="Similar products"
       >
         {products.map((product) => (
-          <ProductCard key={product.slug} product={product} />
+          /* `morph={false}` (D92, coordinator ruling): this row is the one
+             surface where a card never morphs. On a `product-open`
+             navigation from `/results`, a results card and a similar-row card
+             with the same slug would otherwise pair and fly alongside the
+             real card→gallery morph. The cost is deliberate: PDP → PDP
+             through this row slides the page but does not morph the photo. */
+          <ProductCard key={product.slug} product={product} morph={false} />
         ))}
       </div>
     </section>

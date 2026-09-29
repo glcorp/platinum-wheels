@@ -55,6 +55,12 @@ import { ROUTES } from "@/lib/routes";
    widths (home.md:205,208). The 8px desktop top margin stays a call-site class.
 
    Server Component. Year is computed at render (D32), never hard-coded.
+
+   Motion (D92): the section carries `data-reveal` for the below-the-fold
+   reveal (armed only if it starts below the viewport; never hidden without
+   JS or with reduced motion). The CTA leads into `/results?season=winter`,
+   down the hierarchy, so it is typed `nav-forward`; its press comes from the
+   `Button` primitive.
    --------------------------------------------------------------------------- */
 
 export function WinterPromo() {
@@ -63,6 +69,7 @@ export function WinterPromo() {
   return (
     <section
       data-probe="promo"
+      data-reveal=""
       className="mt-14 sm:mt-20 sm:grid sm:grid-cols-20 md:mt-30 md:grid-cols-12 md:min-h-160"
     >
       {/* Photo cell — `height:280px` on mobile only (home.md:50); side by
@@ -134,6 +141,7 @@ export function WinterPromo() {
           size="promo"
           fullWidth
           data-probe="promo-cta"
+          transitionTypes={["nav-forward"]}
           className="sm:mt-2 sm:w-auto"
         >
           Shop winter tires

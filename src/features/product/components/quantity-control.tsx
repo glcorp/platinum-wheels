@@ -36,8 +36,15 @@ import {
    `stroke:var(--text-muted);stroke-width:1.6`.
 
    No radius on any cell (radius is CTA-only, `product.md` §3.4 "no radius on
-   the cells"). No transition — house rule: buttons/cells swap instantly
-   (`globals.css`, `.claude/rules/ui.md`).
+   the cells").
+
+   Motion (D92, replacing the old "cells swap instantly" house rule): the
+   selected fill eases over `--duration-feedback` through the base-layer
+   `a` transition in `globals.css`, so no transition class lives here. Each
+   cell takes `active:translate-y-px`, the boxed-control press. The cells are
+   same-route `?qty=` links (D50), so they carry NO `transitionTypes`: nothing
+   about the page moves, and a typed slide on a same-route link would slide
+   the PDP into itself.
    --------------------------------------------------------------------------- */
 
 export interface QuantityControlProps {
@@ -119,7 +126,7 @@ export function QuantityControl({
                 key={option.value}
                 href={hrefFor(option.value, searchParams)}
                 aria-current={selected ? "true" : undefined}
-                className="bg-surface-2 border-border-strong text-ink-dim flex h-12 items-center justify-between border px-3 text-14 sm:h-13 sm:px-3.5 sm:text-15"
+                className="bg-surface-2 border-border-strong text-ink-dim flex h-12 items-center justify-between border px-3 text-14 active:translate-y-px sm:h-13 sm:px-3.5 sm:text-15"
               >
                 <span className="font-sans font-normal">{option.label}</span>
                 <span className="sm:hidden">
@@ -139,8 +146,8 @@ export function QuantityControl({
               aria-current={selected ? "true" : undefined}
               className={
                 selected
-                  ? "bg-ink text-on-accent border-ink numeral flex h-12 items-center justify-center border text-16 sm:h-13 sm:text-17"
-                  : "text-ink-muted border-border-strong numeral flex h-12 items-center justify-center border bg-transparent text-16 sm:h-13 sm:text-17"
+                  ? "bg-ink text-on-accent border-ink numeral flex h-12 items-center justify-center border text-16 active:translate-y-px sm:h-13 sm:text-17"
+                  : "text-ink-muted border-border-strong numeral flex h-12 items-center justify-center border bg-transparent text-16 active:translate-y-px sm:h-13 sm:text-17"
               }
             >
               {option.label}

@@ -47,14 +47,17 @@ export function QuoteErrorSummary({
       ref={ref}
       role={role}
       tabIndex={tabIndex}
-      /* Fades in, resting state fully opaque — a failed stylesheet can never
-         hide it. The most consequential action on the site used to report its
-         own rejection with no visual event at all; D65 fixed the focus and
-         announcement half of that, this is the matching visual half.
-         `role="alert"` announces content, not opacity, so the 150ms does not
-         delay the announcement. D67. */
+      /* Arrives with `enter-rise` — a fade up of `--motion-nudge` over
+         `--duration-state` via `@starting-style` — resting state fully
+         opaque, so a failed stylesheet can never hide it. The most
+         consequential action on the site used to report its own rejection
+         with no visual event at all; D65 fixed the focus and announcement half
+         of that, D67 added a plain fade, and D92 swaps that fade for the shared
+         small-enter utility so every in-place panel arrives the same way.
+         `role="alert"` announces content, not opacity or position, so the
+         motion does not delay the announcement, and focus is untouched. */
       data-probe="quote-error-summary"
-      className="text-13 leading-body text-ink-muted opacity-100 transition-opacity duration-150 ease-[var(--ease-card)] starting:opacity-0"
+      className="text-13 leading-body text-ink-muted enter-rise"
     >
       {/* New copy. Names the count so the announcement is useful on its own,
           and says what it blocks. No em dash (`.claude/rules/ui.md` "Copy"). */}

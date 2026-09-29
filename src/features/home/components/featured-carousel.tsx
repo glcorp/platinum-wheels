@@ -132,6 +132,10 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
     });
   }
 
+  /* Press (D92): every arrow takes `active:translate-y-px`, the boxed-control
+     half of the press vocabulary; the base-layer rule in `globals.css` eases
+     it over `--duration-feedback`. The dots below are `aria-hidden` spans, a
+     readout rather than controls, so they have no press. */
   const controls = (
     <div className="flex shrink-0 items-center gap-2">
       {/* Mobile: one round "Next" affordance — `design/assets/home-mobile.html:141`.
@@ -142,7 +146,7 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
         type="button"
         aria-label="Next"
         onClick={() => scrollByStep(1)}
-        className="border-border-strong text-ink inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border sm:hidden"
+        className="border-border-strong text-ink inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border active:translate-y-px sm:hidden"
       >
         <svg
           aria-hidden="true"
@@ -168,7 +172,7 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
           type="button"
           aria-label="Previous"
           onClick={() => scrollByStep(-1)}
-          className="border-border-strong text-ink-dim inline-flex h-12 w-12 items-center justify-center border"
+          className="border-border-strong text-ink-dim inline-flex h-12 w-12 items-center justify-center border active:translate-y-px"
         >
           <svg
             aria-hidden="true"
@@ -186,7 +190,7 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
           type="button"
           aria-label="Next"
           onClick={() => scrollByStep(1)}
-          className="border-ink text-ink inline-flex h-12 w-12 items-center justify-center border"
+          className="border-ink text-ink inline-flex h-12 w-12 items-center justify-center border active:translate-y-px"
         >
           <svg
             aria-hidden="true"

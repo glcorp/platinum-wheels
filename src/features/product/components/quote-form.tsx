@@ -368,9 +368,13 @@ export function QuoteForm({
             a page that never draws one, no new island. Blank is legal — the
             group's own eyebrow says `Optional`, so a required field here
             would contradict drawn copy (`actions.ts`). New copy under
-            `.claude/rules/ui.md` "Copy": short, specific, names the unit. */}
+            `.claude/rules/ui.md` "Copy": short, specific, names the unit.
+            `enter-rise` (D92): the field arrives after a `Custom` click
+            rather than popping in — `@starting-style`, no JS, and a server
+            render with no transition simply shows it. It only wraps the
+            field; the controlled select above (D84) is untouched. */}
         {selectedQuantity === "custom" ? (
-          <div>
+          <div className="enter-rise">
             <FieldLabel htmlFor="quote-custom-quantity">
               {`How many ${unit.many}?`}
             </FieldLabel>

@@ -12,10 +12,18 @@
    DESIGN.md §4 describes the non-home header as "--bg". Per the authority
    chain (root llm.md §4, "artboards win on any number") the measured value
    governs; see the deviation noted in the build report.
+
+   Motion (D92). The header is per page (D38) but must read as one object
+   across a navigation, so both variants carry `view-transition-name:
+   site-header`, which globals.css pins: never slid, never faded, drawn above
+   the content that moves beneath it. The active nav underline is its own
+   element inside a named `<ViewTransition>`, so on a category change it
+   travels from one item to the next instead of vanishing and reappearing.
    --------------------------------------------------------------------------- */
 
 import Image from "next/image";
 import Link from "next/link";
+import { ViewTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { SiteNavDrawer, type SiteNavDrawerLink } from "@/components/site/site-nav-drawer";
 import { PRIMARY_CONTACT } from "@/lib/site";
@@ -49,6 +57,11 @@ export function SiteHeader({
 
   return (
     <header
+      /* D92: pinned through every route transition — see the file header and
+         `::view-transition-group(site-header)` in globals.css. An inline
+         style because Tailwind has no utility for the property and an
+         arbitrary value is banned (.claude/rules/ui.md "Tokens only"). */
+      style={{ viewTransitionName: "site-header" }}
       className={
         variant === "over-hero"
           ? /* absolute inset-x-0 top-0 z-10 — design/manifest.md:44 (not sticky) */
@@ -69,8 +82,14 @@ export function SiteHeader({
         {/* Logo — 512x507 intrinsic (public/images/logo/platinum-wheels-logo-transparent.webp).
             52px mobile → 64px desktop: h-13 (52px, home-mobile.html:79) →
             sm:h-16 (64px, home-desktop.html:97/results-desktop.html:88). No
-            wordmark (D7). */}
-        <Link href={ROUTES.home} className="flex items-center gap-2.5">
+            wordmark (D7). `nav-back` (D92): home is the top of the
+            hierarchy, so leaving for it slides the page the way a breadcrumb
+            does. `active:opacity-70` is the text-link press (D92). */}
+        <Link
+          href={ROUTES.home}
+          transitionTypes={["nav-back"]}
+          className="flex items-center gap-2.5 active:opacity-70"
+        >
           <Image
             src="/images/logo/platinum-wheels-logo-transparent.webp"
             alt="Platinum Wheels"
@@ -98,14 +117,41 @@ export function SiteHeader({
                    is a Tailwind v4 opacity modifier on the token; flagged for
                    emission verification in the build report. Hover is the global
                    `a:hover` → --text-muted, implemented here as hover:text-ink-muted
-                   on inactive links only. */
+                   on inactive links only; the base layer eases it over
+                   `--duration-feedback` since D92 (DEVIATIONS #75).
+
+                   D92 (DEVIATIONS #76): inactive links add `nav-rule`, a 2px
+                   `--border-strong` rule that draws in from the left on hover
+                   in the slot the active underline occupies. The active link's
+                   drawn `border-accent border-b-2` becomes `border-b-2
+                   border-transparent` plus a `nav-indicator` span — the same
+                   2px `--accent` bar at the same `bottom:-2px`, so the box is
+                   byte-identical — because only an element of its own can be
+                   named and carried between items by a view transition.
+
+                   `prefetch={true}`: a shared `nav-indicator` morph only forms
+                   if the destination renders in the same transition. A route
+                   that suspends into `loading.tsx` renders the skeleton
+                   instead, and the incoming half of the pair never exists
+                   (vercel-react-view-transitions, references/nextjs.md "When
+                   Content Must Be Ready"). A full prefetch makes the three
+                   category pages ready before the click. */
+                prefetch={true}
                 className={
                   isActive
-                    ? "label text-13 tracking-10 text-on-photo border-accent border-b-2 py-2"
-                    : "label text-13 tracking-10 text-on-photo-muted hover:text-ink-muted border-b-2 border-transparent py-2"
+                    ? "label text-13 tracking-10 text-on-photo relative border-b-2 border-transparent py-2"
+                    : "label text-13 tracking-10 text-on-photo-muted hover:text-ink-muted nav-rule border-b-2 border-transparent py-2 active:opacity-70"
                 }
               >
                 {item.label}
+                {isActive ? (
+                  /* The span must be the boundary's direct child, and `share`
+                     must be explicit: `default="none"` would otherwise resolve
+                     the pair to none and the bar would never travel. */
+                  <ViewTransition name="nav-indicator" share="auto" default="none">
+                    <span aria-hidden="true" className="nav-indicator" />
+                  </ViewTransition>
+                ) : null}
               </Link>
             );
           })}
@@ -147,11 +193,14 @@ export function SiteHeader({
               no hover. `--accent-hover` is the existing "CTA hover fill
               (instant)" token (globals.css:43) and is exactly what the primary
               Button uses (button.tsx:131). Tailwind v4 compiles `hover:` to
-              `@media (hover: hover)` itself (D17), so no hand-rolled query. */}
+              `@media (hover: hover)` itself (D17), so no hand-rolled query.
+              Since D92 the fill eases over `--duration-feedback` (base layer,
+              DEVIATIONS #75) and a press sinks it 1px, the boxed-control press
+              `Button` uses. */}
           <a
             href={`tel:${PRIMARY_CONTACT.tel}`}
             aria-label="Call now"
-            className="bg-accent hover:bg-accent-hover text-on-accent inline-flex size-11 touch-manipulation items-center justify-center rounded-full sm:hidden"
+            className="bg-accent hover:bg-accent-hover text-on-accent inline-flex size-11 touch-manipulation items-center justify-center rounded-full active:translate-y-px sm:hidden"
           >
             <svg
               width="18"

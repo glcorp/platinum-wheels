@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { PageTransition } from "@/components/site/page-transition";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 
@@ -34,20 +35,24 @@ export function PageStub({ title, active = "tires", children }: PageStubProps) {
   return (
     <>
       <SiteHeader variant="solid" active={active} />
-      <main id="main" tabIndex={-1} className="flex-1 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30">
-        <div className="lg:mx-auto lg:max-w-content">
-          <h1 className="display text-ink text-display-56 sm:text-display-88">
-            {title}
-          </h1>
-          <p className="text-16 leading-body text-ink-muted mt-6 max-w-measure">
-            This page is being built. Call us and we will help you today.
-          </p>
-          {children}
+      {/* D92: `<main>` and the footer's wrapper enter and leave together; the
+          header stays outside, pinned by its own view-transition name. */}
+      <PageTransition>
+        <main id="main" tabIndex={-1} className="flex-1 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30">
+          <div className="lg:mx-auto lg:max-w-content">
+            <h1 className="display text-ink text-display-56 sm:text-display-88">
+              {title}
+            </h1>
+            <p className="text-16 leading-body text-ink-muted mt-6 max-w-measure">
+              This page is being built. Call us and we will help you today.
+            </p>
+            {children}
+          </div>
+        </main>
+        <div className="mt-14 sm:mt-20 md:mt-30">
+          <SiteFooter />
         </div>
-      </main>
-      <div className="mt-14 sm:mt-20 md:mt-30">
-        <SiteFooter />
-      </div>
+      </PageTransition>
     </>
   );
 }

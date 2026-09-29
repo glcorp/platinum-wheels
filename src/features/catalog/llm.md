@@ -117,6 +117,13 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   it off on accessories for a reason the seed disproved — lug nuts carry a thread pitch, TPMS sensors a
   frequency — and the owner vetoed it (D67). Before setting `finder: null` on anything, check the seed's
   own spec strings first.
+- **The card photo is a shared element (D92).** `ProductCard` wraps its `<Image>` in
+  `<ViewTransition name={`product-photo-${slug}`} default="none">` whose `share` is **type-keyed**:
+  `{ "product-open": "morph", "product-back": "morph", default: "none" }`. Only a navigation carrying
+  one of those types may pair a card with the PDP gallery — the two PDP links carry
+  `["nav-forward", "product-open"]` and `prefetch={true}`. Any caller that can render the same slug twice
+  on one page, or on both ends of a `product-open` navigation, passes `morph={false}`: `/styleguide` and
+  `product/`'s `SimilarProducts` do.
 
 ## Decisions
 | ID | Date | Decision | Why | Authority |
@@ -154,6 +161,8 @@ in place.
   (`product-card.tsx:330`, `docs/decisions.md:105`).
 - **Don't list `transform` in the hover transition** to match the artboard string — it would be inert
   (DEVIATIONS #15).
+- **Don't make the card photo's `share` a plain string** to "fix" a missing morph. Untyped, every slug
+  present on both pages pairs and flies at once — Home → `/results` flew six photos (D92).
 
 ## Open
 1. ~~**`data.ts` is not written.**~~ Written: `FEATURED_PRODUCTS` (D29) and the nine-SKU `PRODUCTS`

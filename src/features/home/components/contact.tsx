@@ -49,6 +49,9 @@ export function Contact() {
     <section
       id="contact"
       data-probe="contact"
+      /* Below-the-fold reveal (D92): armed only if it starts below the
+         viewport, never hidden without JS or with reduced motion. */
+      data-reveal=""
       /* `scroll-mt-*`: `ROUTES.contact` points the nav at this anchor — see
          how-it-works.tsx for why. D66. */
       className="scroll-mt-14 sm:scroll-mt-20 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30 md:pb-30"
@@ -87,11 +90,12 @@ export function Contact() {
                   (`design/inventory/home.md:77,331`). Hover only draws on
                   desktop in the artboard but Tailwind's `hover:` is already
                   `@media (hover: hover)`-scoped, so it stays unprefixed
-                  (D17). */}
+                  (D17). `active:translate-y-px` is the D92 boxed-control
+                  press. */}
               <a
                 href={`tel:${contact.tel}`}
                 data-probe={index === 0 ? "contact-phone-1" : undefined}
-                className="numeral border-accent text-ink hover:bg-accent hover:text-on-accent inline-flex h-13 w-full touch-manipulation items-center justify-center gap-2.5 rounded-ctl border text-17 leading-flat sm:mt-auto sm:h-14 sm:w-auto sm:justify-start sm:gap-3 sm:px-5 sm:text-18"
+                className="numeral border-accent text-ink hover:bg-accent hover:text-on-accent inline-flex h-13 w-full touch-manipulation items-center justify-center gap-2.5 rounded-ctl border text-17 leading-flat active:translate-y-px sm:mt-auto sm:h-14 sm:w-auto sm:justify-start sm:gap-3 sm:px-5 sm:text-18"
               >
                 <svg
                   aria-hidden="true"
@@ -128,7 +132,8 @@ export function Contact() {
             </span>
             <a
               href={`mailto:${SITE.email}`}
-              className="text-ink-muted leading-body text-16 underline underline-offset-3 sm:text-17"
+              /* `active:opacity-70`: the D92 text-link press. */
+              className="text-ink-muted leading-body text-16 underline underline-offset-3 active:opacity-70 sm:text-17"
             >
               {SITE.email}
             </a>

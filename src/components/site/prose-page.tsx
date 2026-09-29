@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { PageTransition } from "@/components/site/page-transition";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 
@@ -57,9 +58,14 @@ type NavKey = "tires" | "wheels" | "accessories" | "contact";
    picking up `--accent`. That keeps the accent to one element at a time (only
    one link is ever hovered) rather than painting every inline link lime, which
    `DESIGN.md` §7 forbids. `underline-offset-4` is the exports' own text-link
-   offset (`results.md` §2.4, `Clear all`). */
+   offset (`results.md` §2.4, `Clear all`).
+
+   `active:opacity-70` is the text-link press (D92). It is a press, not a hover,
+   so the rule above still holds: pointing at the link never dims it. The
+   underline-colour change eases over `--duration-feedback` in the base layer
+   (DEVIATIONS #75). */
 export const PROSE_LINK =
-  "text-ink underline decoration-1 underline-offset-4 hover:decoration-2 hover:decoration-accent";
+  "text-ink underline decoration-1 underline-offset-4 hover:decoration-2 hover:decoration-accent active:opacity-70";
 
 /* Small caption label: the `label` role utility at the size and tracking the
    contact section's `Phone & inquiry hours` / `Email` captions already use
@@ -95,49 +101,55 @@ export function ProsePage({
   return (
     <>
       <SiteHeader variant="solid" active={active} />
-      {/* `id="main" tabIndex={-1}` is the skip-link target on every route
-          (D57 / audit C1). Do not drop either. */}
-      <main
-        id="main"
-        tabIndex={-1}
-        className="flex-1 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30"
-      >
-        <div className="lg:mx-auto lg:max-w-content">
-          {/* Page header. `md:items-end` bottom-aligns the lede with the
-              headline the way home-desktop.html:187 aligns its header row;
-              below `md:` the two simply stack, headline first. */}
-          <div className="flex flex-col gap-6 md:grid md:grid-cols-12 md:items-end md:gap-x-8">
-            <div className="flex flex-col gap-4 md:col-span-6">
-              <span className="label text-ink-dim text-11 tracking-14 sm:text-12">
-                {eyebrow}
-              </span>
-              {/* 56 → 88, the `SectionHeading` h1 pair, measured from
-                  product-mobile.html:94 / product-desktop.html:109. */}
-              <h1 className="display text-ink text-display-56 sm:text-display-88">
-                {title}
-              </h1>
+      {/* D92: `<main>` and the footer's wrapper enter and leave together; the
+          header stays outside, pinned by its own view-transition name. The
+          boundary must contain the DOM nodes directly — no wrapper `<div>`
+          (see page-transition.tsx). */}
+      <PageTransition>
+        {/* `id="main" tabIndex={-1}` is the skip-link target on every route
+            (D57 / audit C1). Do not drop either. */}
+        <main
+          id="main"
+          tabIndex={-1}
+          className="flex-1 px-4 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-30"
+        >
+          <div className="lg:mx-auto lg:max-w-content">
+            {/* Page header. `md:items-end` bottom-aligns the lede with the
+                headline the way home-desktop.html:187 aligns its header row;
+                below `md:` the two simply stack, headline first. */}
+            <div className="flex flex-col gap-6 md:grid md:grid-cols-12 md:items-end md:gap-x-8">
+              <div className="flex flex-col gap-4 md:col-span-6">
+                <span className="label text-ink-dim text-11 tracking-14 sm:text-12">
+                  {eyebrow}
+                </span>
+                {/* 56 → 88, the `SectionHeading` h1 pair, measured from
+                    product-mobile.html:94 / product-desktop.html:109. */}
+                <h1 className="display text-ink text-display-56 sm:text-display-88">
+                  {title}
+                </h1>
+              </div>
+              <p className="text-16 leading-body text-ink-muted max-w-measure sm:text-17 md:col-span-5 md:col-start-8">
+                {lede}
+              </p>
             </div>
-            <p className="text-16 leading-body text-ink-muted max-w-measure sm:text-17 md:col-span-5 md:col-start-8">
-              {lede}
-            </p>
-          </div>
 
-          {meta === undefined ? null : (
-            <div className="border-border-strong mt-10 border-t pt-6 sm:mt-14 sm:pt-8">
-              {meta}
+            {meta === undefined ? null : (
+              <div className="border-border-strong mt-10 border-t pt-6 sm:mt-14 sm:pt-8">
+                {meta}
+              </div>
+            )}
+
+            {/* Section rhythm: 48px → 56px → 80px, all on the DESIGN.md §5
+                spacing scale (8/16/24/32/48/80/120). */}
+            <div className="mt-14 flex flex-col gap-12 sm:mt-20 sm:gap-14 md:mt-24 md:gap-20">
+              {children}
             </div>
-          )}
-
-          {/* Section rhythm: 48px → 56px → 80px, all on the DESIGN.md §5
-              spacing scale (8/16/24/32/48/80/120). */}
-          <div className="mt-14 flex flex-col gap-12 sm:mt-20 sm:gap-14 md:mt-24 md:gap-20">
-            {children}
           </div>
+        </main>
+        <div className="mt-14 sm:mt-20 md:mt-30">
+          <SiteFooter />
         </div>
-      </main>
-      <div className="mt-14 sm:mt-20 md:mt-30">
-        <SiteFooter />
-      </div>
+      </PageTransition>
     </>
   );
 }
