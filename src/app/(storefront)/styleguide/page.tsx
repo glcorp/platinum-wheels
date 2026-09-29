@@ -14,6 +14,7 @@ import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import { ResultsEmpty } from "@/features/results/components/results-grid";
 import { QuoteErrorSummary } from "@/features/product/components/quote-error-summary";
 import { PageTransition } from "@/components/site/page-transition";
+import { LoaderMark } from "@/components/site/nav-progress";
 import { RouteErrorPanel } from "@/components/site/route-error";
 import { QuoteSuccess } from "@/features/product/components/quote-success";
 import type { Product } from "@/features/catalog/types";
@@ -655,19 +656,23 @@ export default function StyleguidePage() {
             </nav>
           </Row>
 
-          {/* The real bar is `position:fixed` across the top of the viewport, so
-            this is its look only: 2px `--accent`, shown at the 85% it creeps
-            to while waiting. The live one appears only when a wait passes
-            150ms. */}
-        <Row label="Loading bar: waits over 150ms">
-          <div aria-hidden="true" className="bg-surface border-border relative h-6 w-full border sm:w-96">
-            <span className="bg-accent absolute top-0 left-0 block h-0.5 w-5/6" />
-          </div>
-          <p className="text-14 leading-body text-ink-dim max-w-measure">
-            Runs along the top edge during a slow page change or filter update,
-            then fills and fades. A quick one shows nothing.
-          </p>
-        </Row>
+          {/* The live loader is `position:fixed` over the whole viewport and
+              appears only when a wait passes 150ms. This is the same
+              component, `LoaderMark`, on the same `--scrim-mid` wash, sweeping
+              continuously so its motion can be judged here. */}
+          <Row label="Loader: waits over 150ms">
+            <div
+              aria-hidden="true"
+              className="bg-scrim-mid border-border grid h-60 w-full place-items-center border sm:w-96"
+            >
+              <LoaderMark />
+            </div>
+            <p className="text-14 leading-body text-ink-dim max-w-measure">
+              Takes the middle of a dimmed screen during a slow page change or
+              filter update, then fades. A quick one shows nothing, and taps
+              still reach the page underneath.
+            </p>
+          </Row>
 
         <Row label="Disclosure: fades both ways">
             <details className="border-border-strong w-full border sm:w-96">

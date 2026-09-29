@@ -272,11 +272,12 @@
   --motion-slide: 60px; /* route slide distance — owner, D92b */
   --motion-rise: 12px; /* scroll-reveal and new-card rise — owner, D92b */
   --motion-nudge: 6px; /* small in-place enters: form panels, route fade */
-  /* Loading bar (owner, 2026-09-29: "add it"). A wait shorter than the delay
-     shows nothing, so fast navigations never flash; the trickle is how long
-     the bar takes to creep towards 85% while nothing has arrived. */
+  /* Loader (owner, 2026-09-29: "add it", "i want a loader on center of
+     screen", then "make it more stylish and premium"). A wait shorter than
+     the delay shows nothing, so fast navigations never flash; the sweep is
+     one lap of the lime head round the tread ring. */
   --progress-delay: 150ms;
-  --progress-trickle: 8s;
+  --progress-spin: 1000ms;
 
   /* Breakpoints — DESIGN.md §8. Mobile-first: these are min-widths.
      400  single-column product grid → two-up
@@ -1028,44 +1029,99 @@
    next on a category change. Same box as the `border-b-2` it replaces: the
    link keeps `border-b-2 border-transparent`, so its geometry is unchanged
    (DEVIATIONS #76). */
-/* The top loading bar — `NavProgress` (src/components/site/nav-progress.tsx)
-   drives `data-state` idle → loading → done → idle. 2px `--accent`, the same
-   weight and colour as the active nav underline, across the top edge above
-   the header. Scale and opacity only. `loading` waits `--progress-delay`
-   before appearing, then creeps to 85% on `--ease-arrive` (fast at first,
-   then slowing — it never claims to be finished); `done` runs to 100% and
-   fades out. A navigation that settles inside the delay switches to `done`
-   while opacity is still 0, so nothing is ever seen. `idle` has no
-   transition, so the reset to zero is invisible. Under reduced motion the
-   durations collapse and the bar simply appears at 85% and disappears — still
-   an indicator, with no movement. */
+/* The loader — `NavProgress` (src/components/site/nav-progress.tsx) drives
+   `data-state` idle → loading → done → idle on this full-viewport overlay.
+   While loading it lays a `--scrim-mid` wash over the page — the same
+   translucent layer the filter sheet puts behind itself: a flat colour, not a
+   blur, so the no-depth rule holds — with the tyre (`loader-mark`, below)
+   standing free in the centre, no box. Clicks pass through; the wash says
+   wait, it traps nobody. Centred on the owner's instruction, an exception to
+   the flush-left rule (DEVIATIONS #81). `loading` waits `--progress-delay`,
+   then the wash fades in and the tyre settles from 94%; a navigation that
+   settles inside the delay switches to `done` while opacity is still 0 and
+   nothing is seen. The sweep is paused whenever the overlay is idle. Under
+   reduced motion the global kill ends every sweep at once, leaving the grey
+   ring, hub and label on the wash: shown, not moving. */
 @utility nav-progress {
   position: fixed;
-  inset-inline: 0;
-  top: 0;
+  inset: 0;
   z-index: 60;
-  height: 2px;
-  background: var(--accent);
-  transform-origin: left;
-  scale: 0 1;
+  display: grid;
+  place-items: center;
+  background: var(--scrim-mid);
   opacity: 0;
   pointer-events: none;
   view-transition-name: nav-progress;
 
+  & > span {
+    scale: 0.94;
+    transition: scale var(--duration-overlay) var(--ease-arrive);
+  }
+
+  &:not([data-state="loading"]):not([data-state="done"]) [data-sweep] line {
+    animation-play-state: paused;
+  }
+
   &[data-state="loading"] {
-    scale: 0.85 1;
     opacity: 1;
-    transition:
-      scale var(--progress-trickle) var(--ease-arrive) var(--progress-delay),
-      opacity var(--duration-feedback) linear var(--progress-delay);
+    transition: opacity var(--duration-state) var(--ease-card)
+      var(--progress-delay);
+
+    & > span {
+      scale: 1;
+      transition-delay: var(--progress-delay);
+    }
   }
 
   &[data-state="done"] {
-    scale: 1 1;
     opacity: 0;
-    transition:
-      scale var(--duration-state) var(--ease-card),
-      opacity var(--duration-exit) var(--ease-leave) var(--duration-state);
+    transition: opacity var(--duration-exit) var(--ease-leave);
+
+    & > span {
+      scale: 1;
+    }
+  }
+}
+
+/* The tyre (`LoaderMark`): a 120px tread ring — 24 radial ticks round a
+   five-bolt hub, like the tread blocks of a tyre or the marks of a
+   tachometer — with `Loading` beneath. The grey ticks sit at 45%; a lime head
+   sweeps clockwise once per `--progress-spin`, each tick fading over half a
+   lap behind it (`--i` is a tick's place in the sweep; the 24 must match
+   `TICK_COUNT`). Opacity only. Used by the overlay above and by /styleguide
+   §12, where it sweeps continuously. */
+@utility loader-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+
+  & svg {
+    width: 120px;
+    height: 120px;
+  }
+
+  & [data-base] {
+    opacity: 0.45;
+  }
+
+  & [data-sweep] line {
+    opacity: 0;
+    animation: nav-progress-sweep var(--progress-spin) linear infinite;
+    animation-delay: calc(var(--progress-spin) * (var(--i) / 24 - 1));
+  }
+}
+
+/* One tick's life: lit as the head passes, gone half a lap later. */
+@keyframes nav-progress-sweep {
+  0% {
+    opacity: 1;
+    animation-timing-function: var(--ease-card);
+  }
+
+  50%,
+  100% {
+    opacity: 0;
   }
 }
 

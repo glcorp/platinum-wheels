@@ -75,12 +75,13 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   `default="none"` so same-route changes never animate the whole page. Every page shell wraps `<main>`
   **and** the footer in it — never the header, which is pinned by its own name — and it lives in pages,
   not a layout, because a layout persists and never enters or exits.
-- [`nav-progress.tsx`](nav-progress.tsx) — `"use client"` leaf island, the top loading bar (**D92b**
-  addendum). No React state: one effect writes `data-state` (`idle`/`loading`/`done`) on a
-  `nav-progress` div. Starts on an internal link click, a GET submit or `aria-busy="true"`; ends when the
-  URL has committed, no `[data-route-loading]` skeleton remains and nothing is busy; 15s safety. Mounted
-  in the root layout. Its listeners survive `pagehide` on purpose, so a bfcache-restored page still has
-  a working bar.
+- [`nav-progress.tsx`](nav-progress.tsx) — `"use client"` leaf island, the centred loader (**D92b**
+  addendum), plus `LoaderMark`, the tyre itself, which `/styleguide` §12 renders directly. No React
+  state: one effect writes `data-state` (`idle`/`loading`/`done`) on the `nav-progress` overlay — a
+  `--scrim-mid` wash with the tyre in the centre, no box. Starts on an internal link click, a GET submit
+  or `aria-busy="true"`; ends when the URL has committed and nothing is busy; 15s safety. Mounted in
+  the root layout. Its listeners survive `pagehide` on purpose, so a bfcache-restored page still has a
+  working loader. Centred by the owner's choice, DEVIATIONS #81.
 - [`scroll-reveal.tsx`](scroll-reveal.tsx) — `"use client"` leaf island rendering `null` (**D92b**). Arms
   only `[data-reveal]` elements that are below the fold at mount (`data-reveal="pending"`), reveals each
   once via IntersectionObserver. Never arms under reduced motion or without IntersectionObserver, and

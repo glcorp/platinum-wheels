@@ -18,7 +18,7 @@ entire site loses its type or its palette at once.
   is a `next/script` `beforeInteractive` inline bootstrap (`MOTION_BOOT`) that marks images
   `data-loaded` for the lazy-image fade-in and registers the passive `touchstart` listener iOS Safari
   needs before it applies `:active`. Not a client component; no hydration. After `HashScroll`, the
-  layout mounts `NavProgress`, the top loading bar (D92b addendum) — here because the root layout
+  layout mounts `NavProgress`, the centred loader (D92b addendum) — here because the root layout
   persists across navigations and the bar must outlive the page that started it.
 - [`fonts.ts`](fonts.ts) (29 ln) — Barlow Condensed 600/700 and Barlow 400/500/700, self-hosted via
   `next/font/google`, `display: "swap"`, `adjustFontFallback` (**D20**; `docs/decisions.md:99`).

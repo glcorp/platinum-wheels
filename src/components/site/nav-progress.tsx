@@ -1,26 +1,35 @@
 "use client";
 
 /* ---------------------------------------------------------------------------
-   NavProgress — the thin lime bar along the top edge while a page change or a
-   filter update is in flight.
+   NavProgress — the loader in the centre of the screen while a page change or
+   a filter update is in flight.
 
    Owner, 2026-09-29, asking for a loading indicator "when it takes time to
-   fetch", then approving "a thin lime progress bar along the top edge during
-   any page change or filter update that takes longer than ~150ms; quick ones
-   show nothing". The ~150ms is not in this file: `data-state="loading"` waits
+   fetch", then approving a thin lime bar along the top edge that shows only
+   for waits over ~150ms, then — having not seen it — "i want a loader on
+   center of screen", then "make it more stylish and premium", then "i dont
+   want the box, tire is better, amke it more evident and get ride of the
+   box, make the background little translucent while laoding". So it is a
+   tyre: a ring of 24 tread ticks round a five-bolt hub, a lime head sweeping
+   round it, `Loading` beneath — standing free in the middle of the viewport
+   over a `--scrim-mid` wash, the same translucent layer the filter sheet puts
+   behind itself (a flat colour, not a blur, so the no-depth rule holds).
+   Clicks still pass through: the wash says "wait", it does not trap anyone.
+   Centring it is a deliberate exception to the flush-left rule, made by the
+   owner. The ~150ms is not in this file: `data-state="loading"` waits
    `--progress-delay` in CSS before it paints, so a change that settles inside
    that window flips to `done` while opacity is still 0 and nothing is seen.
 
    All of the look lives in globals.css (`@utility nav-progress`). This island
    only writes `data-state` — `idle` → `loading` → `done` → `idle` — directly
-   on the element through a ref. There is no React state at all: the bar
+   on the element through a ref. There is no React state at all: the loader
    changes many times per navigation and nothing else renders from it, so a
    re-render per change would buy nothing, and writing from listeners keeps
    `react-hooks/set-state-in-effect` out of the picture entirely.
 
    `aria-hidden`: a screen reader already hears Next's route announcer on a
    page change, and the filter form and sort select carry `aria-busy` while
-   their transition runs (D66). A decorative 2px bar would be a third,
+   their transition runs (D66). A decorative spinner would be a third,
    contentless announcement of the same event.
 
    Three signals START it:
@@ -47,46 +56,74 @@
      (2) No `[data-route-loading]` element exists. That marks the wrapper of
          `(storefront)/loading.tsx`'s skeleton (D62); on a slow dynamic route
          the URL commits while the skeleton is still up, and the page is not
-         loaded until the real content replaces it. The attribute is added by
-         the concurrent QA pass (D91b). If it is ever absent this still ends —
+         loaded until the real content replaces it. D91b removed that
+         skeleton, so this check is now always clear — inert, kept only in
+         case a loading boundary ever returns. If it is ever absent this still ends —
          on URL commit, while a skeleton is visible — so it degrades to early,
          never to stuck.
      (3) No `[aria-busy="true"]` element exists: a transition is still running.
 
    Safety: 15s after the last start it goes to `done` regardless. A link that
    resolves to the current URL, a cancelled navigation, or a submit that never
-   leaves must never leave the bar parked across the top of the page.
+   leaves must never leave a spinner parked in the middle of the page.
 
-   `done` holds for 350ms — the CSS's 200ms run to full plus its 150ms fade —
-   then resets to `idle`, whose lack of a transition makes the reset invisible.
-   A start during that window restarts cleanly: `idle`, a forced reflow, then
-   `loading`, so the delay and the trickle both run again from zero rather than
-   resuming mid-fade.
+   `done` holds for 350ms — comfortably past the CSS's 150ms fade-out — then
+   resets to `idle`. A start during that window restarts cleanly: `idle`, a
+   forced reflow, then `loading`, so the 150ms delay runs again from zero
+   rather than the loader resuming mid-fade.
 
    A full page load (a native GET submit, a hard navigation) simply unloads the
-   page mid-bar; nothing needs handling. `pagehide` parks the bar at `idle` so
+   page mid-spin; nothing needs handling. `pagehide` parks it at `idle` so
    a page restored from the back/forward cache does not come back frozen
    mid-load, and keeps the listeners, because a restored page does not re-run
    this effect.
 
    Reduced motion needs no branch here. The global kill collapses transition
-   durations but not `transition-delay`, so the bar still waits the 150ms,
-   then appears at 85% and disappears on `done` — a static indicator with no
-   movement, which is what reduced motion asks for.
+   durations but not `transition-delay`, so the loader still waits the 150ms
+   and appears; the kill also collapses the spin to a single 0.01ms turn, so
+   the ring sits still — a static indicator with no movement, which is what
+   reduced motion asks for.
 
    Where it lives: the root layout, because layouts persist across navigations
    and this has to survive the page it is reporting on being replaced. Motion
-   system: D92b ("Expressive"); the bar is pinned out of the page's view
+   system: D92b ("Expressive"); the loader is pinned out of the page's view
    transition by its own `view-transition-name` in globals.css.
    --------------------------------------------------------------------------- */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 
 /** Matches the CSS: `--duration-state` (200ms run to 100%) plus
  *  `--duration-exit` (150ms fade), after which `idle` is safe to write. */
 const DONE_HOLD_MS = 350;
 
-/** The bar never stays up longer than this after its most recent start. */
+/* The tread ring: 24 radial ticks, like the tread blocks round a tyre or the
+   marks round a tachometer. Computed once at module scope — the geometry
+   never changes. Each tick is drawn twice: a `--border-strong` base, and a
+   lime copy whose opacity the CSS sweeps round the ring in turn (`--i` sets
+   each copy's place in the sweep), so a lit head chases clockwise with a
+   fading tail. Opacity only, no colour animation. */
+const TICK_COUNT = 24;
+const TICKS = Array.from({ length: TICK_COUNT }, (_, i) => {
+  const angle = (i / TICK_COUNT) * Math.PI * 2;
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return {
+    x1: round(40 + 26 * Math.sin(angle)),
+    y1: round(40 - 26 * Math.cos(angle)),
+    x2: round(40 + 37 * Math.sin(angle)),
+    y2: round(40 - 37 * Math.cos(angle)),
+  };
+});
+
+/* Five wheel bolts round the hub. */
+const BOLTS = Array.from({ length: 5 }, (_, i) => {
+  const angle = (i / 5) * Math.PI * 2;
+  return {
+    cx: Math.round((40 + 9 * Math.sin(angle)) * 100) / 100,
+    cy: Math.round((40 - 9 * Math.cos(angle)) * 100) / 100,
+  };
+});
+
+/** The loader never stays up longer than this after its most recent start. */
 const SAFETY_MS = 15000;
 
 type BarState = "idle" | "loading" | "done";
@@ -137,7 +174,7 @@ export function NavProgress() {
       startedAt = performance.now();
 
       if (state === "loading") {
-        /* Already running: keep the bar where it is. A click or submit on top
+        /* Already running: keep the loader as it is. A click or submit on top
            of a busy transition adds the URL condition; a busy flag on top of
            a click leaves the click's URL condition in place. */
         if (fromHref !== null) startHref = fromHref;
@@ -253,7 +290,7 @@ export function NavProgress() {
     });
 
     /* Back/forward cache: park at rest so a restored page is not frozen
-       mid-bar. Listeners stay — a restored page does not re-run this. */
+       mid-spin. Listeners stay — a restored page does not re-run this. */
     function onPageHide() {
       stopLoop();
       clearReset();
@@ -286,6 +323,45 @@ export function NavProgress() {
       aria-hidden="true"
       className="nav-progress"
       data-state="idle"
-    />
+    >
+      {/* The overlay (`@utility nav-progress`) lays the translucent
+          `--scrim-mid` over the page and fades in; the tyre itself is
+          `LoaderMark`, shared with `/styleguide` so the reference page renders
+          the real thing rather than a copy that drifts. */}
+      <LoaderMark />
+    </div>
+  );
+}
+
+/* The tyre on its own: a ring of 24 tread ticks round a five-bolt hub, a lime
+   head sweeping round it, `Loading` beneath in the label role (new copy, one
+   word). Look and sweep are `@utility loader-mark`; the sweep only pauses when
+   the mark sits inside an idle `nav-progress` overlay. Exported for
+   `/styleguide` §12. Decorative: callers hide it from assistive tech. */
+export function LoaderMark() {
+  return (
+    <span className="loader-mark">
+      <svg viewBox="0 0 80 80" fill="none" strokeWidth={3.5}>
+        <g className="stroke-ink-dim" data-base="">
+          {TICKS.map((t, i) => (
+            <line key={i} {...t} />
+          ))}
+        </g>
+        <g className="stroke-accent" data-sweep="">
+          {TICKS.map((t, i) => (
+            <line
+              key={i}
+              {...t}
+              style={{ "--i": i } as CSSProperties}
+            />
+          ))}
+        </g>
+        <circle cx="40" cy="40" r="15" strokeWidth={2} className="stroke-ink-dim" />
+        {BOLTS.map((b, i) => (
+          <circle key={i} {...b} r="2" className="fill-ink-muted" />
+        ))}
+      </svg>
+      <span className="label text-ink-muted text-11 tracking-16">Loading</span>
+    </span>
   );
 }
