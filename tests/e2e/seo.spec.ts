@@ -209,6 +209,44 @@ for (const path of ["/tires?season=winter&brand=Zeta", "/wheels?diameter=18&sort
   });
 }
 
+/* ---------- The tags are in <head> for a crawler ---------- */
+
+/* Next streams a dynamic page's metadata into `<body>` when it resolves after
+   the first flush, for every user agent outside its "HTML-limited" list, and
+   that list does not name Googlebot or any AI crawler (`next/dist/shared/lib/
+   router/utils/html-bots.js`). Practitioners report Googlebot then missing the
+   canonical. It does not happen here, because the category and product pages
+   wait on the database with no Suspense boundary above them, so the head is
+   complete before anything is sent. A `loading.tsx` or a `<Suspense>` around
+   either page would break that silently; this test is the alarm. */
+const CRAWLERS = {
+  Googlebot:
+    "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+  "OAI-SearchBot": "OAI-SearchBot/1.0; +https://openai.com/searchbot",
+  ClaudeBot: "Mozilla/5.0 (compatible; ClaudeBot/1.0; +claudebot@anthropic.com)",
+  PerplexityBot: "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot)",
+};
+
+for (const [crawler, userAgent] of Object.entries(CRAWLERS)) {
+  test(`${crawler} gets the title, canonical and robots meta inside <head>`, async ({ request }) => {
+    for (const path of ["/tires?brand=Zeta", "/wheels", "/accessories", `/products/${SLUG.tire}`]) {
+      const res = await request.get(path, {
+        headers: { Host: CANONICAL_HOST, "User-Agent": userAgent },
+        maxRedirects: 0,
+      });
+      // No fixture database yet (D111): the product slug may not exist.
+      if (res.status() === 404) continue;
+      const html = await res.text();
+      const headEnd = html.indexOf("</head>");
+      for (const tag of ["<title>", 'rel="canonical"', 'name="robots"', 'property="og:image"']) {
+        const at = html.indexOf(tag);
+        expect(at, `${tag} is present on ${path}`).toBeGreaterThan(-1);
+        expect(at, `${tag} is inside <head> on ${path}`).toBeLessThan(headEnd);
+      }
+    }
+  });
+}
+
 /* ---------- Pages that are never indexed, in either flag state ---------- */
 
 test("/styleguide is noindex whatever the flag says, and has no canonical", async ({ request }) => {

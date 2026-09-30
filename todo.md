@@ -136,6 +136,9 @@ S1. **Turn search indexing on in the same deploy that goes onto the apex.**
      site.** Pointing it at a flag-off build tells Google to drop it.
    - **How:** in Vercel, set `SEARCH_INDEXING_ENABLED` to exactly `true` for **Production only**
      (lower case, no spaces; anything else is off) and **redeploy**. Only then move the apex (item 6).
+   - **Google keeps a copy of `robots.txt` for up to a day.** After the switch, ask for a fresh read in
+     Search Console (Settings, robots.txt, "Request a recrawl"), and repeat the checks below daily for
+     the first week: the classic failure is a site that launched still saying `noindex`.
    - **Done when:** `curl https://platinumwheels.ca/robots.txt` shows `Allow: /` and the `Sitemap:` line;
      the home page's source has `<meta name="robots" content="index, follow, …">`;
      `https://platinumwheels.ca/sitemap.xml` lists four files; and `robots.txt` on

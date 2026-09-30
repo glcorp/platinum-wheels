@@ -105,6 +105,11 @@ and the `metadata` of `layout.tsx` and of each indexable page.
   `noindex`.
 - Don't fetch a photo from any host but Vercel Blob in `loadProductPhoto()`. The URL comes from a
   database row.
+- Don't put a `loading.tsx` or a `<Suspense>` above a category or product page. Next would then stream
+  the title, canonical and robots meta into `<body>` for Googlebot and every AI crawler, which are not on
+  its "HTML-limited" list; today they arrive in `<head>` because the page waits on the database first
+  (measured 150 of 150 as Googlebot, 2026-09-30). `tests/e2e/seo.spec.ts` fails if that changes. The same
+  boundary turns a 404 into a 200 (D91b, D111).
 - Don't read `headers()` in the root layout or in `pageMetadata()` to make the meta host-aware.
 
 ## Open
