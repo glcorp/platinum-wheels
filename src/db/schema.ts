@@ -56,9 +56,8 @@ import {
 /**
  * Stored link states. **`expired` is deliberately not one of them**: expiry is
  * derived at read time as `status = 'active' AND expires_at <= now()`. Storing
- * it would need a job to flip rows at the right moment, and Vercel Hobby cron
- * runs at most once a day — a link would read "active" for up to 24 hours
- * after it had stopped accepting payment. Derived, it is exact.
+ * it would need a job to flip rows at the right moment, and there is none
+ * (D108). Derived, it is exact.
  */
 export const paymentLinkStatus = pgEnum("payment_link_status", [
   "active",
@@ -70,15 +69,16 @@ export const paymentLinkStatus = pgEnum("payment_link_status", [
  * Attempt lifecycle.
  *
  *   pending    Session token issued; the customer is (or was) on the hosted
- *              page. Outcome unknown until the return redirect is verified or
- *              the daily reconcile runs.
+ *              page. Outcome unknown until the return redirect is verified.
+ *              Nothing else resolves it (D108): a customer who never comes
+ *              back leaves the attempt here.
  *   approved   Verified approved by a server-side transaction query. At most
  *              one per link (partial unique index below).
  *   declined   Verified declined. The customer may try again on the same link.
  *   failed     We never got a usable session (gateway error, timeout, proxy
  *              limit). No money moved.
- *   expired    Session window passed and the reconcile found no transaction
- *              for this attempt's invoice number. No money moved.
+ *   expired    Unused since D108 removed the reconcile that set it. Kept in
+ *              the enum: dropping a value is a migration for no gain.
  *   duplicate  Verified approved, but the link was already paid by another
  *              attempt. Money moved twice: staff must refund this one.
  */
@@ -232,9 +232,9 @@ export const paymentAttempts = pgTable(
 
     /**
      * Sent to Converge as `ssl_invoice_number`: `PW-10001-2`. Unique per
-     * attempt, which is what lets the daily reconcile match a date-range
-     * transaction query back to the attempt that caused it even when the
-     * customer closed the tab before the return redirect.
+     * attempt, which is how staff find the transaction in the Converge
+     * portal when the customer closed the tab before the return redirect
+     * (D108: nothing looks it up automatically).
      */
     providerInvoiceNumber: text("provider_invoice_number").notNull(),
 
@@ -264,7 +264,7 @@ export const paymentAttempts = pgTable(
       .notNull()
       .defaultNow(),
     /** Converge session tokens live 15 minutes; after this the attempt can
-     *  only be resolved by the reconcile, never by the customer. */
+     *  no longer be resolved by the customer, and stays `pending` (D108). */
     sessionExpiresAt: timestamp("session_expires_at", {
       withTimezone: true,
     }).notNull(),
@@ -292,7 +292,7 @@ export const paymentAttempts = pgTable(
     uniqueIndex("payment_attempts_one_approved_per_link")
       .on(t.linkId)
       .where(sql`${t.status} = 'approved'`),
-    // The reconcile's work queue: unresolved attempts, oldest first.
+    // Unresolved attempts, oldest first. Unused since D108; kept to avoid a migration.
     index("payment_attempts_pending_idx")
       .on(t.createdAt)
       .where(sql`${t.status} = 'pending'`),
@@ -358,3 +358,12 @@ export type PaymentAttempt = typeof paymentAttempts.$inferSelect;
 export type NewPaymentAttempt = typeof paymentAttempts.$inferInsert;
 export type PaymentEvent = typeof paymentEvents.$inferSelect;
 export type NewPaymentEvent = typeof paymentEvents.$inferInsert;
+
+/* ===========================================================================
+   Catalogue
+   =========================================================================== */
+
+// Products, specs, images and vendor sources live in their own file. They are
+// re-exported here because `drizzle.config.ts` and `client.ts` both read the
+// schema from this one module.
+export * from "./catalog-schema";

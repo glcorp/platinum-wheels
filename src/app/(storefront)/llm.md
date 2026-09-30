@@ -23,8 +23,8 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   **no artboards** and are not parity rows: they inherit `/results`' parity by rendering the same
   component tree (`design/manifest.md` Routes).
 - [`products/[slug]/page.tsx`](products/[slug]/page.tsx) — route `/products/[slug]`, **built**
-  2026-09-21. `async`, takes `PageProps<"/products/[slug]">`, resolves the slug from the seed (a real 404 if
-  unknown since D91b, but an *unavailable* product still returns 200) and turns `productView(product, query)` into
+  2026-09-21. `async`, takes `PageProps<"/products/[slug]">`, resolves the slug from the catalogue database since D108b (a real 404 if
+  unknown or hidden since D91b, but a *discontinued* product still returns 200) and turns `productView(product, query)` into
   one `ProductView`; composition only. The breadcrumb is rendered once and placed twice — mobile above
   the gallery, desktop inside the buy panel — with the visibility classes owned here, not by the
   component. The header's active nav item follows the product's category (D58), so a wheel PDP marks
@@ -34,7 +34,8 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   streamed every page into `<div hidden id="S:0">` behind the skeleton, so with JavaScript off every
   route showed only the skeleton (every no-JS promise in D44/D45/D50/D83 was void while the served HTML
   looked right), an unknown product slug returned 200 and a render error returned 200. Measured on a
-  build without it: 404 and 500. No route here suspends, so nothing replaced it.
+  build without it: 404 and 500. Nothing replaced it: the results and product routes wait on the
+  database since D108b, with no Suspense boundary, which is what keeps the 404 real (D111).
 - [`qa-error/page.tsx`](qa-error/page.tsx) — **a test fixture, not a page** (D91b). Throws only when the
   server was started with `QA_ERROR_ROUTE=1` (the Playwright config sets it); otherwise `notFound()`. It
   exists so `tests/e2e/error-boundary.spec.ts` can prove the boundary end to end (a real 500).

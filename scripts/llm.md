@@ -19,6 +19,12 @@ from `design/assets/`, and parity becomes eyeballing — which
 - [`parity-probe.js`](parity-probe.js) (140 ln) — three browser functions: `probe(pairs)` (30 computed
   properties + bounding box per labelled selector, `:20-51`), `overflowers()` (the 375/768/1280 no-
   horizontal-scroll gate, `:89`), `accentCount(root, accent)` (the one-accent-per-frame audit, `:109`).
+- [`vehicles-fetch.mjs`](vehicles-fetch.mjs) — `npm run vehicles:fetch`. Asks NHTSA vPIC for every model
+  of the makes in its `MAKES` list, model years 2005 to next year, and rewrites
+  [`data/vehicles.csv`](data/llm.md), the vehicle finder's Year / Make / Model list. About 3,200
+  requests and four minutes. `--check` fetches and reports without writing. The cleanup rules
+  (`EXCLUDED`, `RENAMED`, `SPLIT`, `SCION`, `ADDED`) are in the file, each with its reason; a rule that
+  matches nothing is printed at the end of a run.
 - [`db-migrate.mjs`](db-migrate.mjs) — applies `drizzle/*.sql` via `DATABASE_URL_UNPOOLED`. Runs first in
   `npm run build`, so every Vercel build migrates its own Neon branch (preview) or main (production)
   before `next build`. Exits 1 on Vercel with no URL; skips locally. Also `npm run db:migrate`.
@@ -54,10 +60,16 @@ from `design/assets/`, and parity becomes eyeballing — which
 | — | — | No folder-scoped rows. | **D19** defines the canvas and the no-upscale refusal. | root `llm.md` §5 |
 
 ## Connects to
-- Depends on: `design/assets/{products,photos,logo}/*.png` (inputs), `sharp` (`package.json:27`),
+- Depends on: `https://vpic.nhtsa.dot.gov/api/` (`vehicles-fetch.mjs` only, at run time),
+  `design/assets/{products,photos,logo}/*.png` (inputs), `sharp` (`package.json:27`),
   `npm run design` serving `design/assets` on :4000 for the probe baseline (`package.json:12`).
-- Depended on by: `public/images/` (the output), `design/reports/*.md` (every row is probe output),
+- Depended on by: `scripts/data/vehicles.csv` (output of `vehicles-fetch.mjs`), `public/images/` (the output), `design/reports/*.md` (every row is probe output),
   `design/reports/README.md` §"Running a measurement", `docs/decisions.md` §9.
+
+- **`vehicles-fetch.mjs` is the only thing that talks to vPIC.** The app reads the committed snapshot,
+  never the API, so a page or a build does not depend on NHTSA being up (the file's header).
+- **Fetch models by make ID, never by make name.** vPIC's by-name endpoint substring-matches: `ford`
+  returns trailer builders (`vehicles-fetch.mjs` header).
 
 ## Don't
 - Don't move migrations out of the build without a replacement: the Neon URLs are Vercel **Sensitive**,
@@ -84,3 +96,6 @@ from `design/assets/`, and parity becomes eyeballing — which
    the vendor images (~4% affected) in `~/platinum-wheels-feasibility/tools/web_image.mjs`, which now pads by the
    size the resize actually produced (D90b). Not checked against the current `public/images/products/` output and
    not fixed here — **owner** decides whether to port the fix.
+4. **Nothing reads `data/vehicles.csv` yet.** The finder still renders the 15-make seed in
+   `src/features/finder/data.ts`; the table, its loader and the lookup the dropdowns call are not built.
+   They wait on the catalogue branch landing, because the search they feed extends its queries. Owner.

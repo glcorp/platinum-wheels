@@ -1,7 +1,7 @@
 /**
  * Results contract — written by the coordinator before any component so the
  * build agents code against one shape (D25). `query.ts` implements the URL
- * half (pure, client-safe); `search.ts` the server half (touches the seed);
+ * half (pure, client-safe); `search.ts` the server half (reads the database);
  * `@/features/catalog/categories` holds the per-category table that makes one
  * page serve three routes (D58).
  *
@@ -90,8 +90,13 @@ export interface ResultsQuery {
   priceMin: number | null;
   priceMax: number | null;
   sort: SortKey;
-  /** `?show=all` — the `Load more` link (D44). */
-  showAll: boolean;
+  /**
+   * `?show=30` — how many best matches to render. `RESULTS_WINDOW.best` by
+   * default; each `Load more` adds `RESULTS_WINDOW.step`, up to
+   * `RESULTS_WINDOW.max` (D44, D108b). The old `?show=all` reads as the
+   * maximum: with a real catalogue "all" can be thousands of cards.
+   */
+  show: number;
 }
 
 /** `Record<string, string | string[] | undefined>` — what `PageProps` hands a page. */
@@ -153,14 +158,15 @@ export interface Facets {
      *  clip (`design/DEVIATIONS.md` #67). */
     dense: boolean;
   } | null;
-  /** The chip row: `Season` / `Finish` / `Type`. Always rendered; counts may
-   *  be 0, and options are the category's full list, not just what is in stock. */
+  /** The chip row: `Season` / `Type`, or `null` on wheels, which have none
+   *  (D105b). Counts may be 0; options are the category's full list. */
   chipGroup: {
     label: string;
     param: string;
     options: readonly FacetOption[];
-  };
-  /** Every brand present in this category's seed, in order of first appearance. */
+  } | null;
+  /** Every brand with a product in this category, most products first. The
+   *  rail shows the first `BRAND_WINDOW` and folds the rest away (D108b). */
   brands: readonly FacetOption[];
   price: PriceFacet;
   /** `Price per tire` / `Price per wheel` / `Price per item`. */
@@ -171,18 +177,41 @@ export interface Facets {
 
 /* --- View ---------------------------------------------------------------- */
 
-/** How many cards render before `Load more` (D47): the artboard's own 6 + 3
- *  (results-desktop.html §1.6–1.7). One window at every width, every category. */
-export const RESULTS_WINDOW = { best: 6, similar: 3 } as const;
+/**
+ * How many cards render before `Load more` (D47): the artboard's own 6 + 3
+ * (results-desktop.html §1.6–1.7). One window at every width, every category.
+ *
+ * `step`, `max` and `similarExpanded` are D108b: `Load more` used to reveal
+ * everything, which was nine cards in the seed and is thousands now. It adds
+ * `step` best matches per press up to `max`; the similar row opens from 3 to
+ * `similarExpanded` on the first press.
+ */
+export const RESULTS_WINDOW = {
+  best: 6,
+  similar: 3,
+  step: 24,
+  max: 150,
+  similarExpanded: 12,
+} as const;
+
+/** Brand rows shown before `Show all brands` (D108b). */
+export const BRAND_WINDOW = 8;
 
 export interface ResultsView {
   query: ResultsQuery;
   facets: Facets;
-  /** Full lists after filter + sort; the grid applies `RESULTS_WINDOW` unless
-   *  `query.showAll`. `best` = every size part given matches; `similar` = the
-   *  rest of the filtered set when any size part is given, else empty. */
+  /**
+   * The cards to render, already windowed by `query.show`: the database
+   * returns one page, never the whole list. `best` = every size part given
+   * matches (or everything, when no size is given); `similar` = sizes close to
+   * the one asked for, never the size itself, and empty when none is given.
+   */
   best: readonly Product[];
   similar: readonly Product[];
-  /** `best.length + similar.length` — `N matches · M similar` and `Show N matches`. */
+  /** How many products each list holds in all, of which the arrays above are
+   *  the first few. `N matches · M similar`. */
+  bestTotal: number;
+  similarTotal: number;
+  /** `bestTotal + similarTotal`. Zero = the empty state. */
   total: number;
 }

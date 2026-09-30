@@ -34,6 +34,12 @@ import { WinterPromo } from "@/features/home/components/winter-promo";
    motion.
    --------------------------------------------------------------------------- */
 
+/* The featured row is read from the catalogue (D108b) through a cached read
+   with a tag and no timer (`home/featured.ts`), so `/` stays prerendered and
+   never waits on the database. No `revalidate` export here, on purpose: a
+   timed one makes Next send `stale-while-revalidate` on `/`, which D93b
+   reverted (WDG-09; owner, 2026-09-30, D111). */
+
 export const metadata: Metadata = {
   /* The root template appends "· Platinum Wheels"; the home page carries the
      full name once, so opt out of the template. */

@@ -24,15 +24,20 @@ import { PAYMENT_LINK_CURRENCY } from "@/features/admin/types";
    `QuoteSuccess`'s — so `/admin/styleguide` can render this inert. A live
    `role="status"` on a reference page would announce itself on load.
 
-   D94: no payment service provider is chosen yet, so `url` is a fabricated
-   placeholder (`payment-link-actions.ts`'s `TODO(psp)`). It resolves to
-   nothing. The notice below is mandatory, not decoration — the owner demos
-   this to real clients, and nobody may mistake the placeholder for a working
-   link.
+   D94 is retired by D99-D105: `url` is a real link to our own payment page.
+   What replaces its "sample link" notice is a **test mode** notice, shown
+   while the gateway is Converge's demo account (`testMode`): such a link takes
+   Elavon test cards only and no money moves, and nobody may mistake it for a
+   live one.
    --------------------------------------------------------------------------- */
 
 export interface PaymentLinkSuccessProps {
   url: string;
+  /** `PW-10001`. */
+  reference: string;
+  /** Pre-formatted in the shop's time zone. */
+  expiresLabel: string;
+  testMode: boolean;
   /** Canonical two-decimal string, e.g. `"452.60"` — never re-parsed here. */
   amount: string;
   description: string;
@@ -45,6 +50,9 @@ export interface PaymentLinkSuccessProps {
 
 export function PaymentLinkSuccess({
   url,
+  reference,
+  expiresLabel,
+  testMode,
   amount,
   description,
   role,
@@ -63,20 +71,19 @@ export function PaymentLinkSuccess({
         Payment link ready.
       </h2>
 
-      {/* Mandatory, unmissable notice (D94). Accent is the one colour in the
-          system that reads as "pay attention" without reading as an error —
-          there is no danger/warning token in this palette, and inventing one
-          is out of scope for this file. Sentence case, no exclamation marks
+      {/* Test mode notice (replaces D94's sample notice). Accent is the one
+          colour in the system that reads as "pay attention" without reading
+          as an error. Sentence case, no exclamation marks
           (`.claude/rules/ui.md` "Copy"). */}
-      <div className="border-accent bg-accent-subtle flex flex-col gap-1 border p-3.5 sm:gap-1.5 sm:p-4">
-        <span className="label text-ink text-10 tracking-14 sm:text-11">
-          Sample link
-        </span>
-        <p className="text-ink text-13 leading-body sm:text-14">
-          No payment gateway is connected yet. This link is a preview only and
-          does not process a real payment.
-        </p>
-      </div>
+      {testMode ? (
+        <div className="border-accent bg-accent-subtle flex flex-col gap-1 border p-3.5 sm:gap-1.5 sm:p-4">
+          <span className="label text-ink text-10 tracking-14 sm:text-11">Test mode</span>
+          <p className="text-ink text-13 leading-body sm:text-14">
+            Payments are connected to the gateway&apos;s demo account. This link takes test cards only, and no real
+            money moves.
+          </p>
+        </div>
+      ) : null}
 
       {/* Restated so the owner can verify at a glance what he is about to
           paste into an email — a bare URL with no amount beside it is
@@ -92,6 +99,18 @@ export function PaymentLinkSuccess({
           <dd className="numeral text-ink text-20 leading-flat sm:text-22">
             {`$${amount} ${PAYMENT_LINK_CURRENCY}`}
           </dd>
+        </div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <dt className="label text-ink-dim text-11 tracking-12 sm:text-12">
+            Reference
+          </dt>
+          <dd className="numeral text-ink text-15 sm:text-16">{reference}</dd>
+        </div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <dt className="label text-ink-dim text-11 tracking-12 sm:text-12">
+            Open until
+          </dt>
+          <dd className="text-ink text-15 sm:text-16">{expiresLabel}</dd>
         </div>
         <div className="flex flex-col gap-0.5">
           <dt className="label text-ink-dim text-11 tracking-12 sm:text-12">

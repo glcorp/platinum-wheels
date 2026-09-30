@@ -32,15 +32,22 @@ composition only, `docs/decisions.md:62`); this is where the actual page content
   rows: **D50** (quantity is `?qty=`), **D51** (Server Action + authored success state), **D52** (similar
   = same season, self excluded), **D53** (seven derived PDP rulings).
 
+- [`admin/`](admin/llm.md) — **built.** The staff tool at `/admin` (D89): shared sign-in (D95), payment-link
+  builder, links list (D106).
+- [`payments/`](payments/llm.md) — **built** 2026-09-24. Converge adapter, link and attempt service, the Pay
+  island (D99–D107). The only code that names the gateway.
+
 ## Rules
 - **Feature shape:** `components/` always; `types.ts` and `data.ts` only when the feature has them
   (`docs/decisions.md:63`; `catalog/` is the built example of all three).
 - **Dependency direction is one-way.** A feature imports from `src/components/ui/`, `src/components/site/`
   and `src/lib/`; none of those may import a feature (`docs/decisions.md:65`, "primitives only — no
   business logic"). **Cross-feature imports go through `catalog/` only** — it is the shared product
-  domain and the others consume it (D37).
-- **Seed data is flagged as sample.** `finder/data.ts` (D27) and `catalog/data.ts` (D29) are stand-ins
-  until real data exists; the wheel CSV supplies nothing (D9).
+  domain and the others consume it (D37). **One further edge: `admin/` imports `payments/`** (`service`,
+  `config`, `money`; D106). `payments/` imports no feature.
+- **Seed data is flagged as sample.** `finder/data.ts` (D27) is a stand-in until real data exists; the
+  catalogue seed `catalog/data.ts` (D29) was deleted by D108b and every page reads the database. The
+  wheel CSV supplies nothing (D9).
 - **`"use client"` only on leaf islands** — the filter sheet, the featured carousel, the quote form
   (`docs/decisions.md:73`). Never at page level, never on a whole feature. The PDP quantity control is
   **not** an island: it is `?qty=` links, server rendered (D50).

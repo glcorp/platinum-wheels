@@ -87,7 +87,8 @@ constants).
 - **Don't add a hard-coded year, a `Winter 2026` string, or `© 2026`.** Computed at render (D32);
   the artboards' `2026` is listed as sample data that must be replaced (`design/DEVIATIONS.md`).
 - **Don't put the finder or catalog seed data here.** It belongs to its feature —
-  `src/features/finder/data.ts` (D27) and `src/features/catalog/data.ts` (D29).
+  `src/features/finder/data.ts` (D27); the catalogue's was `src/features/catalog/data.ts` (D29), deleted
+  by D108b.
 - **Don't add invented social proof** — ratings, review counts, testimonials, customer counts
   (`docs/decisions.md:125-126`).
 - **Don't add social URLs.** None exist (D34).

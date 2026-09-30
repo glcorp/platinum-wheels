@@ -1,8 +1,14 @@
+import { randomUUID } from "node:crypto";
+
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 import { AdminTopBar } from "@/features/admin/components/admin-top-bar";
 import { PaymentLinkForm } from "@/features/admin/components/payment-link-form";
+import { PaymentLinkList } from "@/features/admin/components/payment-link-list";
 import { requireAdminSession } from "@/features/admin/session";
+import { publicPayOrigin } from "@/features/payments/config";
+import { listLinks, type LinkSummary } from "@/features/payments/service";
 
 /* ---------------------------------------------------------------------------
    /admin — the payment-link builder, and the gate's landing page (D91, D92)
@@ -13,7 +19,9 @@ import { requireAdminSession } from "@/features/admin/session";
    cart. Owner, this session: *"we dont built a sustem to compute final amount.
    its simply just a payment link generator … basically just a wrapper on top
    of payment gateway they choose"*. Two fields, no line items, no tax, no
-   totals (D92). Nothing may be added here without an owner ruling.
+   totals (D92), plus the expiry D103 added. Nothing may be added here without
+   an owner ruling. Below the builder, the latest links and whether each was
+   paid (D106).
 
    **Why the builder is the root of /admin.** With product CRUD deferred until
    the vendor catalogue settles the schema, the payment link is the only thing
@@ -32,8 +40,24 @@ export const metadata: Metadata = {
   title: "Payment links",
 };
 
+/** The links list must never take the builder down with it: if the database
+ *  is unreachable, the page still renders and says so. */
+async function loadLinks(): Promise<LinkSummary[] | null> {
+  try {
+    return await listLinks();
+  } catch (error) {
+    console.error(JSON.stringify({ at: "admin.listLinks", detail: error instanceof Error ? error.message : "unknown" }));
+    return null;
+  }
+}
+
 export default async function AdminHomePage() {
   const { csrfToken } = await requireAdminSession();
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const origin = publicPayOrigin(`${proto}://${host}`);
+  const links = await loadLinks();
 
   return (
     <>
@@ -69,9 +93,24 @@ export default async function AdminHomePage() {
           </p>
 
           <div className="mt-10 sm:mt-12">
-            <PaymentLinkForm csrfToken={csrfToken} />
+            <PaymentLinkForm csrfToken={csrfToken} idempotencyKey={randomUUID()} />
           </div>
         </div>
+
+        <section aria-labelledby="links-heading" className="mt-16 w-full max-w-measure sm:mt-20">
+          <h2 id="links-heading" className="display text-ink text-display-28 sm:text-display-40">
+            Recent links
+          </h2>
+          <div className="mt-6">
+            {links ? (
+              <PaymentLinkList links={links} origin={origin} csrfToken={csrfToken} />
+            ) : (
+              <p role="alert" className="text-ink text-15 leading-body">
+                The links list could not be loaded. Refresh in a minute.
+              </p>
+            )}
+          </div>
+        </section>
       </main>
     </>
   );

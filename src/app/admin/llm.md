@@ -10,7 +10,8 @@ and emails it to the customer. Delete this folder and `src/features/admin/` has 
 
 - [`layout.tsx`](layout.tsx) — admin metadata and `robots: noindex`. Renders **no chrome** (see Rules).
 - [`login/page.tsx`](login/page.tsx) — `/admin/login`. Redirects to `/admin` if a session already exists.
-- [`page.tsx`](page.tsx) — `/admin`, the payment-link builder. Calls `requireAdminSession()` first.
+- [`page.tsx`](page.tsx) — `/admin`, the payment-link builder and the recent-links list (D106). Calls
+  `requireAdminSession()` first, mints the form's idempotency key, and renders if the links list fails.
 - [`styleguide/page.tsx`](styleguide/page.tsx) — `/admin/styleguide`, the admin's authored states (D93).
 
 ## Rules

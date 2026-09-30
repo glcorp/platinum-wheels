@@ -35,6 +35,7 @@ import { isFinderVehicle } from "@/features/finder/data";
 import {
   DEFAULT_SORT,
   RESULTS_PARAM,
+  RESULTS_WINDOW,
   SORT_OPTIONS,
   type RawSearchParams,
   type ResultsQuery,
@@ -100,6 +101,15 @@ function parseSizeField(
 /** Parse `PageProps` search params (or a `URLSearchParams`) into a
  *  `ResultsQuery` for `category`. Unknown or malformed values fall back to
  *  the default; never throws. */
+/** `?show=30` → 30, clamped to the window's own bounds. `all` is the old
+ *  spelling of "everything" and now means the maximum. */
+function parseShow(raw: string | null): number {
+  if (raw === "all") return RESULTS_WINDOW.max;
+  if (raw === null || !/^\d{1,4}$/.test(raw)) return RESULTS_WINDOW.best;
+  const parsed = Number.parseInt(raw, 10);
+  return Math.min(Math.max(parsed, RESULTS_WINDOW.best), RESULTS_WINDOW.max);
+}
+
 export function parseResultsQuery(
   category: ProductCategory,
   params: RawSearchParams,
@@ -131,8 +141,10 @@ export function parseResultsQuery(
   /* Selected chip values, filtered and ordered by `config.chips.options`, not
      URL order — so two spellings of the same filter serialise identically and
      the chip row never reorders (today's season mechanism, generalised). */
-  const selected = new Set(uniqueValues(params, config.chips.param));
-  const chips = config.chips.options
+  const selected = new Set(
+    config.chips === null ? [] : uniqueValues(params, config.chips.param),
+  );
+  const chips = (config.chips?.options ?? [])
     .filter((option) => selected.has(option.value))
     .map((option) => option.value);
 
@@ -161,8 +173,8 @@ export function parseResultsQuery(
     priceMin,
     priceMax,
     sort,
-    /* `?show=all` is the only `show` value; `Load more` is a link (D44). */
-    showAll: firstValue(params, RESULTS_PARAM.show) === "all",
+    /* `Load more` is a link that raises `show` (D44, D108b). */
+    show: parseShow(firstValue(params, RESULTS_PARAM.show)),
   };
 }
 
@@ -191,7 +203,9 @@ export function resultsHref(query: ResultsQuery): string {
     append(field.param, query.size[field.param] ?? null);
   }
 
-  for (const chip of query.chips) search.append(config.chips.param, chip);
+  if (config.chips !== null) {
+    for (const chip of query.chips) search.append(config.chips.param, chip);
+  }
   for (const brand of query.brands) search.append(RESULTS_PARAM.brand, brand);
 
   append(
@@ -204,7 +218,9 @@ export function resultsHref(query: ResultsQuery): string {
   );
 
   if (query.sort !== DEFAULT_SORT) search.append(RESULTS_PARAM.sort, query.sort);
-  if (query.showAll) search.append(RESULTS_PARAM.show, "all");
+  if (query.show !== RESULTS_WINDOW.best) {
+    search.append(RESULTS_PARAM.show, String(query.show));
+  }
 
   const serialised = search.toString();
   return serialised === "" ? config.route : `${config.route}?${serialised}`;
@@ -260,16 +276,19 @@ export function clearFilters(query: ResultsQuery): ResultsQuery {
     priceMin: null,
     priceMax: null,
     sort: query.sort,
-    showAll: false,
+    show: RESULTS_WINDOW.best,
   };
 }
 
-/** Same query with a different sort; drops `showAll`. */
+/** Same query with a different sort; closes the window back to its default. */
 export function withSort(query: ResultsQuery, sort: SortKey): ResultsQuery {
-  return { ...query, sort, showAll: false };
+  return { ...query, sort, show: RESULTS_WINDOW.best };
 }
 
-/** Same query with `showAll: true` — the `Load more` href. */
-export function withShowAll(query: ResultsQuery): ResultsQuery {
-  return { ...query, showAll: true };
+/** Same query with one more step of best matches — the `Load more` href. */
+export function withMore(query: ResultsQuery): ResultsQuery {
+  return {
+    ...query,
+    show: Math.min(query.show + RESULTS_WINDOW.step, RESULTS_WINDOW.max),
+  };
 }

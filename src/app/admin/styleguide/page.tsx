@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 /** Sample values. Obviously fake, never real customer data — the storefront's
  *  own rule against shipping the artboards' `Priya Sandhu` placeholder
  *  (`docs/decisions.md` §8) applies to reference pages too. */
-const SAMPLE_URL = "https://pay.platinumwheels.ca/l/8f3c21ab94d7";
+const SAMPLE_URL = "https://pay.platinumwheels.ca/pay/q3Zk9mB2xV7tLpR4nW8sYA";
 const SAMPLE_AMOUNT = "452.60";
 const SAMPLE_DESCRIPTION = "4x Zeta Antarctica Sport 215/55R16 with install";
 
@@ -140,14 +140,17 @@ export default async function AdminStyleguidePage() {
         <Block
           id="sg-admin-payment-link"
           title="Payment link"
-          note="The success panel is the real component. Its sample-link notice is mandatory and not decorative: no gateway is connected, and the owner demos this to clients."
+          note="The success panel is the real component. Its test-mode notice shows while the gateway is the demo account, so a demo link is never mistaken for a live one."
         >
           <Row label="Success panel">
             <div className="max-w-measure">
               <PaymentLinkSuccess
                 url={SAMPLE_URL}
+                reference="PW-10001"
                 amount={SAMPLE_AMOUNT}
                 description={SAMPLE_DESCRIPTION}
+                expiresLabel="Oct 1, 2026, 2:30 p.m."
+                testMode
               />
             </div>
           </Row>

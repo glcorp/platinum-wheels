@@ -58,6 +58,7 @@ const GROUND = [
 const DEMO: Product[] = [
   {
     slug: "zeta-antarctica-sport",
+    image: "/images/products/zeta-antarctica-sport.webp",
     brand: "Zeta",
     model: "Antarctica Sport",
     size: "215/55R16 · 97T XL",
@@ -69,10 +70,9 @@ const DEMO: Product[] = [
   },
   {
     /* A real seed slug, so the specimen's links resolve (it was
-       `touren-tr76`, a 404 — found by the D93b control crawl). `image` keeps
-       the same cut-out the bare slug used to pick up. */
+       `touren-tr76`, a 404 — found by the D93b control crawl). */
     slug: "touren-tr76-18x8",
-    image: "touren-tr76",
+    image: "/images/products/touren-tr76.webp",
     brand: "Touren",
     model: "TR76",
     size: "18×8.5 ET35",
@@ -84,6 +84,7 @@ const DEMO: Product[] = [
   },
   {
     slug: "zmax-winterhawk",
+    image: "/images/products/zmax-winterhawk.webp",
     brand: "ZMAX",
     model: "Winterhawk",
     size: "215/55R16 · 97T",
@@ -95,6 +96,7 @@ const DEMO: Product[] = [
   },
   {
     slug: "mazzini-snowleopard",
+    image: "/images/products/mazzini-snowleopard.webp",
     brand: "Mazzini",
     model: "Snowleopard",
     size: "205/60R16 · 96H",
@@ -103,6 +105,59 @@ const DEMO: Product[] = [
     badges: ["winter", "studdable"],
     threePeakMountainSnowflake: true,
     available: true,
+  },
+];
+
+/* States the real catalogue produces and no artboard draws (D108b): a product
+   with no photo, one with no price, and the all-weather badge. */
+const DEMO_UNDRAWN: Product[] = [
+  {
+    slug: "demo-no-photo",
+    brand: "Continental",
+    model: "VikingContact 8",
+    size: "225/45R17 · 94T XL",
+    price: 218.4,
+    currency: "CAD",
+    badges: ["winter"],
+    threePeakMountainSnowflake: true,
+    available: true,
+  },
+  {
+    slug: "demo-no-price",
+    image: "/images/products/zmax-landgema.webp",
+    brand: "ZMAX",
+    model: "Landgema",
+    size: "225/45R17 · 94W XL",
+    price: null,
+    currency: "CAD",
+    badges: ["all-weather"],
+    threePeakMountainSnowflake: true,
+    available: true,
+  },
+  {
+    category: "accessories",
+    slug: "demo-no-photo-no-price",
+    brand: "Gorilla Automotive",
+    model: "Acorn lug nuts",
+    size: "Set of 20 · 12×1.5",
+    price: null,
+    currency: "CAD",
+    badges: [],
+    threePeakMountainSnowflake: false,
+    available: true,
+    accessoryType: "lug-nuts",
+  },
+  {
+    category: "wheels",
+    slug: "demo-no-photo-unavailable",
+    brand: "Fuel",
+    model: "Rebel D679",
+    size: "20×9 · 6×135 / 6×139.7",
+    price: 412,
+    currency: "CAD",
+    badges: [],
+    threePeakMountainSnowflake: false,
+    available: false,
   },
 ];
 
@@ -435,6 +490,18 @@ export default function StyleguidePage() {
             2px over 150ms — the photo does not zoom. On a results page the photo
             is also the shared element that morphs into the product page&rsquo;s
             gallery (§12).
+          </p>
+          <div className="mt-10 grid grid-cols-1 gap-4 xs:grid-cols-2 md:grid-cols-4">
+            {DEMO_UNDRAWN.map((p) => (
+              <ProductCard key={p.slug} product={p} morph={false} />
+            ))}
+          </div>
+          <p className="text-14 leading-body text-ink-dim mt-6">
+            No photo · no price and all-weather · neither · no photo and
+            unavailable. A product with no photo shows its brand on a neutral
+            tile in the same square, and one with no price reads{" "}
+            <code className="text-ink">Inquire for price</code> at the height
+            the amount would take, so both line up with their neighbours.
           </p>
         </Block>
 

@@ -6,11 +6,18 @@ and six device profiles, and `@axe-core/playwright` runs WCAG checks per route a
 every future change re-proves what the D56/D65/D91b passes measured by hand; without it, each regression
 has to be rediscovered by the owner in a screenshot (D84, D86 were).
 
+**Parked since 2026-09-30 (D111).** The specs assert on the sample catalogue: its slugs, its counts, its
+nine cards a category. D108b deleted that seed and every storefront page now reads the database, so
+against an empty database almost every spec fails and the suite proves nothing. Owner: *"Park it, fix
+later (Recommended)"*. Every spec is kept as written. **The suite is not a gate until it has a fixture
+database** (Open, below), and the rules in this file apply again from that day.
+
 ## Owns
 - [`../playwright.config.ts`](../playwright.config.ts) — lives at the repo root (Playwright's convention);
   owned by this folder. 15 projects: `{chromium,firefox,webkit}-{1280,1440,1920}` and six devices
   (`iphone-se`, `iphone-15-pro`, `pixel-7`, `ipad-mini`, `ipad-pro-landscape`, `floor-320`).
-- [`helpers.ts`](helpers.ts) — shared route list, seed slugs, project-kind predicates, the console/network
+- [`helpers.ts`](helpers.ts) — shared route list, the old seed's slugs (they resolve again once the
+  fixture database carries those products), project-kind predicates, the console/network
   watcher (ignores WebKit's aborted-`_rsc` "access control checks" noise), `settle()`, `scrollSettled()` and
   the overflow assertion. Every spec imports from here, never re-declares a route.
 - [`e2e/*.spec.ts`](e2e/) — one spec per concern; the concern is the filename. See `design/reports/qa.md`
@@ -55,11 +62,13 @@ has to be rediscovered by the owner in a screenshot (D84, D86 were).
 | — | 2026-09-29 | Port 3100, so `next dev` on :3000 and the artboards on :4000 can run beside it. | Three servers, one machine. | *derived*, D91b |
 | — | 2026-09-30 | `PW_PORT=<port>` points the suite at a private production build (`reuseExistingServer`), so a gate run never touches :3100 or another session's servers. | Several sessions share one machine. | *derived*, D93b |
 | — | 2026-09-30 | `visual.spec` reveals every `[data-reveal="pending"]` section before capture. | The D91b home baselines were blank below the fold. | **D93b** |
+| — | 2026-09-30 | **The suite is parked until it has a fixture database.** One test could no longer compile: `hostile-query.spec.ts` WDG-18 imported `searchSeed`, which D108b deleted. It is `test.fixme` with its reason; nothing else was edited. | The seed the specs assert on is gone; rebuilding the fixture is its own session. Owner: *"Park it, fix later (Recommended)"*. | **D111** |
 | — | 2026-09-30 | `/styleguide` visual baselines run under `prefers-reduced-motion: reduce` rather than masking §12's sweeping `LoaderMark`; the 1.4.12 text-spacing cell for `/styleguide` at 320 is skipped (fixed-size type specimens, internal `noindex`). | Keep the loader in the diff in its static form; a specimen word cannot fit 320 by construction. | *derived*, D91b |
 
 ## Connects to
-- Depends on: every route in `src/app/(storefront)/`; `src/lib/routes.ts` for paths; the seed slugs in
-  `src/features/catalog/data.ts`; `design/assets/*.html` via `npm run design` (:4000) for the parity spec.
+- Depends on: every route in `src/app/(storefront)/`; `src/lib/routes.ts` for paths; the products of the
+  old seed (`src/features/catalog/data.ts`, deleted by D108b), which must come from a fixture database
+  now; `design/assets/*.html` via `npm run design` (:4000) for the parity spec.
 - Depended on by: `design/reports/qa.md` (evidence), `HANDOFF.md` §5 (verification state).
 
 ## Don't
@@ -69,6 +78,16 @@ has to be rediscovered by the owner in a screenshot (D84, D86 were).
 - Don't run the suite against :3000. A dev server passes tests production fails, and vice versa (D88).
 
 ## Open
+- **The fixture database (D111). Blocks every run.** What it takes: a Postgres the suite starts itself
+  (the merge check used PGlite behind `@electric-sql/pglite-socket`, which `pg` and
+  `scripts/db-migrate.mjs` both accept); the old seed's 27 products loaded through `catalog/store.ts`
+  `createProduct`, with their cut-outs as `product_images` rows; `DATABASE_URL` handed to the
+  `webServer` build. Then the assertions D108b and D109 changed on purpose need rewriting, not
+  restoring: a size filters instead of splitting the set (`0 matches · 9 similar` no longer holds),
+  `Load more` is `?show=30` and not `?show=all`, brands sort by count, `Best match` reads across
+  brands, the PDP has an `Other sizes` row. The visual baselines are re-shot under D108b's deviation
+  rows (#88–#94). WDG-18 comes back as a test against an empty fixture category. Expect Firefox to
+  be clean on `/` again: the home row has no timer (D111). Coordinator.
 - **Load sensitivity.** At 5–6 workers on this 8-core machine a handful of timing tests (the INP proxy,
   pre-hydration clicks) can fail and pass alone; the gate run uses `--workers=5`. A CI box with more cores
   should use the config's `workers`. Coordinator.
