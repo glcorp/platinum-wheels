@@ -231,7 +231,6 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
   return (
     <>
       <SectionHeading
-        index={3}
         eyebrow="Featured tires"
         title="Winter sets, in stock now."
         action={controls}

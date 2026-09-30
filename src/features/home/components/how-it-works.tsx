@@ -107,7 +107,7 @@ export function HowItWorks() {
             ship as real `<button>`s. Every style is in the classes, so no pixel
             moves. D67, design/DEVIATIONS.md #59. */}
         <h2 className="label text-ink-dim text-11 tracking-14 sm:text-12">
-          02 — How it works
+          How it works
         </h2>
 
         <div

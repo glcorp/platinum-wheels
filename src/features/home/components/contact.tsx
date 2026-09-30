@@ -60,7 +60,7 @@ export function Contact() {
         {/* A — eyebrow, h2, paragraph. `design/inventory/home.md:77,347`. */}
         <div className="order-1 flex flex-col gap-6 sm:order-none sm:col-span-9 sm:col-start-1 sm:row-start-1 sm:gap-8 md:col-span-1 md:col-start-1">
           <span className="label text-ink-dim text-11 tracking-14 sm:text-12">
-            04 — Contact
+            Contact
           </span>
           <h2
             data-probe="contact-h2"

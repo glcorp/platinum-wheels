@@ -10,7 +10,7 @@ Delete this folder and `/` renders header and footer around nothing.
 One file per manifest section (`design/manifest.md` §1); each header comment carries its measured
 sources (`design/inventory/home.md` §2.x). All Server Components except the carousel island.
 - [`components/hero.tsx`](components/hero.tsx) — `Hero`, no props. Full-bleed `hero-tread.webp`, scrim, eyebrow / h1 / lede. home.md §2.1.
-- [`components/category-tiles.tsx`](components/category-tiles.tsx) — `CategoryTiles`. "01 — Shop by category", `md:category-grid` 2fr/1fr; the D35 text-colour hover stays suppressed, and since D92b the tiles take the card's border + 2px lift hover (DEVIATIONS #77). home.md §2.4.
+- [`components/category-tiles.tsx`](components/category-tiles.tsx) — `CategoryTiles`. "Shop by category" (D93b, DEVIATIONS #87: section numbers dropped), `md:category-grid` 2fr/1fr; the D35 text-colour hover stays suppressed, and since D92b the tiles take the card's border + 2px lift hover (DEVIATIONS #77). home.md §2.4.
 - [`components/winter-promo.tsx`](components/winter-promo.tsx) — `WinterPromo`. Full-bleed photo + tinted panel, computed `Winter <year>` (D32), spec chips inline (not `Chip`). home.md §2.5.
 - [`components/how-it-works.tsx`](components/how-it-works.tsx) — `HowItWorks`, `id="how-it-works"`. Four steps as data; eyebrow only, no h2. home.md §2.6.
 - [`components/featured-tires.tsx`](components/featured-tires.tsx) — `FeaturedTires`. Server shell: spacing, hands `FEATURED_ROW` (the four artboard SKUs **plus two**, D74) to the island. home.md §2.7.

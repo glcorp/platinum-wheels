@@ -77,7 +77,7 @@ export function CategoryTiles() {
             which would push every later section down by 28px at 1440. */}
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between md:gap-4">
           <p className="label text-ink-dim text-11 tracking-14 sm:text-12">
-            01 — Shop by category
+            Shop by category
           </p>
           <h2 className="display text-ink text-display-40 md:text-display-56">
             Everything between you and the road.
