@@ -265,6 +265,10 @@ const CROPS = {
   // inside both the promo's near-square panel and the contact card's wide crop.
   "winter-tacoma": { aspect: 4 / 3, cx: 0.33, bottom: true },
 };
+/** The stack-of-tyres photo is shot in near darkness; the tile scrim would
+ *  swallow the lower tyres, so it is lifted (owner: "too zoomed in" on the first
+ *  pick, then this re-pick; brightness checked by eye on the home baseline). */
+const BRIGHTEN = { "tires-tile": 1.8 };
 const REPLACEMENT_MAX = 2400;
 
 async function replacementPhotos() {
@@ -286,6 +290,7 @@ async function replacementPhotos() {
       const left = Math.min(width - w, Math.max(0, Math.round(width * crop.cx - w / 2)));
       img = img.extract({ left, top: crop.bottom ? height - h : 0, width: w, height: h });
     }
+    if (BRIGHTEN[name]) img = img.modulate({ brightness: BRIGHTEN[name] });
     await emit(
       "photos",
       src,
