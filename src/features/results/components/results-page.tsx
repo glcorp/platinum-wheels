@@ -53,8 +53,11 @@ export interface ResultsPageProps {
   searchParams: RawSearchParams;
 }
 
-export function ResultsPage({ category, searchParams }: ResultsPageProps) {
-  const view = searchResults(category, searchParams);
+export async function ResultsPage({
+  category,
+  searchParams,
+}: ResultsPageProps) {
+  const view = await searchResults(category, searchParams);
 
   return (
     <>

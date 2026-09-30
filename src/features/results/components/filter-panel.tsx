@@ -58,6 +58,7 @@ import {
   resultsHref,
 } from "@/features/results/query";
 import {
+  BRAND_WINDOW,
   DEFAULT_SORT,
   RESULTS_PARAM,
   type FacetOption,
@@ -500,6 +501,49 @@ export function FilterPanel({
     ? "flex flex-col gap-5 border-t border-border-strong pt-5"
     : "flex flex-col gap-4 py-4";
 
+  /* Brand rows. `facets.brands` arrives most-products-first. */
+  const primaryBrands = facets.brands.filter(
+    (option, index) => option.selected || index < BRAND_WINDOW,
+  );
+  const foldedBrands = facets.brands
+    .filter((option, index) => !option.selected && index >= BRAND_WINDOW)
+    .sort((a, b) => a.label.localeCompare(b.label));
+  /* Rail: one column, `gap:2px`, rows 40px / `gap:12px`, name `flex:1`,
+     count 13px tabular (results-desktop.html:137).
+     Sheet: `grid-template-columns:1fr 1fr`, rows 44px / `gap:10px`, name
+     not flexed, count 12px non-tabular (results.md §4.4 group 4). */
+  const brandList = rail ? "flex flex-col gap-0.5" : "grid grid-cols-2";
+  const brandRow = (option: FacetOption) => (
+    <Checkbox
+      key={option.value}
+      variant="facet"
+      id={`${idPrefix}-brand-${slugifyId(option.value)}`}
+      name={RESULTS_PARAM.brand}
+      value={option.value}
+      defaultChecked={option.selected}
+      labelClassName={rail ? "h-10 gap-3" : "h-11 gap-2.5"}
+      labelProbe="brand-row"
+    >
+      <span
+        className={cx(
+          "text-15 leading-flat font-normal text-ink",
+          rail && "flex-1",
+        )}
+      >
+        {option.label}
+      </span>
+      <span
+        className={
+          rail
+            ? "text-13 leading-flat font-normal text-ink-dim tabular-nums"
+            : "text-12 leading-flat font-normal text-ink-dim"
+        }
+      >
+        {option.count}
+      </span>
+    </Checkbox>
+  );
+
   return (
     <form
       aria-busy={isPending}
@@ -646,50 +690,58 @@ export function FilterPanel({
         );
       })()}
 
-      {/* 2 — Chip group: Season / Finish / Type --------------------------- */}
+      {/* 2 — Chip group: Season / Type ------------------------------------- */}
       {/* Rail label carries the collapse mark, the sheet's is bare
           (results.md §4.6 "Collapse chevrons | all 5 groups | Category and Tire
           size only" — with Category gone the sheet's only chevron is the size
-          group's, #60). */}
-      <div
-        /* `group-${param}` resolves to the measured `group-season` on tires,
-           so every existing probe in `design/reports/results.md` still hits;
-           on the other two it reads `group-finish` / `group-type` rather than
-           naming a group that is not there (D58). */
-        data-probe={`group-${facets.chipGroup.param}`}
-        role="group"
-        aria-labelledby={`${idPrefix}-season-label`}
-        className={shell}
-      >
-        <GroupLabel id={`${idPrefix}-season-label`} mark={rail}>
-          {facets.chipGroup.label}
-        </GroupLabel>
-        {/* `display:flex;gap:8px;flex-wrap:wrap` (results-desktop.html:134). */}
-        <div className="flex flex-wrap gap-2">
-          {facets.chipGroup.options.map((option: FacetOption) => (
-            <ChipCheckbox
-              key={option.value}
-              /* Tires still emit `rail-season-winter`, unchanged; the param
-                 keeps the id honest on the other two categories. */
-              id={`${idPrefix}-${facets.chipGroup.param}-${option.value}`}
-              name={facets.chipGroup.param}
-              value={option.value}
-              defaultChecked={option.selected}
-              /* The sheet is in use to 1099px (D46) and draws 44px chips, so it
-                 pins the touch height; the rail takes the primitive's own
-                 44 → 40 step. */
-              size={rail ? "auto" : "touch"}
-              data-probe={option.value === "winter" ? "chip-winter" : undefined}
-            >
-              {/* Copy verbatim, `All-season` with a lowercase s on tires —
-                  unlike the card badge (results.md §6 "Internal
-                  inconsistencies" #1). Wheels/accessories options are new
-                  copy (`.claude/rules/ui.md` "Copy", `categories.ts`). */}
-              {option.label}
-            </ChipCheckbox>
-          ))}
-        </div>
-      </div>
+          group's, #60).
+          Wheels have no chip group since D105 (no finish filter), so the rail
+          draws one group fewer there. */}
+      {(() => {
+        const chipGroup = facets.chipGroup;
+        if (chipGroup === null) return null;
+        return (
+          <div
+            /* `group-${param}` resolves to the measured `group-season` on tires,
+               so every existing probe in `design/reports/results.md` still hits;
+               on the other two it reads `group-finish` / `group-type` rather than
+               naming a group that is not there (D58). */
+            data-probe={`group-${chipGroup.param}`}
+            role="group"
+            aria-labelledby={`${idPrefix}-season-label`}
+            className={shell}
+          >
+            <GroupLabel id={`${idPrefix}-season-label`} mark={rail}>
+              {chipGroup.label}
+            </GroupLabel>
+            {/* `display:flex;gap:8px;flex-wrap:wrap` (results-desktop.html:134). */}
+            <div className="flex flex-wrap gap-2">
+              {chipGroup.options.map((option: FacetOption) => (
+                <ChipCheckbox
+                  key={option.value}
+                  /* Tires still emit `rail-season-winter`, unchanged; the param
+                     keeps the id honest on the other two categories. */
+                  id={`${idPrefix}-${chipGroup.param}-${option.value}`}
+                  name={chipGroup.param}
+                  value={option.value}
+                  defaultChecked={option.selected}
+                  /* The sheet is in use to 1099px (D46) and draws 44px chips, so it
+                     pins the touch height; the rail takes the primitive's own
+                     44 → 40 step. */
+                  size={rail ? "auto" : "touch"}
+                  data-probe={option.value === "winter" ? "chip-winter" : undefined}
+                >
+                  {/* Copy verbatim, `All-season` with a lowercase s on tires —
+                      unlike the card badge (results.md §6 "Internal
+                      inconsistencies" #1). Wheels/accessories options are new
+                      copy (`.claude/rules/ui.md` "Copy", `categories.ts`). */}
+                  {option.label}
+                </ChipCheckbox>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 3 — Brand ------------------------------------------------------- */}
       <div
@@ -701,42 +753,22 @@ export function FilterPanel({
         <GroupLabel id={`${idPrefix}-brand-label`} mark={rail}>
           Brand
         </GroupLabel>
-        {/* Rail: one column, `gap:2px`, rows 40px / `gap:12px`, name `flex:1`,
-            count 13px tabular (results-desktop.html:137).
-            Sheet: `grid-template-columns:1fr 1fr`, rows 44px / `gap:10px`, name
-            not flexed, count 12px non-tabular (results.md §4.4 group 4). */}
-        <div className={rail ? "flex flex-col gap-0.5" : "grid grid-cols-2"}>
-          {facets.brands.map((option: FacetOption) => (
-            <Checkbox
-              key={option.value}
-              variant="facet"
-              id={`${idPrefix}-brand-${slugifyId(option.value)}`}
-              name={RESULTS_PARAM.brand}
-              value={option.value}
-              defaultChecked={option.selected}
-              labelClassName={rail ? "h-10 gap-3" : "h-11 gap-2.5"}
-              labelProbe="brand-row"
-            >
-              <span
-                className={cx(
-                  "text-15 leading-flat font-normal text-ink",
-                  rail && "flex-1",
-                )}
-              >
-                {option.label}
-              </span>
-              <span
-                className={
-                  rail
-                    ? "text-13 leading-flat font-normal text-ink-dim tabular-nums"
-                    : "text-12 leading-flat font-normal text-ink-dim"
-                }
-              >
-                {option.count}
-              </span>
-            </Checkbox>
-          ))}
-        </div>
+        {/* The catalogue carries up to 150 brands in a category, so the list
+            is the first `BRAND_WINDOW` by product count plus anything already
+            ticked, and the rest fold into a native `<details>` (D108): no
+            state, no JS, and a box ticked inside a closed `<details>` still
+            submits with the form. The folded list reads A to Z, which is how a
+            long list is scanned. */}
+        <div className={brandList}>{primaryBrands.map(brandRow)}</div>
+        {foldedBrands.length === 0 ? null : (
+          <details data-probe="brand-more" className="group">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center font-sans text-12 leading-flat font-medium text-ink-muted underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0 md:text-13 [&::-webkit-details-marker]:hidden">
+              <span className="group-open:hidden">Show all brands</span>
+              <span className="hidden group-open:inline">Show fewer brands</span>
+            </summary>
+            <div className={brandList}>{foldedBrands.map(brandRow)}</div>
+          </details>
+        )}
       </div>
 
       {/* 4 — Price per tire / wheel / item -------------------------------- */}

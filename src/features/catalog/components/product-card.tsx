@@ -5,6 +5,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
 import { configFor } from "@/features/catalog/categories";
+import { ProductPhotoPlaceholder } from "@/features/catalog/components/product-photo-placeholder";
 import {
   productImageSrc,
   type Product,
@@ -58,6 +59,8 @@ const BADGE_PRESENTATION: Record<
 > = {
   winter: { variant: "winter", copy: "Winter" },
   "all-season": { variant: "outline", copy: "All-Season" },
+  /* New copy (D105), in the drawn `All-Season` badge's own capitalisation. */
+  "all-weather": { variant: "outline", copy: "All-Weather" },
   summer: { variant: "outline", copy: "Summer" },
   oem: { variant: "outline", copy: "OEM" },
   studdable: { variant: "outline", copy: "Studdable" },
@@ -158,6 +161,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
     threePeakMountainSnowflake,
     available,
   } = product;
+  const photo = productImageSrc(product);
 
   /* WINTER first, then the rest in the order the caller gave them, capped at
      two (`design/DESIGN.md:201`). On the unavailable card the dim badge takes
@@ -246,23 +250,25 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           aria-hidden="true"
           className="block h-full w-full"
         >
-          <Image
-            src={productImageSrc(product)}
-            alt={`${brand} ${model}`}
-            width={1000}
-            height={1000}
-            sizes={IMAGE_SIZES}
-            /* See `priority` in ProductCardProps for why this is eager +
-               fetchPriority rather than `preload`. Both stay undefined when
-               the prop is false, so the default lazy behaviour is
-               untouched. */
-            loading={priority ? "eager" : undefined}
-            fetchPriority={priority ? "high" : undefined}
-            className={cx(
-              "photo-inset-card block h-full w-full object-contain",
-              !available && "opacity-35",
-            )}
-          />
+          {photo === null ? (
+            /* No photo on record: the placeholder tile, never a guessed path
+               (D108). */
+            <ProductPhotoPlaceholder brand={brand} dimmed={!available} />
+          ) : (
+            <Image
+              src={photo}
+              alt={`${brand} ${model}`}
+              width={1000}
+              height={1000}
+              sizes={IMAGE_SIZES}
+              loading={priority ? "eager" : undefined}
+              fetchPriority={priority ? "high" : undefined}
+              className={cx(
+                "photo-inset-card block h-full w-full object-contain",
+                !available && "opacity-35",
+              )}
+            />
+          )}
         </Link>
 
         <div
@@ -294,9 +300,11 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
             other 11px label on the page (`design/inventory/results.md:310`),
             which is what the `display` role utility carries; `leading-badge`
             (24px) and `tracking-8` override its display leading and tracking. */}
-        <span className="display text-ink-muted leading-badge pointer-events-none absolute top-2.5 right-2.5 text-11 tracking-8 sm:top-4 sm:right-4">
-          {brand}
-        </span>
+        {photo === null ? null : (
+          <span className="display text-ink-muted leading-badge pointer-events-none absolute top-2.5 right-2.5 text-11 tracking-8 sm:top-4 sm:right-4">
+            {brand}
+          </span>
+        )}
       </div>
 
       {/* `padding:24px;display:flex;flex-direction:column;gap:8px;flex:1` —

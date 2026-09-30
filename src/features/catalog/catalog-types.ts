@@ -5,9 +5,9 @@
  * `@/db/schema` are erased at build).
  *
  * This sits beside `types.ts`, not in place of it. `types.ts` is `Product`,
- * the shape the built cards render from the seed in `data.ts`. The pages move
- * from that seed onto these shapes when the storefront is wired to the
- * database; until then nothing here is rendered.
+ * the shape the cards and pages have always rendered, measured against the
+ * artboards. These are the database's own shapes; `adapter.ts` `toProduct()`
+ * turns one into the other.
  */
 
 import type {
@@ -126,6 +126,13 @@ export interface ProductFilters {
   };
   accessory?: {
     kinds?: readonly AccessoryKind[];
+    /**
+     * The vehicle's lug thread, `12x1.5`. An accessory has no size, so this is
+     * what a vehicle narrows it on: with `sizeMatch: "exact"` (the default) it
+     * keeps everything that does not contradict the thread, and with `"near"`
+     * it returns only the lug nuts and wheel locks cut to a different one.
+     */
+    thread?: string;
   };
 }
 
@@ -133,11 +140,12 @@ export interface ListProductsInput extends ProductFilters {
   /**
    * `exact` (default): every size part given must match.
    * `near`: the "similar options" list. Close to the size asked for, never the
-   * size itself. Empty unless a rim (tires) or a diameter (wheels) is given.
+   * size itself. Empty unless a rim (tires), a diameter and width (wheels) or
+   * a thread (accessories) is given.
    */
   sizeMatch?: "exact" | "near";
   sort?: CatalogSort;
-  /** Default 24, capped at 100. */
+  /** Default 24, capped at 150. */
   limit?: number;
   offset?: number;
 }

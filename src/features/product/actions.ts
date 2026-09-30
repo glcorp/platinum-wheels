@@ -24,8 +24,9 @@
 import { headers } from "next/headers";
 
 import { categoryConfig } from "@/features/catalog/categories";
-import { findProduct } from "@/features/catalog/data";
-import { productCategory } from "@/features/catalog/types";
+import { toProduct } from "@/features/catalog/adapter";
+import { getProductBySlug } from "@/features/catalog/queries";
+import { productCategory, type Product } from "@/features/catalog/types";
 import { deliverQuote } from "@/features/product/quote-email";
 import {
   CONTACT_METHODS,
@@ -58,6 +59,29 @@ const CONTACT_VALUES = new Set<string>(CONTACT_METHODS.map((method) => method.va
 function readString(formData: FormData, field: string): string {
   const value = formData.get(field);
   return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * The product an enquiry is about, for its category defaults and its name in
+ * the emails. `null` for a stale or tampered slug, and ALSO when the catalogue
+ * cannot be read: an enquiry is the one thing this site exists to capture, so
+ * a database outage must cost the email a product name, never the lead. The
+ * emails still carry the slug and the page URL.
+ */
+async function quotedProduct(slug: string): Promise<Product | null> {
+  try {
+    const found = await getProductBySlug(slug);
+    return found ? toProduct(found) : null;
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "quote.product_lookup_failed",
+        slug,
+        message: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    return null;
+  }
 }
 
 /** Strips everything but digits, then checks for a 10-digit NANP number or an
@@ -104,7 +128,7 @@ export async function submitQuote(
   // silently re-broke that for a tampered accessory submission. `slug` is
   // already a hidden field on every inquiry; a missing/stale one reads as
   // `tires`, `productCategory()`'s own default (D58).
-  const product = findProduct(slug);
+  const product = await quotedProduct(slug);
   const category = product ? productCategory(product) : "tires";
 
   // Quantity and Preferred contact are never wrong, only unset or tampered

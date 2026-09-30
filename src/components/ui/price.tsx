@@ -28,8 +28,16 @@ import { cx } from "@/lib/cx";
 type PriceContext = "card" | "pdp";
 
 export interface PriceProps {
-  /** Amount in whole currency units. Rendered without cents by design. */
-  amount: number;
+  /**
+   * The amount. Rendered in whole units, without cents, by design: a catalogue
+   * price of `108.77` reads `$109`.
+   *
+   * `null` = the catalogue has no price for this product (D105). The row then
+   * reads `Inquire for price` in the `from` label's own type, at the height
+   * the amount would have taken, so a card with no price lines up with its
+   * neighbours. Undrawn, so new copy under `.claude/rules/ui.md` "Copy".
+   */
+  amount: number | null;
   /** Where the price sits. `card` is the product grid, `pdp` the buy panel. */
   context?: PriceContext;
   /** Currently-unavailable product: the amount drops to `--text-dim`. */
@@ -84,6 +92,8 @@ const PRESENTATION = {
     suffixBreak: "",
     /* Verbatim, both card artboards. */
     suffixCopy: "/ tire",
+    /* The amount's own line box, 24px → 28px, so the row keeps its height. */
+    noPrice: "h-6 sm:h-7",
   },
   pdp: {
     /* 10px column gap mobile (product-mobile.html:95 `gap:10px`) → 12px desktop
@@ -107,6 +117,8 @@ const PRESENTATION = {
     suffixBreak: "basis-full sm:basis-auto",
     /* Verbatim, both PDP artboards. Separator is U+00B7 with spaces. */
     suffixCopy: "per tire · before tax",
+    /* The amount's own line box, 48px → 64px. */
+    noPrice: "h-12 sm:h-16",
   },
 } as const;
 
@@ -118,6 +130,16 @@ export function Price({
   className,
 }: PriceProps) {
   const style = PRESENTATION[context];
+
+  if (amount === null) {
+    return (
+      <div className={cx("flex items-center", style.noPrice, className)}>
+        <span className={cx("label text-ink-muted", style.prefix)}>
+          Inquire for price
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div

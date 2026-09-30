@@ -138,9 +138,9 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
    back with a demo account. Client, via owner.
 3. **Product CRUD screens.** The server side exists (D105); the list, the create/edit form and their
    `/admin/styleguide` states are not built, and `ADMIN_ROUTES` has no product routes yet. Image upload
-   (Vercel Blob) is its own session; `product_images` is ready for it. **The actions return state and
-   do not re-render the route**: the screens must call `refresh()` (or the actions must, once there is a
-   route to refresh) or a list will show stale statuses after a bulk change. Owner.
+   (Vercel Blob) is its own session; `product_images` is ready for it. Since D109 every
+   successful write calls `updateTag(CATALOGUE_TAG)`, which expires the cached home row and has Next
+   re-render the route the form was posted from. Owner.
 4. **Switch production to `ADMIN_PASSWORD_HASH`.** `ADMIN_USERNAME`, `ADMIN_PASSWORD` and
    `ADMIN_SESSION_SECRET` are set in the Vercel project (Production + Preview). Until the hash replaces
    `ADMIN_PASSWORD`, every instance logs `admin.config.plaintext_password`. **Deferred by the owner,

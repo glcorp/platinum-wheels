@@ -13,7 +13,8 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
 - [`components/category-tiles.tsx`](components/category-tiles.tsx) — `CategoryTiles`. "01 — Shop by category", `md:category-grid` 2fr/1fr, no hover (D35). home.md §2.4.
 - [`components/winter-promo.tsx`](components/winter-promo.tsx) — `WinterPromo`. Full-bleed photo + tinted panel, computed `Winter <year>` (D32), spec chips inline (not `Chip`). home.md §2.5.
 - [`components/how-it-works.tsx`](components/how-it-works.tsx) — `HowItWorks`, `id="how-it-works"`. Four steps as data; eyebrow only, no h2. home.md §2.6.
-- [`components/featured-tires.tsx`](components/featured-tires.tsx) — `FeaturedTires`. Server shell: spacing, hands `FEATURED_ROW` (the four artboard SKUs **plus two**, D74) to the island. home.md §2.7.
+- [`components/featured-tires.tsx`](components/featured-tires.tsx) — `FeaturedTires`. Async server shell: spacing, hands the featured products to the island, and renders nothing when none resolve. home.md §2.7.
+- [`featured.ts`](featured.ts) — `FEATURED_SLUGS`, **a fixed list of product slugs in code** (owner, 2026-09-30, D108: not an automatic rule, not an admin tick), and `getFeaturedProducts()`, which reads them from the catalogue through `unstable_cache` (tag `CATALOGUE_TAG`, five minutes). A slug that does not resolve is skipped; a failed read logs `home.featured.read_failed` and returns none. `/` stays prerendered (`export const revalidate = 300` in the route).
 - [`components/featured-carousel.tsx`](components/featured-carousel.tsx) — `FeaturedCarousel`, **the one `"use client"` file** (D30): heading row with prev/next, scroll-snap track, dot progress.
   Since **D74** the track is a flex scroll-snap scroller at **every** width, not a grid from `sm:`, so
   the two drawn desktop arrows act. One press moves one card at any width — `stepSize()` measures the
@@ -66,7 +67,7 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
   and `similar-track`, which no longer hides its own.
 - ~~The two square desktop prev/next buttons can never act — OWNER RULING needed.~~ **Closed
   2026-09-22 by D74:** the owner chose option (c), give them something to scroll. The row is now
-  `FEATURED_ROW` — six SKUs — and the track stays a scroller above `sm:` instead of becoming a grid, so
+  six products (`FEATURED_SLUGS` since D108) — and the track stays a scroller above `sm:` instead of becoming a grid, so
   `maxScroll > 0` at every width and both arrows act. The first four cards are unmoved: appended, not
   reordered, at the same width. `design/DEVIATIONS.md` #65.
 - ~~The mobile `Next` button never reached the end of the track.~~ **Fixed 2026-09-22:** it stepped a
@@ -87,3 +88,6 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
   `Snowleopard` each appear twice. The drawn heading `Winter sets, in stock now.` admits only winter,
   in-stock SKUs and the seed holds exactly two more of those. Six distinct models needs real catalogue
   data. Owner / client.
+- **`FEATURED_SLUGS` holds placeholder slugs** (D108): six winter tires from the vendors' own sheets. They
+  resolve only if the approved catalogue carries the same products. Replace them once that data is
+  loaded, and keep six or more so both desktop arrows have something to scroll (D74). Owner.

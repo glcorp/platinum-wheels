@@ -26,6 +26,13 @@ import { WinterPromo } from "@/features/home/components/winter-promo";
    the first block.
    --------------------------------------------------------------------------- */
 
+/* The featured row is read from the catalogue (D108). This keeps `/`
+   prerendered and has Next rebuild it in the background at most every five
+   minutes, so the home page never waits on the database and is never more
+   than five minutes behind it. Must be a literal: Next reads it statically.
+   Same number as `FEATURED_REVALIDATE_SECONDS`. */
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   /* The root template appends "· Platinum Wheels"; the home page carries the
      full name once, so opt out of the template. */

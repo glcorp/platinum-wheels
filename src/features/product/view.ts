@@ -1,23 +1,30 @@
 /**
- * `productView()` — the only place any PDP value is derived from a `Product`
+ * `productView()` — the only place any PDP value is derived from a product
  * and the page's raw query string. Every section reads the `ProductView` this
- * returns; none of them re-parses `Product.size`, re-derives a spec row or
- * re-computes the similar list (`src/features/product/llm.md` "Owns").
+ * returns; none of them re-derives a spec row or re-computes a product row
+ * (`src/features/product/llm.md` "Owns").
  *
- * Pure, no I/O — mirrors the split between `src/features/results/query.ts`
- * (parse) and `src/features/results/search.ts` (derive) but as one function,
- * because the PDP contract (`types.ts`) is one `productView()` call, not a
- * query type plus a search function.
- *
- * Imports the seed (`productsIn()`, `@/features/catalog/data`) so this file
- * is never imported from a `"use client"` leaf — same rule as
- * `results/search.ts`.
+ * Pure, no I/O: the page reads the database (`catalog/queries.ts`) and hands
+ * the results in. It takes the database's own shape (`CatalogProductDetail`)
+ * because the specifications table shows every fact the catalogue holds, not
+ * just the handful the card carries; the card-shaped `Product` every section
+ * renders is made here, once, by `toProduct()`.
  */
 
-import { productsIn } from "@/features/catalog/data";
+import {
+  ACCESSORY_LABEL,
+  accessoryParam,
+  signedOffset,
+  timesSign,
+  toProduct,
+} from "@/features/catalog/adapter";
+import type {
+  CatalogProduct,
+  CatalogProductDetail,
+  TireSeason,
+} from "@/features/catalog/catalog-types";
 import { configFor, type CategoryConfig } from "@/features/catalog/categories";
 import type { Product, ProductCategory } from "@/features/catalog/types";
-
 import {
   DEFAULT_QUANTITY_BY_CATEGORY,
   PRODUCT_PARAM,
@@ -38,161 +45,164 @@ import {
  */
 export type ProductSearchParams = Record<string, string | string[] | undefined>;
 
-/* --- Size string ----------------------------------------------------------- */
+/* --- Size ---------------------------------------------------------------- */
 
-/** `product.md` §3.2: a tire's `Product.size` is `<sizeCode> · <loadSpeed>`,
- *  e.g. `215/55R16 · 97T XL` — unchanged for tires (D58). Defensive: a tire
- *  size with no ` · ` separator puts everything in `sizeCode` and leaves
- *  `loadSpeed` empty, rather than throwing on data that does not match the
- *  shape the seed happens to use.
+/**
+ * `product.md` §3.2: a tire reads `<sizeCode> · <loadSpeed>`, e.g.
+ * `215/55R16 · 97T XL`. The two halves come straight off the tire's own
+ * columns, so nothing is parsed back out of a joined string.
  *
- *  A wheel's size (`18×8.5 · 5×114.3`) and an accessory's (`Set of 4 ·
- *  12×1.5`) do not split into that shape — their spec rows come from
- *  `product.wheel` / `product.accessoryType` instead (`buildSpecs` below), so
- *  for those two categories the whole string stays intact as `sizeCode` and
- *  `loadSpeed` is empty; `sizeLine` (built by the caller) then renders the
- *  whole string, ` · ` included (D58, `types.ts` `sizeLine` doc). */
+ * A wheel (`18×8.5 · 5×114.3`) and an accessory (`Set of 4 · 12×1.5`) do not
+ * split into that shape, so for those two the whole card line stays intact
+ * as `sizeCode` and `loadSpeed` is empty (D58).
+ */
 function splitSize(
+  detail: CatalogProductDetail,
   product: Product,
-  config: CategoryConfig,
 ): { sizeCode: string; loadSpeed: string } {
-  if (config.category !== "tires") {
+  if (detail.category !== "tires" || detail.specs === null) {
     return { sizeCode: product.size, loadSpeed: "" };
   }
-
-  const separator = " · ";
-  const index = product.size.indexOf(separator);
-  if (index === -1) return { sizeCode: product.size, loadSpeed: "" };
-  return {
-    sizeCode: product.size.slice(0, index),
-    loadSpeed: product.size.slice(index + separator.length),
-  };
+  const { size, loadIndex, speedRating, isXl } = detail.specs;
+  const loadSpeed = [`${loadIndex ?? ""}${speedRating ?? ""}`, isXl ? "XL" : ""]
+    .filter(Boolean)
+    .join(" ");
+  return { sizeCode: size, loadSpeed };
 }
 
-/* --- Season -----------------------------------------------------------------
-   The one season a product carries, read off `Product.badges` (catalog/types
-   `ProductBadge`). Shared by the spec table's `Season` row, the badge row and
-   the similar-products grouping (D52) so all three agree on one product's
-   season. */
+/* --- Specifications ------------------------------------------------------
+ *
+ * One rule for all three tables (D53(1)): a row whose value is empty is
+ * dropped, never printed blank. That is what lets the table show every fact
+ * the catalogue holds for a product and still survive a vendor who supplied
+ * almost none of them.
+ */
 
-type Season = "winter" | "all-season" | "summer";
+type SpecRows = Array<[key: string, value: string | null | undefined]>;
+
+function specRows(rows: SpecRows): readonly ProductSpecRow[] {
+  return rows.flatMap(([key, value]) =>
+    value === null || value === undefined || value === ""
+      ? []
+      : [{ key, value }],
+  );
+}
+
+/** `Yes` / `No`, or nothing when the vendor did not say. */
+function yesNo(value: boolean | null): string | null {
+  return value === null ? null : value ? "Yes" : "No";
+}
+
+/** `72.6 mm`, `5.5 in`: a number, a space, its unit. */
+function measure(value: number | null, unit: string): string | null {
+  return value === null ? null : `${value} ${unit}`;
+}
+
+/** `Winter (studdable)` is artboard-verbatim (`product.md` §2.5 row 4);
+ *  `All-weather` is new copy (D105), in the chip's own spelling. */
+function seasonLabel(season: TireSeason | null, studdable: boolean): string {
+  switch (season) {
+    case "winter":
+      return studdable ? "Winter (studdable)" : "Winter";
+    case "all_season":
+      return "All-season";
+    case "all_weather":
+      return "All-weather";
+    case "summer":
+      return "Summer";
+    case null:
+      return "";
+  }
+}
+
+/**
+ * The first six tire rows are the artboard's, in its order (`product.md`
+ * §2.5): Brand, Model, Size, Season, Load / speed, 3PMSF. The rest are facts
+ * the catalogue carries that the seed never did (D108), each shown only when
+ * the vendor supplied it.
+ */
+function buildSpecs(
+  detail: CatalogProductDetail,
+  product: Product,
+  sizeCode: string,
+  loadSpeed: string,
+): readonly ProductSpecRow[] {
+  const lead: SpecRows = [
+    ["Brand", detail.brand],
+    ["Model", detail.model],
+  ];
+
+  if (detail.category === "tires") {
+    const specs = detail.specs;
+    return specRows([
+      ...lead,
+      ["Size", sizeCode],
+      ["Season", specs && seasonLabel(specs.season, specs.studdable)],
+      ["Load / speed", loadSpeed],
+      ["3PMSF", specs && (specs.winterApproved ? "Yes" : "No")],
+      ["Load range", specs?.loadRange],
+      ["Ply rating", specs?.plyRating?.toString()],
+      ["Run-flat", specs?.runFlat ? "Yes" : null],
+      ["UTQG", specs?.utqg],
+    ]);
+  }
+
+  if (detail.category === "wheels") {
+    const specs = detail.specs;
+    const wheel = product.wheel;
+    return specRows([
+      ...lead,
+      ["Size", wheel && `${wheel.diameter}×${wheel.width}`],
+      /* ASCII `x` in the database and the URL, U+00D7 on screen. */
+      ["Bolt pattern", specs?.boltPatterns.map(timesSign).join(" / ")],
+      ["Offset", specs?.offsetMm == null ? null : signedOffset(specs.offsetMm)],
+      /* The vendor's own wording, as it arrived (D105): no finish filter, so
+         nothing groups or renames it. */
+      ["Finish", specs?.finish],
+      ["Centre bore", measure(specs?.centerBoreMm ?? null, "mm")],
+      ["Backspacing", measure(specs?.backspacing ?? null, "in")],
+      ["Material", specs?.material],
+      ["Seat type", specs?.seatType],
+      ["Load rating", measure(specs?.loadRatingLbs ?? null, "lb")],
+      ["TPMS compatible", yesNo(specs?.tpmsCompatible ?? null)],
+      ["Winter use", yesNo(specs?.winterCompatible ?? null)],
+    ]);
+  }
+
+  const specs = detail.specs;
+  return specRows([
+    ...lead,
+    ["Type", specs && ACCESSORY_LABEL[accessoryParam(specs.accessoryType)]],
+    ["Thread size", specs?.threadSize && timesSign(specs.threadSize)],
+    ["Seat type", specs?.seatType],
+    ["Finish", specs?.finish],
+    [
+      "Pack quantity",
+      specs?.packQuantity == null ? null : String(specs.packQuantity),
+    ],
+    ["Outer diameter", measure(specs?.outerDiameterMm ?? null, "mm")],
+    ["Inner diameter", measure(specs?.innerDiameterMm ?? null, "mm")],
+  ]);
+}
+
+/* --- Badges -------------------------------------------------------------- */
+
+type Season = "winter" | "all-season" | "all-weather" | "summer";
 
 function productSeason(product: Product): Season | null {
   if (product.badges.includes("winter")) return "winter";
   if (product.badges.includes("all-season")) return "all-season";
+  if (product.badges.includes("all-weather")) return "all-weather";
   if (product.badges.includes("summer")) return "summer";
   return null;
 }
 
-/** `Winter (studdable)` / `Winter` / `All-season` / `Summer` — the spec
- *  table's `Season` value (`product.md` §2.5 row 4, verbatim `Winter
- *  (studdable)`). Empty when the product carries none of the three season
- *  badges, so the row is dropped rather than printing a blank (D53(1)). */
-function seasonLabel(product: Product, season: Season | null): string {
-  if (season === "winter") {
-    return product.studdable ? "Winter (studdable)" : "Winter";
-  }
-  if (season === "all-season") return "All-season";
-  if (season === "summer") return "Summer";
-  return "";
-}
-
-/* --- Spec table -------------------------------------------------------------
-   Tires: six rows, drawn order, keys artboard-verbatim including the
-   `Load / speed` spacing (`product.md` §2.5, §3.7). A row whose value would
-   be empty is dropped rather than invented (D53(1)) — that only ever happens
-   to `Season` or `Load / speed` on data the artboard itself never exercises.
-   Unchanged by D58: a tire's five rows and their values are byte-identical to
-   the built page. Wheels and accessories get their own shapes below, each
-   applying the same empty-value-dropped rule. */
-function buildSpecs(
-  product: Product,
-  config: CategoryConfig,
-  sizeCode: string,
-  loadSpeed: string,
-  season: Season | null,
-): readonly ProductSpecRow[] {
-  if (config.category === "wheels") {
-    return buildWheelSpecs(product, config);
-  }
-  if (config.category === "accessories") {
-    return buildAccessorySpecs(product, config);
-  }
-
-  const rows: Array<[string, string]> = [
-    ["Brand", product.brand],
-    ["Model", product.model],
-    ["Size", sizeCode],
-    ["Season", seasonLabel(product, season)],
-    ["Load / speed", loadSpeed],
-    ["3PMSF", product.threePeakMountainSnowflake ? "Yes" : "No"],
-  ];
-
-  return rows
-    .filter(([, value]) => value !== "")
-    .map(([key, value]) => ({ key, value }));
-}
-
-/** Wheel's six rows (D58): Brand, Model, Size (`<diameter>×<width>`, U+00D7),
- *  Bolt pattern (`wheel.bolt` with its ASCII `x` swapped for U+00D7 — the
- *  seed and URL keep the ASCII spelling, only the display differs,
- *  `categories.ts` "Bolt pattern"), Offset (`wheel.offset` verbatim — it
- *  already carries its own sign), Finish (looked up in
- *  `CategoryConfig.chips.options` rather than retyped, so the spec row and
- *  the filter chip can never disagree). Same empty-value-dropped rule as
- *  tires (D53(1)); only exercised on data the WHEELS seed never has, since
- *  every row there carries a `wheel`. */
-function buildWheelSpecs(
-  product: Product,
-  config: CategoryConfig,
-): readonly ProductSpecRow[] {
-  const wheel = product.wheel;
-  const finishLabel =
-    wheel === undefined
-      ? ""
-      : (config.chips.options.find((option) => option.value === wheel.finish)?.label ??
-        wheel.finish);
-
-  const rows: Array<[string, string]> = [
-    ["Brand", product.brand],
-    ["Model", product.model],
-    ["Size", wheel === undefined ? "" : `${wheel.diameter}×${wheel.width}`],
-    ["Bolt pattern", wheel === undefined ? "" : wheel.bolt.replace("x", "×")],
-    ["Offset", wheel?.offset ?? ""],
-    ["Finish", finishLabel],
-  ];
-
-  return rows
-    .filter(([, value]) => value !== "")
-    .map(([key, value]) => ({ key, value }));
-}
-
-/** Accessory's four rows (D58): Brand, Model, Type (looked up in
- *  `CategoryConfig.chips.options`, same reasoning as the wheel Finish row
- *  above), Fits (`Product.size`, the short descriptor, e.g. `Set of 4 ·
- *  12×1.5`). Four rows, not six — there is no season or load/speed fact on an
- *  accessory. */
-function buildAccessorySpecs(
-  product: Product,
-  config: CategoryConfig,
-): readonly ProductSpecRow[] {
-  const typeLabel =
-    product.accessoryType === undefined
-      ? ""
-      : (config.chips.options.find((option) => option.value === product.accessoryType)?.label ??
-        "");
-
-  const rows: Array<[string, string]> = [
-    ["Brand", product.brand],
-    ["Model", product.model],
-    ["Type", typeLabel],
-    ["Fits", product.size],
-  ];
-
-  return rows
-    .filter(([, value]) => value !== "")
-    .map(([key, value]) => ({ key, value }));
-}
+const SEASON_BADGE: Readonly<Record<Season, string>> = {
+  winter: "Winter",
+  "all-season": "All-season",
+  "all-weather": "All-weather",
+  summer: "Summer",
+};
 
 /* --- Badge row ----------------------------------------------------------
    Never more than three (`product.md` §3.1): the season badge, `3PMSF` when
@@ -203,16 +213,20 @@ function buildAccessorySpecs(
    Wheels and accessories (D58) draw no badges at all: no wheel or accessory
    artboard exists to draw one, so none is invented here — the same D7
    precedent (undrawn element → follow the artboards) used throughout this
-   file. `Product.badges` is `[]` and `threePeakMountainSnowflake` is `false`
-   on every WHEELS and ACCESSORIES seed row already (`catalog/data.ts`), so
-   the code below would already return `[]` for them unaided — this early
-   return makes that guarantee explicit rather than relying on seed data
-   staying that way. */
+   file. `toProduct()` already gives a wheel or an accessory no badges and no
+   3PMSF mark, so the code below would return `[]` for them unaided — this
+   early return makes that guarantee explicit. */
 function buildBadges(
   product: Product,
   config: CategoryConfig,
   season: Season | null,
 ): readonly PdpBadge[] {
+  /* A discontinued product: the one dim badge takes the row, as it does on
+     the card (`design/inventory/results.md:355`), whatever the category. */
+  if (!product.available) {
+    return [{ label: "Currently unavailable", variant: "unavailable" }];
+  }
+
   if (config.category !== "tires") {
     return [];
   }
@@ -221,7 +235,7 @@ function buildBadges(
 
   if (season !== null) {
     badges.push({
-      label: season === "winter" ? "Winter" : seasonLabel(product, season),
+      label: SEASON_BADGE[season],
       variant: season === "winter" ? "winter" : "outline",
     });
   }
@@ -292,55 +306,27 @@ function buildBackHref(params: ProductSearchParams, route: string): string {
   return query === "" ? route : `${route}?${query}`;
 }
 
-/* --- Similar products ---------------------------------------------------
-   D52, extended by D58: stay within the subject's own category — a wheel PDP
-   must never recommend a tire — exclude the current slug, prefer products
-   sharing the subject's own chip value (season for tires, finish for wheels,
-   type for accessories, via `config.chips.match` so this file never repeats
-   which param each category filters on), fall back to the rest of that
-   category in seed order, cap at 4. Deterministic — `Array.prototype.filter`
-   preserves `productsIn()`'s own order, so no randomness and no re-sort.
-
-   For tires this reproduces the pre-D58 season-based grouping exactly: every
-   tire in the seed carries exactly one season badge, so finding "the option
-   whose `match` returns true for the subject" always lands on the same
-   season `productSeason()` would have read directly, and `productsIn("tires")`
-   is `PRODUCTS` — the same array this used to filter. */
-function subjectChipValue(product: Product, config: CategoryConfig): string | null {
-  const option = config.chips.options.find((candidate) =>
-    config.chips.match(product, candidate.value),
-  );
-  return option?.value ?? null;
-}
-
-function buildSimilar(product: Product, config: CategoryConfig): readonly Product[] {
-  const categoryProducts = productsIn(config.category);
-  const others = categoryProducts.filter((candidate) => candidate.slug !== product.slug);
-  const subjectValue = subjectChipValue(product, config);
-
-  const matching =
-    subjectValue === null
-      ? []
-      : others.filter((candidate) => config.chips.match(candidate, subjectValue));
-  const matchingSlugs = new Set(matching.map((candidate) => candidate.slug));
-  const rest = others.filter((candidate) => !matchingSlugs.has(candidate.slug));
-
-  return [...matching, ...rest].slice(0, 4);
-}
-
-/* --- Entry point ----------------------------------------------------------- */
-
+/**
+ * @param detail   the product, as `getProductBySlug()` returned it
+ * @param rows     the two product rows under the page, as the catalogue
+ *                 returned them: `similar` (`getSimilarProducts`) and
+ *                 `otherSizes` (`getOtherSizes`)
+ */
 export function productView(
-  product: Product,
+  detail: CatalogProductDetail,
   searchParams: ProductSearchParams,
+  rows: {
+    similar: readonly CatalogProduct[];
+    otherSizes: readonly CatalogProduct[];
+  },
 ): ProductView {
+  const product = toProduct(detail);
   const config = configFor(product);
-  const { sizeCode, loadSpeed } = splitSize(product, config);
+  const { sizeCode, loadSpeed } = splitSize(detail, product);
   const sizeLine = loadSpeed === "" ? sizeCode : `${sizeCode} ${loadSpeed}`;
   const fullName = `${product.brand} ${product.model}`;
   const season = productSeason(product);
   const vehicle = parseVehicle(searchParams);
-
   const inquiryContext =
     vehicle === null
       ? `${fullName} ${sizeCode}`
@@ -353,12 +339,13 @@ export function productView(
     loadSpeed,
     sizeLine,
     fullName,
-    specs: buildSpecs(product, config, sizeCode, loadSpeed, season),
+    specs: buildSpecs(detail, product, sizeCode, loadSpeed),
     badges: buildBadges(product, config, season),
     quantity: parseQuantity(searchParams, config.category),
     vehicle,
     backHref: buildBackHref(searchParams, config.route),
     inquiryContext,
-    similar: buildSimilar(product, config),
+    similar: rows.similar.map(toProduct),
+    otherSizes: rows.otherSizes.map(toProduct),
   };
 }

@@ -25,7 +25,7 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   `Winter (studdable)` row (D53(2)); it is deliberately **not** pushed into `badges`, which would give
   that card a second badge and move a measured `/results` parity row. Carried by
   `zeta-antarctica-sport` and its 235/40R18 sibling — the drawn PDP subject.
-  **D58 added** `ProductCategory`, `WheelFinish`, `AccessoryType`, `WheelSpec`, the optional
+  **D58 added** `ProductCategory`, `AccessoryType`, `WheelSpec` (`WheelFinish` went with the finish filter, D105), the optional
   `category` / `wheel` / `accessoryType` fields, `productCategory()` (absent `category` = tires) and
   `productImageSrc()` (shared by `ProductCard` and `PdpGallery`).
 - [`categories.ts`](categories.ts) — `CATEGORY_CONFIG`, the per-category table (**D58**): route, nav
@@ -50,33 +50,24 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   carried `pointer-events:none`, so the full-box vignette silently swallowed every click on the photo.
   Corrected 2026-09-22 by adding `pointer-events-none` to all three overlays** (DEVIATIONS #69, amended).
   Per-value sources are in the inline comments.
-- [`data.ts`](data.ts) — `FEATURED_ROW` (**D74**) is what the home carousel renders: `FEATURED_PRODUCTS`
-  plus `zeta-antarctica-sport-235-40r18` and `mazzini-snowleopard-225-50r17`, filtered out of `PRODUCTS`
-  by slug. It is a **separate export, not an append to `FEATURED_PRODUCTS`** — `PRODUCTS` spreads that
-  array, so appending there would duplicate slugs into the `/results` seed and take it to eleven SKUs.
-  The two appends are the only winter, in-stock rows the seed holds beyond the drawn four, which the
-  heading `Winter sets, in stock now.` requires. `design/DEVIATIONS.md` #65.
-- [`data.ts`](data.ts) — `FEATURED_PRODUCTS`, the four artboard SKUs of the home row, flagged sample
-  (D29, `design/inventory/home.md:278-285`), and `PRODUCTS`, the nine-SKU `/results` seed (D43): the four
-  featured objects spread first (`data.ts:84-85`) so seed order is artboard order, then
-  `zeta-antarctica-sport-235-40r18`, `zmax-landgema-235-40r18`, `mazzini-snowleopard-225-50r17`,
-  `zmax-winterhawk-215-50r17` (`available: false`, the drawn unavailable card — `data.ts:126-139`) and
-  `zmax-landgema-225-45r17`. Each of the five carries a size-suffixed slug and an `image` pointing at
-  its base SKU's cut-out. **D58 added** `WHEELS` (nine SKUs, brands Touren and Spec-1, one
-  unavailable) and `ACCESSORIES`, plus `ALL_PRODUCTS` and `productsIn(category)`. **D63 re-cut
-  `ACCESSORIES`** to the four types the client's photography actually covers — TPMS, lug nuts, wheel
-  locks, centre caps — with brands Bosch / Gorilla / Sentali. `findProduct(slug)` searches
-  `ALL_PRODUCTS`. All of it is placeholder data (D48) — the tire rows are untouched and carry no
-  `category` field, which is what keeps every measured card byte-identical.
-
-- **The database-backed catalogue (D105, D106). Built; no page reads it yet**, so every route still
-  renders the seed above. It was exercised against a throwaway Postgres loaded with the vendor sheets;
-  **no test file is committed.**
+- ~~`data.ts`~~ **Deleted by D108.** The seed (nine tires, nine wheels, nine accessories, the featured
+  row) is gone; every page reads the database. `/styleguide` keeps its own hand-built sample cards.
+- [`adapter.ts`](adapter.ts) — `toProduct()`: a database product (`CatalogProduct`) into the card-shaped
+  `Product` every component renders, plus the hyphen/underscore enum spelling and `ACCESSORY_LABEL`. The
+  one place the two shapes meet (D108). Pure, client-safe.
+- [`cache-tag.ts`](cache-tag.ts) — `CATALOGUE_TAG`, the one tag for a cached catalogue read; the product
+  admin's actions expire it on every write.
+- [`components/product-photo-placeholder.tsx`](components/product-photo-placeholder.tsx) — the tile a
+  product with no photo shows in the card and the gallery: its brand in display type, nothing else
+  (owner, 2026-09-30, D108).
+- **The database-backed catalogue (D105, D106), read by every storefront page since D108.** It was
+  exercised against a throwaway Postgres loaded with the vendor sheets; **no test file is committed.**
   - [`catalog-types.ts`](catalog-types.ts) — the data contract: `CatalogProduct`, `ProductFilters`,
     `CatalogFacets`, `ProductInput`, `AdminProduct`, plus the four enum value lists. No database code,
     client-safe.
   - [`queries.ts`](queries.ts) — storefront reads: `listProducts`, `getFacets`, `getProductBySlug`,
-    `getOtherSizes`, `getSimilarProducts`, `listProductUrls`. The only place visibility is decided.
+    `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs`, `getPriceBounds`, `listProductUrls`.
+    The only place visibility is decided.
   - [`store.ts`](store.ts) — staff reads and every write: `listAllProducts`, `getProductById`,
     `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`.
     **Not gated**; `src/features/admin/` is the gate.
@@ -165,7 +156,7 @@ in place.
 - **Depended on by (D105):** `src/features/admin/` — `product-queries.ts` and `product-actions.ts` call
   `store.ts` and `product-input.ts`.
 - **Depended on by:** `src/app/(storefront)/styleguide/page.tsx`; `src/features/home/` (featured row,
-  D29); `src/features/results/` — `search.ts` filters, sorts and splits `productsIn(category)` and is the
+  D29); `src/features/results/` — `search.ts` asks `queries.ts` for the lists and facets and is the
   only place results are computed (D44), `query.ts` and `filter-panel.tsx` read `CATEGORY_CONFIG`, and
   the grid renders `ProductCard`; `src/features/product/` — `view.ts` reads `configFor()` for the spec
   table, the back href, the units and the similar list, and `pdp-gallery.tsx` reads `productImageSrc()`.
@@ -184,12 +175,15 @@ in place.
   (DEVIATIONS #15).
 
 ## Open
-7. **Wire the pages to `queries.ts`** and retire `data.ts`. Four UI changes come with it (D105): an
-   all-weather chip and badge; the wheel finish filter removed, finish shown in the specifications;
-   accessory types go from four to nine; the unavailable card keyed on `discontinued` instead of
-   `available`. `results/search.ts` also treats "similar" as everything else in the filtered set, which
-   cannot work at 45,000 products: `listProducts({ sizeMatch: "near" })` replaces it. Owner.
-8. **No caching on `queries.ts`.** Every call hits Postgres. Decide when the pages are wired. Owner.
+7. ~~**Wire the pages to `queries.ts`**~~ **Done by D108**, with the four UI changes D105 listed.
+8. **Only the home row is cached** (`home/featured.ts`, D109). The results and product pages read Postgres
+   on every request: measured at 6 to 97 ms with all ~46k vendor rows, and their filter combinations
+   are unbounded, so a cache there would grow without limit for little gain. Revisit if a page is slow
+   in production. Owner.
+11. **No sitemap yet.** `listProductUrls()` is ready for one, but the site has no canonical URL in code
+    and the public domain still serves the goodwill site (D96). It belongs with the SEO work. Owner.
+12. **`public/images/products/*.webp` is now used by `/styleguide` only.** The seed cut-outs stay until
+    real product photos are uploaded. Owner.
 9. **Tire sizes the parser refuses**, all real but none in the vendor sheets: commercial `11R22.5` and
    `7.50R16`, run-flat `225/45RF17`, temporary `T125/70D16`. Add them to `size.ts` only if the shop
    sells them. Owner.

@@ -20,17 +20,25 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
   `view.ts`'s `parseQuantity(params, category)`: accessories open on `1`, tires and wheels on `4`.
   `QUOTE_FIELD.customQuantity` and `CUSTOM_QUANTITY_MIN`/`MAX` (2026-09-22, `DEVIATIONS.md` #70) back
   the `Custom` cell's free-text field.
-- `view.ts` — `productView(product, searchParams)`, pure. The only place any PDP value is computed.
-  Per category (D58): a **tire** splits `Product.size` on ` · ` into `sizeCode` + `loadSpeed` and builds
-  the six drawn spec rows, the three badges and the season-grouped similar list, exactly as before; a
-  **wheel** keeps its whole size string intact and builds Brand / Model / Size / Bolt pattern / Offset /
-  Finish from `product.wheel`; an **accessory** builds Brand / Model / Type / Fits. Wheels and
-  accessories carry **no badges** (D59(4)). `backHref` points at the product's own category route, and
-  `buildSimilar` never leaves the product's own category, ranking by shared chip value (D59(6)).
+- `view.ts` — `productView(detail, searchParams, rows)`, pure. The only place any PDP value is
+  computed. Since D108 it takes the database's own shape (`CatalogProductDetail`) plus the two rows the
+  page read, and makes the card-shaped `Product` itself with `toProduct()`. Per category (D58): a
+  **tire** reads `sizeCode` + `loadSpeed` off its own columns and builds the six drawn spec rows first,
+  then Load range / Ply rating / Run-flat / UTQG when the vendor gave them; a **wheel** builds Brand /
+  Model / Size / Bolt pattern / Offset / Finish (the vendor's wording, D105) and then Centre bore,
+  Backspacing, Material, Seat type, Load rating, TPMS compatible, Winter use; an **accessory** builds
+  Brand / Model / Type and then Thread size, Seat type, Finish, Pack quantity and the two diameters. **A
+  row with no value is dropped** (D53(1)). Wheels and accessories carry **no badges** (D59(4)); a
+  discontinued product of any category carries the one `Currently unavailable` badge. `backHref` points
+  at the product's own category route.
+- `load.ts` — server only (D108). `loadProduct(slug)`, wrapped in React `cache()` so `generateMetadata`
+  and the page share one query, and `loadProductRows(detail)`: `getSimilarProducts` and `getOtherSizes`,
+  four cards each.
 - `actions.ts` — `submitQuote`, the `"use server"` action (D51). Spam checks first (honeypot
   `website`, 3 s timer from the hidden `renderedAt`; a bot gets a normal `success`), then validation,
   then `deliverQuote()` (D104). A failed owner alert returns `status: "failed"` with the typed values.
-  Looks `slug` up (`catalog/findProduct`/`productCategory`) so an
+  Looks `slug` up in the catalogue (`getProductBySlug`, D108; a failed lookup costs the email its
+  product name, never the lead) so an
   unrecognised `quantity` falls back to the product's own category default, not a flat `4` (2026-09-22
   fix, was category-blind); bounds a non-blank `customQuantity` to 1–99, blank legal (`DEVIATIONS.md` #70).
 - `quote-email.ts` — `deliverQuote()` (D104): the owner alert and the fixed auto-reply, plain text,
@@ -112,7 +120,8 @@ same season, self excluded), **D53** (derived rulings), **D6** (no sticky buy ba
 context="pdp"`), **D37** (imports go through `catalog/`), **D47(2)** (no trust line), **D32** (year).
 
 ## Connects to
-- **Depends on:** `src/features/catalog/` — `Product`, `findProduct`, `productsIn`, `ProductCard`,
+- **Depends on:** `src/features/catalog/` — `Product`, `queries.ts` (`getProductBySlug`,
+  `getSimilarProducts`, `getOtherSizes`), `adapter.ts` (`toProduct`), `ProductCard`,
   `configFor` / `CategoryConfig`, `productImageSrc` (D37); `src/components/ui/` — `Badge`, `Button`,
   `Price`, `Input`, `Textarea`, `Select`, `FieldLabel`, `FieldError`, `Checkbox`;
   `src/components/site/` — `SiteHeader`, `SiteFooter`; `src/lib/{site,routes}.ts`;
@@ -157,3 +166,12 @@ context="pdp"`), **D37** (imports go through `catalog/`), **D47(2)** (no trust l
 6. ~~**`Custom` collects no number.**~~ **Closed 2026-09-22** — see Rules ("Quantity is a URL param") and
    `DEVIATIONS.md` #70: a bounded free-text field renders in the Optional group whenever the selection is
    `custom`. No new island, no drawn pixel moved.
+- **The unavailable PDP (D108, undrawn).** A `discontinued` product loads, per D105. It borrows the
+  card's drawn treatment: the `Currently unavailable` badge, the price in `--text-dim`, and the primary
+  CTA as the ghost `Inquire about restock`. This closes the parked `HANDOFF.md` §7.16. The photo is not
+  dimmed. Owner, if it should be.
+- **An unknown or hidden product answers 200, not 404 (D108).** The page shows `Page not found` and Next
+  adds `noindex`, but the status is 200: the lookup is now a real database read, the `(storefront)`
+  `loading.tsx` has already started streaming by the time it answers, and a status cannot change after
+  that. The seed lookup was synchronous, so production returns a true 404 today. A true 404 means taking
+  `/products/[slug]` out from under that loading boundary. Owner.

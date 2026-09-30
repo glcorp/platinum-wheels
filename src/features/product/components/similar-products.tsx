@@ -1,5 +1,6 @@
 import { ProductCard } from "@/features/catalog/components/product-card";
 import type { Product } from "@/features/catalog/types";
+import { cx } from "@/lib/cx";
 
 /* ---------------------------------------------------------------------------
    SimilarProducts — the four-card row that closes the page. Server Component.
@@ -19,6 +20,15 @@ import type { Product } from "@/features/catalog/types";
 
 export interface SimilarProductsProps {
   products: readonly Product[];
+  /** `Similar products` is artboard-verbatim and the default. The PDP also
+   *  uses this row for `Other sizes` (D108), which no artboard draws. */
+  heading?: string;
+  /** `data-probe` stem. The default keeps every measured probe as it was. */
+  probe?: string;
+  /** Another row of this kind follows directly. The row then gives up its
+   *  desktop bottom padding, so two stacked rows sit one section gap apart
+   *  instead of two. */
+  leads?: boolean;
 }
 
 /* Section: mobile `padding:56px 0 0 16px;gap:20px` — left-padded,
@@ -31,7 +41,7 @@ export interface SimilarProductsProps {
    Desktop `md:` `padding:120px 48px;gap:40px` (`product-desktop.html:159`) —
    fluid grid, nothing to clip, so overflow resets to visible. */
 const SECTION =
-  "flex flex-col gap-5 overflow-hidden pt-14 pl-4 md:gap-10 md:overflow-visible md:px-12 md:py-30";
+  "flex flex-col gap-5 overflow-hidden pt-14 pl-4 md:gap-10 md:overflow-visible md:px-12 md:pt-30";
 
 /* `display` utility carries family/weight/leading/tracking/transform; size
    stays an explicit token. 40px M (`product-mobile.html:126`) → 56px D
@@ -53,14 +63,24 @@ const HEADING = "display text-ink text-display-40 sm:text-display-56";
    draws any (`product.md` §2.7). */
 const TRACK = "similar-track hide-scrollbar md:similar-grid gap-3 md:gap-4";
 
-export function SimilarProducts({ products }: SimilarProductsProps) {
+export function SimilarProducts({
+  products,
+  heading = "Similar products",
+  probe = "similar",
+  leads = false,
+}: SimilarProductsProps) {
   if (products.length === 0) {
     return null;
   }
 
   return (
-    <section data-probe="similar-products" className={SECTION}>
-      <h2 className={HEADING}>Similar products</h2>
+    /* The drawn `padding:120px 48px` is top and bottom. The bottom half is
+       spelled separately so a row that leads another can drop it. */
+    <section
+      data-probe={`${probe}-products`}
+      className={cx(SECTION, !leads && "md:pb-30")}
+    >
+      <h2 className={HEADING}>{heading}</h2>
       {/* Keyboard-scroll decision: the track itself is made focusable
           (`tabIndex={0}`, `role="group"`, `aria-label="Similar products"`)
           rather than relying solely on the focusable links inside each card.
@@ -72,11 +92,11 @@ export function SimilarProducts({ products }: SimilarProductsProps) {
           any card link is reached. The group role plus label announces it
           as one unit distinct from the heading above it. */}
       <div
-        data-probe="similar-track"
+        data-probe={`${probe}-track`}
         className={TRACK}
         tabIndex={0}
         role="group"
-        aria-label="Similar products"
+        aria-label={heading}
       >
         {products.map((product) => (
           <ProductCard key={product.slug} product={product} />

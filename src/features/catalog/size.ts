@@ -3,8 +3,6 @@
  * columns the database filters on. Pure, no imports beyond types, so the admin
  * form, the import script and a test can all use it.
  *
- * Not to be confused with `parseTireSize()` in `categories.ts`, which splits
- * the seed's pre-joined card string for the built UI.
  */
 
 import type { TireSizeFormat } from "./catalog-types";
@@ -108,6 +106,21 @@ export function normalizeBoltPattern(raw: string): string | null {
   if (lugs <= 0 || pcd <= 0) return null;
   // `Number` drops a trailing `.0`, so `5x120.0` and `5x120` are one value.
   return `${lugs}x${pcd}`;
+}
+
+const METRIC_THREAD = /^(\d{1,2}(?:\.\d+)?)[X\u00D7](\d(?:\.\d+)?)$/;
+
+/**
+ * A lug thread in its one stored spelling: `12x1.50`, `12 X 1.5` and
+ * `12×1.5` all become `12x1.5`. Anything that is not a metric thread
+ * (`1/2"`, `9/16 UNF`) is kept as typed, trimmed. The vehicle filter compares
+ * threads for equality, so both sides go through here.
+ */
+export function normalizeThreadSize(raw: string): string {
+  const compact = raw.replace(/\s+/g, "").toUpperCase();
+  const match = METRIC_THREAD.exec(compact);
+  if (!match) return raw.trim();
+  return `${Number(match[1])}x${Number(match[2])}`;
 }
 
 /**

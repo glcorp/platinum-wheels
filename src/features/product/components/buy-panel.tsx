@@ -141,6 +141,10 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
         <Price
           amount={product.price}
           context="pdp"
+          /* A discontinued product (D105): the amount dims, as it does on the
+             unavailable card. Undrawn on the PDP, so it borrows the card's
+             drawn treatment rather than inventing one. */
+          unavailable={!product.available}
           unit={view.config.unit.pdp}
         />
       </div>
@@ -155,8 +159,16 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
             (`src/lib/routes.ts` `quoteRoute()` doc: "the PDP's own quote
             band") — an in-page fragment, not a routed path, so it is not a
             `ROUTES` entry. */}
-        <Button variant="primary" size="panel" fullWidth href="#quote">
-          Request a quote
+        {/* Unavailable: the card's own drawn swap, ghost button and
+            `Inquire about restock` (`results-desktop.html:426`). The form
+            below still takes the enquiry. */}
+        <Button
+          variant={product.available ? "primary" : "secondary"}
+          size="panel"
+          fullWidth
+          href="#quote"
+        >
+          {product.available ? "Request a quote" : "Inquire about restock"}
         </Button>
         <Button
           variant="secondary"

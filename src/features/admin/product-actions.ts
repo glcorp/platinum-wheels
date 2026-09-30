@@ -19,6 +19,9 @@
    idiom in this repo (`payment-link-actions.ts`).
    --------------------------------------------------------------------------- */
 
+import { updateTag } from "next/cache";
+
+import { CATALOGUE_TAG } from "@/features/catalog/cache-tag";
 import {
   PRODUCT_CATEGORIES,
   PRODUCT_STATUSES,
@@ -85,11 +88,23 @@ function invalid(
   return { status: "invalid", errors, formError, values: echo(formData) };
 }
 
+/**
+ * A write landed: expire every cached catalogue read (the home page's
+ * featured row today), so the storefront is never staler than the last save.
+ * `updateTag` also makes Next re-render the route the form was posted from.
+ */
+function catalogueChanged(): void {
+  updateTag(CATALOGUE_TAG);
+}
+
 function fromWriteResult(
   formData: FormData,
   result: WriteProductResult,
 ): ProductFormState {
-  if (result.ok) return { status: "saved", id: result.id, slug: result.slug };
+  if (result.ok) {
+    catalogueChanged();
+    return { status: "saved", id: result.id, slug: result.slug };
+  }
   switch (result.reason) {
     case "source_taken":
       return invalid(formData, {
@@ -167,6 +182,7 @@ export async function setProductStatusAction(
       message: "This product no longer exists. Reload the list and try again.",
     };
   }
+  catalogueChanged();
   return { status: "done", to: status, changed: 1 };
 }
 
@@ -243,5 +259,6 @@ export async function bulkSetProductStatusAction(
       message: "Select some products or filter the list first.",
     };
   }
+  catalogueChanged();
   return { status: "done", to: status, changed: result.changed };
 }

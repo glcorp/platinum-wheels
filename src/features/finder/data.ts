@@ -78,9 +78,10 @@ export const FINDER_MAKES: ReadonlyArray<FinderMake> = [
  * this is not, and `findFitment()` deliberately takes no year argument.
  *
  * NOT derived from the wheel CSV (D9). These are NOT verified OE specs: sizes
- * are deliberately skewed toward the five sizes the catalog seed actually
- * carries — 215/55R16, 215/50R17, 225/45R17, 225/50R17, 235/40R18
- * (`src/features/catalog/data.ts`) — so that a finder submit produces a real
+ * are deliberately skewed toward the five sizes the catalog seed used to
+ * carry — 215/55R16, 215/50R17, 225/45R17, 225/50R17, 235/40R18 (the seed
+ * was deleted by D108; the catalogue is the database now) — so that a finder
+ * submit produced a real
  * best/similar split (D47(8)). 38 of the 60 pairs land on one of those five;
  * the remaining 22 — full-size trucks, three-row SUVs and large-wheel EVs —
  * carry honest sizes the seed does not stock, so the empty `Best matches`

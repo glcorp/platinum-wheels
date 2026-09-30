@@ -3,13 +3,13 @@ import { notFound } from "next/navigation";
 
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import { findProduct } from "@/features/catalog/data";
 import { BuyPanel } from "@/features/product/components/buy-panel";
 import { PdpBreadcrumb } from "@/features/product/components/pdp-breadcrumb";
 import { PdpGallery } from "@/features/product/components/pdp-gallery";
 import { QuoteBand } from "@/features/product/components/quote-band";
 import { SimilarProducts } from "@/features/product/components/similar-products";
 import { Specifications } from "@/features/product/components/specifications";
+import { loadProduct, loadProductRows } from "@/features/product/load";
 import { productView } from "@/features/product/view";
 
 /* ---------------------------------------------------------------------------
@@ -59,12 +59,16 @@ export async function generateMetadata({
   params,
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = findProduct(slug);
-  if (!product) return { title: "Product" };
+  const detail = await loadProduct(slug);
+  if (!detail) return { title: "Product" };
 
+  const { fullName, sizeLine } = productView(detail, {}, {
+    similar: [],
+    otherSizes: [],
+  });
   return {
-    title: `${product.brand} ${product.model}`,
-    description: `${product.brand} ${product.model} ${product.size}. Request a quote from Platinum Wheels in Brampton, Ontario.`,
+    title: fullName,
+    description: `${fullName} ${sizeLine}. Request a quote from Platinum Wheels in Brampton, Ontario.`,
   };
 }
 
@@ -73,17 +77,19 @@ export default async function ProductPage({
   searchParams,
 }: PageProps<"/products/[slug]">) {
   const { slug } = await params;
-  const product = findProduct(slug);
-  /* An unknown slug is a 404. An UNAVAILABLE product is not: the page still
-     returns 200 and the card variant carries the state
-     (`docs/decisions.md:116`). */
-  if (!product) notFound();
+  const detail = await loadProduct(slug);
+  /* An unknown slug is a 404, and so is a HIDDEN product. A DISCONTINUED one
+     is not: the page still returns 200 and shows it as unavailable, so an old
+     link still lands somewhere that takes an enquiry
+     (`docs/decisions.md:116`, D105). */
+  if (!detail) notFound();
 
   /* Read once: `productView` derives from it, and `BuyPanel` passes it down to
      `QuantityControl` so a `?qty=` link changes that param and preserves every
      other one (D50). */
   const query = await searchParams;
-  const view = productView(product, query);
+  const view = productView(detail, query, await loadProductRows(detail));
+  const { product } = view;
   const breadcrumb = <PdpBreadcrumb view={view} />;
 
   return (
@@ -99,7 +105,6 @@ export default async function ProductPage({
             <PdpGallery
               brand={product.brand}
               model={product.model}
-              slug={product.slug}
               image={product.image}
               /* Mobile draws the badge row over the image; from `sm:` it moves
                  into the buy panel, which is where the desktop artboard puts
@@ -124,6 +129,14 @@ export default async function ProductPage({
         </div>
 
         <QuoteBand view={view} />
+        {/* Undrawn (D108): the same row as `Similar products`, above it, for
+            this model's other sizes. Each renders only when it has cards. */}
+        <SimilarProducts
+          heading="Other sizes"
+          probe="other-sizes"
+          products={view.otherSizes}
+          leads={view.similar.length > 0}
+        />
         <SimilarProducts products={view.similar} />
       </main>
       <SiteFooter />

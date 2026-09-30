@@ -121,7 +121,7 @@ export interface Vehicle {
  */
 export interface PdpBadge {
   label: string;
-  variant: "winter" | "outline";
+  variant: "winter" | "outline" | "unavailable";
   /** `3PMSF` only: the snowflake mark, desktop only. */
   mark?: "three-peak";
 }
@@ -178,11 +178,17 @@ export interface ProductView {
    *  half when no vehicle is in the URL. The quote band's chip value. */
   inquiryContext: string;
   /**
-   * Four cards: same category always, then same chip value (season / finish /
-   * type) first, current slug excluded, capped at 4 (D52, extended by D58 —
-   * a wheel PDP never recommends a tire).
+   * Up to four cards, never another size of this same model and never another
+   * category (D52, D58 — a wheel PDP never recommends a tire). Closest first:
+   * the catalogue decides what "close" is (`getSimilarProducts`, D107).
    */
   similar: readonly Product[];
+  /**
+   * This brand and model in its other sizes, nearest this one first
+   * (`getOtherSizes`, D107). Empty for a product with no model, and for a
+   * model sold in one size; the row is then not rendered.
+   */
+  otherSizes: readonly Product[];
 }
 
 /* --- Quote form (D51) ---------------------------------------------------- */

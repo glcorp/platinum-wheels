@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import type { Product } from "@/features/catalog/types";
-import { clearFilters, resultsHref, withShowAll } from "@/features/results/query";
+import { clearFilters, resultsHref, withMore } from "@/features/results/query";
 import { RESULTS_WINDOW, type ResultsView } from "@/features/results/types";
 import { PRIMARY_CONTACT } from "@/lib/site";
 
@@ -84,9 +84,13 @@ const COUNT = "text-ink-muted text-14 leading-flat tabular-nums md:text-15";
  *
  *  Moved here from `results-toolbar.tsx` by D72 together with the element it
  *  feeds; it is still the only place the string is built. */
+const COUNT_FORMAT = new Intl.NumberFormat("en-CA");
+
 function countCopy(best: number, similar: number): string {
-  const matches = `${best} ${best === 1 ? "match" : "matches"}`;
-  return similar > 0 ? `${matches} · ${similar} similar` : matches;
+  const matches = `${COUNT_FORMAT.format(best)} ${best === 1 ? "match" : "matches"}`;
+  return similar > 0
+    ? `${matches} · ${COUNT_FORMAT.format(similar)} similar`
+    : matches;
 }
 
 /* The empty state's action pair, shared by `ResultsEmpty` (which `/styleguide`
@@ -193,14 +197,19 @@ export function ResultsGrid({ view }: ResultsGridProps) {
   const empty = view.total === 0;
 
   /* One window at every width — 6 best + 3 similar, the desktop artboard's own
-     counts (D47(7)). `?show=all` lifts it (D44). */
-  const showAll = view.query.showAll;
-  const best = showAll ? view.best : view.best.slice(0, RESULTS_WINDOW.best);
-  const similar = showAll
-    ? view.similar
-    : view.similar.slice(0, RESULTS_WINDOW.similar);
-  const hiddenCount =
-    view.best.length - best.length + (view.similar.length - similar.length);
+     counts (D47(7)). The lists arrive already cut to that window: the
+     database returns one page and the totals, never the whole set (D108).
+
+     `Load more` raises `?show=` by one step. It has something to do while
+     best matches remain and the window is below its ceiling, or, on the first
+     press, while the similar row is still at three of more. */
+  const { best, similar } = view;
+  const bestHidden = view.bestTotal - best.length;
+  const similarHidden = view.similarTotal - similar.length;
+  const atCeiling = view.query.show >= RESULTS_WINDOW.max;
+  const canLoadMore =
+    (bestHidden > 0 && !atCeiling) ||
+    (similarHidden > 0 && view.query.show === RESULTS_WINDOW.best);
 
   return (
     <div className="flex flex-col md:gap-20">
@@ -249,7 +258,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             aria-atomic="true"
             className={empty ? "sr-only" : COUNT}
           >
-            {countCopy(view.best.length, view.similar.length)}
+            {countCopy(view.bestTotal, view.similarTotal)}
           </p>
           {empty ? <p className={SUPPORT}>{copy.empty}</p> : null}
         </div>
@@ -263,7 +272,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             always below the fold and stays lazy. */}
         {empty ? (
           <EmptyActions clearHref={resultsHref(clearFilters(view.query))} />
-        ) : view.best.length === 0 ? (
+        ) : view.bestTotal === 0 ? (
           /* A vehicle now derives a size (D48), so a fitment with no exact
              match lands here: best empty, similar populated. `total === 0` is
              the `empty` branch above. The heading stays — it is the page
@@ -287,7 +296,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
 
       {/* Omitted entirely when there is nothing similar — with no size in the
           URL every result is a best match (D47(8)). */}
-      {view.similar.length === 0 ? null : (
+      {similar.length === 0 ? null : (
         <section
           data-probe="similar"
           className={`${SECTION} pt-14`}
@@ -304,7 +313,19 @@ export function ResultsGrid({ view }: ResultsGridProps) {
         </section>
       )}
 
-      {hiddenCount === 0 ? null : (
+      {/* The window has a ceiling (D108): past it the page stops growing and
+          says how to narrow instead. Undrawn, so new copy under
+          `.claude/rules/ui.md` "Copy", in the empty state's own type. */}
+      {atCeiling && bestHidden > 0 ? (
+        <p
+          data-probe="load-ceiling"
+          className={`${SUPPORT} px-4 pt-5 sm:px-8 md:px-0 md:pt-0 md:pb-30`}
+        >
+          {`Showing ${COUNT_FORMAT.format(best.length)} of ${COUNT_FORMAT.format(view.bestTotal)}. Filter by size or brand to narrow it down.`}
+        </p>
+      ) : null}
+
+      {!canLoadMore ? null : (
         /* D: its own row, `justify-content:center` + `padding-bottom:120px`
            (results-desktop.html:498) — the 120px is why the page's footer
            wrapper adds no desktop margin. M: full width inside the flow,
@@ -323,8 +344,8 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             size="load"
             fullWidth
             className="md:w-auto"
-            href={resultsHref(withShowAll(view.query))}
-            /* `scroll={false}`: this is a `?show=all` link (D44), and Next
+            href={resultsHref(withMore(view.query))}
+            /* `scroll={false}`: this is a `?show=` link (D44), and Next
                scrolls a navigation to the top by default — so pressing
                `Load more` threw the reader back to the header, away from the
                cards it had just revealed. Measured before the fix: scrollY

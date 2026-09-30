@@ -25,18 +25,21 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `metadata` object and one call.
 - [`query.ts`](query.ts) — pure, client-safe: `parseResultsQuery()`, `resultsHref()`, `clearFilters()`;
   param names double as form field names so a no-JS GET submit produces the same URL.
-- [`search.ts`](search.ts) — server only: `searchResults()` filters, sorts and facets the catalog seed
-  into a `ResultsView`. Imports `src/features/catalog/data.ts`; never imported by a client file. The
-  best/similar split runs against an internal `SizeFilter`: an explicit URL size wins, otherwise a vehicle
-  borrows one from the placeholder `FITMENT` map in `src/features/finder/data.ts` (D48(4)) — `query` is
-  never mutated and `facets.activeGroups` is unchanged, because a derived fitment is not a user filter.
-  **Fitment is per category (D58, D67):** tires borrow `width`/`profile`/`rim`, wheels `bolt` only — a car
-  determines its bolt pattern, not the rim size its owner wants — and accessories, which have no size
-  group, narrow on the spec string via `accessoryFitsVehicle()`, where a stated thread pitch or TPMS
-  frequency must equal the vehicle's and stating neither stays best. Both sides are normalised (`12x1.5`
-  in the map, `12×1.5` on the card). Reads `productsIn(category)`, not `PRODUCTS`. **Brand matching is
-  case-insensitive since D65** — in `matchesBrands` *and* in `brandFacets`'s `selected` flag, which must
-  agree or the grid filters while the row stays unticked; facet values keep the seed's own casing.
+- [`search.ts`](search.ts) — server only and **async** since D108: `searchResults()` asks the catalogue
+  (`catalog/queries.ts`) for one page of best matches, the similar row and the facets, and maps them into
+  a `ResultsView`. Reads the database; never imported by a client file. An explicit URL size wins,
+  otherwise a vehicle borrows one from the placeholder `FITMENT` map in `src/features/finder/data.ts`
+  (D48(4)) — `query` is never mutated and `facets.activeGroups` is unchanged, because a derived fitment is
+  not a user filter. **Fitment is per category (D58, D67):** tires borrow `width`/`profile`/`rim`, wheels
+  `bolt` only, and accessories, which have no size group, narrow on the vehicle's lug thread: a lug nut or
+  wheel lock that states a different thread is `similar`, and stating none stays best
+  (`queries.ts` `contradictsThread()`). TPMS frequency is not a catalogue column, so a sensor always stays
+  best. **What D108 changed, because 9 products and 45,000 behave differently:** a size now *filters*
+  (`best` is that size; `similar` is the sizes next to it, `sizeMatch: "near"`, not "everything else");
+  facet counts follow `best`; the lists arrive windowed by `query.show`; **the brand filter is exact**, as
+  the facet spells it (D107), which supersedes D65's case-insensitive match; and a price bound parked at
+  the end of the slider is not sent as a filter, because the form posts both range inputs on every change
+  and a price bound would silently drop every product with no price.
 - [`components/results-toolbar.tsx`](components/results-toolbar.tsx) — `ResultsToolbar({ view })`, Server.
   Breadcrumb, then a `<details>` whose `<summary>` is the vehicle chip plus the `Change vehicle` /
   `Add vehicle` link (D45, D47(5)) opening a `<VehicleFinder variant="inline">` that submits to **this**
@@ -56,7 +59,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   since **D71** deleted the drawn `Category` group (#60) — the size group from `facets.sizeGroup.fields`,
   omitted when `null`, on stock `grid-cols-3`, `dense` swapping in `grid-cols-4` with `SizeField`'s
   `spanTwo` on the last field and trimmed padding (a 1:1:2 split, wheels only, `5x114.3` no longer clips;
-  rail and sheet now share the same classes, #67/#71); the chip row (`Season`/`Finish`/`Type`); Brand
+  rail and sheet now share the same classes, #67/#71); the chip row (`Season`/`Type`; none on wheels since D105); Brand
   `Checkbox variant="facet"` rows; Price = two `range-input`s inside a travel box 8px wider than the drawn
   track each side (**D69**), its dim bounds row showing only once `selectedMin`/`selectedMax` narrow
   (#68). **No `Apply`** (#71, D82) — the rail's button and the sheet's inline one are both gone, so the
@@ -78,9 +81,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 - [`components/results-grid.tsx`](components/results-grid.tsx) — `ResultsGrid({ view })` and
   `ResultsEmpty({ clearHref, as?, body? })`, Server. `body` defaults to the category copy so the
   `/styleguide` call site stays untouched (one sentence for all three today, D73). `Best matches` is the
-  `<h1>` (D47(6)), `Similar matches` an `<h2>` (omitted when empty); `RESULTS_WINDOW` 6 + 3 unless
-  `showAll`; `Load more` = `Button size="load"` link to `?show=all`, rendered only when cards are hidden
-  (D47(7)) and carrying `scroll={false}` since **D68**, because Next scrolls a navigation to the top by
+  `<h1>` (D47(6)), `Similar matches` an `<h2>` (omitted when empty); `RESULTS_WINDOW` 6 + 3 by
+  default; `Load more` = `Button size="load"` link that raises `?show=` by 24 up to 150 and opens the
+  similar row to 12 (D108; it used to be `?show=all`, which is thousands of cards now), rendered only
+  while it has something to reveal (D47(7)); at the ceiling a line says how many are shown and to narrow
+  the filters and carrying `scroll={false}` since **D68**, because Next scrolls a navigation to the top by
   default and the reader was thrown back to the header (2146 → 0); the empty state is new copy (D47(4)).
   Since **D72** the count and `countCopy` live here as the second line of the `Best matches` header stack
   (#63), and `ResultsGrid` composes the zero-results state itself from the shared `SECTION` /
@@ -136,7 +141,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 - Don't reproduce the artboard's drawn filter state (`Winter`, `Zeta + ZMAX`, `$140–$275`) as defaults —
   it is sample data (`DEVIATIONS.md` "Sample data").
 - Don't add a fitment trust line here, and don't move `call-cta-panel` to `src/components/site/` (D47).
-- Don't import `search.ts` or `catalog/data.ts` from a client file — they carry the seed;
+- Don't import `search.ts` or `catalog/queries.ts` from a client file — they read the database;
   `catalog/categories.ts` is the client-safe half, and is what `filter-panel.tsx` imports.
 - Don't branch a component on `view.query.category`; the one `category === "accessories"` test in
   `search.ts` is server logic, not a component fork (D67).
@@ -167,5 +172,10 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
    five client photos cover the nine accessory SKUs (#51). Client, via owner.
 6. ~~`wheel-size-grid`/`wheel-size-grid-sheet`~~ (closed, #67; dead code owed for removal, D25). Owner.
 7. **`Load more` drops keyboard focus to `<body>`** — the link unmounts on arrival, D65's defect again,
-   and nothing announces the three new cards (the count is unchanged by `?show=all`). `results-grid.tsx`
+   and nothing announces the new cards (the count is unchanged by `?show=`). `results-grid.tsx`
    is a Server Component by design, so the fix is a leaf island, not a directive on it. Owner.
+8. **Brand rows fold after eight** into a native `<details>` (`Show all brands`, D108). The form is keyed
+   on the URL, so the fold closes again after every filter change; a ticked brand is always shown. Owner,
+   if it should stay open.
+9. **The vehicle → size map is still the placeholder `FITMENT` table.** Real fitment data is its own
+   session (D105). Owner.
