@@ -16,11 +16,11 @@
    gap and type value below reuses an existing token or primitive rather than
    inventing one, per `.claude/rules/ui.md` "States the design doesn't show".
 
-   Two fields, and only two (D92, owner ruling this session: no line items, no
+   Three fields: amount and description (D92, owner ruling: no line items, no
    quantities, no fees, no tax, no totals block — the owner works the number
-   out himself and types it once). Do not add a field here without an owner
-   ruling; if something looks missing, that belongs in a report, not in this
-   file.
+   out himself and types it once) and expiry (D103). Do not add a field here
+   without an owner ruling; if something looks missing, that belongs in a
+   report, not in this file.
    --------------------------------------------------------------------------- */
 
 import { useActionState, useEffect, useRef } from "react";
@@ -28,16 +28,21 @@ import { useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FieldError, FieldLabel } from "@/components/ui/field-label";
 import { Input, Textarea } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { createPaymentLink } from "@/features/admin/payment-link-actions";
 import {
   ADMIN_CSRF_FIELD,
+  PAYMENT_LINK_EXPIRY,
+  PAYMENT_LINK_EXPIRY_DEFAULT,
   PAYMENT_LINK_FIELD,
   PAYMENT_LINK_INITIAL_STATE,
 } from "@/features/admin/types";
 import { PaymentLinkSuccess } from "./payment-link-success";
 
-/** `csrfToken` comes from the page's `requireAdminSession()` (D95). */
-export function PaymentLinkForm({ csrfToken }: { csrfToken: string }) {
+/** `csrfToken` comes from the page's `requireAdminSession()` (D95);
+ *  `idempotencyKey` is minted by the page per render (`docs/payments.md` §5.3),
+ *  so a double-tapped submit returns the same link. */
+export function PaymentLinkForm({ csrfToken, idempotencyKey }: { csrfToken: string; idempotencyKey: string }) {
   const [state, formAction, isPending] = useActionState(
     createPaymentLink,
     PAYMENT_LINK_INITIAL_STATE,
@@ -45,6 +50,7 @@ export function PaymentLinkForm({ csrfToken }: { csrfToken: string }) {
   const successRef = useRef<HTMLDivElement>(null);
   const amountRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const expiryRef = useRef<HTMLSelectElement>(null);
 
   // Move focus to the confirmation once it replaces the form, so a screen
   // reader (and a sighted keyboard user) lands on the thing that changed —
@@ -66,6 +72,8 @@ export function PaymentLinkForm({ csrfToken }: { csrfToken: string }) {
       amountRef.current?.focus();
     } else if (state.errors.description) {
       descriptionRef.current?.focus();
+    } else if (state.errors.expiry) {
+      expiryRef.current?.focus();
     }
   }, [state]);
 
@@ -81,8 +89,11 @@ export function PaymentLinkForm({ csrfToken }: { csrfToken: string }) {
           role="status"
           tabIndex={-1}
           url={state.url}
+          reference={state.reference}
           amount={state.amount}
           description={state.description}
+          expiresLabel={state.expiresLabel}
+          testMode={state.testMode}
         />
         {/* Starting another link is a full page reload rather than a local
             state reset. `useActionState`'s state lives inside this component
@@ -104,12 +115,13 @@ export function PaymentLinkForm({ csrfToken }: { csrfToken: string }) {
     );
   }
 
-  const values = state.status === "invalid" ? state.values : undefined;
+  const values = state.status === "invalid" || state.status === "unavailable" ? state.values : undefined;
   const errors = state.status === "invalid" ? state.errors : undefined;
 
   return (
     <form action={formAction} data-probe="payment-link-form" className="flex flex-col gap-5 sm:gap-6">
       <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
+      <input type="hidden" name={PAYMENT_LINK_FIELD.idempotencyKey} value={idempotencyKey} />
       <div>
         <FieldLabel htmlFor="payment-amount" required>
           Amount (CAD)
@@ -182,6 +194,33 @@ export function PaymentLinkForm({ csrfToken }: { csrfToken: string }) {
           <FieldError id="payment-description-error">{errors.description}</FieldError>
         ) : null}
       </div>
+
+      <div>
+        <FieldLabel htmlFor="payment-expiry" required>
+          Link stays open for
+        </FieldLabel>
+        <Select
+          id="payment-expiry"
+          name={PAYMENT_LINK_FIELD.expiry}
+          ref={expiryRef}
+          defaultValue={values?.expiry || PAYMENT_LINK_EXPIRY_DEFAULT}
+          invalid={Boolean(errors?.expiry)}
+          aria-describedby={errors?.expiry ? "payment-expiry-error" : undefined}
+        >
+          {PAYMENT_LINK_EXPIRY.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
+        {errors?.expiry ? <FieldError id="payment-expiry-error">{errors.expiry}</FieldError> : null}
+      </div>
+
+      {state.status === "unavailable" ? (
+        <p role="alert" className="text-ink text-14 leading-body">
+          The link could not be saved. Nothing was created. Try again in a minute.
+        </p>
+      ) : null}
 
       <Button
         type="submit"

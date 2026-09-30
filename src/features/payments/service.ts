@@ -1,0 +1,505 @@
+/* ---------------------------------------------------------------------------
+   Payments service — every state change a payment link or attempt can make.
+
+   The rules this file enforces (`docs/payments.md` §4–§5):
+
+     1. The amount sent to the gateway comes from the database row, never
+        from the browser.
+     2. Nothing the browser sends back changes state. A return redirect only
+        tells us *which* transaction to ask about; the gateway's server-side
+        query decides approved or declined, and its amount and invoice number
+        must match the attempt before a link is marked paid.
+     3. Creating an attempt locks the link row (`FOR UPDATE`) and refuses a
+        paid, cancelled or expired link. The lock is released before the
+        network call, so a slow gateway never holds a row lock for 60 s.
+     4. A second approval on an already-paid link is recorded as `duplicate`
+        (a refund for staff to issue), never folded silently into `approved`.
+        The partial unique index makes a second `approved` impossible anyway.
+     5. Every change writes a `payment_events` row, in the same transaction.
+
+   Callers: the `/pay` routes (customer), the admin actions (staff) and the
+   reconcile cron (system). The gateway is passed in, so the money logic runs
+   against a fake in tests; only `reconcileLink` defaults to the configured
+   Converge account, so the admin never has to import a gateway (D106).
+   --------------------------------------------------------------------------- */
+
+import { randomBytes } from "node:crypto";
+
+import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
+
+import { getDb, type Database } from "@/db/client";
+import {
+  paymentAttempts,
+  paymentEvents,
+  paymentLinks,
+  type NewPaymentEvent,
+  type PaymentAttempt,
+  type PaymentLink,
+} from "@/db/schema";
+
+import { convergeGateway } from "./converge";
+import { linkState, type Gateway, type GatewayTransaction, type LinkState } from "./types";
+
+type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
+
+/** Converge session tokens live 15 minutes (Elavon, `docs/payments.md` §2). */
+const SESSION_TTL_MS = 15 * 60 * 1000;
+
+/** The reconcile leaves an attempt alone until its session has been dead
+ *  this long, so a customer still on the hosted page is never raced. */
+const RECONCILE_GRACE_MS = 5 * 60 * 1000;
+
+/** Attempts per link, so a script cannot burn the proxy quota or the
+ *  gateway's fraud rules through one leaked link. */
+const MAX_ATTEMPTS_PER_LINK = 10;
+
+async function event(tx: Tx, row: NewPaymentEvent): Promise<void> {
+  await tx.insert(paymentEvents).values(row);
+}
+
+/* ===========================================================================
+   Links (staff)
+   =========================================================================== */
+
+export interface CreateLinkInput {
+  amountCents: number;
+  description: string;
+  expiresAt: Date;
+  idempotencyKey: string;
+  createdBy: string;
+}
+
+/** Idempotent on `idempotencyKey`: a double-submitted form returns the first
+ *  link rather than minting a second one. */
+export async function createLink(input: CreateLinkInput, db: Database = getDb()): Promise<PaymentLink> {
+  return db.transaction(async (tx) => {
+    const [inserted] = await tx
+      .insert(paymentLinks)
+      .values({
+        publicToken: randomBytes(16).toString("base64url"),
+        idempotencyKey: input.idempotencyKey,
+        amountCents: input.amountCents,
+        description: input.description,
+        expiresAt: input.expiresAt,
+        createdBy: input.createdBy,
+      })
+      .onConflictDoNothing({ target: paymentLinks.idempotencyKey })
+      .returning();
+
+    if (!inserted) {
+      const [existing] = await tx
+        .select()
+        .from(paymentLinks)
+        .where(eq(paymentLinks.idempotencyKey, input.idempotencyKey));
+      return existing;
+    }
+
+    await event(tx, {
+      linkId: inserted.id,
+      type: "link.created",
+      actor: "staff",
+      data: {
+        amount_cents: inserted.amountCents,
+        expires_at: inserted.expiresAt.toISOString(),
+        created_by: input.createdBy,
+      },
+    });
+    return inserted;
+  });
+}
+
+export type CancelResult = { ok: true } | { ok: false; state: LinkState | "not_found" };
+
+export async function cancelLink(linkId: string, cancelledBy: string, db: Database = getDb()): Promise<CancelResult> {
+  return db.transaction(async (tx) => {
+    const [link] = await tx.select().from(paymentLinks).where(eq(paymentLinks.id, linkId)).for("update");
+    if (!link) return { ok: false, state: "not_found" };
+    // An expired link can still be cancelled: it tidies the list, and a
+    // cancelled link can never be revived by an expiry change later.
+    if (link.status !== "active") return { ok: false, state: linkState(link) };
+
+    await tx
+      .update(paymentLinks)
+      .set({ status: "cancelled", cancelledAt: new Date(), cancelledBy })
+      .where(eq(paymentLinks.id, linkId));
+    await event(tx, { linkId, type: "link.cancelled", actor: "staff", data: { cancelled_by: cancelledBy } });
+    return { ok: true };
+  });
+}
+
+export interface LinkSummary {
+  link: PaymentLink;
+  state: LinkState;
+  /** The approved attempt, when paid: brand, last four, approval code. */
+  approved: PaymentAttempt | null;
+  pendingAttempts: number;
+  duplicateAttempts: number;
+}
+
+/** The admin list: newest first. */
+export async function listLinks(limit = 50, db: Database = getDb()): Promise<LinkSummary[]> {
+  const links = await db.select().from(paymentLinks).orderBy(desc(paymentLinks.createdAt)).limit(limit);
+  if (links.length === 0) return [];
+
+  const attempts = await db
+    .select()
+    .from(paymentAttempts)
+    .where(
+      and(
+        inArray(
+          paymentAttempts.linkId,
+          links.map((l) => l.id),
+        ),
+        inArray(paymentAttempts.status, ["approved", "pending", "duplicate"]),
+      ),
+    );
+
+  const now = new Date();
+  return links.map((link) => {
+    const mine = attempts.filter((a) => a.linkId === link.id);
+    return {
+      link,
+      state: linkState(link, now),
+      approved: mine.find((a) => a.status === "approved") ?? null,
+      pendingAttempts: mine.filter((a) => a.status === "pending").length,
+      duplicateAttempts: mine.filter((a) => a.status === "duplicate").length,
+    };
+  });
+}
+
+/* ===========================================================================
+   The customer's page
+   =========================================================================== */
+
+export interface PayPageView {
+  link: PaymentLink;
+  state: LinkState;
+  /** The most recent attempt, for "declined, try again" / "confirming". */
+  latestAttempt: PaymentAttempt | null;
+}
+
+export async function getPayPage(publicToken: string, db: Database = getDb()): Promise<PayPageView | null> {
+  const [link] = await db.select().from(paymentLinks).where(eq(paymentLinks.publicToken, publicToken));
+  if (!link) return null;
+  const [latestAttempt] = await db
+    .select()
+    .from(paymentAttempts)
+    .where(eq(paymentAttempts.linkId, link.id))
+    .orderBy(desc(paymentAttempts.attemptNo))
+    .limit(1);
+  return { link, state: linkState(link), latestAttempt: latestAttempt ?? null };
+}
+
+export type StartAttemptResult =
+  | { kind: "redirect"; hostedPageUrl: string; token: string }
+  | { kind: "not_payable"; state: LinkState | "not_found" | "too_many_attempts" }
+  | { kind: "unavailable" };
+
+/**
+ * The customer pressed Pay. Lock, check, record a pending attempt, commit,
+ * then ask the gateway for a session built from the attempt row.
+ */
+export async function startAttempt(
+  publicToken: string,
+  gateway: Gateway,
+  db: Database = getDb(),
+): Promise<StartAttemptResult> {
+  const created = await db.transaction(async (tx) => {
+    const [link] = await tx
+      .select()
+      .from(paymentLinks)
+      .where(eq(paymentLinks.publicToken, publicToken))
+      .for("update");
+    if (!link) return { kind: "not_payable", state: "not_found" } as const;
+
+    const state = linkState(link);
+    if (state !== "active") return { kind: "not_payable", state } as const;
+
+    const [{ last }] = await tx
+      .select({ last: sql<number>`coalesce(max(${paymentAttempts.attemptNo}), 0)::int` })
+      .from(paymentAttempts)
+      .where(eq(paymentAttempts.linkId, link.id));
+    if (last >= MAX_ATTEMPTS_PER_LINK) return { kind: "not_payable", state: "too_many_attempts" } as const;
+
+    const attemptNo = last + 1;
+    const [attempt] = await tx
+      .insert(paymentAttempts)
+      .values({
+        linkId: link.id,
+        attemptNo,
+        provider: "converge",
+        environment: gateway.environment,
+        providerInvoiceNumber: `${link.reference}-${attemptNo}`,
+        amountCents: link.amountCents,
+        sessionExpiresAt: new Date(Date.now() + SESSION_TTL_MS),
+      })
+      .returning();
+    await event(tx, {
+      linkId: link.id,
+      attemptId: attempt.id,
+      type: "attempt.created",
+      actor: "customer",
+      data: { attempt_no: attemptNo, invoice_number: attempt.providerInvoiceNumber },
+    });
+    return { kind: "created", link, attempt } as const;
+  });
+
+  if (created.kind !== "created") return created;
+  const { link, attempt } = created;
+
+  const session = await gateway.createSession({
+    amountCents: attempt.amountCents,
+    invoiceNumber: attempt.providerInvoiceNumber,
+    description: link.description,
+  });
+
+  await db.transaction(async (tx) => {
+    if (session.ok) {
+      await event(tx, { linkId: link.id, attemptId: attempt.id, type: "attempt.session_created", actor: "system", data: {} });
+    } else {
+      // No session was issued, so no money can have moved on this attempt.
+      await tx
+        .update(paymentAttempts)
+        .set({ status: "failed" })
+        .where(and(eq(paymentAttempts.id, attempt.id), eq(paymentAttempts.status, "pending")));
+      await event(tx, {
+        linkId: link.id,
+        attemptId: attempt.id,
+        type: "attempt.session_failed",
+        actor: "system",
+        data: { detail: session.detail },
+      });
+    }
+  });
+
+  if (!session.ok) {
+    console.error(JSON.stringify({ at: "payments.startAttempt", invoice: attempt.providerInvoiceNumber, detail: session.detail }));
+    return { kind: "unavailable" };
+  }
+  return { kind: "redirect", hostedPageUrl: session.hostedPageUrl, token: session.token };
+}
+
+/* ===========================================================================
+   Verification — the only path to `approved`
+   =========================================================================== */
+
+type ResolveOutcome = "approved" | "duplicate" | "declined" | "unchanged" | "mismatch";
+
+/**
+ * Apply one gateway-verified transaction to its attempt. Called by the return
+ * route and the reconcile; both got `txn` from a server-side query.
+ */
+async function resolveAttempt(
+  attemptId: string,
+  txn: GatewayTransaction,
+  source: "return" | "reconcile" | "staff",
+  db: Database,
+): Promise<ResolveOutcome> {
+  return db.transaction(async (tx) => {
+    // Lock order: link, then attempt — the same order `startAttempt` takes.
+    const [{ linkId }] = await tx
+      .select({ linkId: paymentAttempts.linkId })
+      .from(paymentAttempts)
+      .where(eq(paymentAttempts.id, attemptId));
+    const [link] = await tx.select().from(paymentLinks).where(eq(paymentLinks.id, linkId)).for("update");
+    const [attempt] = await tx.select().from(paymentAttempts).where(eq(paymentAttempts.id, attemptId)).for("update");
+
+    const base = { linkId, attemptId, actor: "provider" as const };
+    const data = { source, txn: txn.raw };
+
+    // Replay of something already applied: nothing to do.
+    if (attempt.providerTxnId === txn.txnId && attempt.verifiedAt) return "unchanged";
+
+    if (txn.invoiceNumber !== attempt.providerInvoiceNumber || txn.amountCents !== attempt.amountCents) {
+      await event(tx, { ...base, type: "attempt.verification_mismatch", data: { ...data, expected_cents: attempt.amountCents } });
+      console.error(JSON.stringify({ at: "payments.resolveAttempt", mismatch: true, attemptId, txnId: txn.txnId }));
+      return "mismatch";
+    }
+
+    if (txn.outcome === "other") {
+      await event(tx, { ...base, type: "attempt.verified_unresolved", data });
+      return "unchanged";
+    }
+
+    // A final attempt only ever moves forward to an approval (a decline
+    // followed by an approved retry on the same hosted page).
+    const isFinal = attempt.status !== "pending" && attempt.status !== "failed" && attempt.status !== "expired";
+    if (isFinal && !(attempt.status === "declined" && txn.outcome === "approved")) {
+      await event(tx, { ...base, type: "attempt.verified_ignored", data: { ...data, current: attempt.status } });
+      return "unchanged";
+    }
+
+    const now = new Date();
+    const cardFields = {
+      providerTxnId: txn.txnId,
+      approvalCode: txn.approvalCode,
+      resultMessage: txn.resultMessage,
+      cardBrand: txn.cardBrand,
+      cardLast4: txn.cardLast4,
+      verifiedAt: now,
+    };
+
+    if (txn.outcome === "declined") {
+      await tx.update(paymentAttempts).set({ status: "declined", ...cardFields }).where(eq(paymentAttempts.id, attemptId));
+      await event(tx, { ...base, type: "attempt.declined", data });
+      return "declined";
+    }
+
+    // Approved. Money moved. Paid link, or a cancelled one (the customer was
+    // already on the hosted page when staff cancelled) → a refund to issue.
+    if (link.status !== "active") {
+      await tx.update(paymentAttempts).set({ status: "duplicate", ...cardFields }).where(eq(paymentAttempts.id, attemptId));
+      await event(tx, { ...base, type: "attempt.duplicate", data: { ...data, link_status: link.status } });
+      console.error(JSON.stringify({ at: "payments.resolveAttempt", duplicate: true, reference: link.reference, txnId: txn.txnId }));
+      return "duplicate";
+    }
+
+    // An expired-but-active link is still paid: the session was issued
+    // before the expiry, and the customer did pay.
+    await tx.update(paymentAttempts).set({ status: "approved", ...cardFields }).where(eq(paymentAttempts.id, attemptId));
+    await tx.update(paymentLinks).set({ status: "paid", paidAt: now }).where(eq(paymentLinks.id, linkId));
+    await event(tx, { ...base, type: "attempt.approved", data });
+    await event(tx, { linkId, attemptId, actor: "system", type: "link.paid", data: { amount_cents: attempt.amountCents } });
+    return "approved";
+  });
+}
+
+const TXN_ID_SHAPE = /^[A-Za-z0-9-]{1,64}$/;
+const INVOICE_SHAPE = /^PW-\d+-\d+$/;
+
+/**
+ * The browser came back from the hosted page. `fields` is untrusted: it only
+ * names a transaction (or, failing that, an invoice) to ask the gateway about.
+ * Returns the link's public token so the caller can send the customer back to
+ * their page, or null when nothing matches.
+ */
+export async function handleReturn(
+  fields: { txnId: string | null; invoiceNumber: string | null },
+  gateway: Gateway,
+  db: Database = getDb(),
+): Promise<string | null> {
+  const txnId = fields.txnId && TXN_ID_SHAPE.test(fields.txnId) ? fields.txnId : null;
+  const claimedInvoice = fields.invoiceNumber && INVOICE_SHAPE.test(fields.invoiceNumber) ? fields.invoiceNumber : null;
+
+  let transactions: GatewayTransaction[] = [];
+  if (txnId) {
+    const result = await gateway.getTransaction(txnId);
+    if (result.ok) transactions = result.transactions;
+    else console.error(JSON.stringify({ at: "payments.handleReturn", detail: result.detail }));
+  }
+
+  // The invoice we trust is the gateway's; the browser's is only a fallback
+  // for finding the customer's page when the query failed or had no txn id.
+  const invoice = transactions[0]?.invoiceNumber ?? claimedInvoice;
+  if (!invoice) return null;
+
+  const [row] = await db
+    .select({ attemptId: paymentAttempts.id, publicToken: paymentLinks.publicToken, linkId: paymentLinks.id })
+    .from(paymentAttempts)
+    .innerJoin(paymentLinks, eq(paymentLinks.id, paymentAttempts.linkId))
+    .where(eq(paymentAttempts.providerInvoiceNumber, invoice));
+  if (!row) return null;
+
+  await db.insert(paymentEvents).values({
+    linkId: row.linkId,
+    attemptId: row.attemptId,
+    type: "attempt.return_received",
+    actor: "customer",
+    data: { txn_id: txnId, verified: transactions.length > 0 },
+  });
+
+  const txn = transactions.find((t) => t.txnId === txnId);
+  if (txn) await resolveAttempt(row.attemptId, txn, "return", db);
+  return row.publicToken;
+}
+
+/* ===========================================================================
+   Reconcile — attempts whose customer never came back
+   =========================================================================== */
+
+export interface ReconcileSummary {
+  checked: number;
+  approved: number;
+  declined: number;
+  duplicate: number;
+  expired: number;
+  unresolved: number;
+}
+
+async function reconcileAttempts(
+  attempts: PaymentAttempt[],
+  gateway: Gateway,
+  source: "reconcile" | "staff",
+  db: Database,
+): Promise<ReconcileSummary> {
+  const summary: ReconcileSummary = { checked: 0, approved: 0, declined: 0, duplicate: 0, expired: 0, unresolved: 0 };
+
+  for (const attempt of attempts) {
+    summary.checked += 1;
+    const result = await gateway.findByInvoice(attempt.providerInvoiceNumber);
+    if (!result.ok) {
+      summary.unresolved += 1;
+      console.error(JSON.stringify({ at: "payments.reconcile", invoice: attempt.providerInvoiceNumber, detail: result.detail }));
+      continue;
+    }
+
+    const matches = result.transactions.filter((t) => t.invoiceNumber === attempt.providerInvoiceNumber);
+    if (matches.length === 0) {
+      // Only once the session is dead can "no transaction" mean "never paid".
+      if (attempt.sessionExpiresAt.getTime() + RECONCILE_GRACE_MS > Date.now()) {
+        summary.unresolved += 1;
+        continue;
+      }
+      await db.transaction(async (tx) => {
+        const updated = await tx
+          .update(paymentAttempts)
+          .set({ status: "expired" })
+          .where(and(eq(paymentAttempts.id, attempt.id), eq(paymentAttempts.status, "pending")))
+          .returning({ id: paymentAttempts.id });
+        if (updated.length > 0) {
+          await event(tx, { linkId: attempt.linkId, attemptId: attempt.id, type: "attempt.expired", actor: "system", data: { source } });
+        }
+      });
+      summary.expired += 1;
+      continue;
+    }
+
+    // Approved first, so an approval is never masked by an earlier decline.
+    const ordered = [...matches].sort((a, b) => Number(b.outcome === "approved") - Number(a.outcome === "approved"));
+    const outcome = await resolveAttempt(attempt.id, ordered[0], source, db);
+    if (outcome === "approved") summary.approved += 1;
+    else if (outcome === "declined") summary.declined += 1;
+    else if (outcome === "duplicate") summary.duplicate += 1;
+    else summary.unresolved += 1;
+  }
+  return summary;
+}
+
+/** The daily cron: every pending attempt whose session has been dead a while. */
+export async function reconcilePending(gateway: Gateway, db: Database = getDb()): Promise<ReconcileSummary> {
+  const cutoff = new Date(Date.now() - RECONCILE_GRACE_MS);
+  const attempts = await db
+    .select()
+    .from(paymentAttempts)
+    .where(and(eq(paymentAttempts.status, "pending"), lt(paymentAttempts.sessionExpiresAt, cutoff)))
+    .orderBy(asc(paymentAttempts.createdAt))
+    .limit(100);
+  return reconcileAttempts(attempts, gateway, "reconcile", db);
+}
+
+/** Staff pressed "Check payment" on one link: every pending attempt, any age.
+ *  An attempt still inside its session is queried but never expired.
+ *  `gateway` defaults to the configured Converge account, so the admin can
+ *  call this without ever importing a gateway itself (D106). */
+export async function reconcileLink(
+  linkId: string,
+  gateway: Gateway = convergeGateway(),
+  db: Database = getDb(),
+): Promise<ReconcileSummary> {
+  const attempts = await db
+    .select()
+    .from(paymentAttempts)
+    .where(and(eq(paymentAttempts.linkId, linkId), eq(paymentAttempts.status, "pending")))
+    .orderBy(asc(paymentAttempts.attemptNo));
+  return reconcileAttempts(attempts, gateway, "staff", db);
+}

@@ -9,9 +9,10 @@
    or an owner ruling in D89-D94, and every authored state lands on
    `/admin/styleguide` (D93).
 
-   Nothing in this file may reference a payment provider. The PSP is unchosen
-   (project skill "Open items" #3), so the admin is a provider-agnostic wrapper:
-   it collects an amount and a description, and nothing else (D92).
+   Nothing in this file may reference a payment provider. The PSP is Converge
+   (D99), but only gateway code under `src/features/payments/` may name it; the
+   admin collects an amount, a description and an expiry (D92 amended by D103)
+   and nothing else.
    --------------------------------------------------------------------------- */
 
 /* ===========================================================================
@@ -122,9 +123,34 @@ export const LOGIN_INITIAL_STATE: AdminLoginState = { status: "idle" };
 export const PAYMENT_LINK_FIELD = {
   amount: "amount",
   description: "description",
+  /** D103: how long the link stays payable, one of `PAYMENT_LINK_EXPIRY`. */
+  expiry: "expiry",
+  /** Hidden. A UUID the page mints per render, so a double-submitted form
+   *  returns the first link instead of creating a second (`docs/payments.md`
+   *  §5.3). Not a field the owner sees. */
+  idempotencyKey: "idempotency_key",
 } as const;
 
-export type PaymentLinkFieldKey = keyof typeof PAYMENT_LINK_FIELD;
+export type PaymentLinkFieldKey = "amount" | "description" | "expiry";
+
+/**
+ * Expiry choices (D103: *"Add an expiry field"*, owner 2026-09-23). A select,
+ * not a date picker: the owner thinks "give them a week", not in calendar
+ * dates, and a fixed list cannot produce a link that expired before it was
+ * sent. `hours` is the only value the action trusts; `label` is copy.
+ */
+export const PAYMENT_LINK_EXPIRY = [
+  { value: "1d", label: "24 hours", hours: 24 },
+  { value: "3d", label: "3 days", hours: 72 },
+  { value: "7d", label: "7 days", hours: 168 },
+  { value: "14d", label: "14 days", hours: 336 },
+  { value: "30d", label: "30 days", hours: 720 },
+] as const;
+
+export const PAYMENT_LINK_EXPIRY_DEFAULT = "7d";
+
+/** Field on the per-link Cancel / Check forms in the links list. */
+export const PAYMENT_LINK_ID_FIELD = "link_id";
 
 /**
  * Fixed currency. The storefront is CAD throughout (`src/lib/site.ts`
@@ -166,15 +192,31 @@ export type PaymentLinkState =
   | {
       status: "invalid";
       errors: Partial<Record<PaymentLinkFieldKey, string>>;
-      values: { amount: string; description: string };
+      values: { amount: string; description: string; expiry: string };
     }
+  /** The database could not be reached. Our fault, not the owner's input. */
+  | { status: "unavailable"; values: { amount: string; description: string; expiry: string } }
   | {
       status: "success";
-      /** Placeholder only. No gateway is connected — see D94 and the TODO in
-       *  `payment-link-actions.ts`. The success panel must say so on screen. */
+      /** The customer's link, `https://pay.platinumwheels.ca/pay/<token>` in
+       *  production (D100, D105). */
       url: string;
+      /** `PW-10001`: what staff and the customer quote on the phone. */
+      reference: string;
       amount: string;
       description: string;
+      /** Already formatted for display in the shop's time zone. */
+      expiresLabel: string;
+      /** `true` while the gateway is Converge's demo: test cards only. */
+      testMode: boolean;
     };
+
+/** Result of the links list's Cancel and Check-payment buttons. */
+export type LinkActionState =
+  | { status: "idle" }
+  | { status: "done"; message: string }
+  | { status: "error"; message: string };
+
+export const LINK_ACTION_INITIAL_STATE: LinkActionState = { status: "idle" };
 
 export const PAYMENT_LINK_INITIAL_STATE: PaymentLinkState = { status: "idle" };

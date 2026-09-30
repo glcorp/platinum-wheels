@@ -10,7 +10,7 @@ import { decideHostRouting } from "@/features/admin/host-routing";
    `docs/decisions.md` §2 fixed this file name before it existed. It lives in
    `src/` because the app does; Next looks for it beside `app/`.
 
-   It does one thing — decide which hostname may serve `/admin` — and every
+   It does one thing — decide which hostname may serve `/admin` and `/pay` — and every
    rule lives in `src/features/admin/host-routing.ts` as a pure function. This
    file only adapts a request to that function and its answer to a response.
    Nothing about sign-in happens here: the gate is `requireAdminSession()` in
@@ -68,6 +68,15 @@ export const config = {
     {
       source: "/((?!_next/|.*\\..*).*)",
       has: [{ type: "header", key: "host", value: "admin\\.platinumwheels\\.ca" }],
+    },
+    // Payments (D105): `/pay` on any host, so production can 404 it off the
+    // pay host, and every non-asset path on the pay host. `PAY_HOST` in
+    // `host-routing.ts` — change both.
+    "/pay",
+    "/pay/:path*",
+    {
+      source: "/((?!_next/|.*\\..*).*)",
+      has: [{ type: "header", key: "host", value: "pay\\.platinumwheels\\.ca" }],
     },
   ],
 };

@@ -8,14 +8,17 @@ and destined for `admin.platinumwheels.ca`. It exists because the shop's selling
 money. Delete this folder and the owner has no way to raise a payment link, and the storefront's
 quote-first model terminates in a phone call with nothing to send.
 
-It is **UI only** (D54 extended by D89). No database and no payment provider. Sign-in is one shared
-account, hardened by D95 rather than replaced by an auth system.
+Since D99–D107 it is backed by real payments: the builder writes a `payment_links` row through
+`src/features/payments/` and hands back the customer's `pay.platinumwheels.ca/pay/<token>` URL, and the
+links list shows which links were paid (D106). Sign-in is still one shared account, hardened by D95
+rather than replaced by an auth system.
 
 ## Owns
 
-- [`host-routing.ts`](host-routing.ts) — which host may serve `/admin` (D97). A pure function with no
-  imports, so it is testable without Next; `src/proxy.ts` is its only caller. `ADMIN_HOST` is duplicated
-  as a literal in the proxy's `matcher` — change both.
+- [`host-routing.ts`](host-routing.ts) — which host may serve `/admin` (D97) and `/pay` (D105). A pure
+  function with no imports, so it is testable without Next; `src/proxy.ts` is its only caller.
+  `ADMIN_HOST` and `PAY_HOST` are duplicated as literals in the proxy's `matcher` (and `PAY_HOST` in
+  `src/features/payments/config.ts`). Change them together.
 - [`types.ts`](types.ts) — the contract. Route map, field names, form-state unions, validation ceilings.
   Written by the coordinator before any implementation file (D25). Both actions and both forms code
   against it; nothing here invents a field name.
@@ -25,18 +28,24 @@ account, hardened by D95 rather than replaced by an auth system.
   touching anything auth-shaped.**
 - [`auth-actions.ts`](auth-actions.ts) — `"use server"`. `signIn` (origin check, validates, opens a
   session, logs, redirects) and `signOut` (`requireAdminAction()`, then clears the cookie).
-- [`payment-link-actions.ts`](payment-link-actions.ts) — `"use server"`. `createPaymentLink`: calls
-  `requireAdminAction()` first, validates an amount and a description, returns a placeholder URL.
-  Connects to no provider.
+- [`payment-link-actions.ts`](payment-link-actions.ts) — `"use server"`, three actions, each calling
+  `requireAdminAction()` first. `createPaymentLink` validates amount, description and expiry, then
+  creates the link (idempotent on a per-render key). `cancelPaymentLink` and `checkPaymentLink` serve the
+  links list (D106).
 - [`components/login-form.tsx`](components/login-form.tsx) — client island. `useActionState` + focus
   management, the `quote-form.tsx` idiom.
 - [`components/login-error-summary.tsx`](components/login-error-summary.tsx) — authored error state,
   its own module so `/admin/styleguide` renders the real component.
 - [`components/admin-top-bar.tsx`](components/admin-top-bar.tsx) — logo, `Admin` label, sign out. The
   seed of a shell, not a shell.
-- [`components/payment-link-form.tsx`](components/payment-link-form.tsx) — client island. Two fields.
+- [`components/payment-link-form.tsx`](components/payment-link-form.tsx) — client island. Amount,
+  description, expiry (D103), plus the hidden idempotency key.
 - [`components/payment-link-success.tsx`](components/payment-link-success.tsx) — authored success state:
-  the link, the amount restated, and the mandatory "not connected yet" notice.
+  the link, reference, amount, expiry, and the **test mode** notice while the gateway is the demo (D107).
+- [`components/payment-link-list.tsx`](components/payment-link-list.tsx) — the latest 50 links as stacked
+  cards: status, paid-with card and approval code, duplicate-payment alert, copy link (D106).
+- [`components/link-row-actions.tsx`](components/link-row-actions.tsx) — client island. Cancel (with a
+  confirm) and Check payment for one row.
 - [`components/copy-link-button.tsx`](components/copy-link-button.tsx) — client island. Clipboard write
   with a real failure path.
 
@@ -52,11 +61,13 @@ account, hardened by D95 rather than replaced by an auth system.
   storefront).
 - **No hover-only affordances.** Hover is scoped to `@media (hover: hover)` repo-wide (D17), so anything
   revealed only on hover is permanently unreachable on his devices. Every control is persistently visible.
-- **No gateway in this folder.** The PSP is Converge (D99), but that code lives outside
-  `src/features/admin/`, and nothing here may name, import or be shaped around a gateway (D92, as
-  amended by D99).
-- **Two fields.** The builder takes an amount and a description. No line items, no quantities, no fees,
-  no HST, no totals — the owner ruled it a wrapper, not a calculator (D92).
+- **No gateway in this folder.** The PSP is Converge (D99), but that code lives in
+  `src/features/payments/`. This folder may import that feature's `service`, `config` and `money` modules
+  (D106), and never `converge.ts`; nothing here may name or be shaped around a gateway (D92, as amended
+  by D99).
+- **Three fields.** The builder takes an amount, a description and an expiry (D103). No line items, no
+  quantities, no fees, no HST, no totals — the owner ruled it a wrapper, not a calculator (D92).
+- **Nothing here moves money out.** No refund or void button; those are done in the Converge portal.
 - Every protected page calls `requireAdminSession()` first, and **every Server Action here calls
   `requireAdminAction(formData)` first** (`signIn`, which has no session yet, calls
   `assertSameOriginRequest()`). An action is a public POST endpoint whether or not its page is gated, and
@@ -77,7 +88,7 @@ account, hardened by D95 rather than replaced by an auth system.
 | D91 | 2026-09-21 | Stub cookie gate, username + password, one shared credential, lands on the builder | One shop, no staff accounts; real auth needs a backend that is deferred | Owner |
 | D92 | 2026-09-21 | Payment link = amount + description only; no computation | Owner: *"its simply just a payment link generator … basically just a wrapper on top of payment gateway they choose"* | Owner |
 | D93 | 2026-09-21 | Admin authored states go to `/admin/styleguide`, not the storefront's | Staff states do not belong on a public storefront reference page | Owner |
-| D94 | 2026-09-21 | The generated link is a realistic placeholder, visibly labelled as not connected | It must demo convincingly without anyone mistaking it for live | Owner |
+| D94 | 2026-09-21 | ~~The generated link is a realistic placeholder, visibly labelled as not connected~~ **Retired by D107** | It must demo convincingly without anyone mistaking it for live | Owner |
 | D95 | 2026-09-23 | One shared sign-in, hardened: scrypt hash, signed `__Host-` cookie, CSRF token + origin check on every action, admin security headers, audit log. No login limit, no per-user accounts, no 2FA | Owner: *"only one login account password works"*, *"lets not build limit failed login"* | Owner |
 | D96 | 2026-09-23 | `admin.platinumwheels.ca` wired: a DNS-only Cloudflare CNAME to Vercel; the apex stays on the goodwill site | Owner chose the admin subdomain only; must never proxy the record or move the nameservers (email) | Owner |
 | D97 | 2026-09-23 | `src/proxy.ts`: on the admin host non-`/admin` paths 307 to `/admin`; elsewhere `/admin` is a 404; production only | The subdomain became real, so the D90 deferral no longer applied | Owner |

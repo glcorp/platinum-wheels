@@ -14,6 +14,18 @@ const ADMIN_SECURITY_HEADERS = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
+/* Customer payment pages (D105). The URL carries the link's secret token, so
+   the referrer is cut to the origin: Converge's hosted page (and anything else)
+   learns the site, never the token. Never framed, never indexed. */
+const PAY_SECURITY_HEADERS = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin" },
+  { key: "X-Robots-Tag", value: "noindex, nofollow" },
+  { key: "Cache-Control", value: "no-store" },
+];
+
 const nextConfig: NextConfig = {
   /* config options here */
   turbopack: {
@@ -28,6 +40,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/admin", headers: ADMIN_SECURITY_HEADERS },
       { source: "/admin/:path*", headers: ADMIN_SECURITY_HEADERS },
+      { source: "/pay/:path*", headers: PAY_SECURITY_HEADERS },
     ];
   },
 };

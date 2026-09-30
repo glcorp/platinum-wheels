@@ -323,22 +323,31 @@ parked row.
     may too, because GitHub can credit the squash commit to the PR author.
   - **Fix:** move the team to Pro (Hobby is also non-commercial only) and invite `garvbareja`'s Vercel
     account. Owner.
-- **PSP chosen, not wired.** Converge, via Costco / Elavon (D99). Until the adapter lands,
-  `createPaymentLink` still fabricates a URL (D94). The success panel says so on screen, and that notice
-  is mandatory.
+- **Payments are wired, not yet proven against Converge** (D99–D107, branch `payments`). The builder
+  creates real links; the success panel shows a **test mode** notice while `CONVERGE_ENV=demo` (D94 retired).
 - **Product CRUD** is deferred until the vendor catalogue settles the schema.
 - **No `/admin` error or loading boundary** — `(storefront)/error.tsx` does not reach it, and its component
   speaks to customers. `src/app/admin/llm.md` Open #3.
 - Session length (12 h) and the admin's `sm:` padding ramp were coordinator calls; both vetoable. Full list:
   `src/features/admin/llm.md` Open.
 
-**Payments (D99–D103):**
+**Payments (D99–D103, D105–D107):**
 
 - The schema, migrations and DB client are on `main`. The 2026-09-24 production build migrated
   production Neon. Each Vercel build migrates its own Neon branch first (`scripts/db-migrate.mjs`).
-- **Not built yet:** the Converge adapter, the `/pay/<token>` page, and the admin wiring, including the
-  D103 expiry field. The design is in `docs/payments.md`. Owner actions (the `ssl_pin` rotation,
-  Fixie, and a demo extension by **2026-10-13**) are in `docs/payments.md` §8.
+- **Built 2026-09-24 on `payments`:** `src/features/payments/` (Converge adapter, service, Pay island),
+  `/pay/<token>`, `/pay/return`, `/pay/done`, the daily reconcile cron (`/api/cron/reconcile`,
+  `vercel.json`), host routing for `pay.platinumwheels.ca` (D105), and the admin's expiry field and
+  links list (D106, **awaiting the owner's nod**). No migration: the schema already had everything.
+- **Verified:** `tsc`, `eslint`, `next build`; 13 service tests against real Postgres (PGlite running the
+  repo's own migrations) with a fake gateway. They cover paid, declined then retry, two-tab duplicate,
+  amount mismatch, forged return, gateway down, reconcile (paid / expired / live left alone), cancel,
+  expiry, append-only events with no PIN, and XML parsing. The harness is not in the repo (no test
+  runner is configured).
+- **Not verified yet: a real Converge call.** Blocked on Elavon allowlisting the Fixie IPs. The
+  walkthrough once unblocked: create a `$1.00` link → pay with Visa `4000000000000002` → paid; `$1.88` →
+  declined, then retry. The UNCONFIRMED wire details are listed in `docs/payments.md` §10.
+- Owner actions: `todo.md` "Payments".
 - **Local database work needs a Neon dev branch in `.env.local`.** The Vercel database variables are
   Sensitive and target Production and Preview only, so `vercel env pull` cannot fetch them.
 

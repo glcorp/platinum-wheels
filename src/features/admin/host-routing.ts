@@ -10,9 +10,16 @@
      - On `ADMIN_HOST`, `/admin` and everything under it passes; any other path
        redirects to `/admin`, which the page gate (`requireAdminSession`) then
        sends to sign-in. The subdomain has no storefront on it.
+     - On `PAY_HOST` (D105), `/pay` and everything under it passes — the
+       customer's `/pay/<token>` page and Converge's `/pay/return` — and any
+       other path is a 404. The subdomain serves payments and nothing else.
      - On every other host — the apex once it is wired, and the production
-       `*.vercel.app` alias today — `/admin` and everything under it is a 404.
-       The admin exists on exactly one hostname.
+       `*.vercel.app` alias today — `/admin` and `/pay` are a 404. Each exists
+       on exactly one hostname.
+
+   `PAY_HOST` lives here beside `ADMIN_HOST` because this module is the one
+   place host rules are decided; `src/features/payments/config.ts` repeats the
+   literal to build link URLs (this file has no imports, by design).
 
    **Previews and local dev get no host rules at all.** A preview deployment is
    served on a generated `*.vercel.app` hostname, so blocking `/admin` off
@@ -33,6 +40,11 @@
  *  `matcher`, because Next requires matcher values to be static constants —
  *  change both together. */
 export const ADMIN_HOST = "admin.platinumwheels.ca";
+
+/** The customer payment hostname (D105): a DNS-only Cloudflare CNAME to
+ *  Vercel, like `ADMIN_HOST`. Duplicated in `src/proxy.ts`'s `matcher` and in
+ *  `src/features/payments/config.ts` — change all three. */
+export const PAY_HOST = "pay.platinumwheels.ca";
 
 /** Where a stray path on the admin host is sent. Mirrors
  *  `ADMIN_ROUTES.home` in `types.ts`; not imported, to keep this module
@@ -65,6 +77,11 @@ export function isAdminPath(pathname: string): boolean {
   return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
+/** `/pay` and anything under `/pay/`, but not `/payments` or `/pay-later`. */
+export function isPayPath(pathname: string): boolean {
+  return pathname === "/pay" || pathname.startsWith("/pay/");
+}
+
 export function decideHostRouting({
   host,
   pathname,
@@ -72,13 +89,17 @@ export function decideHostRouting({
 }: HostRoutingInput): HostRoutingDecision {
   if (!isProduction) return { kind: "pass" };
 
-  const onAdminHost = normalizeHost(host) === ADMIN_HOST;
+  const normalized = normalizeHost(host);
 
-  if (onAdminHost) {
+  if (normalized === ADMIN_HOST) {
     return isAdminPath(pathname)
       ? { kind: "pass" }
       : { kind: "redirect", pathname: ADMIN_HOME_PATH };
   }
 
-  return isAdminPath(pathname) ? { kind: "not-found" } : { kind: "pass" };
+  if (normalized === PAY_HOST) {
+    return isPayPath(pathname) ? { kind: "pass" } : { kind: "not-found" };
+  }
+
+  return isAdminPath(pathname) || isPayPath(pathname) ? { kind: "not-found" } : { kind: "pass" };
 }
