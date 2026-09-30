@@ -4,8 +4,10 @@
  */
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
-/** One PDP per category, plus each category's drawn unavailable SKU
- *  (`src/features/catalog/data.ts`). Seeds are placeholder data (D48). */
+/** One PDP per category, plus each category's drawn unavailable SKU. These
+ *  were the slugs of the sample catalogue (`src/features/catalog/data.ts`,
+ *  deleted by D108b). The suite is parked until a fixture database carries
+ *  them again (D111, `tests/llm.md` Open). */
 export const SLUG = {
   tire: "zeta-antarctica-sport",
   wheel: "touren-tr76-18x8",

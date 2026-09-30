@@ -1,23 +1,35 @@
 # Platinum Wheels — session handoff
 
-**Last updated 2026-09-30 (three open PRs combined into one branch for a single `glcorp` merge).** The
-branch brings **#11** the vehicle list snapshot (D110), **#8** Converge payments (D105–D108) and **#9**
-the catalogue database with its server code (D105b–D107b, migration `0002`). No page reads the catalogue
-yet, so every storefront route still renders the seed. The catalogue's decision rows were suffixed at
-this merge because `payments` had published D105–D107 first (root `llm.md` §5b, header note).
-- **Checked on the combined tree:** `npm run check`, `npm run db:check`, `drizzle-kit generate` (no
-  schema drift) and `next build`. Migrations `0000`–`0002` applied through `scripts/db-migrate.mjs` to a
-  throwaway Postgres (PGlite), and a second run was a no-op. In a browser against that database: sign
-  in, generate a link, open `/pay/<token>`, press Pay with no gateway configured (*Online payment is not
-  available right now*), cancel the link, and the closed page. The D97 and D105 host rules with
-  `VERCEL_ENV=production`.
-- **Not checked:** the e2e suite (§5) was not re-run, because this machine lacks the browser build
-  Playwright 1.63 asks for; the storefront code is byte-identical to `main`. No real Converge call has
-  been made (`todo.md` P2).
-- **#10 (every storefront page reads the database, D108b/D109) is not in the branch.** Owner, 2026-09-30:
-  it merges after the approved catalogue is loaded. It also has to be reconciled with D91b–D93b first:
-  it deletes the seed the e2e suite asserts on, and it rewrites `results/search.ts`, where D93b's
-  hostile-query rules live.
+**Last updated 2026-09-30 (all four open PRs combined into one branch for a single `glcorp` merge, D111).**
+The branch brings **#11** the vehicle list snapshot (D110), **#8** Converge payments (D105–D108), **#9** the
+catalogue database with its server code (D105b–D107b, migration `0002`) and **#10** the page wiring
+(D108b, D109): every storefront page reads the database and the seed is deleted.
+- **The catalogue is empty until the approved CSV is loaded.** After this merge every listing on the
+  deployed storefront reads `0 matches`, the price range reads `$0`, the home featured row does not
+  render and every product URL is a 404. Owner, 2026-09-30: *"fold everything into one"*, which amends
+  D108b's "merged only after the approved catalogue is loaded".
+- **Where #10 met D91b–D93b, the owner ruled five times (root `llm.md` D111):** both brand rules on a
+  results URL; the e2e suite parked; the no-photo tile morphs too; #10's deviation rows renumbered
+  #88–#94; the home row cached by tag with no timer. The catalogue's and the wiring's decision rows
+  carry a `b` suffix because `payments` had published D105–D108 first (root `llm.md` §5b, header note).
+- **Checked on the combined tree:** `next typegen`, `npm run check`, `npm run db:check`, `drizzle-kit
+  generate` (no schema drift) and `npm run build`; `/` is prerendered and sends `s-maxage=31536000` with
+  no `stale-while-revalidate`; a home row cached while the catalogue was empty stays empty on a rebuild
+  with the same deployment id and appears on one with a new id. Migrations `0000`–`0002` applied through `scripts/db-migrate.mjs` to a
+  throwaway Postgres (PGlite), and a second run was a no-op. Against that database, empty: the three
+  results routes answer 200 with `0 matches` and no `Infinity`. Against it with a 13-product fixture:
+  hostile results URLs (`brand=Nope`, `brand=zeta`, `width=abc`, `width=999`, `min=0&max=999999`), a
+  carried brand the size empties keeping its ticked row at 0 with `Filters (2)`, a product page in each
+  state (published and discontinued 200, hidden and unknown 404 with `noindex`), and the tile morph
+  pairing on `product-open` and `product-back`. Payments, before #10 was folded in: sign in, generate a
+  link, `/pay/<token>`, Pay with no gateway configured, cancel, the closed page, and the D97 and D105
+  host rules with `VERCEL_ENV=production`.
+- **Not checked:** the e2e suite (§5) is parked and cannot run (`tests/llm.md`). How the tile morph
+  looks frame by frame. The product admin's Server Actions from a browser: its screens do not exist, so
+  the tag expiry that refreshes the home row is unexercised. No real Converge call (`todo.md` P2).
+- **Owed next, in order:** load the approved catalogue; replace the placeholder `FEATURED_SLUGS`
+  (`src/features/home/featured.ts`) and redeploy, which is also what makes a bulk load show on `/`; the
+  suite's fixture database (`tests/llm.md` Open).
 
 **Last updated 2026-09-30 (the D93b senior pass and D94b home photos, then `origin/main` merged: admin, payments database and quote email, D89–D104).** The D91b QA pass (a committed Playwright + axe suite, §5) precedes it. Earlier summaries follow.
 
@@ -160,7 +172,7 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | `src/features/product/` | `types.ts`, `view.ts` (all derivation), `actions.ts` (`"use server"`), **10** components; one island `quote-form.tsx`. Two authored states in their own modules so `/styleguide` renders the real thing: `quote-success.tsx` (D51) and `quote-error-summary.tsx` (D57). |
 | `src/features/results/` | `types.ts`, `query.ts`, `search.ts`, 9 components (D58 added `results-page.tsx`); islands `sort-select`, `filter-panel`, `filter-sheet`. D42–D49, D58, D59. **Nothing here branches on the category** — components read `view.facets`, and what differs is data in `catalog/categories.ts`. |
 | Finder | `src/features/finder/` — native selects, GET to `ROUTES.results` by default with `action`/`cta` overrides (D27/D28/D58); `variant="inline"` for `Change vehicle` (D45); **placeholder `FITMENT` map** now carrying a **bolt pattern** as well as a tire size (D48, D58). `/wheels` submits to `/wheels`; `/accessories` renders no finder at all (D59(2)). |
-| Catalog | `FEATURED_PRODUCTS` (4), `PRODUCTS` (9 tires), **`WHEELS` (9)** and **`ACCESSORIES` (9)**, one unavailable each, plus `ALL_PRODUCTS` / `productsIn()` (D43, D58). `Product` gained optional `category` (**absent = tires**, which is what keeps every measured tire row byte-identical), `wheel`, `accessoryType`; plus `productCategory()` and `productImageSrc()`. **`categories.ts` is the per-category table** (`CATEGORY_CONFIG`) read by `results/`, `product/` and `ProductCard` — it lives in `catalog/` because D37 routes cross-feature imports through there, and it imports no seed so a client island can use it. `ProductCard` is the most reused component in the build and is unchanged on all three categories. |
+| Catalog | **The seed named in this row was deleted by D108b; every page reads the database (`src/features/catalog/llm.md`). The component notes still hold.** `FEATURED_PRODUCTS` (4), `PRODUCTS` (9 tires), **`WHEELS` (9)** and **`ACCESSORIES` (9)**, one unavailable each, plus `ALL_PRODUCTS` / `productsIn()` (D43, D58). `Product` gained optional `category` (**absent = tires**, which is what keeps every measured tire row byte-identical), `wheel`, `accessoryType`; plus `productCategory()` and `productImageSrc()`. **`categories.ts` is the per-category table** (`CATEGORY_CONFIG`) read by `results/`, `product/` and `ProductCard` — it lives in `catalog/` because D37 routes cross-feature imports through there, and it imports no seed so a client island can use it. `ProductCard` is the most reused component in the build and is unchanged on all three categories. |
 | Chrome | `site-header`, `site-nav-drawer`, `site-footer` (no social row, D34), `page-stub`. Skip link in `layout.tsx` (D57). |
 | Primitives | **Ten**, hand-built and token-only in `src/components/ui/`. Every variant and state is on `/styleguide`. Neither the PDP, nor D57, nor D58 needed a new primitive — D58 added exactly one optional prop, `Price.unit`, defaulting to the drawn tire string. |
 | `globals.css` | **719 ln**: tokens, role utilities, the home/results/product layout utilities, and the three D57 accessibility utilities (`tap-extend-lg`, `hide-scrollbar`, `skip-link`). The dead `--container-rail` token was removed 2026-09-21 (D61, audit S5). **Single writer: the coordinator.** See §9. |
@@ -177,6 +189,9 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 ---
 
 ## §5. Verification state
+
+**The suite is parked since D111 and cannot run until it has a fixture database (`tests/llm.md` Open).**
+What follows describes it as it ran on the seed.
 
 **The verification of record is the committed QA suite (D91b), not a hand measurement.** `tests/` is a
 Playwright + `@axe-core/playwright` suite against the **production build only** (never `next dev`, D88), on

@@ -18,6 +18,11 @@
  * row follows the database when staff save a product and on every deploy; a
  * bulk load made outside the admin shows after a redeploy. A failed read is
  * thrown out of the cached function so it is never stored.
+ *
+ * "On every deploy" is made true by `DEPLOYMENT` in the cache key. An
+ * `unstable_cache` entry outlives the deployment that wrote it (Next's own
+ * docs: "across requests and deployments"), so without it a row cached while
+ * the catalogue was empty would be served, still empty, by every later deploy.
  */
 
 import { unstable_cache } from "next/cache";
@@ -45,10 +50,17 @@ export const FEATURED_SLUGS: readonly string[] = [
   "nexen-winguard-sport-2-205-55r16-91",
 ];
 
+/** One cache entry per deployment. Vercel sets both; a local build has
+ *  neither and shares one entry, which `rm -rf .next` clears. */
+const DEPLOYMENT =
+  process.env.VERCEL_DEPLOYMENT_ID ??
+  process.env.VERCEL_GIT_COMMIT_SHA ??
+  "local";
+
 const readFeatured = unstable_cache(
   async (slugs: readonly string[]): Promise<Product[]> =>
     (await getProductsBySlugs(slugs)).map(toProduct),
-  ["home-featured-products"],
+  ["home-featured-products", DEPLOYMENT],
   { tags: [CATALOGUE_TAG], revalidate: false },
 );
 
