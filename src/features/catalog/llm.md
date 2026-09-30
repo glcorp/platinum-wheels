@@ -69,7 +69,32 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   `ALL_PRODUCTS`. All of it is placeholder data (D48) — the tire rows are untouched and carry no
   `category` field, which is what keeps every measured card byte-identical.
 
+- **The database-backed catalogue (D105, D106). Built; no page reads it yet**, so every route still
+  renders the seed above. It was exercised against a throwaway Postgres loaded with the vendor sheets;
+  **no test file is committed.**
+  - [`catalog-types.ts`](catalog-types.ts) — the data contract: `CatalogProduct`, `ProductFilters`,
+    `CatalogFacets`, `ProductInput`, `AdminProduct`, plus the four enum value lists. No database code,
+    client-safe.
+  - [`queries.ts`](queries.ts) — storefront reads: `listProducts`, `getFacets`, `getProductBySlug`,
+    `getOtherSizes`, `getSimilarProducts`, `listProductUrls`. The only place visibility is decided.
+  - [`store.ts`](store.ts) — staff reads and every write: `listAllProducts`, `getProductById`,
+    `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`.
+    **Not gated**; `src/features/admin/` is the gate.
+  - [`product-input.ts`](product-input.ts) — `PRODUCT_FIELD` and `parseProductInput()`, the one
+    validator every writer goes through. Pure.
+  - [`size.ts`](size.ts) — `parseTireSizeSpec()` (metric and flotation) and the bolt-pattern
+    normalisers. Pure. [`slug.ts`](slug.ts) — `buildProductSlug()`. Pure.
+  - [`rows.ts`](rows.ts) — the product + specs join and the row mapper, shared by `queries.ts` and
+    `store.ts`.
+
 ## Rules
+- **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
+  `hidden` product or a vendor source; `store.ts` returns both (D105).
+- **Listings show `published` only; a product page loads `published` and `discontinued`; `hidden` is a
+  404.** There is no in-stock flag (D105).
+- **A slug is written once, at create, and never rewritten** (D107).
+- **`queries.ts`, `store.ts` and `rows.ts` are server only.** They open database connections. A
+  `"use client"` file may import `catalog-types.ts`, `product-input.ts`, `size.ts` and `slug.ts`.
 - **Nothing enters `Product` that the cards do not vary on.** The field list traces to
   `design/inventory/results.md:363`; adding a field means measuring it first.
 - **Deliberately absent, and must stay absent:** stock counts, shipping, ratings, invented specs
@@ -136,6 +161,9 @@ in place.
   `src/features/catalog/types.ts` (`:7`); `next/image`, `next/link` (`:1-2`); `src/app/globals.css` for
   `photo-inset-card`, `photo-vignette`, `transition-card`, `tap-extend`, `display`, `numeral`;
   `public/images/products/<slug>.webp`.
+- **Depends on (D105):** `src/db/` (`getDb()`, the catalogue tables).
+- **Depended on by (D105):** `src/features/admin/` — `product-queries.ts` and `product-actions.ts` call
+  `store.ts` and `product-input.ts`.
 - **Depended on by:** `src/app/(storefront)/styleguide/page.tsx`; `src/features/home/` (featured row,
   D29); `src/features/results/` — `search.ts` filters, sorts and splits `productsIn(category)` and is the
   only place results are computed (D44), `query.ts` and `filter-panel.tsx` read `CATEGORY_CONFIG`, and
@@ -156,6 +184,18 @@ in place.
   (DEVIATIONS #15).
 
 ## Open
+7. **Wire the pages to `queries.ts`** and retire `data.ts`. Four UI changes come with it (D105): an
+   all-weather chip and badge; the wheel finish filter removed, finish shown in the specifications;
+   accessory types go from four to nine; the unavailable card keyed on `discontinued` instead of
+   `available`. `results/search.ts` also treats "similar" as everything else in the filtered set, which
+   cannot work at 45,000 products: `listProducts({ sizeMatch: "near" })` replaces it. Owner.
+8. **No caching on `queries.ts`.** Every call hits Postgres. Decide when the pages are wired. Owner.
+9. **Tire sizes the parser refuses**, all real but none in the vendor sheets: commercial `11R22.5` and
+   `7.50R16`, run-flat `225/45RF17`, temporary `T125/70D16`. Add them to `size.ts` only if the shop
+   sells them. Owner.
+10. **A brand spelled two ways is two brands** (`GOODYEAR` / `Goodyear` in the scraped sheets): two facet
+    rows, and "other sizes" split between them. The approved CSV is expected to arrive clean; nothing
+    here canonicalises it. Co-founder, via owner.
 1. ~~**`data.ts` is not written.**~~ Written: `FEATURED_PRODUCTS` (D29) and the nine-SKU `PRODUCTS`
    (D43). All four featured SKUs still share `215/55R16` — the home row is "a staged result for that
    vehicle, not a real merchandising selection" (`design/DEVIATIONS.md`, Sample data).

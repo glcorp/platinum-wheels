@@ -8,8 +8,9 @@ and destined for `admin.platinumwheels.ca`. It exists because the shop's selling
 money. Delete this folder and the owner has no way to raise a payment link, and the storefront's
 quote-first model terminates in a phone call with nothing to send.
 
-It is **UI only** (D54 extended by D89). No database and no payment provider. Sign-in is one shared
-account, hardened by D95 rather than replaced by an auth system.
+The screens are **UI only** (D54 extended by D89) and no payment provider is connected. Sign-in is one
+shared account, hardened by D95 rather than replaced by an auth system. Since D105 the folder also
+holds the product admin's server side (gated reads and Server Actions); its screens are not built.
 
 ## Owns
 
@@ -28,6 +29,15 @@ account, hardened by D95 rather than replaced by an auth system.
 - [`payment-link-actions.ts`](payment-link-actions.ts) — `"use server"`. `createPaymentLink`: calls
   `requireAdminAction()` first, validates an amount and a description, returns a placeholder URL.
   Connects to no provider.
+- [`product-types.ts`](product-types.ts) — the product admin contract (D105): `PRODUCT_ID_FIELD`,
+  `PRODUCT_STATUS_FIELD`, `ProductFormState`, `ProductStatusState`, `ProductListQuery`. The product's
+  own field names are `PRODUCT_FIELD` in `@/features/catalog/product-input`.
+- [`product-queries.ts`](product-queries.ts) — gated reads for Server Components: `adminListProducts`,
+  `adminGetProduct`, `adminListBrands`. Each calls `requireAdminSession()` first. Not `"use server"`.
+- [`product-actions.ts`](product-actions.ts) — `"use server"`. `createProductAction`,
+  `updateProductAction`, `setProductStatusAction`, `bulkSetProductStatusAction`. Each calls
+  `requireAdminAction(formData)` first and then `catalog/store.ts`; the create and update actions
+  validate with `parseProductInput()` in between.
 - [`components/login-form.tsx`](components/login-form.tsx) — client island. `useActionState` + focus
   management, the `quote-form.tsx` idiom.
 - [`components/login-error-summary.tsx`](components/login-error-summary.tsx) — authored error state,
@@ -89,9 +99,10 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 - **Depends on:** `src/components/ui/` (button, input, field-label), `src/lib/site.ts` (`SITE`),
   `next/headers`, `next/navigation`, `node:crypto`. Nothing else — no new dependency.
 - **Depended on by:** `src/app/admin/` (layout, three routes).
-- **Deliberately does not touch:** `src/features/catalog|finder|home|product|results/`. The admin shares
-  the primitives and the tokens, and nothing else. When product CRUD lands it will need `catalog`, and
-  that is the point at which the one-way graph in D37 has to be re-read.
+- **Depends on (D105):** `src/features/catalog/` — `store.ts`, `product-input.ts`, `catalog-types.ts`.
+  This is the D37 graph's existing direction (`features → catalog`), so no edge is reversed.
+- **Deliberately does not touch:** `src/features/finder|home|product|results/`. The admin shares the
+  primitives and the tokens, and nothing else.
 
 ## Don't
 
@@ -110,6 +121,11 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 - **Don't add a local class-merge helper.** The 13 hand-rolled copies the D56 audit found were
   consolidated into [`src/lib/cx.ts`](../../lib/cx.ts) by D63. Import `cx` / `join` from `@/lib/cx`
   when a conditional class list needs one; the admin currently needs neither.
+- **Don't add a delete action for products.** A product leaves the site by becoming `hidden` or
+  `discontinued`, so old links keep working (D105).
+- **Don't let a bulk status change run with no ticked rows and no filter.** `bulkSetProductStatus`
+  refuses it; an empty submit must never mean the whole catalogue (D107).
+- **Don't put a product read in a `"use server"` file.** Every export there is a public POST endpoint.
 - **Don't build the admin shell here yet.** `AdminTopBar` is intentionally minimal; product CRUD will
   reshape navigation, and a full shell built now is thrown away.
 
@@ -120,7 +136,11 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
    need their own logins. Owner.
 2. **PSP selection.** Until one is chosen, `createPaymentLink` fabricates a URL. The client was to come
    back with a demo account. Client, via owner.
-3. **Product CRUD**, deferred until the vendor catalogue lands and the schema is settled. Client, via owner.
+3. **Product CRUD screens.** The server side exists (D105); the list, the create/edit form and their
+   `/admin/styleguide` states are not built, and `ADMIN_ROUTES` has no product routes yet. Image upload
+   (Vercel Blob) is its own session; `product_images` is ready for it. **The actions return state and
+   do not re-render the route**: the screens must call `refresh()` (or the actions must, once there is a
+   route to refresh) or a list will show stale statuses after a bulk change. Owner.
 4. **Switch production to `ADMIN_PASSWORD_HASH`.** `ADMIN_USERNAME`, `ADMIN_PASSWORD` and
    `ADMIN_SESSION_SECRET` are set in the Vercel project (Production + Preview). Until the hash replaces
    `ADMIN_PASSWORD`, every instance logs `admin.config.plaintext_password`. **Deferred by the owner,
