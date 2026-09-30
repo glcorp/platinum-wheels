@@ -345,3 +345,86 @@ test("with scripting off every model stays reachable and the GET submit still wo
   await expect(countLine(page)).toHaveText("4 matches · 5 similar");
   await context.close();
 });
+
+/* --- WDG-17: Change vehicle keeps the page's other filters ------------------ */
+
+/* Owner, 2026-09-30: "Keep filters, stay empty". The inline finder opens
+   unselected (D28) but its GET form carries the chips, brand and sort as
+   hidden fields; size params are NOT carried because the new vehicle derives
+   the size, and `show` is not carried either. */
+const KEEP: Record<Category, { filters: string; sizeParams: string }> = {
+  tires: { filters: "season=winter&brand=Zeta&sort=price-asc", sizeParams: "width=205&profile=55&rim=16" },
+  wheels: { filters: "finish=gloss-black&brand=Touren&sort=price-asc", sizeParams: "diameter=18&width=8" },
+  accessories: { filters: "type=tpms&brand=Bosch&sort=price-asc", sizeParams: "" },
+};
+
+function expectKept(page: Page, category: Category) {
+  const p = params(page);
+  const want = new URLSearchParams(KEEP[category].filters);
+  for (const key of want.keys()) expect(p.getAll(key), `${key} kept`).toEqual(want.getAll(key));
+  for (const key of new URLSearchParams(KEEP[category].sizeParams).keys()) {
+    expect(p.has(key), `${key} dropped: the new vehicle derives the size`).toBe(false);
+  }
+  expect(p.has("show")).toBe(false);
+  expect(p.get("make")).toBe("Ford");
+  expect(p.get("model")).toBe("F-150");
+}
+
+for (const category of Object.keys(ROUTE) as Category[]) {
+  test(`${category}: Change vehicle keeps the other filters and opens unselected (WDG-17)`, async ({
+    page,
+  }, info) => {
+    skipDuplicate(info);
+    const { filters, sizeParams } = KEEP[category];
+    await page.goto(
+      `${ROUTE[category]}?${filters}&year=2021&make=Honda&model=Civic&${sizeParams}&show=all`,
+    );
+    await settle(page);
+    const summary = page.locator('[data-probe="change-vehicle"]');
+    await expect(summary).toContainText("Change vehicle");
+    await summary.click();
+    const finder = finderOf(page);
+    await expect(finder).toBeVisible();
+    // D28 stands: the panel opens empty, not pre-filled with the current car.
+    await expect(finder.locator("#finder-make")).toHaveValue("");
+    const year = await someYear(finder);
+    await finder.getByRole("combobox", { name: "Year" }).selectOption(year);
+    await finder.getByRole("combobox", { name: "Make" }).selectOption("Ford");
+    await finder.getByRole("combobox", { name: "Model" }).selectOption("F-150");
+    await finder.getByRole("button", { name: CTA[category] }).click();
+
+    await expect(page).toHaveURL(
+      (u) => u.pathname === ROUTE[category] && u.searchParams.get("model") === "F-150",
+    );
+    await settle(page);
+    expectKept(page, category);
+    expect(params(page).get("year")).toBe(year);
+    await expect(chip(page)).toHaveText(`${year} Ford F-150`);
+  });
+}
+
+test("with scripting off, Change vehicle still keeps the other filters (WDG-17)", async ({
+  browser,
+}, info) => {
+  skipDuplicate(info);
+  test.skip(!/-1440$/.test(info.project.name), "no-JS markup: once per desktop engine");
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    baseURL: info.project.use.baseURL,
+    viewport: info.project.use.viewport,
+  });
+  const page = await context.newPage();
+  await page.goto(
+    `/results?${KEEP.tires.filters}&year=2021&make=Honda&model=Civic&${KEEP.tires.sizeParams}`,
+  );
+  await page.locator('[data-probe="change-vehicle"]').click();
+  const finder = finderOf(page);
+  await expect(finder).toBeVisible();
+  await finder.getByRole("combobox", { name: "Year" }).selectOption(await someYear(finder));
+  await finder.getByRole("combobox", { name: "Make" }).selectOption("Ford");
+  await finder.getByRole("combobox", { name: "Model" }).selectOption("F-150");
+  await finder.getByRole("button", { name: CTA.tires }).click();
+  await expect(page).toHaveURL((u) => u.searchParams.get("model") === "F-150");
+  expectKept(page, "tires");
+  await context.close();
+});

@@ -15,7 +15,7 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 ## Owns
 - [`site-header.tsx`](site-header.tsx) — Server Component, named export `SiteHeader`. Props:
   `{ variant: "over-hero" | "solid"; active?: "tires" | "wheels" | "accessories" | "contact" }`
-  (`active` defaults `"tires"`). Renders `<header><nav aria-label="Primary">`: logo (`next/image`,
+  (`active` omitted means **no current item** since D93b — it defaulted to `"tires"`, which marked Tires current on `/about`, `/privacy`, `/terms` and every 404; routes that have an item pass it, and the current link carries `aria-current="true"` in the header and the drawer). Renders `<header><nav aria-label="Primary">`: logo (`next/image`,
   no wordmark, D7), the four nav links (desktop, `md:flex`), the phone CTA (`ui/button.tsx`
   `accent`/`compact`, D40, visible `sm:`), a 44×44 circular mobile call button (which carries
   `hover:bg-accent-hover` since **D66** — it was `bg-accent` in every state, the only accent CTA in the
@@ -44,8 +44,11 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   20px and needs **no `design/DEVIATIONS.md` row** — the drawer is undrawn, so its layout is the
   coordinator's call (D31).
 
-- [`page-stub.tsx`](page-stub.tsx) — `PageStub`, props `{ title; active?; children? }`. Solid header +
-  one `h1` + one line + footer, behind every planned-but-undesigned route (D26, D39). Replace each stub
+- [`page-stub.tsx`](page-stub.tsx) — `PageStub`, props `{ title; lede; active?; children? }` (**D93b**: `lede`
+  is required — the built-in "This page is being built" line was false on a 404 — and `children` render
+  below it; `active` omitted means no current item). Solid header + one `h1` + lede + footer. The 404
+  passes the owner-approved lede and the `RouteErrorPanel` action pair (`Shop tires` + the `tel:` CTA) from
+  `src/app/not-found.tsx`. Originally behind every planned-but-undesigned route (D26, D39). Replace each stub
   with its designed page. **Its only caller since 2026-09-22 is `src/app/not-found.tsx`** — `/about`,
   `/privacy` and `/terms` moved to `prose-page.tsx` below, and the `body` prop plus the `StubSection`
   helper D63 had added for them were removed with them rather than left unused. Do not re-add a `body`
@@ -152,7 +155,9 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D93b | 2026-09-30 | The nav drawer trigger is a link to `#site-footer-nav` (the footer nav div's id) until hydrated; the header link row carries `data-print="hide"` and `globals.css` has a minimal `@media print` block. | The Menu button did nothing without JS (NJR-5); printing kept interactive chrome (ENV-2). | Owner: "Menu jumps to footer nav"; QA pass NJR-5, ENV-2; DEVIATIONS #85; D93b |
 | D91b | 2026-09-29 | `hash-scroll` stays as a safety net (its cause, `loading.tsx`, is gone); `site-footer` links may wrap (`break-words`); stale "suspends into `loading.tsx`" comments corrected across the folder. | QA pass HPD-1, KBD-7. | D91b |
+| D93b | 2026-09-30 | `SiteHeader`/`PageStub` default to no current item and the current link carries `aria-current="true"` (header + drawer); `PageStub` takes a required `lede`; the 404 gets the owner's line and action pair; `src/app/global-error.tsx` renders `RouteError` in its own `<html lang="en">` on the dark ground. | Tires was marked current on `/about`, `/privacy`, `/terms` and every 404; the 404 said "This page is being built"; a root-layout error showed Next's white unbranded page. Owner: *"Line + two actions"*, *"Add a branded global-error"*. | D93b |
 | D91b | 2026-09-30 | `scroll-reveal` reveals a fragment target instantly (link, `hashchange`, `popstate`, cold load); `nav-progress` drops the inert `[data-route-loading]` settle check, which only `loading.tsx` ever set; `hash-scroll` re-lands a fragment on route arrival. | QA pass: `/#contact` landed 12px short on `/`; the check could never fire after D91b. | D91b |
 | — | — | None folder-scoped. | Every ruling that shapes this folder is global. | — |
 

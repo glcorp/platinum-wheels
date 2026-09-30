@@ -42,7 +42,18 @@ export const CONTACTS = [
      artboards drew, or to the one `CONTACTS[1]` still uses. It is therefore no
      longer the artboard's formatting for this row (`design/DEVIATIONS.md` #66).
      `tel` stays E.164 and is the only reformatting. */
-  { name: "Inderpal Singh", display: "+1 (437) 882-5000", tel: "+14378825000" },
+  /* WDG-15 (owner ruling 2026-09-30): the spaces in `display` are U+00A0 and
+     the hyphen is followed by U+2060 WORD JOINER, so the number is one
+     unbreakable unit wherever it is set in running text ("Call …", the quote
+     success sentence) and never wraps mid-number. Every glyph is identical to
+     the owner's verbatim D76 string; the two extra code points draw nothing
+     (NBSP is a space, WJ is zero-width) and only the line-break class differs.
+     Written as escapes so the source stays readable. `tel` is untouched. */
+  {
+    name: "Inderpal Singh",
+    display: "+1\u00a0(437)\u00a0882-\u20605000",
+    tel: "+14378825000",
+  },
   { name: "Harman Singh", display: "365-998-0990", tel: "+13659980990" },
 ] as const;
 

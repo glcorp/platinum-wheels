@@ -330,7 +330,8 @@ test.describe("price range (D69)", () => {
     await page.mouse.move(box.x + box.width + 24, y, { steps: 12 });
     await page.mouse.up();
     await expect.poll(() => param(page, "min")).toEqual([String(hi)]);
-    expect(param(page, "max")).toEqual([String(hi)]);
+    // WDG-07 (D91b): a handle on its bound is no filter, so max stays out of the URL.
+    expect(param(page, "max")).toEqual([]);
 
     // Grab the stacked pair at the ceiling and pull left: min must move.
     const again = await priceParts(await filterScope(page, info));
@@ -342,7 +343,7 @@ test.describe("price range (D69)", () => {
     await expect
       .poll(() => Number(param(page, "min")[0]), { message: "min moved off the ceiling" })
       .toBeLessThan(hi - 5);
-    expect(param(page, "max")).toEqual([String(hi)]);
+    expect(param(page, "max")).toEqual([]); // WDG-07 (D91b): max sits on its bound, so it is not in the URL
   });
 
   test("keyboard arrows step the minimum and keep focus on it", async ({ page }, info) => {
@@ -731,8 +732,9 @@ test.describe("result states", () => {
     await expectGridAgreesWithCount(page);
     await expect(page.getByRole("heading", { level: 2, name: "Similar matches" })).toBeVisible();
 
-    // A size no seed tire carries: best empty, similar populated (D49).
-    await page.goto(`${ROUTE.tires}?width=205`);
+    // Best empty, similar populated (D49). WDG-08 (D91b): the sizes are ones the
+    // selects offer (an unknown width is dropped now), but no tire carries them together.
+    await page.goto(`${ROUTE.tires}?width=215&profile=45&rim=16`);
     await settle(page);
     const { best, similar } = await readCount(page);
     expect(best).toBe(0);

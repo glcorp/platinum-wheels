@@ -1445,3 +1445,44 @@ body {
 dialog:modal {
   padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
 }
+
+/* ---------------------------------------------------------------------------
+   Print (D93b, ENV-2, owner ruling 2026-09-30 "Author a minimal print
+   stylesheet"; DEVIATIONS #85). Nothing is drawn for paper, so this is the
+   smallest thing that makes the page readable: ink on white, no chrome that
+   only works on a screen. Screen is untouched — every rule is inside
+   @media print. No new token: `Canvas` / `CanvasText` are the system colours
+   for a light page and paper is white, which is what a printer gets when
+   "Background graphics" is off (the default). `!important` is deliberate:
+   the utilities set `color` on nearly every element, and a print block that
+   loses to them prints the dark theme's near-white text on white (h1 1.1:1).
+   The header keeps its logo and phone number (the way to reach the shop is
+   the one thing a printed quote page needs); its nav links and Menu button,
+   the skip link, dialogs, loader wash, the mobile sticky Filters/Sort bar and
+   the desktop filter rail are controls, not content.
+   --------------------------------------------------------------------------- */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  html,
+  body {
+    background-color: Canvas !important;
+  }
+  body,
+  body * {
+    color: CanvasText !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  header [data-print="hide"],
+  header button,
+  dialog,
+  .skip-link,
+  .nav-progress,
+  [data-probe="sticky-bar"],
+  [class~="md:filter-rail"] {
+    display: none !important;
+  }
+}

@@ -13,7 +13,7 @@
  * `.click()` forces a full reload and masked D84.
  */
 import { test, expect, type Page } from "@playwright/test";
-import { SLUG, VEHICLE, isPhone, settle, watchProblems } from "../helpers";
+import { SLUG, VEHICLE, isPhone, isTouch, scrollSettled, settle, watchProblems } from "../helpers";
 
 /** `src/features/catalog/data.ts` — slug → category, for D59(6). Seed data (D48). */
 const CATEGORY_SLUGS = {
@@ -306,7 +306,7 @@ test.describe("custom quantity field (D75)", () => {
       if (c.ok) {
         await expect(successPanel(page)).toBeVisible();
       } else {
-        await expect(errorSummary(page)).toHaveText("1 field needs a fix before this can be sent.");
+        await expect(errorSummary(page)).toHaveText("1 field needs a fix before we can send your inquiry.");
         await expect(page.locator("#quote-custom-quantity-error")).toHaveText(
           "Enter a number between 1 and 99.",
         );
@@ -360,7 +360,7 @@ test.describe("quote form (D51, D57, D65)", () => {
   }) => {
     await openPdp(page, `/products/${SLUG.tire}`);
     await submitAndWait(page);
-    await expect(errorSummary(page)).toHaveText("3 fields need a fix before this can be sent.");
+    await expect(errorSummary(page)).toHaveText("3 fields need a fix before we can send your inquiry.");
     await expect(nameField(page)).toBeFocused();
     for (const field of [nameField(page), emailField(page), phoneField(page)]) {
       await expect(field).toHaveAttribute("aria-invalid", "true");
@@ -379,9 +379,9 @@ test.describe("quote form (D51, D57, D65)", () => {
     await quoteForm(page).getByText("Email", { exact: true }).last().click();
     await page.locator("#quote-message").fill("Please call after 5.");
     await submitAndWait(page);
-    await expect(errorSummary(page)).toHaveText("2 fields need a fix before this can be sent.");
+    await expect(errorSummary(page)).toHaveText("2 fields need a fix before we can send your inquiry.");
     await expect(emailField(page)).toBeFocused();
-    await expect(emailField(page)).toHaveAccessibleDescription("Enter a valid email address.");
+    await expect(emailField(page)).toHaveAccessibleDescription("Enter an email like name@example.com.");
     await expect(nameField(page)).toHaveValue("Ada Lovelace");
     await expect(nameField(page)).not.toHaveAttribute("aria-invalid", "true");
     await expect(emailField(page)).toHaveValue("ada@");
@@ -680,4 +680,171 @@ test("PDP tel: links are E.164 and the buy panel calls the primary contact (D76)
       page.getByRole("main").getByRole("link", { name: /request a quote/i }).first(),
     ).toHaveAttribute("href", "#quote");
   }
+});
+
+// ---------------------------------------------------------------------------
+// 7. Owner rulings 2026-09-30 (WDG-10, WDG-12, WDG-13 quantity half)
+// ---------------------------------------------------------------------------
+
+test.describe("consent tick survives a failed submit (WDG-10)", () => {
+  test("ticked + invalid email: the box is still ticked; a fresh load is unticked", async ({
+    page,
+  }) => {
+    await openPdp(page, `/products/${SLUG.tire}`);
+    const consent = quoteForm(page).getByRole("checkbox");
+    await nameField(page).fill("Ada Lovelace");
+    await emailField(page).fill("ada@");
+    await phoneField(page).fill("416-555-0123");
+    await consent.scrollIntoViewIfNeeded();
+    await scrollSettled(page);
+    await consent.check();
+    await expect(consent).toBeChecked();
+    await submitAndWait(page);
+    await expect(errorSummary(page)).toHaveText("1 field needs a fix before we can send your inquiry.");
+    // The visitor's own tick comes back with the rest of their input.
+    await expect(nameField(page)).toHaveValue("Ada Lovelace");
+    await expect(consent, "consent tick dropped by the failed submit").toBeChecked();
+
+    // A fresh render never pre-ticks (docs/decisions.md §7).
+    await openPdp(page, `/products/${SLUG.tire}`);
+    await expect(quoteForm(page).getByRole("checkbox")).not.toBeChecked();
+  });
+
+  test("unticked + invalid email stays unticked", async ({ page }) => {
+    await openPdp(page, `/products/${SLUG.tire}`);
+    await emailField(page).fill("ada@");
+    await submitAndWait(page);
+    await expect(errorSummary(page)).toBeVisible();
+    await expect(quoteForm(page).getByRole("checkbox")).not.toBeChecked();
+  });
+});
+
+test.describe("field length caps (WDG-12)", () => {
+  test("browser maxlength: name 100, email 254, phone 32, message 1000", async ({ page }) => {
+    await openPdp(page, `/products/${SLUG.tire}`);
+    await expect(nameField(page)).toHaveAttribute("maxlength", "100");
+    await expect(emailField(page)).toHaveAttribute("maxlength", "254");
+    await expect(phoneField(page)).toHaveAttribute("maxlength", "32");
+    await expect(page.locator("#quote-message")).toHaveAttribute("maxlength", "1000");
+  });
+
+  test("typing 150 characters into name keeps 100", async ({ page }) => {
+    await openPdp(page, `/products/${SLUG.tire}`);
+    await nameField(page).click();
+    await page.keyboard.type("n".repeat(150));
+    const len = await nameField(page).evaluate((el) => (el as HTMLInputElement).value.length);
+    expect(len).toBe(100);
+  });
+
+  /* The server is the validator (`noValidate`, D65), so each cap is proved by
+     stripping the browser's own `maxlength` and submitting past it. */
+  const overCap: Array<{
+    label: string;
+    field: string;
+    value: string;
+    length: number;
+    error: string;
+    errorId: string;
+  }> = [
+    {
+      label: "5000-character name",
+      length: 5000,
+      field: "#quote-name",
+      value: "n".repeat(5000),
+      error: "Enter your name.",
+      errorId: "quote-name-error",
+    },
+    {
+      label: "255-character email",
+      length: 255,
+      field: "#quote-email",
+      value: `${"a".repeat(64)}@${"b".repeat(186)}.com`,
+      error: "Enter an email like name@example.com.",
+      errorId: "quote-email-error",
+    },
+    {
+      label: "33-character phone",
+      length: 33,
+      field: "#quote-phone",
+      value: `416${" ".repeat(22)}555-0123`, // 10 digits: passes the digit check, fails the cap
+      error: "Enter a 10-digit Canadian phone number.",
+      errorId: "quote-phone-error",
+    },
+    {
+      label: "1001-character message",
+      length: 1001,
+      field: "#quote-message",
+      value: "m".repeat(1001),
+      error: "Keep your message to 1,000 characters or fewer.",
+      errorId: "quote-message-error",
+    },
+    {
+      label: "zero-width-only name",
+      length: 3,
+      field: "#quote-name",
+      value: "\u200b\u200b\u200b",
+      error: "Enter your name.",
+      errorId: "quote-name-error",
+    },
+  ];
+  for (const c of overCap) {
+    test(`${c.label} is rejected by the server`, async ({ page }) => {
+      expect(c.value.length).toBe(c.length);
+      await openPdp(page, `/products/${SLUG.tire}`);
+      await fillValid(page);
+      await page.locator(c.field).evaluate((el) => el.removeAttribute("maxlength"));
+      await page.locator(c.field).fill(c.value);
+      await submitAndWait(page);
+      await expect(successPanel(page)).toHaveCount(0);
+      await expect(page.locator(`#${c.errorId}`)).toHaveText(c.error);
+      await expect(errorSummary(page)).toHaveText("1 field needs a fix before we can send your inquiry.");
+    });
+  }
+
+  /* Guard, not a red test: a message whose newlines would count twice as CRLF
+     but sits under the cap as typed must not be rejected. */
+  test("a 1000-code-unit message with many newlines is accepted", async ({ page }) => {
+    await openPdp(page, `/products/${SLUG.tire}`);
+    await fillValid(page);
+    const message = `${"a\n".repeat(400)}${"b".repeat(200)}`;
+    expect(message.length).toBe(1000);
+    await page.locator("#quote-message").fill(message);
+    await submitAndWait(page);
+    await expect(successPanel(page)).toBeVisible();
+  });
+});
+
+test.describe("quantity cell hover (WDG-13)", () => {
+  const borderOf = (loc: ReturnType<typeof cell>) =>
+    loc.evaluate((el) => getComputedStyle(el).borderTopColor);
+
+  test("an unselected cell's border goes to ink on hover; the selected cell does not change", async ({
+    page,
+  }, info) => {
+    test.skip(isTouch(info), "hover: hover is a desktop-pointer media query (D17)");
+    await openPdp(page, `/products/${SLUG.tire}`);
+    const selected = cell(page, "4");
+    const other = cell(page, "2");
+    await other.scrollIntoViewIfNeeded();
+    await scrollSettled(page);
+    await expect(selected).toHaveAttribute("aria-current", "true");
+
+    const ink = await borderOf(selected); // `border-ink`, the selected cell's own border
+    const restOther = await borderOf(other);
+    expect(restOther).not.toBe(ink);
+
+    await other.hover();
+    await expect
+      .poll(() => borderOf(other), { message: "unselected cell border on hover" })
+      .toBe(ink);
+
+    // Selected cell: nothing moves under the pointer.
+    const restSelectedBg = await selected.evaluate((el) => getComputedStyle(el).backgroundColor);
+    await selected.hover();
+    await expect.poll(() => borderOf(other), { message: "left the other cell" }).toBe(restOther);
+    await expect.poll(() => borderOf(selected)).toBe(ink);
+    expect(await selected.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+      restSelectedBg,
+    );
+  });
 });

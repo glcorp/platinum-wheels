@@ -57,6 +57,10 @@ function stepSize(track: HTMLElement): number {
   return MOBILE_STEP;
 }
 
+/* The arrows name the region they scroll with `aria-controls` (WDG-13). One
+   carousel per page, so a constant id is unique. */
+const TRACK_ID = "featured-track";
+
 function prefersReducedMotion(): boolean {
   return (
     typeof window !== "undefined" &&
@@ -135,7 +139,20 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
   /* Press (D92b): every arrow takes `active:translate-y-px`, the boxed-control
      half of the press vocabulary; the base-layer rule in `globals.css` eases
      it over `--duration-feedback`. The dots below are `aria-hidden` spans, a
-     readout rather than controls, so they have no press. */
+     readout rather than controls, so they have no press.
+
+     Hover (WDG-13, owner ruling 2026-09-30, DEVIATIONS row for the undrawn
+     arrow hover): the artboard draws these as inert spans, so no hover is
+     drawn. Existing tokens only, and `hover:` compiles to
+     `@media (hover: hover)` (D17); the base-layer rule in `globals.css`
+     eases `border-color`/`color`. Previous rests at `--border-strong` and
+     goes to `--ink`, the chip vocabulary (`chip.tsx`, `hover:border-ink-dim
+     hover:text-ink`) taken one step to the Next arrow's own rest colour.
+     Next already rests at `--ink`, so it cannot go "to ink"; it takes the
+     border a card or category tile takes on hover, `--accent-hover`
+     (`product-card.tsx`, `category-tiles.tsx`). Rest states are unchanged.
+     The mobile round Next carries the names and `aria-controls` only: touch
+     has no hover (D17). */
   const controls = (
     <div className="flex shrink-0 items-center gap-2">
       {/* Mobile: one round "Next" affordance — `design/assets/home-mobile.html:141`.
@@ -144,7 +161,8 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
           is 0-4px (`design/DESIGN.md` §4/§6). */}
       <button
         type="button"
-        aria-label="Next"
+        aria-label="Next featured tire"
+        aria-controls={TRACK_ID}
         onClick={() => scrollByStep(1)}
         className="border-border-strong text-ink inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border active:translate-y-px sm:hidden"
       >
@@ -170,9 +188,10 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
       <div className="hidden items-center gap-2 sm:flex">
         <button
           type="button"
-          aria-label="Previous"
+          aria-label="Previous featured tire"
+          aria-controls={TRACK_ID}
           onClick={() => scrollByStep(-1)}
-          className="border-border-strong text-ink-dim inline-flex h-12 w-12 items-center justify-center border active:translate-y-px"
+          className="border-border-strong text-ink-dim hover:border-ink hover:text-ink inline-flex h-12 w-12 items-center justify-center border active:translate-y-px"
         >
           <svg
             aria-hidden="true"
@@ -188,9 +207,10 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
         </button>
         <button
           type="button"
-          aria-label="Next"
+          aria-label="Next featured tire"
+          aria-controls={TRACK_ID}
           onClick={() => scrollByStep(1)}
-          className="border-ink text-ink inline-flex h-12 w-12 items-center justify-center border active:translate-y-px"
+          className="border-ink text-ink hover:border-accent-hover inline-flex h-12 w-12 items-center justify-center border active:translate-y-px"
         >
           <svg
             aria-hidden="true"
@@ -249,6 +269,7 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
             D66, widened by D74. */}
         <div
           ref={trackRef}
+          id={TRACK_ID}
           data-probe="featured-track"
           tabIndex={0}
           role="group"

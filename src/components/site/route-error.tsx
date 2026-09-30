@@ -108,8 +108,7 @@ export function RouteErrorPanel({
             dash, no exclamation, "you" for the customer and "we" for the
             shop. */}
         <p className="text-16 leading-body text-ink-muted mt-6 max-w-measure">
-          That page did not load. Try again, or call us and we will sort it out
-          for you.
+          That page didn&apos;t load. Try again, or call us and we&apos;ll sort it out.
         </p>
       </div>
 

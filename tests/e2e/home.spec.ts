@@ -12,6 +12,7 @@
 import { test, expect, type Page, type Locator, type TestInfo } from "@playwright/test";
 import {
   ROUTES,
+  SLUG,
   settle,
   watchProblems,
   viewportWidth,
@@ -185,7 +186,7 @@ test.describe("nav drawer (below 1100)", () => {
       ["Contact", "/#contact"],
     ]);
 
-    const tel = dialog.getByRole("link", { name: /Call \+1 \(437\) 882-5000/ });
+    const tel = dialog.getByRole("link", { name: /Call \+1\s\(437\)\s882-\u2060?5000/ });
     await expect(tel).toBeVisible();
     await expect(tel).toHaveAttribute("href", PRIMARY_TEL);
 
@@ -674,11 +675,11 @@ test.describe("product card image link (D86)", () => {
     // Real keyboard: model link -> CTA -> next card's model link.
     const first = t.locator("article").nth(0);
     const second = t.locator("article").nth(1);
-    await first.getByRole("link", { name: "Antarctica Sport", exact: true }).focus();
+    await first.getByRole("link", { name: /^Antarctica Sport/ }).focus();
     await page.keyboard.press(tab);
     await expect(first.getByRole("link", { name: /^Request a quote/ })).toBeFocused();
     await page.keyboard.press(tab);
-    await expect(second.getByRole("link", { name: "Winterhawk", exact: true })).toBeFocused();
+    await expect(second.getByRole("link", { name: /^Winterhawk/ })).toBeFocused();
   });
 
   test("Request a quote on a card goes to the PDP #quote band", async ({ page }) => {
@@ -712,5 +713,193 @@ test.describe("product card image link (D86)", () => {
     await cta.click();
     await expect(page).toHaveURL(/\/products\/[^#]+#quote$/);
     await expectLandedOn(page, "quote", 6_000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3. Carousel arrows: names, aria-controls, hover, press (WDG-13)
+//    Brand names and the phone number as data (WDG-15)
+// ---------------------------------------------------------------------------
+
+test.describe("featured arrows (WDG-13)", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await settle(page);
+    await featured(page).scrollIntoViewIfNeeded();
+  });
+
+  test("arrows are named for what they scroll and point at the track", async ({ page }, info) => {
+    const trackId = await track(page).getAttribute("id");
+    expect(trackId, "the track needs an id for aria-controls").toBeTruthy();
+
+    const next = featured(page).getByRole("button", { name: "Next featured tire", exact: true });
+    await expect(next).toHaveCount(1); // the other Next is display:none, so not in the role tree
+    await expect(next).toHaveAttribute("aria-controls", trackId!);
+
+    const prev = featured(page).getByRole("button", { name: "Previous featured tire", exact: true });
+    if (viewportWidth(info) >= SM) {
+      await expect(prev).toHaveCount(1);
+      await expect(prev).toHaveAttribute("aria-controls", trackId!);
+    } else {
+      await expect(prev).toHaveCount(0); // mobile draws Next only (D30)
+    }
+    await expect(page.locator(`#${trackId}`)).toHaveAttribute("role", "group");
+  });
+
+  test("desktop arrows: border changes on hover and the press moves 1px (pointer projects)", async ({
+    page,
+    browserName,
+  }, info) => {
+    test.skip(isTouch(info), "hover is gated to (hover: hover), D17; touch projects have none");
+    test.skip(viewportWidth(info) < SM, "desktop arrows render from 720px");
+    await documentScrollSettled(page);
+
+    const border = (l: Locator) => l.evaluate((el) => getComputedStyle(el).borderTopColor);
+
+    for (const name of ["Previous featured tire", "Next featured tire"]) {
+      const btn = featured(page).getByRole("button", { name, exact: true });
+      // Centre the arrow first: `scrollIntoViewIfNeeded` parks it at the very
+      // top edge, and `<html>` is `scroll-behavior: smooth` (D92b), so the page
+      // was still gliding under the held pointer and `:active` never applied.
+      await btn.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+      await documentScrollSettled(page);
+      await page.mouse.move(2, 2);
+      await expect.poll(() => border(btn), { message: `${name} rest border` }).toBeTruthy();
+      const rest = await border(btn);
+      await btn.hover();
+      await expect
+        .poll(() => border(btn), { message: `${name}: border colour must change on hover` })
+        .not.toBe(rest);
+      // Press: `active:translate-y-px`, eased by the base-layer rule.
+      // WebKit drops `:active` ~150ms into a held press, so sample every frame
+      // in the page from the moment of mouse-down instead of polling from Node.
+      const pressed = btn.evaluate(
+        (el) =>
+          new Promise<string>((resolve) => {
+            const t0 = performance.now();
+            const tick = () => {
+              const v = getComputedStyle(el).translate;
+              if (/1px/.test(v) || performance.now() - t0 > 2_000) resolve(v);
+              else requestAnimationFrame(tick);
+            };
+            tick();
+          }),
+      );
+      // WebKit does not apply `:active` to a held synthetic press reliably
+      // (measured: computed `translate` stays none; hover also lingers after
+      // the pointer leaves). The hover half above is asserted on every engine;
+      // the press half is Blink/Gecko only until it can be seen in real Safari.
+      if (browserName === "webkit") {
+        await pressed;
+        await page.mouse.move(2, 2);
+        continue;
+      }
+      await page.mouse.down();
+      expect(await pressed, `${name}: pressed`).toMatch(/1px/);
+      await page.mouse.move(2, 2); // release off the button so no scroll step fires
+      await page.mouse.up();
+      await expect.poll(() => border(btn), { message: `${name}: back to rest` }).toBe(rest);
+    }
+  });
+
+  test("hover state is not scoped to touch: no hover rule matches without (hover: hover)", async ({
+    page,
+  }, info) => {
+    test.skip(!isTouch(info), "checks the touch side of the D17 gate");
+    test.skip(viewportWidth(info) < SM, "desktop arrows render from 720px");
+    const stuck = await page.evaluate(() => {
+      // Every rule that mentions hover for these buttons must sit inside a
+      // (hover: hover) media block, so a tap never leaves it stuck on.
+      const bad: string[] = [];
+      const walk = (rules: CSSRuleList, inHover: boolean) => {
+        for (const r of Array.from(rules)) {
+          if (r instanceof CSSStyleRule && /:hover/.test(r.selectorText)) {
+            if (!inHover && /border-ink|border-accent-hover/.test(r.selectorText)) bad.push(r.selectorText);
+          }
+          // @layer blocks, @media, and nested style rules all carry cssRules.
+          const kids = (r as CSSGroupingRule).cssRules;
+          if (kids) {
+            const cond = r instanceof CSSMediaRule ? r.conditionText : "";
+            walk(kids, inHover || /hover:\s*hover/.test(cond));
+          }
+        }
+      };
+      for (const sheet of Array.from(document.styleSheets)) {
+        try { walk(sheet.cssRules, false); } catch { /* cross-origin */ }
+      }
+      return bad;
+    });
+    expect(stuck).toEqual([]);
+  });
+});
+
+test.describe("translate=no on brand names (WDG-15)", () => {
+  test("home brand strip: every wordmark", async ({ page }) => {
+    await page.goto("/");
+    await settle(page);
+    const items = page.locator('[data-probe="brands"] > li');
+    const n = await items.count();
+    expect(n).toBeGreaterThan(0);
+    const flags = await items.evaluateAll((els) => els.map((e) => e.getAttribute("translate")));
+    expect(flags).toEqual(Array(n).fill("no"));
+  });
+
+  for (const path of ["/", "/results"]) {
+    test(`card brand stamp on ${path}`, async ({ page }) => {
+      await page.goto(path);
+      await settle(page);
+      const rows = await page.locator("article").evaluateAll((articles) =>
+        articles.map((a) => {
+          const alt = a.querySelector("img")?.getAttribute("alt") ?? "";
+          const stamp = a.querySelector('span[translate="no"]');
+          return {
+            brand: alt.split(" ")[0],
+            stamp: stamp?.textContent?.trim() ?? null,
+            visible: !!stamp && stamp.getClientRects().length > 0,
+          };
+        }),
+      );
+      expect(rows.length).toBeGreaterThan(0);
+      for (const row of rows) {
+        expect(row.stamp, `card for ${row.brand} has no translate="no" stamp`).toBe(row.brand);
+        expect(row.visible).toBe(true);
+      }
+    });
+  }
+
+  test("PDP brand line", async ({ page }) => {
+    await page.goto(`/products/${SLUG.tire}`);
+    await settle(page);
+    const line = page.locator("h1").locator("xpath=preceding-sibling::span[1]");
+    await expect(line).toHaveAttribute("translate", "no");
+    await expect(line).not.toHaveText("");
+  });
+});
+
+test.describe("phone display is unbreakable data (WDG-15)", () => {
+  test("primary number uses no-break spaces and a word joiner after the hyphen", async ({ page }) => {
+    await page.goto("/");
+    await settle(page);
+    const found = await page.evaluate(() => {
+      const out: string[] = [];
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) {
+        const m = n.textContent?.match(/\+1[\s ]\(437\)[\s ]882-⁠?5000/);
+        if (m) out.push(m[0]);
+      }
+      return out;
+    });
+    expect(found.length, "header pill + contact card at least").toBeGreaterThan(0);
+    for (const s of found) expect(s).toBe("+1 (437) 882-⁠5000");
+  });
+
+  test("tel: hrefs stay E.164 and accessible names still read as the number", async ({ page }) => {
+    await page.goto("/");
+    await settle(page);
+    const hrefs = await page.locator('a[href^="tel:"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+    for (const h of hrefs) expect(ALLOWED_TEL).toContain(h);
+    // Playwright does NOT normalise NBSP in a regex name, so a literal-space
+    // pattern misses the number; match the whitespace class and the joiner.
+    await expect(page.getByRole("link", { name: /\+1\s\(437\)\s882-\u2060?5000/ }).first()).toBeAttached();
   });
 });

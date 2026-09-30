@@ -21,7 +21,7 @@ import {
 } from "@/features/catalog/categories";
 import type { Product, ProductCategory } from "@/features/catalog/types";
 import { findFitment, type FitmentSize } from "@/features/finder/data";
-import { parseResultsQuery } from "./query";
+import { parseResultsQuery, withPriceBounds } from "./query";
 import type {
   FacetOption,
   Facets,
@@ -303,15 +303,24 @@ function brandFacets(
   }));
 }
 
-/** Seed bounds rounded outward to $10, and the active range clamped into
- *  them — computed, never typed (D42). */
+/** Seed bounds rounded outward to $10 — computed, never typed (D42). An empty
+ *  category has no prices, and `Math.min()` of nothing is `Infinity`, which
+ *  would print as `$Infinity` in the rail; it reads `$0`–`$0` instead. */
+function priceBounds(products: readonly Product[]): { min: number; max: number } {
+  if (products.length === 0) return { min: 0, max: 0 };
+  const prices = products.map((product) => product.price);
+  return {
+    min: Math.floor(Math.min(...prices) / 10) * 10,
+    max: Math.ceil(Math.max(...prices) / 10) * 10,
+  };
+}
+
+/** The bounds plus the active range clamped into them. */
 function priceFacet(
   products: readonly Product[],
   query: ResultsQuery,
 ): PriceFacet {
-  const prices = products.map((product) => product.price);
-  const min = Math.floor(Math.min(...prices) / 10) * 10;
-  const max = Math.ceil(Math.max(...prices) / 10) * 10;
+  const { min, max } = priceBounds(products);
   const clamp = (value: number) => Math.min(Math.max(value, min), max);
   return {
     min,
@@ -377,15 +386,67 @@ function sortProducts(
   return [...products].sort((a, b) => (a.price - b.price) * direction);
 }
 
+/* --- Unknown values ------------------------------------------------------ */
+
+/**
+ * Drop what the page has no control for. `parseResultsQuery` is pure and
+ * seed-free, so it keeps `width=abc` and `brand=Nope`; left in the query they
+ * counted as an active group (`Filters (1)`), emptied the best list, and had
+ * no ticked box or selected option a visitor could clear. A size value that is
+ * not one of the category's own options becomes `Any`; a brand not in the
+ * category's seed is dropped, and a known one takes the seed's spelling (so
+ * `brand=zeta` and `brand=Zeta` are one filter and one href, D65) with
+ * repeats collapsed. The price range is clamped to the seed's bounds and a
+ * side sitting on its bound is dropped (`withPriceBounds`). QA WDG-07/08.
+ */
+function withKnownValues(
+  query: ResultsQuery,
+  products: readonly Product[],
+): ResultsQuery {
+  const size: Record<string, string | null> = { ...query.size };
+  for (const field of CATEGORY_CONFIG[query.category].size?.fields ?? []) {
+    const value = size[field.param];
+    if (value === undefined || value === null) continue;
+    const known = sizeFieldOptions(products, field).some(
+      (option) => option.value === value,
+    );
+    if (!known) size[field.param] = null;
+  }
+
+  const seedBrands = new Map<string, string>();
+  for (const product of products) {
+    seedBrands.set(product.brand.toLowerCase(), product.brand);
+  }
+  const brands: string[] = [];
+  for (const wanted of query.brands) {
+    const canonical = seedBrands.get(wanted.toLowerCase());
+    if (canonical !== undefined && !brands.includes(canonical)) {
+      brands.push(canonical);
+    }
+  }
+
+  return withPriceBounds({ ...query, size, brands }, priceBounds(products));
+}
+
 /* --- Search -------------------------------------------------------------- */
 
 export function searchResults(
   category: ProductCategory,
   params: RawSearchParams,
 ): ResultsView {
-  const query = parseResultsQuery(category, params);
+  return searchSeed(category, productsIn(category), params);
+}
+
+/** `searchResults` over an explicit product list. Exported so an empty
+ *  category (no route reaches one today) is provable through the public path
+ *  rather than by reading the code — QA WDG-18. */
+export function searchSeed(
+  category: ProductCategory,
+  products: readonly Product[],
+  params: RawSearchParams,
+): ResultsView {
+  const query = withKnownValues(parseResultsQuery(category, params), products);
   const config = CATEGORY_CONFIG[category];
-  const products = productsIn(category);
 
   /* The unavailable SKU is NOT excluded: the artboard draws it and the page
      still returns 200 with the dimmed card (`docs/decisions.md` §7). */

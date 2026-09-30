@@ -18,7 +18,7 @@
    phone number appears only as a `placeholder` attribute.
    --------------------------------------------------------------------------- */
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,10 +34,45 @@ import {
   QUOTE_INITIAL_STATE,
   quantityQuoteLabel,
   type QuantityKey,
+  type QuoteFormState,
 } from "@/features/product/types";
 import { cx } from "@/lib/cx";
 import { QuoteErrorSummary } from "./quote-error-summary";
 import { QuoteSuccess } from "./quote-success";
+
+/** Browser `maxLength` per field (D91b WDG-12, owner ruling 2026-09-30). These
+ *  mirror the caps `actions.ts` enforces server-side; that file is `"use
+ *  server"` and can only export async functions, so the numbers live in both
+ *  places and `tests/e2e/product.spec.ts` pins them together. The browser stops
+ *  the typing; the server is still the validator (`noValidate`, D65). */
+const MAX_LENGTH = { name: 100, email: 254, phone: 32, message: 1000 } as const;
+
+/** New copy (owner-approved 2026-09-30, D93b ENV-1): shown when the send itself
+ *  fails, e.g. offline. Plain, no blame, says what to do. */
+const SEND_FAILED = "We couldn't send that. Check your connection and try again.";
+
+/** The state shown when the send itself fails (offline, dropped connection).
+ *  A Server Action call that never reaches the server throws inside React's
+ *  transition and, uncaught, lands in the route error boundary: the form is
+ *  gone and so is everything the visitor typed. So, with JS on, `onSubmit`
+ *  below runs `submitQuote` itself inside a try/catch and, on failure, shows
+ *  an `invalid` state that echoes every field (the same `values` path a
+ *  validation error uses) plus a `notice`. The form is untouched, so Send works
+ *  again the moment the network does.
+ *
+ *  The form's `action` stays `useActionState(submitQuote)`'s own `formAction`,
+ *  NOT a client wrapper: a client function is not a Server Action reference, so
+ *  wrapping it would strip the no-JS POST (D44/D51). React skips its action
+ *  when `onSubmit` calls `preventDefault`, so with JS only the guarded path
+ *  runs, and without JS only the native POST does (D93b, ENV-1). */
+function failedSendState(formData: FormData): QuoteFormState {
+  const values: Partial<Record<(typeof QUOTE_FIELD)[keyof typeof QUOTE_FIELD], string>> = {};
+  for (const field of Object.values(QUOTE_FIELD)) {
+    const value = formData.get(field);
+    if (typeof value === "string") values[field] = value;
+  }
+  return { status: "invalid", errors: {}, values, notice: SEND_FAILED };
+}
 
 export interface QuoteFormProps {
   /** Hidden `slug` field — which product this inquiry is about. */
@@ -70,7 +105,16 @@ export function QuoteForm({
   placeholder,
   consent,
 }: QuoteFormProps) {
-  const [state, formAction, isPending] = useActionState(submitQuote, QUOTE_INITIAL_STATE);
+  const [serverState, formAction, actionPending] = useActionState(
+    submitQuote,
+    QUOTE_INITIAL_STATE,
+  );
+  // Result of the JS-only guarded submit (see `failedSendState`); wins over the
+  // action's own state once set, which only ever happens with JS on.
+  const [guardedState, setGuardedState] = useState<QuoteFormState | null>(null);
+  const [guardedPending, startGuarded] = useTransition();
+  const state = guardedState ?? serverState;
+  const isPending = actionPending || guardedPending;
   const successRef = useRef<HTMLDivElement>(null);
   const errorSummaryRef = useRef<HTMLParagraphElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -211,6 +255,17 @@ export function QuoteForm({
   return (
     <form
       action={formAction}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        startGuarded(async () => {
+          try {
+            setGuardedState(await submitQuote(state, formData));
+          } catch {
+            setGuardedState(failedSendState(formData));
+          }
+        });
+      }}
       data-probe="quote-form"
       /* `noValidate` so the authored validation is the one users actually meet.
          With native constraint validation on, the browser's own bubble fired
@@ -241,6 +296,7 @@ export function QuoteForm({
           fallback case without adding it to the tab order. */}
       <QuoteErrorSummary
         count={errorCount}
+        message={state.status === "invalid" ? state.notice : undefined}
         role="alert"
         tabIndex={-1}
         ref={errorSummaryRef}
@@ -262,6 +318,7 @@ export function QuoteForm({
             name={QUOTE_FIELD.name}
             type="text"
             autoComplete="name"
+            maxLength={MAX_LENGTH.name}
             required
             ref={nameRef}
             defaultValue={values?.name}
@@ -280,6 +337,7 @@ export function QuoteForm({
             name={QUOTE_FIELD.email}
             type="email"
             autoComplete="email"
+            maxLength={MAX_LENGTH.email}
             required
             ref={emailRef}
             defaultValue={values?.email}
@@ -298,6 +356,7 @@ export function QuoteForm({
             name={QUOTE_FIELD.phone}
             type="tel"
             autoComplete="tel"
+            maxLength={MAX_LENGTH.phone}
             required
             ref={phoneRef}
             // Placeholder attribute only, never a value (product.md §7.4).
@@ -454,6 +513,7 @@ export function QuoteForm({
             name={QUOTE_FIELD.message}
             ref={messageRef}
             placeholder={placeholder}
+            maxLength={MAX_LENGTH.message}
             defaultValue={values?.message}
             invalid={Boolean(errors?.message)}
             aria-describedby={errors?.message ? "quote-message-error" : undefined}
@@ -463,9 +523,19 @@ export function QuoteForm({
           ) : null}
         </div>
 
-        {/* CASL consent: renders unticked, always — `Checkbox` never accepts
-            `checked`/`defaultChecked` from this call site (docs/decisions.md:118). */}
-        <Checkbox id="quote-consent" name={QUOTE_FIELD.consent} variant="consent">
+        {/* CASL consent (docs/decisions.md:118): a fresh form ALWAYS renders
+            unticked. `restoreChecked` is set from the echo of a rejected
+            submit only (`values` is undefined on idle and success), and that
+            echo carries the visitor's own tick and nothing else — React resets
+            an uncontrolled form after an action, so without it an unrelated
+            field error silently unticked their consent (WDG-10, owner ruling
+            2026-09-30). */}
+        <Checkbox
+          id="quote-consent"
+          name={QUOTE_FIELD.consent}
+          variant="consent"
+          restoreChecked={Boolean(values?.[QUOTE_FIELD.consent])}
+        >
           {consent}
         </Checkbox>
       </div>

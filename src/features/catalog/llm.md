@@ -128,6 +128,7 @@ Delete this folder and every route loses its product surface, and `/results`, `/
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D93b | 2026-09-30 | The `ProductCard` model link carries an `sr-only` size tail, so the same model in two sizes has distinct link names (WCAG 2.4.4); the brand stamp is `translate="no"`. Tests match the model name by regex prefix, never exactly. | Two links read identically to a screen reader. | QA pass; D93b |
 | D91b | 2026-09-29 | `ProductCard` takes an optional `sizes` (default unchanged); each grid passes its own. The photo box is a padded wrapping flex row, so the brand stamp wraps below the badges instead of overlapping them; the image link is `absolute inset-0`, the same box as before. | `sizes` said 50vw where the results grid is 1-up (400–719), so phones fetched about half the pixels they paint; the `Currently unavailable` badge overlapped the stamp by up to 34.6px at 1100–1180. | QA pass WDG-06, NJR-6; D91b |
 | — | — | None folder-scoped. | Every ruling that shapes this folder is global. | — |
 

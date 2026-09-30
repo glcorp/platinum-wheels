@@ -87,6 +87,7 @@ Built at `page home`, 2026-09-20.
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D93b | 2026-09-30 | `VehicleFinder` accepts hidden `carry` inputs, so `Change vehicle` keeps the active filters while the vehicle fields stay empty. | Changing vehicle silently dropped every filter (WDG-17). | Owner: "Keep filters, stay empty"; D93b |
 | D91b | 2026-09-29 | `isFinderVehicle(year, make, model)` in `data.ts` is the one authority on what counts as a vehicle; `results/query.ts` and `product/view.ts` both call it, and anything else is "no vehicle". | The URL vehicle was printed verbatim in the results chip, the best-none note and the PDP quote chip, so any link could write its own text and phone number onto the page (escaped, never executed). Narrows D79. | Owner, 2026-09-29: "Accept finder vehicles only" |
 None folder-scoped. Governing: **D27, D28, D33, D39, D79**.
 

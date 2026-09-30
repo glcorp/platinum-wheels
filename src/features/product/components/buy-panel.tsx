@@ -117,7 +117,7 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
             text-transform:uppercase;color:var(--text-muted)` mobile,
             `13px` desktop (`product-mobile.html:94`,
             `product-desktop.html:109`). */}
-        <span className="label text-ink-muted text-12 tracking-14 sm:text-13">
+        <span translate="no" className="label text-ink-muted text-12 tracking-14 sm:text-13">
           {product.brand}
         </span>
 

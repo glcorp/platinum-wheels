@@ -62,6 +62,7 @@ the next session guesses which of the two phone numbers is real.
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D93b | 2026-09-30 | `CONTACTS[0].display` uses U+00A0 for its spaces and U+2060 after the hyphen so the number never wraps; `tel` stays E.164. Tests that match the displayed number strip U+2060. | The number broke across lines in narrow pills (WDG-15). | Owner ruling 2026-09-30; QA pass WDG-15; D93b |
 | — | — | None folder-scoped. | The one ruling this folder encodes is `docs/decisions.md` §8. | — |
 
 Referenced: **D39** (route map lives here; undesigned targets get `PageStub` pages), **D2** (`@/*` → `./src/*`, which is how `@/lib/site` resolves), **D32** (the year is computed

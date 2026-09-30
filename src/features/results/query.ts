@@ -212,6 +212,38 @@ export function resultsHref(query: ResultsQuery): string {
 
 /* --- Transforms -------------------------------------------------------- */
 
+/** Price bounds as the facet computes them — the seed's, rounded outward. */
+export interface PriceBounds {
+  min: number;
+  max: number;
+}
+
+/**
+ * Same query with the price range clamped into `bounds`, and a side that
+ * lands exactly on its bound dropped (`null`). A slider parked at either end
+ * is not a filter (`countActiveGroups`), and `resultsHref` promises defaults
+ * omitted so equal queries give equal hrefs — but a range input always
+ * submits both values, so every JS commit used to pin `min`/`max` at the
+ * bounds (`?brand=Zeta&min=90&max=150`). Clamping (not just dropping) keeps
+ * the filter and the handle in agreement for a hand-typed `min=999999`: the
+ * handle can only sit at the ceiling, so the filter reads the ceiling too.
+ * QA WDG-07.
+ */
+export function withPriceBounds(
+  query: ResultsQuery,
+  bounds: PriceBounds,
+): ResultsQuery {
+  const settle = (value: number | null, bound: number) => {
+    if (value === null) return null;
+    const clamped = Math.min(Math.max(value, bounds.min), bounds.max);
+    return clamped === bound ? null : clamped;
+  };
+  const priceMin = settle(query.priceMin, bounds.min);
+  const priceMax = settle(query.priceMax, bounds.max);
+  if (priceMin === query.priceMin && priceMax === query.priceMax) return query;
+  return { ...query, priceMin, priceMax };
+}
+
 /** Same query with every filter cleared; keeps `category`, `vehicle` and
  *  `sort`. `Clear all`. Size keys stay present, all set to `null` — the
  *  selects still have something to read `Any` off of. */

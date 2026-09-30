@@ -68,7 +68,11 @@ const DEMO: Product[] = [
     available: true,
   },
   {
-    slug: "touren-tr76",
+    /* A real seed slug, so the specimen's links resolve (it was
+       `touren-tr76`, a 404 — found by the D93b control crawl). `image` keeps
+       the same cut-out the bare slug used to pick up. */
+    slug: "touren-tr76-18x8",
+    image: "touren-tr76",
     brand: "Touren",
     model: "TR76",
     size: "18×8.5 ET35",
@@ -521,6 +525,13 @@ export default function StyleguidePage() {
             </p>
             <div className="border-border-strong border p-4">
               <QuoteErrorSummary count={2} />
+              {/* The send-failed variant (D93b, ENV-1): same node, whole-form line. */}
+              <div className="mt-3">
+                <QuoteErrorSummary
+                  count={0}
+                  message="We couldn't send that. Check your connection and try again."
+                />
+              </div>
             </div>
           </div>
 

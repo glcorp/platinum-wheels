@@ -238,3 +238,98 @@ thumbs (`#rail-price-min`, `#rail-price-max`) — the known D69 limit, carried b
 row (3.2–3.5 s on three page types, 2.5 s on `/about`), the same build-wide cause as `HANDOFF.md` §7,
 still parked. **Lighthouse a11y 100 is not evidence of accessibility** (D56): it passed every page while
 this pass found FIN-2, FIN-3 and FIN-5 by real input.
+
+## 7. Senior pass — "break the site" (D93b, 2026-09-30)
+
+Second pass on top of the D91b suite, run against the production build on the same 15 projects. New specs:
+`routes` (status table for 38 wrong URLs, 404s branded / `noindex` / axe, current-nav rule), `hostile-query`
+(hostile query-string table on the three results routes and the tire PDP), `crawl` (every visible control on
+every route and state: hit-test, name, link status, effect, target size) and `environment` (offline, blocked
+storage, failed images and fonts, CPU races, rotation, 50 % / 400 % zoom, print, two tabs). Method, evidence
+and the rule "red before, green after" are as §1.
+
+**Owner rulings (verbatim, 2026-09-30):** ID "D93b"; 404 "Line + two actions"; root error "Add a branded
+global-error"; tab titles "will fix once data is ingested" (deferred); Change vehicle "Keep filters, stay
+empty"; no-JS Menu "Menu jumps to footer nav"; no-JS price labels "Leave as known"; starter SVGs "Yes,
+delete"; WDG-15 "Fix both"; WDG-13 "Add, using existing tokens"; WDG-10 "Restore their own tick"; WDG-12
+"maxLength + server caps"; ENV-1 "Fix: keep the form + a short error line"; ENV-2 "Author a minimal print
+stylesheet"; the four copy rewrites below, all approved.
+
+### 7.1 Fixed, each proven red → green
+
+| ID | Defect | Fix | Proof |
+|---|---|---|---|
+| ROU | `/about`, `/privacy`, `/terms` and every 404 marked **Tires** as the current nav item (`active` defaulted to `"tires"`) | no default; current links carry `aria-current="true"` in header and drawer | `routes.spec` red 60 → green 210 |
+| 404 | the 404 was a bare stub | `PageStub` requires a `lede`; owner's line + `Shop tires` and `Call` pair; branded, `noindex`, axe-clean | `routes.spec` |
+| ROOT | a root-layout error showed Next's blank shell | `src/app/global-error.tsx` (dark, `lang=en`, titled, `RouteError`) — second allowed `"use client"` under `src/app/` | `error-boundary.spec` with `PW_ROOT_ERROR=1` |
+| WDG-07 | a JS filter commit pinned `min`/`max` at the price bounds in the URL | only a moved handle is kept | `hostile-query.spec` |
+| WDG-08 | unknown size values and brands counted as filters: **21 badge/control mismatches → 0** (`?width=abc` read `Filters (1)` over `Any`) | badge counts only what a visible control shows | `hostile-query.spec` |
+| WDG-18 | an empty category rendered `$Infinity` price bounds | guarded | `hostile-query.spec` |
+| WDG-17 | `Change vehicle` dropped the active filters | hidden `carry` inputs | `finder.spec` red 11 → green |
+| WDG-10 | a failed submit silently unticked the visitor's CASL consent tick | their own tick is echoed back (`Checkbox restoreChecked`); a fresh form still renders unticked | `product.spec` |
+| WDG-12 | unbounded fields; invisible characters passed `required` | `maxLength` name 100 / email 254 / phone 32 / message 1000 mirrored server-side, `\p{Cf}` stripped, existing error strings | `product.spec` |
+| WDG-13 | carousel arrows and quantity cells had no hover; arrows were named `Previous`/`Next` | hover from existing tokens (DEVIATIONS #83, #84); named `Previous featured tire` / `Next featured tire`, `aria-controls` | `home.spec`, `responsive.spec` |
+| WDG-15 | the phone number could wrap mid-number; brand names were machine-translatable | U+00A0 + U+2060 in `CONTACTS[0].display`; `translate="no"` on brands | `home.spec` |
+| NJR-5 | with JS off, header `Menu` was a focusable inert button | a link to the footer nav (`#site-footer-nav`) until hydrated | `nojs.spec` (was `fixme`) |
+| CRAWL-2.4.4 | card model links shared a name across size variants (`Antarctica Sport` ×2, `Snowleopard`, `Landgema`, `Spike Lug Nuts`, `TR76`, `TR79`) | `sr-only` size tail on the model link, pixels unchanged | `crawl.spec` |
+| ENV-1 | offline, `Send inquiry` threw into the route error boundary and **deleted the visitor's typed name, email and message** | client `sendQuote` catch: form stays, every value kept, existing error summary shows *"We couldn't send that. Check your connection and try again."* (DEVIATIONS #86) | `environment.spec` red → green |
+| ENV-2 | no print stylesheet: near-white text on white paper (h1 **1.1:1**, body **2.4:1**), sticky Filters/Sort bar printed | `@media print` block (DEVIATIONS #85) | `environment.spec` print ×4 red → green |
+| HK | `public/{file,globe,next,vercel,window}.svg` starter files | deleted | — |
+
+Copy rewrites (all four approved): email error → *"Enter an email like name@example.com."*; route error →
+*"That page didn't load. Try again, or call us and we'll sort it out."*; message cap → *"Keep your message to
+1,000 characters or fewer."*; summary → *"N fields need a fix before we can send your inquiry."*
+
+### 7.2 Reported, not changed
+
+- **Tab titles** (product pages in particular) wait on the catalogue; owner: "will fix once data is ingested".
+- **No-JS price labels** (NJR-4) stay static; the `test.fixme` in `nojs.spec` cites it (owner: "Leave as known").
+- **Offline navigation** (a full-page navigation with no network) ends on Chrome's own error page; there is no
+  service worker and none is owed. Header/footer client navigations degrade cleanly and back online work.
+- **Failed images / fonts:** 14 / 8 / 7 / 2 broken images on home / results / PDP / about leave `docH`
+  unchanged and text readable; aborted Barlow renders in the fallback face with `docH` 1943 → 1994 on results.
+- **Blocked storage** (`localStorage`/`sessionStorage` throw): every route renders clean and every island works.
+- **CPU ×6, rotation with sheet or drawer open, 50 %/400 % zoom, two tabs:** all pass; the quote form's
+  leave guard fires only in the tab with the dirty form.
+
+- **WDG-09 (year rollover) tried and reverted.** A daily `revalidate` on `/`, `/about`, `/privacy`, `/terms` made
+  Next send `stale-while-revalidate` for a year, which in Firefox left a background revalidation pending and
+  hung 11 tests (measured: same test passes on the build without it). Owner: *"Revert it; redeploy each January
+  (Recommended)"*. `Winter <year>` and `© <year>` therefore change when the site is redeployed (D32 unchanged).
+- **ENV-3 (WebKit only, `test.fixme`):** with the network offline, a filter change leaves `aria-busy` set on
+  WebKit (desktop and the iPhone/iPad projects); Chromium ends on the browser's own error page so it cannot show
+  it. Not fixed: needs real Safari to confirm, and the fix needs a ruling.
+- **ENV-4 (WebKit only, `test.fixme`):** at CSS `zoom: .5` the PDP `h1` reads hidden. CSS `zoom` is not browser
+  zoom in WebKit, so this may be a harness artefact; unverified.
+- The desktop arrow **press** (1px) is asserted on Blink and Gecko only; WebKit never applied `:active` to the
+  synthetic held press (hover is asserted everywhere). Real Safari unverified.
+- Harness fixes this pass: the styleguide has no header, so it has no `[drawer]` crawl state; the failed-image
+  wait ignores lazy images in the phone carousel's horizontal scroller; parity locates a card by its model-name
+  prefix now that the link carries a size tail; `/results?brand=zzz` is no longer empty (WDG-08), so the empty
+  case is `?brand=Zeta&season=all-season`.
+
+### 7.3 Housekeeping (checked, no change made)
+
+No `og:*`, `twitter:*` or `canonical` tags anywhere; no `apple-touch-icon`; `/robots.txt` and `/sitemap.xml`
+answer 404; `/favicon.ico` answers 200. These are launch items for the owner, not defects in the built UI.
+
+### 7.4 Notes on the visual baselines
+
+The committed `home-390` and `home-1440` baselines from D91b were **blank below "Book your winter set"** —
+captured before the `[data-reveal="pending"]` sections were revealed. `visual.spec` now reveals every pending
+section before capture. Regenerated on the final build: `home-390`, `home-1440`, `not-found-1440`,
+`styleguide-390`, `styleguide-1440`; confirmed twice with zero diff and the images looked at (the home pages
+show every section down to the footer). `about`, `privacy` and `terms` did not move enough to fail their
+threshold once the stray Tires underline went, so their baselines are unchanged.
+
+**Not verifiable here:** real Mobile Safari (the iOS Simulator needs full Xcode; the WebKit device projects
+are the proxy). With JS off, a *root-layout* error still shows Next's empty shell — a framework limit.
+
+### 7.5 Gate
+
+`npm run check` clean, `next build` clean, `npm run test:e2e -- --workers=4` (private production build, all 15
+projects): **6,246 passed, 0 failed, 0 flaky, 4,116 skipped** (per-project skips by design, plus the cited
+`test.fixme`s: NJR-4, D69, ENV-3, ENV-4, and the parked unavailable PDP). At `--workers=5` a handful of
+timing tests (INP proxy, filter-commit races in the crawl, forced-colours focus walk) fail under load and pass
+alone; the gate run used 4 workers on this 8-core machine (`tests/llm.md` Open). A dangling promise in the
+WebKit arrow test raised 3 "test ended" errors and was fixed and re-run green on the WebKit projects.

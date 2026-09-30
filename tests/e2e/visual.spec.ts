@@ -79,6 +79,25 @@ async function stabilise(page: Page) {
     window.scrollTo(0, 0);
   });
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  // The D92b reveal flips a section on an IntersectionObserver callback. A
+  // fast scroll pass can move a section in and out of view before that
+  // callback runs, so it stays `pending` (opacity 0) — and the 2026-09-30
+  // home baselines were captured that way, blank from How it works down, and
+  // then "confirmed" twice because the race reproduced. Bring each pending
+  // section into view and wait for it to flip, then return to the top.
+  await page.evaluate(async () => {
+    const frame = () => new Promise((r) => requestAnimationFrame(() => r(undefined)));
+    for (let i = 0; i < 20; i++) {
+      const el = document.querySelector<HTMLElement>('[data-reveal="pending"]');
+      if (!el) break;
+      el.scrollIntoView({ block: "center", behavior: "instant" });
+      for (let f = 0; f < 30 && el.dataset.reveal === "pending"; f++) await frame();
+    }
+  });
+  await expect
+    .poll(() => page.evaluate(() => document.querySelectorAll('[data-reveal="pending"]').length))
+    .toBe(0);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   // Scrolling horizontal tracks back to rest too (the carousel is D30/D74).
   await page.evaluate(() => {
     for (const el of document.querySelectorAll<HTMLElement>("*")) {

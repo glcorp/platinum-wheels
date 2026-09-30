@@ -40,9 +40,10 @@ differing from the design.
   hero's bottom fade. Radius 0–4px; nothing is a pill.
 - **Prices** are white (`--color-ink`), Barlow 700, `tabular-nums`, full-size `$` and no cents, never
   accent-coloured, never superscript.
-- Server Components by default. `"use client"` only on leaf islands — never inside `src/app/`. The one
-  exception is `src/app/(storefront)/error.tsx`, which Next **requires** to carry the directive itself
-  (D62); it holds no component code, only a re-export of `src/components/site/route-error.tsx`.
+- Server Components by default. `"use client"` only on leaf islands — never inside `src/app/`. The two
+  exceptions are `src/app/(storefront)/error.tsx` (D62) and `src/app/global-error.tsx` (D93b), which Next
+  **requires** to carry the directive themselves; neither holds component code — both render
+  `src/components/site/route-error.tsx`.
 - `next/image` with `sizes` and a reserved aspect box; `next/link` for internal links.
 - Tap targets ≥44px, inputs ≥16px font, `dvh` not `vh`, `prefers-reduced-motion` honoured.
 

@@ -827,7 +827,7 @@ test.describe("long content, continued", () => {
 
 test.describe("result-set sizes", () => {
   const cases = [
-    { name: "empty", url: "/results?brand=zzz", cards: 0 },
+    { name: "empty", url: "/results?brand=Zeta&season=all-season", cards: 0 },
     { name: "one", url: "/wheels?finish=bronze&brand=Touren", cards: 1 },
     { name: "many", url: "/results?show=all", cards: 9 },
   ] as const;
@@ -925,5 +925,109 @@ test.describe("result-set sizes", () => {
     } finally {
       await context.close();
     }
+  });
+});
+
+// --- 8. The phone number is one unbreakable unit (WDG-15) --------------------
+
+/** Same override the 1.4.12 text-spacing gate injects (a11y-interaction.spec). */
+const TEXT_SPACING = `* { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; }
+p { margin-bottom: 2em !important; }`;
+
+const PHONE_WIDTHS = [
+  320, 360, 375, 390, 412, 600, 720, 768, 900, 1024, 1099, 1100, 1280, 1440,
+] as const;
+
+/** Every rendered occurrence of the primary number, with the number of lines
+ *  its characters occupy (distinct `top`s of a Range over just the number). */
+async function phoneOccurrences(page: Page) {
+  return page.evaluate(() => {
+    const re = /\+1[\s ]\(437\)[\s ]882-⁠?5000/;
+    const out: { where: string; lines: number; text: string }[] = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const m = n.textContent?.match(re);
+      if (!m || m.index === undefined) continue;
+      const parent = n.parentElement!;
+      if (parent.getClientRects().length === 0) continue; // display:none (closed drawer, hidden pill)
+      const range = document.createRange();
+      range.setStart(n, m.index);
+      range.setEnd(n, m.index + m[0].length);
+      const tops = new Set(
+        [...range.getClientRects()].filter((q) => q.width > 0).map((q) => Math.round(q.top)),
+      );
+      const host = parent.closest("header, #contact, [data-probe], footer, main");
+      out.push({
+        where: host?.getAttribute("data-probe") || host?.id || host?.tagName.toLowerCase() || parent.tagName.toLowerCase(),
+        lines: tops.size,
+        text: m[0].replace(/ /g, "_").replace(/⁠/g, "|"),
+      });
+    }
+    return out;
+  });
+}
+
+test.describe("phone number never wraps mid-number", () => {
+  test("header pill, contact card and quote-success sentence, 320 to 1440, with 1.4.12 spacing", async ({
+    page,
+    browserName,
+  }, info) => {
+    const p = info.project.name;
+    const isDevice = !!info.project.use.isMobile || !/^(chromium|firefox|webkit)-\d+$/.test(p);
+    test.skip(!isDevice && !p.endsWith("-1440"), "desktop engines sweep the widths once, at the 1440 project");
+    test.setTimeout(120_000);
+    const widths = isDevice ? [null] : PHONE_WIDTHS;
+
+    const failures: string[] = [];
+    const seen = new Set<string>();
+    const sweep = async (label: string) => {
+      for (const width of widths) {
+        if (width !== null) await page.setViewportSize({ width, height: 900 });
+        await page.evaluate(
+          () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))),
+        );
+        for (const spacing of [false, true]) {
+          if (spacing) await page.addStyleTag({ content: TEXT_SPACING });
+          await page.evaluate(
+            () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))),
+          );
+          for (const o of await phoneOccurrences(page)) {
+            seen.add(`${label}:${o.where}`);
+            if (o.lines !== 1)
+              failures.push(
+                `${label} @${width ?? "native"}${spacing ? " +1.4.12" : ""} [${o.where}] "${o.text}" wraps to ${o.lines} lines`,
+              );
+          }
+        }
+        // Drop the injected override so the next width starts clean.
+        await page.evaluate(() => document.querySelectorAll("style").forEach((s) => s.textContent?.includes("word-spacing: .16em") && s.remove()));
+      }
+    };
+
+    // Home: header pill (>= 720) and the contact card.
+    await page.goto("/");
+    await settle(page);
+    await sweep("home");
+
+    // PDP: the quote-success sentence "Need it sooner? Call <number>."
+    await page.goto(`/products/${SLUG.tire}`);
+    await settle(page);
+    await page.locator("#quote-name").fill("Test Person");
+    await page.locator("#quote-email").fill("test.person@example.com");
+    await page.locator("#quote-phone").fill("416-555-0123");
+    const success = page.locator('[data-probe="quote-success"]');
+    await expect(async () => {
+      await page
+        .locator('[data-probe="quote-form"]')
+        .getByRole("button", { name: /Send inquiry/ })
+        .click();
+      await expect(success).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
+    await sweep("pdp-success");
+
+    expect(browserName).toBeTruthy();
+    expect([...seen].some((k) => k.startsWith("home:contact")), "contact card occurrence measured").toBe(true);
+    expect([...seen].some((k) => k.startsWith("pdp-success:")), "success sentence measured").toBe(true);
+    expect(failures).toEqual([]);
   });
 });

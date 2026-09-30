@@ -8,6 +8,7 @@
  *     opened without JS anyway") — recorded by a test, not a defect.
  */
 import { test, expect, type Page, type Locator } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 import { SLUG, VEHICLE, scrollSettled, settle, usesSheet, viewportWidth } from "../helpers";
 
 test.use({ javaScriptEnabled: false });
@@ -450,19 +451,45 @@ test.describe("navigation without JS below md: 1100", () => {
     }
   });
 
-  // Known P3, open: design/reports/qa.md §3 NJR-5 (D91b) — senior pass.
-  test.fixme("the header Menu button opens navigation without JS (NJR-5, D91b)", async ({
+  // design/reports/qa.md §3 NJR-5 (D91b), owner ruling 2026-09-30 "Menu jumps to footer nav".
+  test("the header Menu control reaches the primary navigation without JS (NJR-5, D91b)", async ({
     page,
   }) => {
-    // The drawer is a `<dialog>` island (D31). With scripting off the button is
-    // visible, focusable and inert; primary nav is reachable only by scrolling
-    // to the footer. Asserting the correct behaviour — findings NJR.
+    // The drawer is a `<dialog>` island (D31), so the server renders the trigger as
+    // a link to the footer's nav columns; the island swaps in the button on hydration.
     await page.goto("/results");
     await loaded(page);
-    const menu = page.getByRole("button", { name: "Menu" });
+    const menu = page.getByRole("banner").getByRole("link", { name: "Menu", exact: true });
     await expect(menu).toBeVisible();
+    await expect(menu).toHaveAttribute("href", "#site-footer-nav");
     await menu.click();
-    await expect(page.getByRole("dialog", { name: "Menu" })).toBeVisible();
+    await expect(page).toHaveURL(/#site-footer-nav$/);
+    await scrollSettled(page);
+    // The footer nav lands in view with its first heading and links visible.
+    const footer = page.getByRole("contentinfo");
+    await expect(footer.getByText("Shop", { exact: true })).toBeInViewport();
+    await expect(footer.getByRole("link", { name: "Tires", exact: true })).toBeInViewport();
+    await expect(footer.getByRole("link", { name: "Accessories", exact: true })).toBeInViewport();
+  });
+
+  // axe cannot run with scripting disabled (its frame.evaluate never returns), so the
+  // un-hydrated state is reproduced instead: JS on, every Next chunk aborted, so the
+  // page stays exactly as the server rendered it.
+  test.describe("un-hydrated header", () => {
+    test.use({ javaScriptEnabled: true });
+    test("the header with the Menu link passes axe (NJR-5, D91b)", async ({ page }) => {
+      await page.route(/\/_next\/static\/.*\.js/, (route) => route.abort());
+      await page.goto("/results");
+      await loaded(page);
+      await expect(
+        page.getByRole("banner").getByRole("link", { name: "Menu", exact: true }),
+      ).toBeVisible();
+      const { violations } = await new AxeBuilder({ page })
+        .include("header")
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+        .analyze();
+      expect(violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
+    });
   });
 });
 

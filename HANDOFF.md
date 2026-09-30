@@ -118,7 +118,7 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | Primitives | **Ten**, hand-built and token-only in `src/components/ui/`. Every variant and state is on `/styleguide`. Neither the PDP, nor D57, nor D58 needed a new primitive — D58 added exactly one optional prop, `Price.unit`, defaulting to the drawn tire string. |
 | `globals.css` | **719 ln**: tokens, role utilities, the home/results/product layout utilities, and the three D57 accessibility utilities (`tap-extend-lg`, `hide-scrollbar`, `skip-link`). The dead `--container-rail` token was removed 2026-09-21 (D61, audit S5). **Single writer: the coordinator.** See §9. |
 | `/styleguide` | §11 carries the undrawn states, now **complete** (D62): empty results, open `Change vehicle`, quote-form **success** and **error**, the **skip link** (Tab into its demo box to reveal it), the **route error** and the **loading** skeleton. |
-| Undrawn states | `loading.tsx` and `error.tsx` at `(storefront)/` (D62). The boundary component is `src/components/site/route-error.tsx`; `error.tsx` is the directive plus a re-export and is the **only** `"use client"` under `src/app/` — a framework requirement, named as an exception in `.claude/rules/ui.md` and `docs/decisions.md` §4. `loading.tsx` renders a `<div>`, not a second `<main id="main">`. |
+| Undrawn states | `error.tsx` at `(storefront)/` (D62) and `src/app/global-error.tsx` (D93b); `loading.tsx` was removed by D91b. Both boundaries render `src/components/site/route-error.tsx` and are the **only two** `"use client"` files under `src/app/` — a framework requirement, named as exceptions in `.claude/rules/ui.md` and `docs/decisions.md` §4. The 404 (`not-found.tsx`) carries the owner's line and a `Shop tires` + call pair (D93b). |
 | `design/reports/` | 11 files: `README.md` (protocol), three `<page>.md` parity baselines, `audit.md` + four `*-audit.md`, **`deviations-sweep.md`** (D64) and `llm.md`. |
 | `.claude/rules/ui.md` | Taste dials + JSX non-negotiables. **Auto-loads on every `src/**/*.tsx` edit.** Nothing imports it; it loads by glob, and its length is paid on every UI edit. |
 | Stubs left | `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). `/wheels` and `/accessories` left this list on 2026-09-21 (D58). |
@@ -168,7 +168,7 @@ The blocks below are earlier hand measurements. They are still true where the su
   routes at 390 and 1440 found zero geometry change (only the active nav link's border colour, now
   painted by a span, and `position: relative` on the nav links).
 - No overflow on 10 routes × 375/768/1280/1440; Lighthouse CLS 0 and a11y 100 on `/`, `/results`, the PDP.
-- **`"use client"`: 12 files** (D92b added `scroll-reveal.tsx` and, by addendum, `nav-progress.tsx`), still exactly one under `src/app/`.
+- **`"use client"`: 13 files** (D92b added `scroll-reveal.tsx` and, by addendum, `nav-progress.tsx`; D93b added `src/app/global-error.tsx`), exactly two under `src/app/`.
 - **How to measure motion here:** the browser pane skips view transitions and stops frames whenever it is
   hidden (§8.23 again), so live samples ran in headless Playwright Chromium against a production build.
   Build that in a scratch copy (APFS-cloned `node_modules`) when another session is serving `.next`.

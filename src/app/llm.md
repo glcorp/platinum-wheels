@@ -27,6 +27,12 @@ entire site loses its type or its palette at once.
   `next/font/google`, `display: "swap"`, `adjustFontFallback` (**D20**; `docs/decisions.md:99`).
 - `favicon.ico` — App Router file convention. It lives here, **not** in `public/`.
 - [`not-found.tsx`](not-found.tsx) — global 404 on `PageStub`; one of the undrawn states (`design/manifest.md`).
+  **D93b:** passes the owner-approved lede ("That link doesn't lead anywhere. Start from the catalogue, or
+  call us and we'll find it.") and the `Shop tires` + `tel:` action pair.
+- [`global-error.tsx`](global-error.tsx) — **D93b**, owner *"Add a branded global-error"*. `"use client"`
+  (framework-required; the second of the two allowed under `src/app/`), owns `<html lang="en">`/`<body>` with
+  the layout's font variables and classes, renders `RouteError`. Catches only a throw in `layout.tsx`. With
+  JS off Next serves an empty `__next_error__` shell for that case — a framework limit, not fixable here.
 - [`(storefront)/`](<(storefront)/llm.md>) — the storefront route group. Has its own `llm.md`.
 
 ## Rules
@@ -128,7 +134,8 @@ entire site loses its type or its palette at once.
 - Don't treat a green `next build` as proof a utility emitted — Tailwind v4 drops unknown utilities
   silently, and in dev the sheet is split and partly HMR-injected. The browser is authoritative
   (`HANDOFF.md` §8).
-- Don't put `"use client"` anywhere in this tree (`docs/decisions.md:73-75`).
+- Don't put `"use client"` anywhere in this tree except `(storefront)/error.tsx` and `global-error.tsx`
+  (`docs/decisions.md` §4, D62, D93b).
 
 ## Open
 1. `--winter` / `--all-season` are referenced by **zero** artboard elements and are kept only because

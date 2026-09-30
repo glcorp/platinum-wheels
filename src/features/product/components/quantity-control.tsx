@@ -38,6 +38,14 @@ import {
    No radius on any cell (radius is CTA-only, `product.md` §3.4 "no radius on
    the cells").
 
+   Hover (D91b WDG-13, owner ruling 2026-09-30; undrawn, `DEVIATIONS.md`): an
+   UNSELECTED cell's border and label go to `--text` (`hover:border-ink
+   hover:text-ink`), the treatment the chips and the featured carousel's `Next`
+   arrow already use, ridden by the D92b base-layer `a` transition. `hover:` is
+   `@media (hover: hover)` (D17), so touch is untouched. The selected cell
+   carries no hover class: its fill is already `--text`. `Custom` follows the
+   same rule, but it only counts as selected when it is the `?qty=` value.
+
    Motion (D92b, replacing the old "cells swap instantly" house rule): the
    selected fill eases over `--duration-feedback` through the base-layer
    `a` transition in `globals.css`, so no transition class lives here. Each
@@ -131,7 +139,11 @@ export function QuantityControl({
                 href={hrefFor(option.value, searchParams)}
                 aria-current={selected ? "true" : undefined}
                 data-qty-cell=""
-                className="bg-surface-2 border-border-strong text-ink-dim flex h-12 items-center justify-between border px-3 text-14 active:translate-y-px sm:h-13 sm:px-3.5 sm:text-15"
+                className={
+                  selected
+                    ? "bg-surface-2 border-border-strong text-ink-dim flex h-12 items-center justify-between border px-3 text-14 active:translate-y-px sm:h-13 sm:px-3.5 sm:text-15"
+                    : "bg-surface-2 border-border-strong text-ink-dim hover:border-ink hover:text-ink flex h-12 items-center justify-between border px-3 text-14 active:translate-y-px sm:h-13 sm:px-3.5 sm:text-15"
+                }
               >
                 <span className="font-sans font-normal">{option.label}</span>
                 <span className="sm:hidden">
@@ -159,7 +171,7 @@ export function QuantityControl({
               className={
                 selected
                   ? "bg-ink text-on-accent border-ink numeral flex h-12 items-center justify-center border text-16 active:translate-y-px sm:h-13 sm:text-17"
-                  : "text-ink-muted border-border-strong numeral flex h-12 items-center justify-center border bg-transparent text-16 active:translate-y-px sm:h-13 sm:text-17"
+                  : "text-ink-muted border-border-strong hover:border-ink hover:text-ink numeral flex h-12 items-center justify-center border bg-transparent text-16 active:translate-y-px sm:h-13 sm:text-17"
               }
             >
               {option.label}

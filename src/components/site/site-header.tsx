@@ -42,11 +42,15 @@ const NAV_ITEMS: ReadonlyArray<{ id: NavItemId; label: string; href: string }> =
 
 export function SiteHeader({
   variant,
-  active = "tires",
+  active,
 }: {
   variant: "over-hero" | "solid";
-  /** Defaults to "tires" — the active item on all three artboards, e.g.
-   *  results-desktop.html:93. */
+  /** The current nav item. Every drawn route passes its own explicitly
+   *  (tires on `/`, `/results` and tire PDPs, results-desktop.html:93). Omitted
+   *  means NO item is current, which is what `/about`, `/privacy`, `/terms`
+   *  and the 404 need: they belong to none of the four. It used to default to
+   *  "tires", so those pages marked Tires as current in the desktop row and
+   *  the mobile drawer alike. */
   active?: NavItemId;
 }) {
   const drawerLinks: SiteNavDrawerLink[] = NAV_ITEMS.map((item) => ({
@@ -104,7 +108,7 @@ export function SiteHeader({
         {/* Desktop link row — gap-10 (40px, home-desktop.html:100), hidden
             below md: (1100px), tablet band collapses it to the hamburger
             (DESIGN.md §8 "88px, items collapse"). */}
-        <div className="hidden items-center gap-10 md:flex">
+        <div data-print="hide" className="hidden items-center gap-10 md:flex">
           {NAV_ITEMS.map((item) => {
             const isActive = item.id === active;
             return (
@@ -139,6 +143,7 @@ export function SiteHeader({
                    to name `loading.tsx`'s skeleton as the cause; that file was
                    removed in D91b, and the prefetch still earns its place.) */
                 prefetch={true}
+                aria-current={isActive ? "true" : undefined}
                 className={
                   isActive
                     ? "label text-13 tracking-10 text-on-photo relative border-b-2 border-transparent py-2"

@@ -25,13 +25,18 @@ type NavKey = "tires" | "wheels" | "accessories" | "contact";
 
 export interface PageStubProps {
   title: string;
-  /** Which nav item is active for this route. */
+  /** The one paragraph under the `<h1>`. The caller owns the wording: the 404
+   *  is the only caller, and the old built-in "This page is being built" line
+   *  was wrong for it (owner ruling 2026-09-30, "Line + two actions"). */
+  lede: ReactNode;
+  /** Which nav item is active for this route. Omitted means none: the 404
+   *  belongs to no nav item, and defaulting to Tires marked it current. */
   active?: NavKey;
-  /** Optional content under the lede. */
+  /** Content under the lede: the 404's action pair. */
   children?: ReactNode;
 }
 
-export function PageStub({ title, active = "tires", children }: PageStubProps) {
+export function PageStub({ title, lede, active, children }: PageStubProps) {
   return (
     <>
       <SiteHeader variant="solid" active={active} />
@@ -44,7 +49,7 @@ export function PageStub({ title, active = "tires", children }: PageStubProps) {
               {title}
             </h1>
             <p className="text-16 leading-body text-ink-muted mt-6 max-w-measure">
-              This page is being built. Call us and we will help you today.
+              {lede}
             </p>
             {children}
           </div>

@@ -79,8 +79,9 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
   the directive in the file itself and rejects a re-export from a module that carries it — verified by
   building both. The exception is scoped as narrowly as the framework allows: the file is the directive
   plus a one-line re-export and contains **no component code**, which lives at
-  `src/components/site/route-error.tsx` with the other islands. `global-error.tsx` would fall under the
-  same exception if it is ever added. Nothing else under `src/app/` may carry the directive, and the
+  `src/components/site/route-error.tsx` with the other islands. `src/app/global-error.tsx`, added
+  2026-09-30 on the owner's ruling (D93b), falls under the same exception: the directive, the `<html>`/`<body>`
+  the framework requires it to own, and `RouteError` — no component code of its own. Nothing else under `src/app/` may carry the directive, and the
   slop grep should treat any other occurrence as the failure it was always meant to catch.
 - All SEO-relevant content is server-rendered.
 - `next/image` only, always with `sizes` and a reserved aspect box; the hero carries `priority`.
@@ -141,7 +142,9 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
   That stays open — root `llm.md` §7.23(a).)*
 - Unavailable product = dimmed card, "Currently unavailable" badge, "Inquire about restock" CTA.
   The page still returns HTTP 200.
-- A CASL consent checkbox renders **unticked**.
+- A CASL consent checkbox renders **unticked**. *Amended 2026-09-30 (D93b, owner: "Restore their own tick"):* a fresh form always renders it unticked;
+  after a **failed** submit it re-renders the visitor's **own** choice, the same as every other field. Restoring
+  a tick the visitor made is not pre-ticking, and silently clearing it after a typo lost a consent they gave.
 
 ## 8. Content and legal
 

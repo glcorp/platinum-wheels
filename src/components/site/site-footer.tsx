@@ -74,7 +74,15 @@ export function SiteFooter() {
         {/* Right: link columns — grid-cols-2 gap-10 mobile (home-mobile.html:346,
             three children wrap 2+1) → sm:grid-cols-3 sm:gap-6 desktop
             (home-desktop.html:391). */}
-        <div className="grid grid-cols-2 gap-10 sm:col-span-5 sm:grid-cols-3 sm:gap-6">
+        <div
+          /* `id`: the no-JS target of the header Menu link (NJR-5, D91b;
+             `site-nav-drawer.tsx`). A `div`, not a `<nav>`: a second labelled
+             landmark would be new copy, and an unlabelled one fails axe's
+             landmark-unique. The header is static, so no `scroll-mt` is needed;
+             the "Shop" heading is the first thing in the box. */
+          id="site-footer-nav"
+          className="grid grid-cols-2 gap-10 sm:col-span-5 sm:grid-cols-3 sm:gap-6"
+        >
           {linkColumns.map((column) => (
             <div key={column.heading} className="flex flex-col gap-3">
               <span className="label text-11 tracking-12 text-ink-dim">

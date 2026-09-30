@@ -3,7 +3,11 @@ import Link from "next/link";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import { SortSelect } from "@/features/results/components/sort-select";
-import type { ResultsView } from "@/features/results/types";
+import {
+  DEFAULT_SORT,
+  RESULTS_PARAM,
+  type ResultsView,
+} from "@/features/results/types";
 import { ROUTES } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
@@ -110,6 +114,22 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
   /* Without a vehicle in the URL the chip is omitted and the summary reads
      `Add vehicle` (D47(5)). */
   const disclosureCopy = vehicle === null ? "Add vehicle" : "Change vehicle";
+
+  /* Owner, 2026-09-30 (WDG-17, "Keep filters, stay empty"): choosing another
+     car keeps the rest of the page's filters. The finder's GET form carries
+     the chips, brands, price range and sort as hidden fields. Size is left out
+     because the new vehicle derives it, the vehicle is left out because the
+     three selects are it, and `show` is left out because a new search resets
+     the Load-more window (D44). Read off the parsed, normalised query, so the
+     fields are the ones the page itself would serialise. */
+  const q = view.query;
+  const carried: Array<[string, string]> = [
+    ...q.chips.map((chip): [string, string] => [config.chips.param, chip]),
+    ...q.brands.map((brand): [string, string] => [RESULTS_PARAM.brand, brand]),
+  ];
+  if (q.priceMin !== null) carried.push([RESULTS_PARAM.min, String(q.priceMin)]);
+  if (q.priceMax !== null) carried.push([RESULTS_PARAM.max, String(q.priceMax)]);
+  if (q.sort !== DEFAULT_SORT) carried.push([RESULTS_PARAM.sort, q.sort]);
 
   return (
     <div
@@ -273,6 +293,7 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
               variant="inline"
               action={config.route}
               cta={finder.cta}
+              carry={carried}
             />
           </details>
           )}

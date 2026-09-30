@@ -43,6 +43,9 @@ export function BrandStrip() {
       {BRANDS.map((brand) => (
         <li
           key={brand}
+          /* Brand names are proper nouns: machine translation turns
+             "Continental" or "Toyo" into something else (WDG-15). */
+          translate="no"
           className="font-display text-ink-dim leading-flat tracking-2 text-display-20 flex-none font-bold whitespace-nowrap uppercase sm:min-w-0 sm:whitespace-normal sm:wrap-anywhere md:hover:text-ink md:text-display-26 md:text-center"
         >
           {brand}

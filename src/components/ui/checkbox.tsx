@@ -19,9 +19,16 @@ import { join } from "@/lib/cx";
  * `stroke="var(--on-accent)" stroke-width="3"`, `path d="M5 12l5 5L20 7"`.
  * (That facet box is 18px; the consent box this primitive is built for is 20px.)
  *
- * The component never sets `checked` or `defaultChecked`, so it renders unticked
- * — which is what docs/decisions.md §7 requires of the CASL consent box. Keeping
- * it uncontrolled also keeps it a Server Component: no JS is involved.
+ * The component never sets `checked` or `defaultChecked` on its own, so it
+ * renders unticked — which is what docs/decisions.md §7 requires of the CASL
+ * consent box. Keeping it uncontrolled also keeps it a Server Component: no JS
+ * is involved.
+ *
+ * The one exception is `restoreChecked` (D91b, WDG-10, owner ruling
+ * 2026-09-30): React resets an uncontrolled form after a Server Action, so a
+ * failed submit wiped the visitor's own tick. `restoreChecked` renders the box
+ * ticked ONLY to give back that tick, echoed from a rejected submission. It is
+ * not a way to pre-tick a consent box: a fresh form must never pass it.
  */
 
 /**
@@ -49,6 +56,13 @@ export interface CheckboxProps
   /** Parity-probe hook for the ROW box; every other prop lands on the input. */
   labelProbe?: string;
   variant?: CheckboxVariant;
+  /**
+   * Only the visitor's own tick, echoed back after a failed submit (WDG-10).
+   * Renders as `defaultChecked`, so the box stays uncontrolled and React's
+   * post-action form reset lands on it. Never a default, never derived from
+   * anything but the visitor's previous input.
+   */
+  restoreChecked?: boolean;
 }
 
 export function Checkbox({
@@ -58,6 +72,7 @@ export function Checkbox({
   labelProbe,
   children,
   variant = "consent",
+  restoreChecked,
   ...rest
 }: CheckboxProps) {
   const facet = variant === "facet";
@@ -127,6 +142,7 @@ export function Checkbox({
             ].join(" "),
             className,
           )}
+          defaultChecked={restoreChecked ? true : undefined}
           {...rest}
           // After the spread: this control is a checkbox and nothing may change that.
           type="checkbox"

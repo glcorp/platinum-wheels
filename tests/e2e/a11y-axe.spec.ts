@@ -396,7 +396,7 @@ test.describe("live regions", () => {
     await expect(name).toBeFocused();
     await expect(name).toHaveAttribute("aria-invalid", "true");
     await expect(name).toHaveAccessibleDescription("Enter your name.");
-    await expect(email).toHaveAccessibleDescription("Enter a valid email address.");
+    await expect(email).toHaveAccessibleDescription("Enter an email like name@example.com.");
   });
 
   test.fixme("results count announces when Load more reveals cards", async () => {

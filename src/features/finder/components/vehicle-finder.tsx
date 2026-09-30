@@ -62,12 +62,19 @@ export interface VehicleFinderProps {
    * `.claude/rules/ui.md` keeping the drawn phrase's shape.
    */
   cta?: string;
+  /**
+   * Extra `[name, value]` pairs the GET submit carries as hidden inputs — the
+   * results page's own filters, so changing the car keeps them (WDG-17, owner
+   * 2026-09-30). The home hero passes none. Plain markup: works with JS off.
+   */
+  carry?: ReadonlyArray<readonly [string, string]>;
 }
 
 export function VehicleFinder({
   variant = "hero",
   action = ROUTES.results,
   cta = "Find my tires",
+  carry = [],
 }: VehicleFinderProps) {
   return (
     <form
@@ -90,6 +97,9 @@ export function VehicleFinder({
         "p-5 sm:p-8 flex flex-col gap-3 sm:gap-4",
       ].join(" ")}
     >
+      {carry.map(([name, value], index) => (
+        <input key={`${name}-${index}`} type="hidden" name={name} value={value} />
+      ))}
       <div
         className={[
           // Mobile: stacked full-width fields (home.md:36 "flex-direction:column").

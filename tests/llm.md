@@ -15,6 +15,12 @@ has to be rediscovered by the owner in a screenshot (D84, D86 were).
   the overflow assertion. Every spec imports from here, never re-declares a route.
 - [`e2e/*.spec.ts`](e2e/) — one spec per concern; the concern is the filename. See `design/reports/qa.md`
   §1 for the matrix each spec covers.
+- Senior-pass specs (D93b): `e2e/routes.spec.ts` (current-nav rule, status table for wrong URLs, 404 axe),
+  `e2e/hostile-query.spec.ts` (hostile query strings; `HOSTILE_TABLE=<file>` dumps a JSON row per case),
+  `e2e/crawl.spec.ts` (every-control crawl: hit-test, name, links, effect, target size) and
+  `e2e/environment.spec.ts` (offline, blocked storage, failed images/fonts, CPU races, rotation, zoom, print,
+  two tabs). `PW_ROOT_ERROR=1` enables the root-layout-error tests in `error-boundary.spec.ts` and needs a
+  scratch server whose root layout throws.
 - `e2e/**/__screenshots__/` — `toHaveScreenshot` baselines (macOS, Chromium only). Committed.
 
 ## Rules
@@ -47,6 +53,8 @@ has to be rediscovered by the owner in a screenshot (D84, D86 were).
 |---|---|---|---|---|
 | — | 2026-09-29 | Visual regression + axe are in scope; `docs/decisions.md` §10 amended in place. | Owner's QA brief asked for `toHaveScreenshot` baselines and axe per route. | **D91b** |
 | — | 2026-09-29 | Port 3100, so `next dev` on :3000 and the artboards on :4000 can run beside it. | Three servers, one machine. | *derived*, D91b |
+| — | 2026-09-30 | `PW_PORT=<port>` points the suite at a private production build (`reuseExistingServer`), so a gate run never touches :3100 or another session's servers. | Several sessions share one machine. | *derived*, D93b |
+| — | 2026-09-30 | `visual.spec` reveals every `[data-reveal="pending"]` section before capture. | The D91b home baselines were blank below the fold. | **D93b** |
 | — | 2026-09-30 | `/styleguide` visual baselines run under `prefers-reduced-motion: reduce` rather than masking §12's sweeping `LoaderMark`; the 1.4.12 text-spacing cell for `/styleguide` at 320 is skipped (fixed-size type specimens, internal `noindex`). | Keep the loader in the diff in its static form; a specimen word cannot fit 320 by construction. | *derived*, D91b |
 
 ## Connects to
@@ -64,5 +72,7 @@ has to be rediscovered by the owner in a screenshot (D84, D86 were).
 - **Load sensitivity.** At 5–6 workers on this 8-core machine a handful of timing tests (the INP proxy,
   pre-hydration clicks) can fail and pass alone; the gate run uses `--workers=5`. A CI box with more cores
   should use the config's `workers`. Coordinator.
+- **Suite size.** With the senior-pass specs the full run is ~10,000 tests (the hostile-query and crawl tables
+  multiply by 15 projects); budget hours, not minutes, at `--workers=5`. Coordinator.
 - **Real Mobile Safari.** The iOS Simulator needs full Xcode; this machine has only the Command Line
   Tools, so the WebKit device projects are the proxy. Owner installs Xcode to close it.

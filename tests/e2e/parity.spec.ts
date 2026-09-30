@@ -196,7 +196,7 @@ const BOARDS: Board[] = [
       {
         label: "product card",
         design: t("Antarctica Sport", { up: 3 }),
-        app: t("Antarctica Sport", { nth: 0, up: 3 }),
+        app: t("Antarctica Sport", { nth: 0, up: 3, prefix: true }),
         props: ["w", "h", "background-color", "border-top-color", "x", "y"],
       },
       {
@@ -367,11 +367,14 @@ const BOARDS: Board[] = [
       {
         label: "product card",
         design: t("Antarctica Sport", { nth: 0, up: 3 }),
+        // The app's model link carries an sr-only size tail (2.4.4, D93b).
+        app: t("Antarctica Sport", { nth: 0, up: 3, prefix: true }),
         props: ["w", "h", "background-color", "border-top-color", "x"],
       },
       {
         label: "best grid",
         design: t("Antarctica Sport", { nth: 0, up: 4 }),
+        app: t("Antarctica Sport", { nth: 0, up: 4, prefix: true }),
         props: ["grid-template-columns", "column-gap", "x"],
       },
       { label: "Similar matches", design: t("Similar matches"), props: ["font-size", "line-height", "x", "w"] },
@@ -448,6 +451,8 @@ const BOARDS: Board[] = [
       {
         label: "product card",
         design: t("Antarctica Sport", { nth: 0, up: 3 }),
+        // The app's model link carries an sr-only size tail (2.4.4, D93b).
+        app: t("Antarctica Sport", { nth: 0, up: 3, prefix: true }),
         props: ["w", "h", "x", "background-color", "border-top-color"],
       },
       {

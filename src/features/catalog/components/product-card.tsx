@@ -412,7 +412,10 @@ export function ProductCard({
             D91b: a flex item pushed right by `ml-auto` rather than an
             absolute layer (see the photo box), `relative` for paint order,
             `min-w-0 break-words` so a long brand wraps inside the photo. */}
-        <span className="display text-ink-muted leading-badge pointer-events-none relative ml-auto min-w-0 break-words text-11 tracking-8">
+        <span
+          translate="no"
+          className="display text-ink-muted leading-badge pointer-events-none relative ml-auto min-w-0 break-words text-11 tracking-8"
+        >
           {brand}
         </span>
       </div>
@@ -457,6 +460,9 @@ export function ProductCard({
             className="display text-ink text-display-24 tap-extend break-words active:opacity-70 sm:text-display-28"
           >
             {model}
+            {/* WDG-2.4.4: the same model in two sizes must not read as two
+                identical links. Pixels unchanged (`sr-only`). */}
+            <span className="sr-only">{` ${size}`}</span>
           </Link>
         </div>
 

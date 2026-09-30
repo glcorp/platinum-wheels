@@ -46,7 +46,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useLayoutEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -56,6 +62,7 @@ import {
   clearFilters,
   parseResultsQuery,
   resultsHref,
+  withPriceBounds,
 } from "@/features/results/query";
 import {
   DEFAULT_SORT,
@@ -447,6 +454,23 @@ export function FilterPanel({
   const { query, facets } = view;
   const rail = variant === "rail";
   const href = resultsHref(query);
+  const priceFloor = facets.price.min;
+  const priceCeiling = facets.price.max;
+
+  /* The URL a form commits to. A range input always submits both handles, so
+     the raw form pins `min`/`max` at the bounds on every commit; a bound that
+     equals the seed's is no filter and stays out of the href, the same as the
+     server drops it (`withPriceBounds`, QA WDG-07). */
+  const hrefFromForm = useCallback(
+    (form: HTMLFormElement) =>
+      resultsHref(
+        withPriceBounds(parseResultsQuery(query.category, readForm(form)), {
+          min: priceFloor,
+          max: priceCeiling,
+        }),
+      ),
+    [query.category, priceFloor, priceCeiling],
+  );
 
   /* Commit: the form's own FormData is the single source of the next URL, so a
      scripted change and a no-JS submit can never disagree.
@@ -472,9 +496,7 @@ export function FilterPanel({
       const target = event.target;
       refocusRef.current =
         target instanceof HTMLElement && target.id !== "" ? target.id : null;
-      const next = resultsHref(
-        parseResultsQuery(query.category, readForm(form)),
-      );
+      const next = hrefFromForm(form);
       startTransition(() => {
         router.replace(next, { scroll: false });
       });
@@ -484,7 +506,7 @@ export function FilterPanel({
     return () => {
       form.removeEventListener("change", handleChange);
     };
-  }, [href, query.category, router, startTransition]);
+  }, [href, hrefFromForm, router, startTransition]);
 
   /* The href has changed, so the keyed form has just re-mounted: put focus back
      on the control the user operated, and only then tell the sheet to close.
@@ -537,9 +559,7 @@ export function FilterPanel({
       action={CATEGORY_CONFIG[query.category].route}
       onSubmit={(event) => {
         event.preventDefault();
-        const next = resultsHref(
-          parseResultsQuery(query.category, readForm(event.currentTarget)),
-        );
+        const next = hrefFromForm(event.currentTarget);
         if (next === href) {
           /* Nothing moved, so no navigation will arrive to close on. */
           onNavigate?.();

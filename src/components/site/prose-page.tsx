@@ -79,7 +79,8 @@ export interface ProsePageProps {
   title: string;
   /** One sentence beside the `<h1>` on desktop, under it below `md:`. */
   lede: string;
-  /** Which nav item the header marks as current. */
+  /** Which nav item the header marks as current. Omitted means none, which is
+   *  what all three written pages pass: they belong to no nav item. */
   active?: NavKey;
   /** Full-width band under the page header: the fact row on `/about`. Unused
    *  on `/privacy` and `/terms` since the 2026-09-22 simplification dropped

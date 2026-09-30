@@ -27,6 +27,9 @@
 export interface QuoteErrorSummaryProps {
   /** How many fields failed validation. Renders nothing at 0. */
   count: number;
+  /** A whole-form line with no field behind it (the send failed, ENV-1). Takes
+   *  the place of the count sentence and renders even at `count` 0. */
+  message?: string;
   /** `"alert"` in the live form; omitted on `/styleguide`. */
   role?: "alert";
   /** `-1` in the live form so `QuoteForm` can focus it. */
@@ -36,11 +39,12 @@ export interface QuoteErrorSummaryProps {
 
 export function QuoteErrorSummary({
   count,
+  message,
   role,
   tabIndex,
   ref,
 }: QuoteErrorSummaryProps) {
-  if (count <= 0) return null;
+  if (count <= 0 && !message) return null;
 
   return (
     <p
@@ -61,9 +65,10 @@ export function QuoteErrorSummary({
     >
       {/* New copy. Names the count so the announcement is useful on its own,
           and says what it blocks. No em dash (`.claude/rules/ui.md` "Copy"). */}
-      {count === 1
-        ? "1 field needs a fix before this can be sent."
-        : `${count} fields need a fix before this can be sent.`}
+      {message ??
+        (count === 1
+          ? "1 field needs a fix before we can send your inquiry."
+          : `${count} fields need a fix before we can send your inquiry.`)}
     </p>
   );
 }

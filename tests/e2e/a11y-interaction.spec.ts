@@ -1153,7 +1153,7 @@ test.describe("reduced motion", () => {
     await track.scrollIntoViewIfNeeded();
     expect(await track.evaluate((el) => getComputedStyle(el).scrollBehavior)).toBe("auto");
     const before = await track.evaluate((el) => el.scrollLeft);
-    await page.getByRole("button", { name: "Next", exact: true }).filter({ visible: true }).first().click();
+    await page.getByRole("button", { name: "Next featured tire", exact: true }).filter({ visible: true }).first().click();
     const firstFrames = await track.evaluate(
       (el) =>
         new Promise<number>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(el.scrollLeft)))),

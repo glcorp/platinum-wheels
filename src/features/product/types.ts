@@ -241,6 +241,11 @@ export interface QuoteFormState {
   errors?: Partial<Record<QuoteField, string>>;
   /** Echoed back on `invalid` only. Never echoed on `success`. */
   values?: Partial<Record<QuoteField, string>>;
+  /** A whole-form notice with no field behind it: the send itself failed
+   *  (offline, dropped connection). Set by `quote-form.tsx`'s client wrapper,
+   *  never by the Server Action (D93b, ENV-1). Always with `status: "invalid"`
+   *  and empty `errors`, and `values` echoes everything the visitor typed. */
+  notice?: string;
 }
 
 export const QUOTE_INITIAL_STATE: QuoteFormState = { status: "idle" };

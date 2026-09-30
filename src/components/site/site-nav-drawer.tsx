@@ -12,8 +12,40 @@
    --------------------------------------------------------------------------- */
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
+
+/* NJR-5 (D91b, owner ruling 2026-09-30 "Menu jumps to footer nav"). The drawer
+   is a JS `<dialog>`, so with scripting off the trigger used to be a visible,
+   focusable, inert button. Until the island hydrates the trigger is now a link
+   to the footer's nav columns (`id="site-footer-nav"` in `site-footer.tsx`),
+   the one place the primary nav is reachable without JS. `useSyncExternalStore`
+   is the hydration signal: the server snapshot is `false`, the client's is
+   `true`, so the first client render still matches the server markup and no
+   effect has to set state (`react-hooks/set-state-in-effect`). Same classes,
+   same icon, same name "Menu", so the two elements paint identically. */
+const subscribeNever = () => () => {};
+const isHydrated = () => true;
+const notHydrated = () => false;
+
+const TRIGGER_CLASS =
+  "text-on-photo inline-flex size-11 touch-manipulation items-center justify-center bg-transparent active:translate-y-px";
+
+const MENU_ICON = (
+  /* 22x22 three-bar icon, stroke-width 1.6, round caps — home-mobile.html:88-90 */
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    aria-hidden="true"
+  >
+    <path d="M3 7h18M3 12h18M3 17h18" />
+  </svg>
+);
 
 export type SiteNavDrawerLink = {
   label: string;
@@ -30,6 +62,7 @@ export function SiteNavDrawer({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
+  const hydrated = useSyncExternalStore(subscribeNever, isHydrated, notHydrated);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -50,29 +83,23 @@ export function SiteNavDrawer({
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="Menu"
-        aria-expanded={open}
-        aria-controls="site-nav-drawer"
-        onClick={() => setOpen(true)}
-        /* `active:translate-y-px` — the boxed-control press (D92b). */
-        className="text-on-photo inline-flex size-11 touch-manipulation items-center justify-center bg-transparent active:translate-y-px"
-      >
-        {/* 22x22 three-bar icon, stroke-width 1.6, round caps — home-mobile.html:88-90 */}
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          aria-hidden="true"
+      {hydrated ? (
+        <button
+          type="button"
+          aria-label="Menu"
+          aria-expanded={open}
+          aria-controls="site-nav-drawer"
+          onClick={() => setOpen(true)}
+          /* `active:translate-y-px` — the boxed-control press (D92b). */
+          className={TRIGGER_CLASS}
         >
-          <path d="M3 7h18M3 12h18M3 17h18" />
-        </svg>
-      </button>
+          {MENU_ICON}
+        </button>
+      ) : (
+        <a href="#site-footer-nav" aria-label="Menu" className={TRIGGER_CLASS}>
+          {MENU_ICON}
+        </a>
+      )}
 
       <dialog
         id="site-nav-drawer"
@@ -144,6 +171,7 @@ export function SiteNavDrawer({
                 <Link
                   href={link.href}
                   onClick={() => setOpen(false)}
+                  aria-current={link.active ? "true" : undefined}
                   className={
                     link.active
                       ? "display text-display-40 text-ink border-accent inline-block border-b-2 active:opacity-70"
