@@ -15,8 +15,12 @@ renders empty until the pipeline is re-run.
 - `photos/hero-tread.webp` — 2400×1600, 480KB; served by `next/image` at **13.0KB / 390px**. Licensed
   Unsplash `CTwQiFlpgrM`, Rob Wingate (**D4**, `design/ASSET-CREDITS.md:10`). It replaces the artboard's
   hotlinked Vossen/Ferrari photo (`design/DEVIATIONS.md` #1).
-- `photos/{accessories,tires-tile,wheels-tile,winter-tacoma}.webp` — client-supplied, from
-  `design/assets/photos/`, long edge capped at 1600 (`scripts/prepare-assets.mjs:33-34`).
+- `photos/{accessories,tires-tile,wheels-tile,winter-tacoma}.webp` — **licensed Unsplash photographs since
+  D94b** (owner: replace the placeholder home photos with HD ones), built by `replacementPhotos()` in
+  `scripts/prepare-assets.mjs` from `client-assets/photos/*.jpg`, long edge capped at 2400, wheels and
+  winter pre-cropped (`CROPS`). Sources and licences: `design/ASSET-CREDITS.md`. The original client PNGs stay
+  in `design/assets/photos/` (frozen) and are overwritten in the output by the replacements. The filename
+  `winter-tacoma` is kept because two components import it; it no longer shows a Tacoma.
 - `logo/platinum-wheels-logo-transparent.webp` — **the working file**, used everywhere in the UI.
 - `logo/platinum-wheels-logo.webp` — the white-plate original; **print/invoice only**
   (`design/ASSET-CREDITS.md:38`, DESIGN.md §0). 512px cap covers the 64px nav and 120px footer at 4×
@@ -53,6 +57,7 @@ renders empty until the pipeline is re-run.
   rest of the set and that is deliberate, visible evidence of a client blocker
   (`HANDOFF.md` §7, `design/DEVIATIONS.md` bottom).
 - Don't use `logo/platinum-wheels-logo.webp` (white plate) in the UI — transparent is the working file.
+- Don't delete `client-assets/photos/`: `npm run assets` rebuilds the four home photos from it (D94b).
 - Don't assume `npm run assets` regenerates the hero: `hero-tread.webp` has **no source** in
   `design/assets/photos/` and is placed by hand under **D4**. The pipeline never touches it.
 

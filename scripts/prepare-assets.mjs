@@ -251,9 +251,54 @@ async function scaled(folder, max) {
   }
 }
 
+/**
+ * Photographs that REPLACE a same-named design-export photo (D94b): licensed
+ * Unsplash JPEGs in `client-assets/photos/`, recorded in `design/ASSET-CREDITS.md`.
+ * They run after `scaled("photos")` so they win, and the frozen PNGs in
+ * `design/assets/photos/` stay untouched. `CROPS` pre-crops a landscape source
+ * to a portrait box around its subject (`cx` = subject centre as a fraction of
+ * the width) so `object-cover` in a narrow tile does not cut the subject.
+ */
+const CROPS = {
+  "wheels-tile": { aspect: 3 / 4, cx: 0.49 },
+  // The car sits low and left in the frame; 4:3 anchored to the bottom keeps it
+  // inside both the promo's near-square panel and the contact card's wide crop.
+  "winter-tacoma": { aspect: 4 / 3, cx: 0.33, bottom: true },
+};
+const REPLACEMENT_MAX = 2400;
+
+async function replacementPhotos() {
+  let files = [];
+  try {
+    files = (await readdir(join(CLIENT_SRC, "photos"))).filter((f) => f.endsWith(".jpg"));
+  } catch {
+    return;
+  }
+  for (const f of files) {
+    const name = parse(f).name;
+    const src = join(CLIENT_SRC, "photos", f);
+    let img = sharp(src);
+    const crop = CROPS[name];
+    if (crop) {
+      const { width, height } = await sharp(src).metadata();
+      const w = Math.min(width, Math.round(height * crop.aspect));
+      const h = Math.round(w / crop.aspect);
+      const left = Math.min(width - w, Math.max(0, Math.round(width * crop.cx - w / 2)));
+      img = img.extract({ left, top: crop.bottom ? height - h : 0, width: w, height: h });
+    }
+    await emit(
+      "photos",
+      src,
+      join(OUT, "photos", `${name}.webp`),
+      img.resize(REPLACEMENT_MAX, REPLACEMENT_MAX, { fit: "inside", withoutEnlargement: true }),
+    );
+  }
+}
+
 await products();
 await clientProducts();
 await scaled("photos", PHOTO_MAX);
+await replacementPhotos();
 await scaled("logo", LOGO_MAX);
 
 const mb = (n) => (n / 1048576).toFixed(2).padStart(6) + "MB";

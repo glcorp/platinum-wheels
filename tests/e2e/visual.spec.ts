@@ -57,7 +57,7 @@ async function stabilise(page: Page) {
     const root = document.scrollingElement ?? document.documentElement;
     const step = Math.max(200, Math.floor(innerHeight * 0.8));
     for (let y = 0; y < root.scrollHeight; y += step) {
-      window.scrollTo(0, y);
+      window.scrollTo({ top: y, behavior: "instant" });
       await frame();
       await frame();
     }
@@ -68,7 +68,7 @@ async function stabilise(page: Page) {
       });
     for (const img of paintable()) {
       if (img.complete) continue;
-      img.scrollIntoView({ block: "center", inline: "nearest" });
+      img.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
       await new Promise<void>((resolve) => {
         if (img.complete) return resolve();
         img.addEventListener("load", () => resolve(), { once: true });
@@ -76,7 +76,7 @@ async function stabilise(page: Page) {
       });
     }
     await Promise.all(paintable().map((img) => img.decode().catch(() => undefined)));
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "instant" });
   });
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   // The D92b reveal flips a section on an IntersectionObserver callback. A
