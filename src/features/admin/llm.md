@@ -8,7 +8,7 @@ and destined for `admin.platinumwheels.ca`. It exists because the shop's selling
 money. Delete this folder and the owner has no way to raise a payment link, and the storefront's
 quote-first model terminates in a phone call with nothing to send.
 
-Since D99–D107 it is backed by real payments: the builder writes a `payment_links` row through
+Since D99–D108 it is backed by real payments: the builder writes a `payment_links` row through
 `src/features/payments/` and hands back the customer's `pay.platinumwheels.ca/pay/<token>` URL, and the
 links list shows which links were paid (D106). Sign-in is still one shared account, hardened by D95
 rather than replaced by an auth system.
@@ -28,10 +28,10 @@ rather than replaced by an auth system.
   touching anything auth-shaped.**
 - [`auth-actions.ts`](auth-actions.ts) — `"use server"`. `signIn` (origin check, validates, opens a
   session, logs, redirects) and `signOut` (`requireAdminAction()`, then clears the cookie).
-- [`payment-link-actions.ts`](payment-link-actions.ts) — `"use server"`, three actions, each calling
+- [`payment-link-actions.ts`](payment-link-actions.ts) — `"use server"`, two actions, each calling
   `requireAdminAction()` first. `createPaymentLink` validates amount, description and expiry, then
-  creates the link (idempotent on a per-render key). `cancelPaymentLink` and `checkPaymentLink` serve the
-  links list (D106).
+  creates the link (idempotent on a per-render key). `cancelPaymentLink` serves the links list
+  (D106). There is no check-payment action: the admin never calls the gateway (D108).
 - [`components/login-form.tsx`](components/login-form.tsx) — client island. `useActionState` + focus
   management, the `quote-form.tsx` idiom.
 - [`components/login-error-summary.tsx`](components/login-error-summary.tsx) — authored error state,
@@ -43,9 +43,10 @@ rather than replaced by an auth system.
 - [`components/payment-link-success.tsx`](components/payment-link-success.tsx) — authored success state:
   the link, reference, amount, expiry, and the **test mode** notice while the gateway is the demo (D107).
 - [`components/payment-link-list.tsx`](components/payment-link-list.tsx) — the latest 50 links as stacked
-  cards: status, paid-with card and approval code, duplicate-payment alert, copy link (D106).
+  cards: status, paid-with card and approval code, duplicate-payment alert, the *Payment started, not
+  confirmed* note for an attempt that never returned (D108), copy link (D106).
 - [`components/link-row-actions.tsx`](components/link-row-actions.tsx) — client island. Cancel (with a
-  confirm) and Check payment for one row.
+  confirm) for one row.
 - [`components/copy-link-button.tsx`](components/copy-link-button.tsx) — client island. Clipboard write
   with a real failure path.
 

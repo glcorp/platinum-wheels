@@ -48,7 +48,7 @@ import {
 } from "@/features/admin/types";
 import { payLinkUrl, publicPayOrigin } from "@/features/payments/config";
 import { parseAmountToCents } from "@/features/payments/money";
-import { cancelLink, createLink, reconcileLink } from "@/features/payments/service";
+import { cancelLink, createLink } from "@/features/payments/service";
 
 /**
  * Shape of a valid amount once `$`, spaces and thousands commas are stripped:
@@ -216,7 +216,7 @@ export async function createPaymentLink(
 }
 
 /* ===========================================================================
-   Links list — Cancel and Check payment
+   Links list — Cancel
    =========================================================================== */
 
 function readLinkId(formData: FormData): string | null {
@@ -238,28 +238,4 @@ export async function cancelPaymentLink(_prev: LinkActionState, formData: FormDa
     status: "error",
     message: result.state === "paid" ? "This link is already paid, so it can't be cancelled." : "This link is already closed.",
   };
-}
-
-/** Ask the gateway now about a link whose customer never came back, instead
- *  of waiting for the daily reconcile. */
-export async function checkPaymentLink(_prev: LinkActionState, formData: FormData): Promise<LinkActionState> {
-  await requireAdminAction(formData);
-  const id = readLinkId(formData);
-  if (!id) return { status: "error", message: "That link could not be found." };
-
-  let summary;
-  try {
-    summary = await reconcileLink(id);
-  } catch (error) {
-    console.error(
-      JSON.stringify({ at: "admin.checkPaymentLink", detail: error instanceof Error ? error.message : "unknown" }),
-    );
-    return { status: "error", message: "Couldn't reach the payment service. Try again in a minute." };
-  }
-  revalidatePath(ADMIN_ROUTES.home);
-
-  if (summary.approved > 0) return { status: "done", message: "Payment confirmed. The link is paid." };
-  if (summary.duplicate > 0) return { status: "error", message: "A second payment was taken. Refund it in the payment portal." };
-  if (summary.unresolved > 0) return { status: "done", message: "Still waiting on the customer. Check again later." };
-  return { status: "done", message: "No payment was made on the open attempts." };
 }

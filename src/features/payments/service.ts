@@ -17,15 +17,16 @@
         The partial unique index makes a second `approved` impossible anyway.
      5. Every change writes a `payment_events` row, in the same transaction.
 
-   Callers: the `/pay` routes (customer), the admin actions (staff) and the
-   reconcile cron (system). The gateway is passed in, so the money logic runs
-   against a fake in tests; only `reconcileLink` defaults to the configured
-   Converge account, so the admin never has to import a gateway (D106).
+   Callers: the `/pay` routes (customer) and the admin actions (staff). The
+   gateway is passed in, so the money logic runs against a fake in tests.
+
+   There is no reconcile (D108): an attempt whose customer never comes back
+   through `/pay/return` stays `pending`, and the admin list says so.
    --------------------------------------------------------------------------- */
 
 import { randomBytes } from "node:crypto";
 
-import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db/client";
 import {
@@ -37,17 +38,12 @@ import {
   type PaymentLink,
 } from "@/db/schema";
 
-import { convergeGateway } from "./converge";
 import { linkState, type Gateway, type GatewayTransaction, type LinkState } from "./types";
 
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 /** Converge session tokens live 15 minutes (Elavon, `docs/payments.md` §2). */
 const SESSION_TTL_MS = 15 * 60 * 1000;
-
-/** The reconcile leaves an attempt alone until its session has been dead
- *  this long, so a customer still on the hosted page is never raced. */
-const RECONCILE_GRACE_MS = 5 * 60 * 1000;
 
 /** Attempts per link, so a script cannot burn the proxy quota or the
  *  gateway's fraud rules through one leaked link. */
@@ -287,12 +283,12 @@ type ResolveOutcome = "approved" | "duplicate" | "declined" | "unchanged" | "mis
 
 /**
  * Apply one gateway-verified transaction to its attempt. Called by the return
- * route and the reconcile; both got `txn` from a server-side query.
+ * route, which got `txn` from a server-side query.
  */
 async function resolveAttempt(
   attemptId: string,
   txn: GatewayTransaction,
-  source: "return" | "reconcile" | "staff",
+  source: "return",
   db: Database,
 ): Promise<ResolveOutcome> {
   return db.transaction(async (tx) => {
@@ -411,95 +407,4 @@ export async function handleReturn(
   const txn = transactions.find((t) => t.txnId === txnId);
   if (txn) await resolveAttempt(row.attemptId, txn, "return", db);
   return row.publicToken;
-}
-
-/* ===========================================================================
-   Reconcile — attempts whose customer never came back
-   =========================================================================== */
-
-export interface ReconcileSummary {
-  checked: number;
-  approved: number;
-  declined: number;
-  duplicate: number;
-  expired: number;
-  unresolved: number;
-}
-
-async function reconcileAttempts(
-  attempts: PaymentAttempt[],
-  gateway: Gateway,
-  source: "reconcile" | "staff",
-  db: Database,
-): Promise<ReconcileSummary> {
-  const summary: ReconcileSummary = { checked: 0, approved: 0, declined: 0, duplicate: 0, expired: 0, unresolved: 0 };
-
-  for (const attempt of attempts) {
-    summary.checked += 1;
-    const result = await gateway.findByInvoice(attempt.providerInvoiceNumber);
-    if (!result.ok) {
-      summary.unresolved += 1;
-      console.error(JSON.stringify({ at: "payments.reconcile", invoice: attempt.providerInvoiceNumber, detail: result.detail }));
-      continue;
-    }
-
-    const matches = result.transactions.filter((t) => t.invoiceNumber === attempt.providerInvoiceNumber);
-    if (matches.length === 0) {
-      // Only once the session is dead can "no transaction" mean "never paid".
-      if (attempt.sessionExpiresAt.getTime() + RECONCILE_GRACE_MS > Date.now()) {
-        summary.unresolved += 1;
-        continue;
-      }
-      await db.transaction(async (tx) => {
-        const updated = await tx
-          .update(paymentAttempts)
-          .set({ status: "expired" })
-          .where(and(eq(paymentAttempts.id, attempt.id), eq(paymentAttempts.status, "pending")))
-          .returning({ id: paymentAttempts.id });
-        if (updated.length > 0) {
-          await event(tx, { linkId: attempt.linkId, attemptId: attempt.id, type: "attempt.expired", actor: "system", data: { source } });
-        }
-      });
-      summary.expired += 1;
-      continue;
-    }
-
-    // Approved first, so an approval is never masked by an earlier decline.
-    const ordered = [...matches].sort((a, b) => Number(b.outcome === "approved") - Number(a.outcome === "approved"));
-    const outcome = await resolveAttempt(attempt.id, ordered[0], source, db);
-    if (outcome === "approved") summary.approved += 1;
-    else if (outcome === "declined") summary.declined += 1;
-    else if (outcome === "duplicate") summary.duplicate += 1;
-    else summary.unresolved += 1;
-  }
-  return summary;
-}
-
-/** The daily cron: every pending attempt whose session has been dead a while. */
-export async function reconcilePending(gateway: Gateway, db: Database = getDb()): Promise<ReconcileSummary> {
-  const cutoff = new Date(Date.now() - RECONCILE_GRACE_MS);
-  const attempts = await db
-    .select()
-    .from(paymentAttempts)
-    .where(and(eq(paymentAttempts.status, "pending"), lt(paymentAttempts.sessionExpiresAt, cutoff)))
-    .orderBy(asc(paymentAttempts.createdAt))
-    .limit(100);
-  return reconcileAttempts(attempts, gateway, "reconcile", db);
-}
-
-/** Staff pressed "Check payment" on one link: every pending attempt, any age.
- *  An attempt still inside its session is queried but never expired.
- *  `gateway` defaults to the configured Converge account, so the admin can
- *  call this without ever importing a gateway itself (D106). */
-export async function reconcileLink(
-  linkId: string,
-  gateway: Gateway = convergeGateway(),
-  db: Database = getDb(),
-): Promise<ReconcileSummary> {
-  const attempts = await db
-    .select()
-    .from(paymentAttempts)
-    .where(and(eq(paymentAttempts.linkId, linkId), eq(paymentAttempts.status, "pending")))
-    .orderBy(asc(paymentAttempts.attemptNo));
-  return reconcileAttempts(attempts, gateway, "staff", db);
 }

@@ -48,7 +48,7 @@ const HOSTS = {
 } as const;
 
 /** Elavon recommends 60–120 s. A timeout on the token call means no session
- *  was issued; on a query it means "unknown", left for the reconcile. */
+ *  was issued; on a query it means "unknown": the attempt stays `pending` (D108). */
 const TIMEOUT_MS = 60_000;
 
 /** Converge's limits: invoice number ≤ 25 chars; description kept short so
@@ -261,6 +261,5 @@ export function convergeGateway(config: ConvergeConfig = getConvergeConfig()): G
     environment: config.environment,
     createSession: (request) => createSession(config, request),
     getTransaction: (txnId) => query(config, { ssl_txn_id: txnId }),
-    findByInvoice: (invoiceNumber) => query(config, { ssl_invoice_number: invoiceNumber }),
   };
 }

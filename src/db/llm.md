@@ -38,8 +38,8 @@ Proposed rows are listed in `docs/payments.md` §9; IDs are assigned in root `ll
 
 - **Depends on:** `drizzle-orm`, `pg`, `@vercel/functions`; env vars `DATABASE_URL`,
   `DATABASE_URL_UNPOOLED` (Vercel Neon integration).
-- **Depended on by:** `src/features/payments/service.ts` (every read and write; D99–D107), and through it
-  the admin, `/pay` and the reconcile cron.
+- **Depended on by:** `src/features/payments/service.ts` (every read and write; D99–D108), and through it
+  the admin and `/pay`.
 
 ## Don't
 

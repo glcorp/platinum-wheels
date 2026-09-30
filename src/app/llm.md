@@ -20,7 +20,6 @@ entire site loses its type or its palette at once.
 - [`(storefront)/`](<(storefront)/llm.md>) — the storefront route group. Has its own `llm.md`.
 - [`admin/`](admin/llm.md) — the staff tool segment (D89). Has its own `llm.md`.
 - [`pay/`](pay/llm.md) — the customer payment routes on `pay.platinumwheels.ca` (D105). Has its own `llm.md`.
-- [`api/`](api/llm.md) — machine endpoints: the daily payment reconcile cron (D107). Has its own `llm.md`.
 
 ## Rules
 `globals.css`, in the ten lines worth internalising — point at the file, don't restate its comments:

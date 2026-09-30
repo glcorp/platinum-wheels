@@ -45,7 +45,7 @@ function attemptNotice(attempt: PaymentAttempt | null): string | null {
     case "pending":
       return attempt.sessionExpiresAt.getTime() > Date.now()
         ? "A payment was started on this link in the last few minutes. If you finished it, wait a moment and refresh this page before paying again."
-        : null;
+        : "A payment was started on this link earlier and we couldn't confirm it. If your card was charged, please don't pay again: call or email us and we'll sort it out.";
     default:
       return null;
   }

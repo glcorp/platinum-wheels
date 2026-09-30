@@ -13,7 +13,9 @@ import type { LinkSummary } from "@/features/payments/service";
    in this repo. Tokens and roles are the success panel's.
 
    The status word is the database's, derived at request time: `expired` is
-   computed, never stored (`src/db/schema.ts`).
+   computed, never stored (`src/db/schema.ts`). Rendering this list reads our
+   database only and never calls the gateway (D108), so a customer who paid
+   and closed the tab before returning shows as "started, not confirmed".
    --------------------------------------------------------------------------- */
 
 const DATE = new Intl.DateTimeFormat("en-CA", {
@@ -94,19 +96,14 @@ export function PaymentLinkList({
           ) : null}
           {pendingAttempts > 0 && state !== "paid" ? (
             <p className="text-ink-muted text-13 leading-body">
-              A payment was started and not confirmed yet. It is checked automatically once a day, or press Check
-              payment.
+              Payment started, not confirmed. The customer opened the card page and we never heard back. Check the
+              payment portal (invoice numbers start {link.reference}) before treating this link as unpaid.
             </p>
           ) : null}
 
           {state === "active" ? <CopyLinkButton value={payLinkUrl(origin, link.publicToken)} /> : null}
 
-          <LinkRowActions
-            csrfToken={csrfToken}
-            linkId={link.id}
-            canCancel={state === "active"}
-            canCheck={pendingAttempts > 0}
-          />
+          <LinkRowActions csrfToken={csrfToken} linkId={link.id} canCancel={state === "active"} />
         </li>
       ))}
     </ul>

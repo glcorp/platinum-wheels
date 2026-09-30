@@ -10,8 +10,10 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
 - [`[token]/page.tsx`](%5Btoken%5D/page.tsx) — `/pay/<token>`: amount, description, reference, expiry and
   the Pay island, or the paid, expired or cancelled state. Dynamic, read at request time.
 - [`return/route.ts`](return/route.ts) — `/pay/return`, the one URL Converge sends every customer back to
-  (GET or POST). It verifies server-side, then 303s to the link's page.
-- [`done/page.tsx`](done/page.tsx) — `/pay/done`, the landing page for a return that matched no link.
+  (GET or POST). It verifies server-side, then 303s to the link's page. It is the
+  only thing that settles an attempt (D108).
+- [`done/page.tsx`](done/page.tsx) — `/pay/done`, the landing page for a return that matched no link. It
+  tells the customer not to pay twice and to call the shop.
 
 ## Rules
 
@@ -27,7 +29,7 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
 
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
-| — | — | None folder-scoped. | See D100, D105, D107 in root `llm.md` §5b. | — |
+| — | — | None folder-scoped. | See D100, D105, D107, D108 in root `llm.md` §5b. | — |
 
 ## Connects to
 

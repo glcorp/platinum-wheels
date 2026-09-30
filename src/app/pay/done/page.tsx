@@ -5,8 +5,8 @@ import { CONTACTS, SITE } from "@/lib/site";
 /* ---------------------------------------------------------------------------
    /pay/done — where `/pay/return` lands a customer it could not match to a
    link (Converge sent no usable transaction or invoice number). Nothing about
-   the payment is known here, so it claims nothing: the daily reconcile will
-   find the transaction by invoice number if there is one.
+   the payment is known here, so it claims nothing, and nothing will look the
+   payment up later (D108): the copy sends the customer to the shop.
    --------------------------------------------------------------------------- */
 
 export const metadata: Metadata = {
@@ -19,10 +19,10 @@ export default function PayDonePage() {
   return (
     <main id="main" tabIndex={-1} className="w-full flex-1 px-4 pt-14 pb-20 sm:px-8">
       <div className="bg-surface border-border-strong mx-auto flex w-full max-w-measure flex-col gap-4 border p-5 sm:p-8">
-        <h1 className="display text-ink text-display-28 sm:text-display-40">Thanks. We&apos;re checking.</h1>
+        <h1 className="display text-ink text-display-28 sm:text-display-40">Thanks. One more step.</h1>
         <p className="text-ink-muted text-15 leading-body">
-          If you completed a payment, we&apos;ll confirm it shortly. Open the payment link from your email again to see
-          its status, or call {contact.name} at{" "}
+          We couldn&apos;t match this visit to a payment link. Open the link from your email again to see its status.
+          If you were charged and it still shows as unpaid, please don&apos;t pay again: call {contact.name} at{" "}
           <a className="text-ink underline" href={`tel:${contact.tel}`}>
             {contact.display}
           </a>{" "}

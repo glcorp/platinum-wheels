@@ -86,6 +86,10 @@ P2. **Fixie (free) and the Elavon allowed list.** Nothing works until this is do
      Online Security Allowed List. The portal's Allowed List Manager only displays the list.
    - **Done when:** the IPs appear under Settings → Online Security Allowed List Manager → Valid IP
      Addresses.
+   - **In the same email, ask for an export script** (D108 follow-up; Elavon quotes up to 12 business
+     days). Destination: `https://pay.platinumwheels.ca/pay/notify`. Ask two things: does the POST
+     include `ssl_invoice_number`, and can the demo account use it. **The route is not built yet**; it
+     gets built once Elavon confirms. Until then a payment costs 2 Fixie requests instead of 1.
 P3. **Converge portal → Settings → Hosted Payments.**
    - Response Page → **Redirect URL**, the Decline button link, and Payment Page → **Cancel Link**:
      `https://pay.platinumwheels.ca/pay/return`. While testing on a preview or locally, use that host's
@@ -99,9 +103,8 @@ P4. **`pay.platinumwheels.ca`** (D105).
      proxying it breaks the certificate with a 525).
    - **Done when:** `https://pay.platinumwheels.ca/pay/done` loads.
 P5. **Vercel env vars** (Production and Preview): `CONVERGE_ENV=demo`, `CONVERGE_ACCOUNT_ID`,
-   `CONVERGE_USER_ID`, and as **Sensitive** `CONVERGE_PIN`, `FIXIE_URL` and `CRON_SECRET`
-   (`openssl rand -hex 32`). The same values go in `.env.local` for local testing, with a Neon **dev**
-   branch URL.
+   `CONVERGE_USER_ID`, and as **Sensitive** `CONVERGE_PIN` and `FIXIE_URL`. The same values go in
+   `.env.local` for local testing, with a Neon **dev** branch URL.
 P6. **Demo expires 2026-10-18.** Ask `#SEDevPortalSupport@elavon.com` for an extension by **2026-10-13**.
 
 ## Client — payments go-live

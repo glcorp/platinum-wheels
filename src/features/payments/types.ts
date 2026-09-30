@@ -54,10 +54,6 @@ export interface Gateway {
   createSession(request: SessionRequest): Promise<SessionResult>;
   /** Look up one transaction by the gateway's id (the return redirect). */
   getTransaction(txnId: string): Promise<QueryResult>;
-  /** Every transaction carrying one invoice number (the daily reconcile).
-   *  Invoice numbers are unique per attempt, so this is an exact match and
-   *  avoids the terminal-time-zone ambiguity of a date-range search. */
-  findByInvoice(invoiceNumber: string): Promise<QueryResult>;
 }
 
 export type { PaymentAttempt, PaymentLink };

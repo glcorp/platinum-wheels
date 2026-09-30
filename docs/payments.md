@@ -1,10 +1,11 @@
 # Payments — design (Converge, via Costco / Elavon)
 
-Status: **built 2026-09-24 on branch `payments`**: the Converge adapter, `/pay`, the return route, the
-reconcile cron and the admin wiring (expiry field, links list). It has been tested against Postgres with a
+Status: **built 2026-09-24 on branch `payments`**: the Converge adapter, `/pay`, the return route
+and the admin wiring (expiry field, links list). The reconcile cron and the Check payment button were
+removed on 2026-09-30 before merging (D108). It has been tested against Postgres with a
 fake gateway, not yet against Converge: that waits on the owner actions in `todo.md`, chiefly Elavon
 allowlisting the Fixie IPs. The schema and migrations have been on `main` and production Neon since
-2026-09-24 (PR #5). Decisions: **D99–D103** and **D105–D107** in root `llm.md` §5b (§9).
+2026-09-24 (PR #5). Decisions: **D99–D103** and **D105–D108** in root `llm.md` §5b (§9).
 
 ---
 
@@ -39,9 +40,8 @@ Converge ─▶ browser sent to /pay/return (GET or POST, ssl_txn_id …)       
 server: TXNQUERY by ssl_txn_id (via proxy) ─▶ find the attempt by the gateway's invoice number,
         verify amount + result ─▶ attempt approved/declined; link paid (or 'duplicate')
         ─▶ 303 to /pay/<token>
-daily cron: TXNQUERY by ssl_invoice_number for every still-pending attempt (no date range, so no
-            terminal-time-zone ambiguity); no transaction after the session died ⇒ 'expired'
-staff "Check payment": the same lookup for one link, on demand
+no return (tab closed, or the query failed): the attempt stays 'pending'. Nothing looks it up
+        later (D108); the admin list says "Payment started, not confirmed".
 ```
 
 The database is the source of truth for whether a link is open. The gateway is the source of truth for
@@ -55,10 +55,10 @@ whether money moved. Nothing the browser sends is trusted for either.
 | `payment_attempts` | trip to the hosted page | **at most one `approved` per link** (partial unique index) · unique `(provider, provider_txn_id)` · unique invoice number · approved/duplicate ⇒ has txn id and `verified_at` · last4 is 4 digits |
 | `payment_events` | thing that happened | **append-only**: a trigger rejects UPDATE, DELETE, TRUNCATE · dotted `type` format |
 
-- **Expired is derived, not stored**: `status='active' AND expires_at <= now()`. Vercel Hobby cron runs
-  once a day; a stored flag would lie for up to 24 hours.
+- **Expired is derived, not stored**: `status='active' AND expires_at <= now()`. No job exists to flip a
+  stored flag at the right moment (D108), so a stored one would lie.
 - **References**: `PW-10001` from a Postgres sequence; attempt invoice `PW-10001-2` is what Converge
-  prints on the cardholder's statement and what the reconcile matches on.
+  prints on the cardholder's statement, and what staff search for in the Converge portal.
 - **Links are never deleted** (FK `ON DELETE RESTRICT` from attempts and events). Cancel instead.
 - **No card data**: brand + last four only (PCI DSS permits). The Hosted Payment Page keeps us at
   **SAQ A**.
@@ -92,7 +92,7 @@ Loud, never silent.
 5. **Redaction:** gateway payloads are whitelisted into `payment_events.data`; `ssl_pin` and any card
    number beyond last four are dropped.
 6. **Timeouts:** 60 s on gateway calls (Elavon recommends 60–120 s); a timeout marks the attempt
-   `failed` only if no session was issued — otherwise it stays `pending` for the reconcile.
+   `failed` only if no session was issued — otherwise it stays `pending` (D108).
 7. **Refunds and voids are out of scope** and done in the Converge UI. The admin is behind a stub gate
    (D91), so it must never be able to move money out.
 
@@ -106,8 +106,9 @@ calls** through **Fixie** (HTTPS `CONNECT` tunnel — TLS is end-to-end, the pro
 - **500 requests / month, 100 MB transfer.**
 - At 75% Fixie emails a warning; **at 100% requests fail with HTTP 407** until the month rolls over or
   the plan is upgraded ([docs](https://usefixie.com/documentation/)).
-- Budget: ~3 requests per payment attempt (session token + verification query + possible reconcile
-  share) ⇒ roughly **150 attempts / month** on the free tier. Next tier is $5/month for 2,500.
+- Budget: **2 requests per payment attempt** (session token + verification query on the return) ⇒
+  roughly **250 attempts / month** on the free tier. Nothing else calls Converge (D108). Next tier is
+  $5/month for 2,500. The export script in §8 would make it 1 request.
 - Fixie's IPs must be sent to Elavon for the account's Merchant IP Filter (the demo email asks for
   exactly this). Local development uses the same proxy, so one allowlist covers dev, preview and prod.
 - A 407 from the proxy is surfaced to the customer as "payments are temporarily unavailable, call us",
@@ -124,7 +125,6 @@ calls** through **Fixie** (HTTPS `CONNECT` tunnel — TLS is end-to-end, the pro
 | `CONVERGE_USER_ID` | Vercel | no | the **API user**, not the web login |
 | `CONVERGE_PIN` | Vercel | **yes** | never in the repo, a log, or a chat |
 | `FIXIE_URL` | Vercel | **yes** | `http://fixie:<secret>@<host>:80` |
-| `CRON_SECRET` | Vercel | **yes** | authenticates the daily reconcile |
 
 Local development uses a **Neon `dev` branch** URL in `.env.local` (gitignored), never production.
 
@@ -152,8 +152,14 @@ The owner's step-by-step actions are in root `todo.md`. In summary:
 7. **Going live**: production credentials, Converge vendor ID and Elavon's certification test script.
    Every portal setting in item 3 must be redone on the production account. Client.
 8. The UNCONFIRMED items in §10, each settled by the first demo call.
+9. **Export script (D108 follow-up, not built).** Ask Elavon to register
+   `https://pay.platinumwheels.ca/pay/notify` as an export destination; they quote up to 12 business
+   days. Once it is live, build `/pay/notify`: accept the POST only from Elavon's IP ranges (§10) and
+   with the agreed username and password, match the attempt, and mark it paid **without** a `txnquery`.
+   That takes a payment to 1 Fixie request and settles closed-tab payments. Two questions for Elavon
+   first: does the POST carry `ssl_invoice_number`, and does the demo account support it. Owner.
 
-## 9. Decision rows, numbered D99–D103 at the 2026-09-24 merge (D105–D107 added with the build)
+## 9. Decision rows, numbered D99–D103 at the 2026-09-24 merge (D105–D107 added with the build, D108 on 2026-09-30)
 
 The canonical text is in root `llm.md` §5b. In order: **D99** PSP = Converge HPP · **D100** the link is
 ours · **D101** Drizzle + node-postgres · **D102** Fixie · **D103** staff-chosen expiry. The original
@@ -186,6 +192,7 @@ Elavon's Converge docs now live under `developer.elavon.com/products/hosted-paym
 | `txnquery`: `POST …/VirtualMerchant(Demo)/processxml.do`, `xmldata=<txn>…</txn>`; search by `ssl_txn_id` or `ssl_invoice_number`; several results come in `<txnlist>`; errors are `errorCode`/`errorMessage`; `ssl_trans_status` PST/FPR/PRE = failed rules | [transaction management](https://developer.elavon.com/products/hosted-payment-page/v1/transaction-management) | `converge.ts` `query` |
 | Approval is read from `ssl_result_message` (`APPROVAL`): the txnquery examples omit `ssl_result` | same | `toGatewayTransaction` |
 | 5 wrong PINs put the calling IP on a fraud list | [Cartis FAQ](https://knowledge.cartispayments.com/hc/en-us/articles/4407890739351-Common-Integration-Questions-and-Answers-General-and-Converge) | `payments/llm.md` Rules |
+| **Export scripts**: after a transaction Converge POSTs the result (form-encoded, ISO-8859-1) to a URL Elavon has registered; setup takes up to 12 business days; a non-200 reply is logged as a failed export. **Not signed.** Source ranges: `62.17.112.80/28`, `62.134.193.208/28`, `65.201.175.80/28`, `204.137.47.32/28`, `204.137.43.32/28`. It can send a username and password | [export scripts](https://developer.elavon.com/products/hosted-payment-page/v1/export-scripts), read 2026-09-30 | D108 follow-up, §8.9. Not built |
 | Demo test cards approve at `$X.00`; `$X.88` declines. Visa `4000000000000002`, Mastercard `5121212121212124` | [test cards](https://developer.elavon.com/test-cards) | the demo walkthrough |
 
 **UNCONFIRMED; the first demo call settles each one:** that `ssl_merchant_id` is still accepted (it is what
