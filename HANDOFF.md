@@ -351,11 +351,24 @@ parked row.
 - **Local database work needs a Neon dev branch in `.env.local`.** The Vercel database variables are
   Sensitive and target Production and Preview only, so `vercel env pull` cannot fetch them.
 
-**Quote delivery by email — unparked 2026-09-23. The docs are on `main` (via #5); the code is not built:**
+**Quote delivery by email — built 2026-09-24 on branch `quote-email-delivery` (D104), behind a flag:**
 
+- The code is `src/features/product/quote-email.ts`, called from `actions.ts`. It sends **only when
+  `AUTO_EMAIL_LEAD_CAPTURE_ENABLED=true`**; any other value validates, logs `quote.email.disabled` and
+  shows success, so the live form can be tested without sending mail. **Vercel has the flag set to
+  `false`** and `LEAD_CAPTURE_EMAIL=sales@platinumwheels.ca` (the sender and the alert inbox, one address;
+  Production + Preview, 2026-09-24). **`RESEND_API_KEY` is set** (Sensitive, Production + Preview, added
+  by the owner 2026-09-24). To go live: get the code onto production, test the form, then set the flag to
+  `true` and redeploy (env changes only take effect on a new deployment). `todo.md` item 2.
+- **Verified locally against `next start`, with Resend's endpoint mocked** by a fetch preload so no mail
+  left the machine: flag off → success, nothing sent; submit under 3 s → `quote.spam.too_fast`;
+  honeypot filled → `quote.spam.honeypot`; flag on → exactly two payloads (owner alert with reply-to the
+  customer and the consent block; fixed auto-reply); Resend 500 → the `failed` state, form kept, alert
+  focused; flag on with no key, or no `LEAD_CAPTURE_EMAIL` → `failed`. **Never observed:** a real Resend send, and any of it on Vercel.
+- Log lines carry the slug and outcome only, never a name, email, phone or message, and never Resend's
+  error `message` (it can quote the recipient).
 - The owner unparked §7.15: *"Deliver enquiries by email (highest value, and it's part of what you
-  sold)"*. It takes the next free decision ID when its code lands (**D98**). D95–D103 are taken, so
-  **D104** is next at the time of writing.
+  sold)"*.
 - **Owner rulings, 2026-09-23:**
   - reuse the goodwill site's Resend account, with a new sending-only key for the storefront
   - `sales@platinumwheels.ca` as both the From address and the alert recipient
@@ -369,8 +382,7 @@ parked row.
 
 **Parked by D54 — recorded, not owed, not blockers:**
 
-1. **The quote form has no destination** — **unparked 2026-09-23, see the block above.** `actions.ts`
-   still validates and discards on `main`. (root `llm.md` §7.15)
+1. ~~**The quote form has no destination.**~~ **Built by D104, see the block above.** (root `llm.md` §7.15)
 2. **No unavailable state on the PDP.** No artboard draws one, so none was authored. (§7.16)
 3. **The LCP gate**, 3.0–3.5 s against 2.5 s on all three routes, one build-wide cause. (§7.12)
 

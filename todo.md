@@ -50,13 +50,19 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
      `DKIM: PASS with domain platinumwheels.ca`.
    - Independent of the storefront; do it any time. Google's steps:
      https://support.google.com/a/answer/174124
-2. **Create a Resend API key for the storefront.**
-   - **Where:** in the goodwill site's Resend account (owner ruling 2026-09-23: reuse it). Permission
-     **Sending access**, restricted to domain `platinumwheels.ca`. The goodwill site keeps its own key,
-     so revoking one never breaks the other.
-   - **Put it in:** Vercel env `RESEND_API_KEY` (Preview and Production), plus `.env.local` in the
-     worktree used for local testing (`.env*` is gitignored).
-   - **Never** commit it or paste it into a chat.
+2. **Turn the quote emails on, after testing the live form (D104).**
+   - **State, checked 2026-09-24:** Vercel env has all three for Production and Preview:
+     `RESEND_API_KEY` (Sensitive, added by the owner 2026-09-24), `LEAD_CAPTURE_EMAIL` =
+     `sales@platinumwheels.ca` (the sender and the alert inbox) and `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` =
+     `false`, so nothing is sent yet. Whether the key is **Sending access** restricted to
+     `platinumwheels.ca` (owner ruling 2026-09-23) cannot be seen from Vercel; confirm in Resend.
+   - **How:** once the code is on production and the form has been tested there, set the flag to
+     exactly `true` and **redeploy**: env changes only reach a new deployment. Setting it back to
+     `false` and redeploying stops the emails again.
+   - **Done when:** one real test enquiry with the flag on delivers both emails (alert in `sales@`,
+     auto-reply in the tester's inbox, neither in spam).
+   - **Never** commit the key or paste it into a chat. For local testing it goes in `.env.local`
+     (`.env*` is gitignored).
 3. **Accept Resend's DPA** (https://resend.com/legal/dpa).
    - **Why:** PIPEDA keeps the shop accountable for data its processor handles. Resend stores account
      data in the US, and the privacy page will say so.

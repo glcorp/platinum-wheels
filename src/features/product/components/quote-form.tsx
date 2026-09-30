@@ -63,6 +63,11 @@ export interface QuoteFormProps {
   placeholder: string;
   /** CASL consent line, per category, same reasoning as `placeholder`. */
   consent: string;
+  /** Hidden `vehicle` field: the page URL's vehicle, or blank (D104). */
+  vehicle: string;
+  /** Hidden `renderedAt` field: server render time, epoch ms. The fill timer
+   *  in `actions.ts` measures from it (D104). */
+  renderedAt: number;
 }
 
 export function QuoteForm({
@@ -71,6 +76,8 @@ export function QuoteForm({
   unit,
   placeholder,
   consent,
+  vehicle,
+  renderedAt,
 }: QuoteFormProps) {
   const [state, formAction, isPending] = useActionState(submitQuote, QUOTE_INITIAL_STATE);
   const successRef = useRef<HTMLDivElement>(null);
@@ -84,7 +91,9 @@ export function QuoteForm({
   // Computed ahead of the `success` early return below so the hooks that
   // follow — the invalid-focus effect and the Custom-quantity field's own
   // state — stay unconditional, per the rules of hooks.
-  const values = state.status === "invalid" ? state.values : undefined;
+  // `failed` (D104) echoes too: the visitor retries without retyping.
+  const values =
+    state.status === "invalid" || state.status === "failed" ? state.values : undefined;
 
   // Which cell the Quantity select currently shows — also its own controlled
   // `value` below, so a `?qty=` cell click and an invalid-resubmit echo both
@@ -122,6 +131,12 @@ export function QuoteForm({
   // keys are a subset of `name`/`email`/`phone`/`customQuantity`/`message`
   // (`actions.ts`).
   useEffect(() => {
+    // A send failure (D104) has no field to point at: focus the summary,
+    // which carries the fallback phone number.
+    if (state.status === "failed") {
+      errorSummaryRef.current?.focus();
+      return;
+    }
     if (state.status !== "invalid" || !state.errors) {
       return;
     }
@@ -191,6 +206,24 @@ export function QuoteForm({
     >
       {/* Hidden: which product this inquiry is about. */}
       <input type="hidden" name={QUOTE_FIELD.slug} value={slug} />
+      {/* Hidden, D104: the searched vehicle for the owner alert, and the
+          render time for the fill timer. */}
+      <input type="hidden" name={QUOTE_FIELD.vehicle} value={vehicle} />
+      <input type="hidden" name={QUOTE_FIELD.renderedAt} value={renderedAt} />
+      {/* Honeypot, D104. `sr-only` takes it out of flow (no gap, no pixels),
+          `aria-hidden` and `tabIndex={-1}` keep it from screen readers and
+          the tab order, so only a bot filling every input ever sets it. */}
+      <div aria-hidden="true" className="sr-only">
+        <label htmlFor="quote-website">Website</label>
+        <input
+          id="quote-website"
+          type="text"
+          name={QUOTE_FIELD.website}
+          tabIndex={-1}
+          autoComplete="off"
+          defaultValue=""
+        />
+      </div>
 
       {/* Audit C2: the build had no live region anywhere, so a rejected
           submit was as silent to a screen reader as it was to a keyboard
@@ -204,6 +237,7 @@ export function QuoteForm({
           fallback case without adding it to the tab order. */}
       <QuoteErrorSummary
         count={errorCount}
+        sendFailed={state.status === "failed"}
         role="alert"
         tabIndex={-1}
         ref={errorSummaryRef}

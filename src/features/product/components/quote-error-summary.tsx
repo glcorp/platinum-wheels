@@ -22,11 +22,19 @@
    a reference page would announce itself on load. `tabIndex={-1}` exists only
    so `QuoteForm` can focus the summary in the fallback case where no error
    key maps to a field.
+   D104 added `sendFailed`: every field passed but the owner alert could not
+   be sent, so the lead would be lost. Same node, same type role, one fixed
+   sentence that offers the phone as the fallback.
    --------------------------------------------------------------------------- */
 
+import { PRIMARY_CONTACT } from "@/lib/site";
+
 export interface QuoteErrorSummaryProps {
-  /** How many fields failed validation. Renders nothing at 0. */
+  /** How many fields failed validation. Renders nothing at 0 unless
+   *  `sendFailed` is set. */
   count: number;
+  /** The inquiry was valid but could not be delivered (D104). */
+  sendFailed?: boolean;
   /** `"alert"` in the live form; omitted on `/styleguide`. */
   role?: "alert";
   /** `-1` in the live form so `QuoteForm` can focus it. */
@@ -36,11 +44,12 @@ export interface QuoteErrorSummaryProps {
 
 export function QuoteErrorSummary({
   count,
+  sendFailed = false,
   role,
   tabIndex,
   ref,
 }: QuoteErrorSummaryProps) {
-  if (count <= 0) return null;
+  if (count <= 0 && !sendFailed) return null;
 
   return (
     <p
@@ -58,9 +67,11 @@ export function QuoteErrorSummary({
     >
       {/* New copy. Names the count so the announcement is useful on its own,
           and says what it blocks. No em dash (`.claude/rules/ui.md` "Copy"). */}
-      {count === 1
-        ? "1 field needs a fix before this can be sent."
-        : `${count} fields need a fix before this can be sent.`}
+      {sendFailed
+        ? `We couldn't send your request. Please try again, or call us at ${PRIMARY_CONTACT.display}.`
+        : count === 1
+          ? "1 field needs a fix before this can be sent."
+          : `${count} fields need a fix before this can be sent.`}
     </p>
   );
 }
