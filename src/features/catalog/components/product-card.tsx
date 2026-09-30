@@ -6,6 +6,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
 import { configFor } from "@/features/catalog/categories";
+import { ProductPhotoPlaceholder } from "@/features/catalog/components/product-photo-placeholder";
 import {
   productImageSrc,
   type Product,
@@ -59,6 +60,8 @@ const BADGE_PRESENTATION: Record<
 > = {
   winter: { variant: "winter", copy: "Winter" },
   "all-season": { variant: "outline", copy: "All-Season" },
+  /* New copy (D105b), in the drawn `All-Season` badge's own capitalisation. */
+  "all-weather": { variant: "outline", copy: "All-Weather" },
   summer: { variant: "outline", copy: "Summer" },
   oem: { variant: "outline", copy: "OEM" },
   studdable: { variant: "outline", copy: "Studdable" },
@@ -194,6 +197,7 @@ export function ProductCard({
     threePeakMountainSnowflake,
     available,
   } = product;
+  const photoSrc = productImageSrc(product);
 
   /* WINTER first, then the rest in the order the caller gave them, capped at
      two (`design/DESIGN.md:201`). On the unavailable card the dim badge takes
@@ -207,27 +211,31 @@ export function ProductCard({
       ].slice(0, MAX_BADGES)
     : [];
 
-  /* The photo, defined once so the `morph` switch below wraps the same
-     element it would otherwise render bare. */
-  const photo = (
-    <Image
-      src={productImageSrc(product)}
-      alt={`${brand} ${model}`}
-      width={1000}
-      height={1000}
-      sizes={sizes}
-      /* See `priority` in ProductCardProps for why this is eager +
-         fetchPriority rather than `preload`. Both stay undefined when
-         the prop is false, so the default lazy behaviour is
-         untouched. */
-      loading={priority ? "eager" : undefined}
-      fetchPriority={priority ? "high" : undefined}
-      className={cx(
-        "photo-inset-card block h-full w-full object-contain",
-        !available && "opacity-35",
-      )}
-    />
-  );
+  /* What fills the photo box, defined once so the `morph` switch below wraps
+     the same element it would otherwise render bare. No photo on record: the
+     placeholder tile, never a guessed path (D108b). */
+  const photo =
+    photoSrc === null ? (
+      <ProductPhotoPlaceholder brand={brand} dimmed={!available} />
+    ) : (
+      <Image
+        src={photoSrc}
+        alt={`${brand} ${model}`}
+        width={1000}
+        height={1000}
+        sizes={sizes}
+        /* See `priority` in ProductCardProps for why this is eager +
+           fetchPriority rather than `preload`. Both stay undefined when
+           the prop is false, so the default lazy behaviour is
+           untouched. */
+        loading={priority ? "eager" : undefined}
+        fetchPriority={priority ? "high" : undefined}
+        className={cx(
+          "photo-inset-card block h-full w-full object-contain",
+          !available && "opacity-35",
+        )}
+      />
+    );
 
   return (
     /* `background:var(--surface);border:1px solid var(--border);display:flex;
@@ -411,13 +419,17 @@ export function ProductCard({
             (24px) and `tracking-8` override its display leading and tracking.
             D91b: a flex item pushed right by `ml-auto` rather than an
             absolute layer (see the photo box), `relative` for paint order,
-            `min-w-0 break-words` so a long brand wraps inside the photo. */}
-        <span
-          translate="no"
-          className="display text-ink-muted leading-badge pointer-events-none relative ml-auto min-w-0 break-words text-11 tracking-8"
-        >
-          {brand}
-        </span>
+            `min-w-0 break-words` so a long brand wraps inside the photo.
+            Not drawn over the placeholder tile, which already is the brand
+            (D108b). */}
+        {photoSrc === null ? null : (
+          <span
+            translate="no"
+            className="display text-ink-muted leading-badge pointer-events-none relative ml-auto min-w-0 break-words text-11 tracking-8"
+          >
+            {brand}
+          </span>
+        )}
       </div>
 
       {/* `padding:24px;display:flex;flex-direction:column;gap:8px;flex:1` —

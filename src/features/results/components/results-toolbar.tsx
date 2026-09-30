@@ -123,8 +123,12 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
      the Load-more window (D44). Read off the parsed, normalised query, so the
      fields are the ones the page itself would serialise. */
   const q = view.query;
+  /* Wheels have no chip group (D105b), and then no chips to carry. */
+  const chipParam = config.chips?.param;
   const carried: Array<[string, string]> = [
-    ...q.chips.map((chip): [string, string] => [config.chips.param, chip]),
+    ...(chipParam === undefined
+      ? []
+      : q.chips.map((chip): [string, string] => [chipParam, chip])),
     ...q.brands.map((brand): [string, string] => [RESULTS_PARAM.brand, brand]),
   ];
   if (q.priceMin !== null) carried.push([RESULTS_PARAM.min, String(q.priceMin)]);

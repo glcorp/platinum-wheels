@@ -26,7 +26,6 @@ import {
   usesSheet,
   watchProblems,
 } from "../helpers";
-import { searchSeed } from "@/features/results/search";
 
 type Category = "tires" | "wheels" | "accessories";
 
@@ -397,16 +396,11 @@ test.describe("WDG-08: what the page has no control for is not a filter", () => 
 });
 
 test.describe("WDG-18: an empty category has no $Infinity price bounds", () => {
-  test("searchSeed over no products returns finite bounds", async ({}, info) => {
-    test.skip(info.project.name !== "chromium-1440", "pure logic, no browser: once");
-    for (const category of Object.keys(ROUTE) as Category[]) {
-      const view = searchSeed(category, [], {});
-      const { min, max, selectedMin, selectedMax } = view.facets.price;
-      for (const n of [min, max, selectedMin, selectedMax]) {
-        expect(Number.isFinite(n), `${category} price facet ${JSON.stringify(view.facets.price)}`).toBe(true);
-      }
-      expect(view.total).toBe(0);
-      expect(view.facets.activeGroups).toBe(0);
-    }
-  });
+  /* Parked (D111). This called `searchSeed(category, [], {})`, a pure function
+     over an explicit product list. D108b deleted the seed and `searchResults`
+     reads the database, so an empty category is now a database state: the
+     test comes back, against an empty fixture category, with the suite's
+     fixture database. The rule itself is kept in `search.ts` `buildPrice`
+     (`bounds.min ?? 0`). */
+  test.fixme("an empty category returns finite price bounds", async () => {});
 });

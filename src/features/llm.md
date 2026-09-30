@@ -45,8 +45,9 @@ composition only, `docs/decisions.md:62`); this is where the actual page content
   business logic"). **Cross-feature imports go through `catalog/` only** — it is the shared product
   domain and the others consume it (D37). **One further edge: `admin/` imports `payments/`** (`service`,
   `config`, `money`; D106). `payments/` imports no feature.
-- **Seed data is flagged as sample.** `finder/data.ts` (D27) and `catalog/data.ts` (D29) are stand-ins
-  until real data exists; the wheel CSV supplies nothing (D9).
+- **Seed data is flagged as sample.** `finder/data.ts` (D27) is a stand-in until real data exists; the
+  catalogue seed `catalog/data.ts` (D29) was deleted by D108b and every page reads the database. The
+  wheel CSV supplies nothing (D9).
 - **`"use client"` only on leaf islands** — the filter sheet, the featured carousel, the quote form
   (`docs/decisions.md:73`). Never at page level, never on a whole feature. The PDP quantity control is
   **not** an island: it is `?qty=` links, server rendered (D50).

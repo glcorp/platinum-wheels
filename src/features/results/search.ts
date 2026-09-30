@@ -1,43 +1,63 @@
 /**
- * Server half of the results contract: filter, sort and facet the catalog
- * seed. Imports the seed, so it is never imported from a `"use client"` file.
+ * Server half of the results contract: ask the catalogue for one page of
+ * matches, the similar sizes beneath them, and the facets beside them. Reads
+ * the database, so it is never imported from a `"use client"` file.
  *
- * Serves three routes now — `/results` (tires), `/wheels`, `/accessories`
- * (D58) — off one function, `searchResults(category, params)`. Everything
- * category-specific (which products, which filter groups, how size is read
- * off a product, the fitment map's per-category shape) comes from
- * `CATEGORY_CONFIG` (`@/features/catalog/categories`) or `productsIn()`
- * (`@/features/catalog/data`); nothing here branches on `category` beyond
- * choosing which config/seed to read. Every number this file returns is still
- * computed from the seed — facet counts, the match count, `Filters (n)` and
- * the price bounds (D42). No artboard number ships as a count.
+ * Serves three routes — `/results` (tires), `/wheels`, `/accessories` (D58) —
+ * off one function, `searchResults(category, params)`. Everything
+ * category-specific comes from `CATEGORY_CONFIG`
+ * (`@/features/catalog/categories`); filtering, counting and sorting are SQL
+ * (`@/features/catalog/queries`). Every number this file returns is computed
+ * from the catalogue — facet counts, the match count, `Filters (n)` and the
+ * price bounds (D42). No artboard number ships as a count.
+ *
+ * What changed when the seed went (D108b), because nine products and forty-five
+ * thousand behave differently:
+ *   - **A size filters.** With the seed, a size only split the set into best
+ *     and similar and "similar" was everything else. Now `best` is the size
+ *     asked for and `similar` is the sizes next to it (`sizeMatch: "near"`).
+ *     Facet counts follow `best`, so the number beside a brand is the number
+ *     of cards that brand opens.
+ *   - **The lists arrive windowed.** `query.show` is a limit handed to the
+ *     database, not a slice taken from an in-memory list.
  */
 
-import { productsIn } from "@/features/catalog/data";
 import {
-  CATEGORY_CONFIG,
-  type ChipGroupConfig,
-  type SizeFieldConfig,
-} from "@/features/catalog/categories";
-import type { Product, ProductCategory } from "@/features/catalog/types";
+  accessoryFromParam,
+  accessoryParam,
+  seasonFromParam,
+  seasonParam,
+  toProduct,
+} from "@/features/catalog/adapter";
+import type {
+  CatalogFacets,
+  ProductFilters,
+} from "@/features/catalog/catalog-types";
+import { CATEGORY_CONFIG } from "@/features/catalog/categories";
+import {
+  getFacets,
+  getPriceBounds,
+  getBrands,
+  listProducts,
+} from "@/features/catalog/queries";
+import type { ProductCategory } from "@/features/catalog/types";
 import { findFitment, type FitmentSize } from "@/features/finder/data";
 import { parseResultsQuery, withPriceBounds } from "./query";
-import type {
-  FacetOption,
-  Facets,
-  PriceFacet,
-  RawSearchParams,
-  ResultsQuery,
-  ResultsView,
-  SizeOption,
+import {
+  RESULTS_WINDOW,
+  type FacetOption,
+  type Facets,
+  type PriceFacet,
+  type RawSearchParams,
+  type ResultsQuery,
+  type ResultsView,
+  type SizeOption,
 } from "./types";
 
 /* --- Size ------------------------------------------------------------------
  *
- * Size is deliberately NOT a filter group: it never removes a product from
- * the result set, it only decides `best` vs `similar` (D47(8)). One key per
- * `config.size.fields[].param`; a key absent from the object, or present with
- * `null`, constrains nothing.
+ * One key per `config.size.fields[].param`; a key absent from the object, or
+ * present with `null`, constrains nothing.
  */
 
 type SizeFilter = Readonly<Record<string, string | null>>;
@@ -48,39 +68,18 @@ function hasSize(size: SizeFilter): boolean {
   return Object.values(size).some((value) => value !== null);
 }
 
-function hasSizeFilter(query: ResultsQuery): boolean {
-  return hasSize(query.size);
-}
-
-/** True when every size part `size` names matches this product — a part
- *  absent or `null` constrains nothing (D47(8), generalised from tires to any
- *  `SizeFieldConfig` list). */
-function matchesSize(
-  product: Product,
-  fields: readonly SizeFieldConfig[],
-  size: SizeFilter,
-): boolean {
-  for (const field of fields) {
-    const wanted = size[field.param];
-    if (wanted === undefined || wanted === null) continue;
-    if (field.read(product) !== wanted) return false;
-  }
-  return true;
-}
-
 /**
  * D48(4): a vehicle in the URL with every size select still at `Any` borrows
  * a size from the PLACEHOLDER fitment map beside the finder seed
  * (`src/features/finder/data.ts`, sample data — year is ignored there). An
- * unmapped vehicle resolves to no size, so the page behaves exactly as it did
- * before: everything filtered is a best match (D47(8)).
+ * unmapped vehicle resolves to no size, so the page behaves exactly as it
+ * does with no vehicle at all.
  *
  * Per category, because a car determines different things for different
  * goods (owner, 2026-09-21): **tires** derive `width`/`profile`/`rim`
  * straight off the fitment entry; **wheels** derive `bolt` only — diameter
  * and width are the buyer's choice, not the car's; **accessories** derive no
- * size at all (`config.size` is `null` for them), and since D67 narrow on the
- * spec string instead — `accessoryFitsVehicle()` below.
+ * size at all and narrow on the lug thread instead (D67), below.
  */
 function fitmentSize(
   category: ProductCategory,
@@ -97,230 +96,165 @@ function fitmentSize(
   }
 }
 
-/* --- Accessory fitment (D67) -----------------------------------------------
- *
- * The owner vetoed D59(2) on 2026-09-22: the seed sells lug nuts in 12×1.5 and
- * 12×1.25 and TPMS sensors at 315 MHz and 433 MHz, so an accessory plainly
- * does derive something from a vehicle. It just does not derive a SIZE —
- * accessories draw no size group (D58, four filter groups not five) — so the
- * vehicle cannot narrow them the way it narrows a tire or a wheel. It drives
- * the best/similar split (D47(8)) off the product's own spec string instead.
- *
- * This lives here, not in `categories.ts`, for the same reason `fitmentSize()`
- * does: the match needs `FitmentSize`, and `categories.ts` is imported by a
- * `"use client"` island and by `catalog/`, which must not take an edge back
- * into `finder/` (D37). `search.ts` already imports both.
- * -------------------------------------------------------------------------- */
-
-/**
- * `12×1.5` / `12x1.50` / ` 12 X 1.5 ` → `12x1.5`; anything with no pitch in it
- * → `null`.
- *
- * Both sides are normalised rather than compared raw, because they are spelled
- * differently on purpose: the fitment map carries ASCII `12x1.5` (a URL- and
- * code-safe value, like `WheelSpec.bolt`), while the card renders the
- * typographic `Set of 20 · 12×1.5` with U+00D7. A raw comparison would never
- * match and the whole feature would be invisible — every accessory would stay
- * a "best match" and nothing on screen would say why. Numbers round-trip
- * through `Number` so `1.50` and `1.5` are the same pitch.
- */
-function threadPitch(raw: string): string | null {
-  const match = /(\d+(?:\.\d+)?)\s*[x\u00D7]\s*(\d+(?:\.\d+)?)/i.exec(raw);
-  if (match === null) return null;
-  return `${Number(match[1])}x${Number(match[2])}`;
-}
-
-/** `Programmable · 315 MHz` → `315`; a spec string with no frequency → `null`. */
-function sensorFrequency(raw: string): string | null {
-  const match = /(\d{3})\s*MHz/i.exec(raw);
-  return match === null ? null : match[1];
-}
-
-/**
- * Is this accessory a best match for the vehicle the URL names?
- *
- * The rule is per `accessoryType`, and it is deliberately asymmetric: a
- * product is demoted to `similar` ONLY when it states a vehicle-specific fact
- * that contradicts the vehicle. Stating nothing keeps it a best match.
- *
- *   `lug-nuts`, `wheel-locks` — thread onto the car's studs, so a stated
- *       pitch must equal the vehicle's. Both types are stocked in two pitches
- *       in the seed, which is the whole reason D59(2) was wrong.
- *   `tpms`          — pairs with the car's receiver, so a stated frequency
- *       must equal the vehicle's. Stocked at 315 and 433.
- *   `centre-caps`   — sized to the WHEEL's bore, not to the car; the seed
- *       spells that as `Fits 5-lug · 74 mm`, which names no vehicle fact at
- *       all. Vehicle-agnostic, stays best.
- *   anything else   — a new type is vehicle-agnostic until someone teaches
- *       this function otherwise. The failure mode of that default is a too-
- *       generous `Best matches` list, which is what the page did before D67;
- *       the failure mode of the opposite default is silently hiding stock.
- *
- * The same "states nothing → stays best" escape applies inside a type: an
- * unbranded lock set whose spec string carries no pitch is not demoted, and
- * neither is anything at all when the placeholder fitment entry itself is
- * unreadable.
- */
-function accessoryFitsVehicle(product: Product, fit: FitmentSize): boolean {
-  switch (product.accessoryType) {
-    case "lug-nuts":
-    case "wheel-locks": {
-      const wanted = threadPitch(fit.thread);
-      const stated = threadPitch(product.size);
-      return wanted === null || stated === null || stated === wanted;
-    }
-    case "tpms": {
-      const stated = sensorFrequency(product.size);
-      return stated === null || stated === fit.tpms;
-    }
-    default:
-      return true;
+/** A select's value as the number its column holds, or `undefined` for `Any`
+ *  and for anything that is not a number (the query layer drops those too). */
+function numeric(value: string | null | undefined): number | undefined {
+  if (value === null || value === undefined || value.trim() === "") {
+    return undefined;
   }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-/* --- Non-size filter groups -------------------------------------------------
+/**
+ * The URL's filters as the catalogue reads them.
  *
- * ANDed across groups, ORed within one.
+ * Accessories and a vehicle (D67): an accessory has no size, but lug nuts and
+ * wheel locks thread onto the car's studs, so the vehicle's thread is what
+ * narrows them. The rule is asymmetric on purpose and lives in
+ * `queries.ts` `contradictsThread()`: a product is demoted to `similar` only
+ * when it STATES a different thread. Stating nothing keeps it a best match.
+ * TPMS frequency, the other half of D67, is not a column in the catalogue, so
+ * a sensor states nothing and stays a best match.
  */
-
-function matchesChips(
-  product: Product,
+function catalogFilters(
   query: ResultsQuery,
-  config: ChipGroupConfig,
-): boolean {
-  if (query.chips.length === 0) return true;
-  return query.chips.some((value) => config.match(product, value));
+  size: SizeFilter,
+  fit: FitmentSize | null,
+  price: PriceFacet,
+): ProductFilters {
+  return {
+    category: query.category,
+    brands: query.brands,
+    /* A bound parked at the end of the slider is not a filter, and must not
+       be sent as one. The rail's form posts both range inputs on every
+       change, so `?min=60&max=2710` rides along with any other filter; a
+       price bound excludes products with no price, and those would silently
+       vanish the moment a buyer ticked a brand. */
+    priceMin: price.selectedMin > price.min ? price.selectedMin : undefined,
+    priceMax: price.selectedMax < price.max ? price.selectedMax : undefined,
+    tire: {
+      width: numeric(size.width),
+      aspectRatio: numeric(size.profile),
+      rimDiameter: numeric(size.rim),
+      seasons: query.category === "tires" ? query.chips.map(seasonFromParam) : [],
+    },
+    wheel: {
+      diameter: numeric(size.diameter),
+      width: numeric(size.width),
+      boltPattern: size.bolt ?? undefined,
+    },
+    accessory: {
+      kinds:
+        query.category === "accessories"
+          ? query.chips.map(accessoryFromParam)
+          : [],
+      thread: fit?.thread,
+    },
+  };
 }
 
-function matchesBrands(product: Product, query: ResultsQuery): boolean {
-  if (query.brands.length === 0) return true;
-  /* Case-insensitive: D44 makes the URL the shareable state, so `?brand=` is
-     something a person types, forwards or has normalised to lower case by
-     another system. Exact matching meant `?brand=Zeta` returned 2 and
-     `?brand=zeta` returned 0 with no hint why — measured live. The facet
-     values still ship in the seed's own casing; only the comparison relaxes.
-     Craft audit P2. */
-  const wanted = query.brands.map((brand) => brand.toLowerCase());
-  return wanted.includes(product.brand.toLowerCase());
-}
+/* --- Facets --------------------------------------------------------------- */
 
-function matchesPrice(product: Product, query: ResultsQuery): boolean {
-  if (query.priceMin !== null && product.price < query.priceMin) return false;
-  if (query.priceMax !== null && product.price > query.priceMax) return false;
-  return true;
-}
-
-/* --- Facets ---------------------------------------------------------------
- */
-
-/** Distinct non-null `field.read(product)` values across the seed. Numeric
- *  ascending by default; `field.sort === "text"` sorts lexically (bolt
- *  patterns). `label` = `field.labelPrefix + value` — tires' rim reads `R16`
- *  in the rail while the value stays `16` in the URL. */
-function sizeFieldOptions(
-  products: readonly Product[],
-  field: SizeFieldConfig,
+function sizeOptions(
+  values: ReadonlyArray<number | string>,
+  labelPrefix: string,
 ): SizeOption[] {
-  const seen = new Set<string>();
-  for (const product of products) {
-    const value = field.read(product);
-    if (value !== null) seen.add(value);
-  }
-  const sorted = [...seen].sort((a, b) =>
-    field.sort === "text" ? a.localeCompare(b) : Number(a) - Number(b),
-  );
-  return sorted.map((value) => ({
-    value,
-    label: `${field.labelPrefix ?? ""}${value}`,
+  return values.map((value) => ({
+    value: String(value),
+    label: `${labelPrefix}${value}`,
   }));
 }
 
 function buildSizeGroup(
-  category: ProductCategory,
-  products: readonly Product[],
   query: ResultsQuery,
+  catalog: CatalogFacets,
 ): Facets["sizeGroup"] {
-  const config = CATEGORY_CONFIG[category].size;
+  const config = CATEGORY_CONFIG[query.category].size;
   if (config === null) return null;
+  /* Keyed by the category's own param names, in the order `categories.ts`
+     draws them. */
+  const values: Record<string, ReadonlyArray<number | string>> = {
+    ...(catalog.tire && {
+      width: catalog.tire.widths,
+      profile: catalog.tire.aspectRatios,
+      rim: catalog.tire.rimDiameters,
+    }),
+    ...(catalog.wheel && {
+      diameter: catalog.wheel.diameters,
+      width: catalog.wheel.widths,
+      bolt: catalog.wheel.boltPatterns,
+    }),
+  };
   return {
     label: config.label,
     fields: config.fields.map((field) => ({
       param: field.param,
       caption: field.caption,
-      options: sizeFieldOptions(products, field),
+      options: sizeOptions(values[field.param] ?? [], field.labelPrefix ?? ""),
       value: query.size[field.param] ?? null,
     })),
     dense: config.dense ?? false,
   };
 }
 
-/** Standard faceting: an option's count is what it would yield given every
- *  OTHER group's filter, so a selected option never reads 0 (D42). */
-function chipFacets(
-  products: readonly Product[],
+/** The category's full chip list, each with the count the catalogue reports
+ *  for it (0 when it reports none), so a chip never disappears as filters
+ *  change (D42). */
+function buildChipGroup(
   query: ResultsQuery,
-  config: ChipGroupConfig,
-): FacetOption[] {
-  return config.options.map((option) => ({
-    value: option.value,
-    label: option.label,
-    count: products.filter(
-      (product) =>
-        config.match(product, option.value) &&
-        matchesBrands(product, query) &&
-        matchesPrice(product, query),
-    ).length,
-    selected: query.chips.includes(option.value),
-  }));
-}
-
-/** Every brand present in this category's seed, in order of first appearance
- *  — the rail renders fewer rows than an artboard might draw, which is D42's
- *  stated cost. */
-function brandFacets(
-  products: readonly Product[],
-  query: ResultsQuery,
-  chipConfig: ChipGroupConfig,
-): FacetOption[] {
-  const order: string[] = [];
-  for (const product of products) {
-    if (!order.includes(product.brand)) order.push(product.brand);
-  }
-  return order.map((brand) => ({
-    value: brand,
-    label: brand,
-    count: products.filter(
-      (product) =>
-        product.brand === brand &&
-        matchesChips(product, query, chipConfig) &&
-        matchesPrice(product, query),
-    ).length,
-    /* Case-insensitive to match `matchesBrands`: otherwise `?brand=zeta` would
-       filter the grid correctly but leave the Zeta row unticked. */
-    selected: query.brands.some(
-      (wanted) => wanted.toLowerCase() === brand.toLowerCase(),
+  catalog: CatalogFacets,
+): Facets["chipGroup"] {
+  const config = CATEGORY_CONFIG[query.category].chips;
+  if (config === null) return null;
+  const counts = new Map<string, number>([
+    ...(catalog.tire?.seasons ?? []).map(
+      (row) => [seasonParam(row.value), row.count] as const,
     ),
-  }));
-}
-
-/** Seed bounds rounded outward to $10 — computed, never typed (D42). An empty
- *  category has no prices, and `Math.min()` of nothing is `Infinity`, which
- *  would print as `$Infinity` in the rail; it reads `$0`–`$0` instead. */
-function priceBounds(products: readonly Product[]): { min: number; max: number } {
-  if (products.length === 0) return { min: 0, max: 0 };
-  const prices = products.map((product) => product.price);
+    ...(catalog.accessory?.kinds ?? []).map(
+      (row) => [accessoryParam(row.value), row.count] as const,
+    ),
+  ]);
   return {
-    min: Math.floor(Math.min(...prices) / 10) * 10,
-    max: Math.ceil(Math.max(...prices) / 10) * 10,
+    label: config.label,
+    param: config.param,
+    options: config.options.map((option) => ({
+      value: option.value,
+      label: option.label,
+      count: counts.get(option.value) ?? 0,
+      selected: query.chips.includes(option.value),
+    })),
   };
 }
 
-/** The bounds plus the active range clamped into them. */
-function priceFacet(
-  products: readonly Product[],
+/** Most products first, then A to Z: the rail shows the first few and folds
+ *  the rest behind `Show all brands` (D108b). A selected brand the current
+ *  filters leave with no products still gets its row, reading 0, so a ticked
+ *  box never vanishes. */
+function buildBrands(query: ResultsQuery, catalog: CatalogFacets): FacetOption[] {
+  const rows = new Map(catalog.brands.map((row) => [row.value, row.count]));
+  for (const brand of query.brands) {
+    if (!rows.has(brand)) rows.set(brand, 0);
+  }
+  return [...rows]
+    .map(([brand, count]) => ({
+      value: brand,
+      label: brand,
+      count,
+      selected: query.brands.includes(brand),
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+/** Catalogue bounds rounded outward to $10, and the active range clamped into
+ *  them — computed, never typed (D42). A category with nothing priced reads
+ *  $0 to $0. */
+function buildPrice(
   query: ResultsQuery,
+  bounds: CatalogFacets["price"],
 ): PriceFacet {
-  const { min, max } = priceBounds(products);
+  const min = Math.floor((bounds.min ?? 0) / 10) * 10;
+  const max = Math.ceil((bounds.max ?? 0) / 10) * 10;
   const clamp = (value: number) => Math.min(Math.max(value, min), max);
   return {
     min,
@@ -332,174 +266,190 @@ function priceFacet(
 
 /** `Filters (n)` on the mobile bar: groups carrying an active filter. Price
  *  counts only when a bound differs from the computed bound — a slider parked
- *  at either end is not a filter. Size cannot contribute for a category with
- *  no size group (accessories): `hasSizeFilter` reads an always-empty
- *  `query.size` there and is always `false`. */
+ *  at either end is not a filter. A size lent by the vehicle is not counted:
+ *  it is not something the buyer set in the rail. */
 function countActiveGroups(query: ResultsQuery, price: PriceFacet): number {
   const priceActive =
     (query.priceMin !== null && price.selectedMin !== price.min) ||
     (query.priceMax !== null && price.selectedMax !== price.max);
   return [
-    hasSizeFilter(query),
+    hasSize(query.size),
     query.chips.length > 0,
     query.brands.length > 0,
     priceActive,
   ].filter(Boolean).length;
 }
 
-/** No `categories` facet: the drawn `Category` group is not built
- *  (`design/DEVIATIONS.md` #60, owner, 2026-09-22). It was cross-category
- *  navigation rather than a filter, so nothing here narrowed on it and no
- *  count, facet or best/similar split changes with its removal. */
 function buildFacets(
-  category: ProductCategory,
-  products: readonly Product[],
   query: ResultsQuery,
+  catalog: CatalogFacets,
+  price: PriceFacet,
 ): Facets {
-  const config = CATEGORY_CONFIG[category];
-  const price = priceFacet(products, query);
   return {
-    category,
-    sizeGroup: buildSizeGroup(category, products, query),
-    chipGroup: {
-      label: config.chips.label,
-      param: config.chips.param,
-      options: chipFacets(products, query, config.chips),
-    },
-    brands: brandFacets(products, query, config.chips),
+    category: query.category,
+    sizeGroup: buildSizeGroup(query, catalog),
+    chipGroup: buildChipGroup(query, catalog),
+    brands: buildBrands(query, catalog),
     price,
-    priceLabel: config.priceLabel,
+    priceLabel: CATEGORY_CONFIG[query.category].priceLabel,
     activeGroups: countActiveGroups(query, price),
   };
 }
 
-/* --- Sort -------------------------------------------------------------- */
-
-/** `best` keeps seed order, which is artboard order for tires (D43); the two
- *  price sorts are stable, so equal prices keep it too. */
-function sortProducts(
-  products: readonly Product[],
-  sort: ResultsQuery["sort"],
-): Product[] {
-  if (sort === "best") return [...products];
-  const direction = sort === "price-asc" ? 1 : -1;
-  return [...products].sort((a, b) => (a.price - b.price) * direction);
-}
-
-/* --- Unknown values ------------------------------------------------------ */
+/* --- Unknown values ------------------------------------------------------
+ *
+ * Drop what the page has no control for (D93b, QA WDG-07/08; carried across
+ * the move to the database by D111). `parseResultsQuery` is pure and
+ * catalogue-free, so it keeps `width=abc` and `brand=Nope`; left in the query
+ * they counted as an active group (`Filters (1)`) and had no ticked box or
+ * selected option a visitor could clear.
+ */
 
 /**
- * Drop what the page has no control for. `parseResultsQuery` is pure and
- * seed-free, so it keeps `width=abc` and `brand=Nope`; left in the query they
- * counted as an active group (`Filters (1)`), emptied the best list, and had
- * no ticked box or selected option a visitor could clear. A size value that is
- * not one of the category's own options becomes `Any`; a brand not in the
- * category's seed is dropped, and a known one takes the seed's spelling (so
- * `brand=zeta` and `brand=Zeta` are one filter and one href, D65) with
- * repeats collapsed. The price range is clamped to the seed's bounds and a
- * side sitting on its bound is dropped (`withPriceBounds`). QA WDG-07/08.
+ * The price range clamped into the catalogue's bounds, a side sitting on its
+ * bound dropped (`withPriceBounds`), and the brands settled against the
+ * category's own list. A brand the category does not carry at all is dropped;
+ * a known one takes the catalogue's spelling (so `brand=zeta` and `brand=Zeta`
+ * are one filter and one href, D65), repeats collapsed. A brand the category
+ * carries but the OTHER filters leave with no products is kept: `buildBrands`
+ * gives it a row reading 0, so a ticked box never vanishes (D108b).
  */
-function withKnownValues(
+function withKnownBrands(
   query: ResultsQuery,
-  products: readonly Product[],
+  carried: readonly string[],
 ): ResultsQuery {
-  const size: Record<string, string | null> = { ...query.size };
-  for (const field of CATEGORY_CONFIG[query.category].size?.fields ?? []) {
-    const value = size[field.param];
-    if (value === undefined || value === null) continue;
-    const known = sizeFieldOptions(products, field).some(
-      (option) => option.value === value,
-    );
-    if (!known) size[field.param] = null;
-  }
-
-  const seedBrands = new Map<string, string>();
-  for (const product of products) {
-    seedBrands.set(product.brand.toLowerCase(), product.brand);
+  const exact = new Set(carried);
+  /* First spelling wins when the catalogue holds one brand in two cases. */
+  const folded = new Map<string, string>();
+  for (const brand of carried) {
+    const key = brand.toLowerCase();
+    if (!folded.has(key)) folded.set(key, brand);
   }
   const brands: string[] = [];
   for (const wanted of query.brands) {
-    const canonical = seedBrands.get(wanted.toLowerCase());
+    const canonical = exact.has(wanted)
+      ? wanted
+      : folded.get(wanted.toLowerCase());
     if (canonical !== undefined && !brands.includes(canonical)) {
       brands.push(canonical);
     }
   }
+  const unchanged =
+    brands.length === query.brands.length &&
+    brands.every((brand, index) => brand === query.brands[index]);
+  return unchanged ? query : { ...query, brands };
+}
 
-  return withPriceBounds({ ...query, size, brands }, priceBounds(products));
+/**
+ * A size value that is not one of the category's own options becomes `Any`.
+ * The options arrive with the facets, so this runs after the first read; it
+ * returns the same object when every value is known, which is how the caller
+ * knows not to read again.
+ */
+function withKnownSizes(
+  query: ResultsQuery,
+  catalog: CatalogFacets,
+): ResultsQuery {
+  const group = buildSizeGroup(query, catalog);
+  if (group === null) return query;
+  const size: Record<string, string | null> = { ...query.size };
+  let changed = false;
+  for (const field of group.fields) {
+    const value = size[field.param];
+    if (value === undefined || value === null) continue;
+    if (!field.options.some((option) => option.value === value)) {
+      size[field.param] = null;
+      changed = true;
+    }
+  }
+  return changed ? { ...query, size } : query;
 }
 
 /* --- Search -------------------------------------------------------------- */
 
-export function searchResults(
-  category: ProductCategory,
-  params: RawSearchParams,
-): ResultsView {
-  return searchSeed(category, productsIn(category), params);
-}
-
-/** `searchResults` over an explicit product list. Exported so an empty
- *  category (no route reaches one today) is provable through the public path
- *  rather than by reading the code — QA WDG-18. */
-export function searchSeed(
-  category: ProductCategory,
-  products: readonly Product[],
-  params: RawSearchParams,
-): ResultsView {
-  const query = withKnownValues(parseResultsQuery(category, params), products);
-  const config = CATEGORY_CONFIG[category];
-
-  /* The unavailable SKU is NOT excluded: the artboard draws it and the page
-     still returns 200 with the dimmed card (`docs/decisions.md` §7). */
-  const filtered = products.filter(
-    (product) =>
-      matchesChips(product, query, config.chips) &&
-      matchesBrands(product, query) &&
-      matchesPrice(product, query),
-  );
+/** One read of the catalogue for a settled query: the two lists and the
+ *  facets. `catalog` rides along so the caller can check the size values. */
+async function readCatalogue(
+  query: ResultsQuery,
+  bounds: CatalogFacets["price"],
+): Promise<{ view: ResultsView; catalog: CatalogFacets }> {
+  const { category } = query;
 
   /* The vehicle's placeholder fitment entry, read once (D48(4)). `null` for
-     no vehicle and for a vehicle the map does not cover — both mean the page
-     behaves exactly as it did before a vehicle was named. */
+     no vehicle and for a vehicle the map does not cover. */
   const fit =
     query.vehicle === null
       ? null
       : findFitment(query.vehicle.make, query.vehicle.model);
 
-  /* The size that decides best vs similar. An explicit size in the URL always
-     wins; otherwise a vehicle may lend one, mapped per category (D48(4)).
-     `query` is NOT mutated: the URL's size selects stay `Any`, the rail and
-     sheet keep reading `Any`, and `facets.activeGroups` is computed from
-     `query` alone — a derived fitment is not a user filter. */
-  const size: SizeFilter = hasSizeFilter(query)
-    ? query.size
-    : fitmentSize(category, fit);
+  /* An explicit size in the URL always wins; otherwise a vehicle may lend
+     one, mapped per category (D48(4)). `query` is NOT mutated: the rail's
+     size selects stay `Any`, because a derived fitment is not a user filter. */
+  const size = hasSize(query.size) ? query.size : fitmentSize(category, fit);
 
-  /* What puts a product in `best`, or `null` when nothing narrows — then
-     everything filtered is a best match and `Similar matches` does not render
-     (D47(8)).
+  const price = buildPrice(query, bounds);
+  const filters = catalogFilters(query, size, fit, price);
 
-     Two ways to narrow, in precedence order. A size (chosen in the rail, or
-     derived from the vehicle) is the tire and wheel path and is unchanged.
-     An accessory has no size group at all (D58), so when a vehicle is named
-     it narrows on the spec string instead (D67). The branches cannot both
-     fire: `fitmentSize()` returns nothing for accessories and `query.size` is
-     empty for them, so `sizeGiven` is always false there. */
-  const sizeFields = config.size?.fields ?? [];
-  const isBest: ((product: Product) => boolean) | null = hasSize(size)
-    ? (product) => matchesSize(product, sizeFields, size)
-    : category === "accessories" && fit !== null
-      ? (product) => accessoryFitsVehicle(product, fit)
-      : null;
+  /* Something narrows when a size is in play, or when a vehicle's thread is
+     (accessories). With nothing narrowing, every match is a best match and
+     the similar row does not render (D47(8)), so it is not even asked for. */
+  const narrows = hasSize(size) || (category === "accessories" && fit !== null);
+  const expanded = query.show > RESULTS_WINDOW.best;
 
-  const best = isBest === null ? filtered : filtered.filter(isBest);
-  const similar =
-    isBest === null ? [] : filtered.filter((product) => !isBest(product));
+  const [best, similar, catalog] = await Promise.all([
+    listProducts({ ...filters, sort: query.sort, limit: query.show }),
+    narrows
+      ? listProducts({
+          ...filters,
+          sizeMatch: "near",
+          sort: query.sort,
+          limit: expanded
+            ? RESULTS_WINDOW.similarExpanded
+            : RESULTS_WINDOW.similar,
+        })
+      : { items: [], total: 0 },
+    getFacets(filters),
+  ]);
 
   return {
-    query,
-    facets: buildFacets(category, products, query),
-    best: sortProducts(best, query.sort),
-    similar: sortProducts(similar, query.sort),
-    total: best.length + similar.length,
+    catalog,
+    view: {
+      query,
+      facets: buildFacets(query, catalog, price),
+      best: best.items.map(toProduct),
+      similar: similar.items.map(toProduct),
+      bestTotal: best.total,
+      similarTotal: similar.total,
+      total: best.total + similar.total,
+    },
   };
+}
+
+export async function searchResults(
+  category: ProductCategory,
+  params: RawSearchParams,
+): Promise<ResultsView> {
+  const asked = parseResultsQuery(category, params);
+
+  /* The price bounds and the brand list come first: whether the URL's `min` /
+     `max` and `brand` are filters at all depends on them. Two small reads,
+     one an indexed aggregate. */
+  const [bounds, carried] = await Promise.all([
+    getPriceBounds(category),
+    getBrands(category),
+  ]);
+  const { min, max } = buildPrice(asked, bounds);
+  const settled = withKnownBrands(
+    withPriceBounds(asked, { min, max }),
+    carried,
+  );
+
+  const first = await readCatalogue(settled, bounds);
+
+  /* A size the selects do not offer was sent to the database as a filter.
+     Read again without it: a hand-typed URL pays the second read, a link the
+     page made never does. */
+  const query = withKnownSizes(settled, first.catalog);
+  if (query === settled) return first.view;
+  return (await readCatalogue(query, bounds)).view;
 }

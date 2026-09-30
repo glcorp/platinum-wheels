@@ -13,7 +13,7 @@
    two square desktop prev/next buttons permanently inert: four SKUs in four
    columns meant `scrollWidth === clientWidth`, so `scrollBy` could never do
    anything. The owner chose to make them work rather than remove them, so
-   the row grew to six SKUs (`FEATURED_ROW`) and the scroller runs all the
+   the row grew to six SKUs (`FEATURED_SLUGS`, `../featured.ts`) and the scroller runs all the
    way up. Cards visible at rest are unchanged — 260px on mobile, 3-up on
    tablet, 4-up on desktop — because `featured-card-3` / `featured-card-4`
    reproduce exactly the width the drawn grid gave each column.
@@ -99,7 +99,7 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
     if (!track) return;
 
     const maxScroll = track.scrollWidth - track.clientWidth;
-    /* Defensive only since D74 — `FEATURED_ROW` is six SKUs against four
+    /* Defensive only since D74 — the featured row is six SKUs against four
        visible at `md:` and three at `sm:`, so the track overflows at every
        width and both desktop buttons act. It still guards the case where the
        row is ever trimmed back to what fits. */

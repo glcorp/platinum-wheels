@@ -27,7 +27,15 @@ const PAY_SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* Product photos come from the database as full URLs once staff can upload
+     them (Vercel Blob). `next/image` refuses a host that is not listed, so the
+     Blob host is allowed here ahead of that work; a path from the site root
+     (`/images/...`) needs no entry. */
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
+    ],
+  },
   turbopack: {
     rules: {
       "*.css": {

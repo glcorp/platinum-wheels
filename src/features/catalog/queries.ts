@@ -36,6 +36,7 @@ import {
 import { getDb } from "@/db/client";
 import {
   accessorySpecs,
+  productImages,
   products,
   tireSpecs,
   wheelSpecs,
@@ -63,10 +64,10 @@ import {
   toCatalogProducts,
   withSpecs,
 } from "./rows";
-import { normalizeBoltPattern } from "./size";
+import { normalizeBoltPattern, normalizeThreadSize } from "./size";
 
 const DEFAULT_LIMIT = 24;
-const MAX_LIMIT = 100;
+const MAX_LIMIT = 150;
 const MAX_OFFSET = 1_000_000;
 /** The `products_slug_format` CHECK. Anything else cannot be a slug, so it is
  *  a 404 without asking the database (which refuses some of it outright). */
@@ -78,6 +79,8 @@ const SLUG_MAX_LENGTH = 200;
 const NEAR = { tireWidth: 10, tireAspectRatio: 5, wheelWidth: 1 } as const;
 
 const NOTHING = sql`false`;
+
+const HAS_PHOTO = sql`exists (select 1 from ${productImages} where ${productImages.productId} = ${products.id})`;
 
 /* --- Filters → SQL ------------------------------------------------------- */
 
@@ -137,9 +140,28 @@ function sizeParts(filters: ProductFilters) {
   };
 }
 
+/**
+ * True for a lug nut or wheel lock cut to a thread other than the vehicle's.
+ * Only a product that STATES a different thread contradicts: one with no
+ * thread on record, and every other kind of accessory, never does. `coalesce`
+ * keeps a product with no spec row on the "does not contradict" side, so it
+ * lands in the matches rather than in neither list.
+ */
+function contradictsThread(thread: string): SQL {
+  return sql`coalesce(${accessorySpecs.accessoryType} in ('lug_nuts', 'wheel_locks') and ${accessorySpecs.threadSize} is not null and ${accessorySpecs.threadSize} <> ${normalizeThreadSize(thread)}, false)`;
+}
+
+function vehicleThread(filters: ProductFilters): string | null {
+  const thread =
+    filters.category === "accessories" ? filters.accessory?.thread?.trim() : "";
+  return thread ? thread : null;
+}
+
 /** Every size part given, matched exactly. `null` = no size part given. */
 function exactSize(filters: ProductFilters): SQL | null {
   const parts: SQL[] = [];
+  const thread = vehicleThread(filters);
+  if (thread !== null) parts.push(not(contradictsThread(thread)));
   if (filters.category === "tires") {
     const { width, aspectRatio, rimDiameter } = sizeParts(filters).tire;
     if (width !== undefined) parts.push(eq(tireSpecs.width, width));
@@ -168,6 +190,9 @@ function exactSize(filters: ProductFilters): SQL | null {
  * relax (a width or a profile); without both there is nothing similar to show.
  */
 function nearSize(filters: ProductFilters): SQL {
+  const thread = vehicleThread(filters);
+  if (thread !== null) return contradictsThread(thread);
+
   const exact = exactSize(filters);
   if (exact === null) return NOTHING;
 
@@ -276,7 +301,15 @@ function orderBy(sort: CatalogSort): SQL[] {
     case "price-desc":
       return [sql`${products.price} desc nulls last`, asc(products.id)];
     case "best":
-      return [asc(products.brand), asc(products.name), asc(products.id)];
+      /* Every brand's strongest card before any brand's second: rank each
+         brand's products (one with a photo first, then the lowest price), and
+         read across the ranks. Sorting by brand alone opened every list with
+         six cards from whichever brand is first in the alphabet. */
+      return [
+        sql`row_number() over (partition by ${products.brand} order by (${HAS_PHOTO}) desc, ${products.price} asc nulls last, ${products.id}) asc`,
+        sql`${products.price} asc nulls last`,
+        asc(products.id),
+      ];
   }
 }
 
@@ -329,6 +362,36 @@ function sortedNumbers(values: ReadonlyArray<number | null>): number[] {
     .sort((a, b) => a - b);
 }
 
+/** The lowest and highest price among a category's published products.
+ *  `null` when nothing in it is priced. */
+export async function getPriceBounds(
+  category: ProductCategory,
+): Promise<{ min: number | null; max: number | null }> {
+  const [row] = await getDb()
+    .select({ min: min(products.price), max: max(products.price) })
+    .from(products)
+    .where(
+      and(eq(products.category, category), eq(products.status, "published")),
+    );
+  return { min: row?.min ?? null, max: row?.max ?? null };
+}
+
+/**
+ * Every brand with a published product in a category, whatever else is
+ * filtered. `getFacets` counts brands under the other filters; this is the
+ * list that says whether the category carries a brand at all (D111).
+ */
+export async function getBrands(category: ProductCategory): Promise<string[]> {
+  const rows = await getDb()
+    .selectDistinct({ value: products.brand })
+    .from(products)
+    .where(
+      and(eq(products.category, category), eq(products.status, "published")),
+    )
+    .orderBy(asc(products.brand));
+  return rows.map((row) => row.value);
+}
+
 /**
  * The filter rail for one category: option lists, and counts that agree with
  * what `listProducts` would return for the same filters.
@@ -357,22 +420,17 @@ export async function getFacets(
     .groupBy(products.brand)
     .orderBy(asc(products.brand));
 
-  const priceQuery = db
-    .select({ min: min(products.price), max: max(products.price) })
-    .from(products)
-    .where(inCategory);
-
-  const [[totals], brands, [price]] = await Promise.all([
+  const [[totals], brands, price] = await Promise.all([
     totalQuery,
     brandsQuery,
-    priceQuery,
+    getPriceBounds(category),
   ]);
 
   const facets: CatalogFacets = {
     category,
     total: totals?.total ?? 0,
     brands,
-    price: { min: price?.min ?? null, max: price?.max ?? null },
+    price,
     tire: null,
     wheel: null,
     accessory: null,
@@ -638,13 +696,57 @@ export async function getSimilarProducts(
     where.push(eq(accessorySpecs.accessoryType, product.specs.accessoryType));
   }
 
+  /* Closest first; then a photo before none, the lower price, and `id` so
+     the order never wavers. */
+  const closeness = sql.join(
+    [
+      ...order,
+      sql`(${HAS_PHOTO}) desc`,
+      sql`${products.price} asc nulls last`,
+      sql`${products.id} asc`,
+    ],
+    sql`, `,
+  );
+
   const rows = await withSpecs(
     db.select(PRODUCT_SELECTION).from(products).$dynamic(),
   )
     .where(and(...where))
-    .orderBy(...order, asc(products.brand), asc(products.name), asc(products.id))
+    .orderBy(
+      /* One card per model before any model's second: the closest product
+         of each brand + model, then the next closest of each. Without this
+         the row is four finishes of whichever model sorts first. */
+      sql`row_number() over (partition by ${products.brand}, ${products.model} order by ${closeness}) asc`,
+      closeness,
+    )
     .limit(clampLimit(limit, 6));
   return toCatalogProducts(db, rows);
+}
+
+/* --- Hand-picked rows ---------------------------------------------------- */
+
+/**
+ * The published products behind a list of slugs, in the list's own order. A
+ * slug that does not exist, or whose product is hidden or discontinued, is
+ * simply absent from the result: a hand-picked row shrinks, it never breaks.
+ */
+export async function getProductsBySlugs(
+  slugs: readonly string[],
+): Promise<CatalogProduct[]> {
+  const wanted = [...new Set(slugs)].filter(
+    (slug) => slug.length <= SLUG_MAX_LENGTH && SLUG.test(slug),
+  );
+  if (wanted.length === 0) return [];
+  const db = getDb();
+  const rows = await withSpecs(
+    db.select(PRODUCT_SELECTION).from(products).$dynamic(),
+  ).where(
+    and(inArray(products.slug, wanted), eq(products.status, "published")),
+  );
+  const bySlug = new Map(
+    (await toCatalogProducts(db, rows)).map((product) => [product.slug, product]),
+  );
+  return wanted.flatMap((slug) => bySlug.get(slug) ?? []);
 }
 
 /* --- Sitemap ------------------------------------------------------------- */

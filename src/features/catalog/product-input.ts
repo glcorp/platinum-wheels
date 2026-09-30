@@ -28,7 +28,11 @@ import {
   type TireSpecsInput,
   type WheelSpecsInput,
 } from "./catalog-types";
-import { parseBoltPatterns, parseTireSizeSpec } from "./size";
+import {
+  normalizeThreadSize,
+  parseBoltPatterns,
+  parseTireSizeSpec,
+} from "./size";
 
 export const PRODUCT_FIELD = {
   category: "category",
@@ -263,7 +267,10 @@ function parsePrice(fields: Fields): number | null {
     fields.fail("price", "Enter a price like 129.99, or leave it blank.");
     return null;
   }
-  return Number(cleaned.replace(/,/g, ""));
+  // A price of zero is a vendor's blank, not a price: stored as "no price",
+  // so the storefront reads `Inquire for price` instead of `from $0`.
+  const price = Number(cleaned.replace(/,/g, ""));
+  return price === 0 ? null : price;
 }
 
 function parseSources(fields: Fields): ProductSource[] {
@@ -429,8 +436,9 @@ function parseAccessorySpecs(fields: Fields): AccessorySpecsInput | null {
     fields.fail("accessoryType", "Choose the accessory type.");
   }
 
+  const threadSize = fields.text("threadSize", "thread size", short);
   const rest = {
-    threadSize: fields.text("threadSize", "thread size", short),
+    threadSize: threadSize === null ? null : normalizeThreadSize(threadSize),
     seatType: fields.text("accessorySeatType", "seat type", short),
     finish: fields.text("accessoryFinish", "finish", 120),
     packQuantity: fields.integer("packQuantity", "pack quantity", {

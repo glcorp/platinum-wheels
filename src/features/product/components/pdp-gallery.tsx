@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ViewTransition } from "react";
 
+import { ProductPhotoPlaceholder } from "@/features/catalog/components/product-photo-placeholder";
 import { productImageSrc } from "@/features/catalog/types";
 
 import { Badge } from "@/components/ui/badge";
@@ -56,9 +57,9 @@ import type { PdpBadge } from "@/features/product/types";
 export interface PdpGalleryProps {
   brand: string;
   model: string;
+  /** Names the shared-element transition this box is one end of (D92b). */
   slug: string;
-  /** Cut-out basename when it differs from `slug`, or an absolute path for
-   *  the accessories escape hatch (`Product.image`, D43, D58). */
+  /** The product's photo (`Product.image`). Absent = the placeholder tile. */
   image?: string;
   /** Mobile-only badge overlay (`product.md` §3.1). Omit to render no
    *  overlay — the desktop caller never passes it (badges live in the buy
@@ -66,7 +67,14 @@ export interface PdpGalleryProps {
   badges?: readonly PdpBadge[];
 }
 
-export function PdpGallery({ brand, model, slug, image, badges }: PdpGalleryProps) {
+export function PdpGallery({
+  brand,
+  model,
+  slug,
+  image,
+  badges,
+}: PdpGalleryProps) {
+  const photo = productImageSrc({ image });
   return (
     /* Desktop's `display:flex;flex-direction:column;gap:12px` column wrapper
        around the one image box (`product-desktop.html:102`) — the gap is
@@ -87,24 +95,30 @@ export function PdpGallery({ brand, model, slug, image, badges }: PdpGalleryProp
           share="morph"
           default="none"
         >
-          <Image
-            /* One resolver for the card and the gallery, so an accessory
-               cannot render its photo in the grid and a 404 on its own page
-               (`productImageSrc`, D58). */
-            src={productImageSrc({ image, slug })}
-            alt={`${brand} ${model}`}
-            width={1000}
-            height={1000}
-            /* The box is 704px only once the split activates at `md:` 1100 (see
-               the frame comment below); from 0 to 1099 the gallery is full-bleed,
-               so it is `100vw` there. Declaring 704px from 720 made the browser
-               pick a candidate ~1/3 the rendered width in the 720-1099 band and
-               upscale it. Crossover must match the frame's, not the type's. */
-            sizes="(min-width: 1100px) 704px, 100vw"
-            loading="eager"
-            fetchPriority="high"
-            className="photo-inset-gallery block h-full w-full object-contain"
-          />
+          {photo === null ? (
+            /* No photo on record: the placeholder tile (D108b). One resolver
+               for the card and the gallery (`productImageSrc`), so a product
+               cannot show a photo in the grid and a placeholder on its own
+               page. */
+            <ProductPhotoPlaceholder brand={brand} context="gallery" />
+          ) : (
+            <Image
+              src={photo}
+              alt={`${brand} ${model}`}
+              width={1000}
+              height={1000}
+              /* The box is 704px only once the split activates at `md:` 1100
+                 (see the frame comment above); from 0 to 1099 the gallery is
+                 full-bleed, so it is `100vw` there. Declaring 704px from 720
+                 made the browser pick a candidate ~1/3 the rendered width in
+                 the 720-1099 band and upscale it. Crossover must match the
+                 frame's, not the type's. */
+              sizes="(min-width: 1100px) 704px, 100vw"
+              loading="eager"
+              fetchPriority="high"
+              className="photo-inset-gallery block h-full w-full object-contain"
+            />
+          )}
         </ViewTransition>
         <div
           aria-hidden="true"

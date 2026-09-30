@@ -24,34 +24,22 @@
  * `unit` string by its caller instead, because `src/components/*` never
  * imports a feature (D37).
  *
- * Client-safe: type-only imports plus pure functions, **no seed import**.
+ * Client-safe: type-only imports plus pure functions, **no database import**.
  * `FilterPanel` is a `"use client"` island and reads its labels from here, so
- * anything that touches `PRODUCTS` belongs in `results/search.ts` instead —
- * which is also where the vehicle → size fitment lives, because that needs the
+ * anything that reads products belongs in `results/search.ts` instead — which
+ * is also where the vehicle → size fitment lives, because that needs the
  * finder seed (D48).
+ *
+ * Since the catalogue moved into Postgres (D105b, D108b) this table holds copy
+ * and param names only. It used to carry a `read` / `match` function per
+ * field, which pulled a value off a seed product in memory; filtering and
+ * counting are SQL now (`catalog/queries.ts`), so those are gone.
  */
 
-import type { Product, ProductCategory } from "./types";
+import { ACCESSORY_LABEL } from "./adapter";
+import type { AccessoryType, Product, ProductCategory } from "./types";
 import { productCategory } from "./types";
 import { ROUTES } from "@/lib/routes";
-
-/* --- Tire size parsing ---------------------------------------------------- */
-
-export interface TireSizeParts {
-  width: string;
-  profile: string;
-  rim: string;
-}
-
-/** `215/55R16 · 97T XL` → `{ width: "215", profile: "55", rim: "16" }`.
- *  The format is measured, not invented: `<width>/<ratio>R<rim>` with no
- *  spaces, then ` · ` (U+00B7) and the load/speed pair
- *  (`design/inventory/results.md:737`). */
-export function parseTireSize(size: string): TireSizeParts | null {
-  const match = /^(\d+)\/(\d+)R(\d+)/.exec(size);
-  if (match === null) return null;
-  return { width: match[1], profile: match[2], rim: match[3] };
-}
 
 /* --- Size fields ---------------------------------------------------------- */
 
@@ -72,28 +60,23 @@ export interface SizeFieldConfig {
   /** Strips `labelPrefix` back off an inbound value, so a URL carrying either
    *  spelling resolves. Tires' rim only. */
   strip?: RegExp;
-  /** This field's value for one product, or `null` when the product cannot
-   *  supply it. Facet options are the distinct non-null values across the seed. */
-  read: (product: Product) => string | null;
-  /** Facet options sort numerically by default; `text` sorts lexically, which
-   *  is what bolt patterns (`5x114.3`) need. */
-  sort?: "numeric" | "text";
 }
 
 /* --- Chip group ----------------------------------------------------------- */
 
 /**
- * The single chip row every category draws: `Season` on tires
- * (`results-desktop.html:135`), `Finish` on wheels, `Type` on accessories.
- * Same markup, same `ChipCheckbox`, same wrap behaviour — only the label, the
- * param and the option list move.
+ * The chip row: `Season` on tires (`results-desktop.html:135`), `Type` on
+ * accessories. Same markup, same `ChipCheckbox`, same wrap behaviour — only
+ * the label, the param and the option list move.
+ *
+ * **Wheels have none.** They used to filter on four authored finishes; the
+ * real catalogue spells finish 500 different ways, so the owner ruled the
+ * filter out and finish is a specification row only (D105b).
  */
 export interface ChipGroupConfig {
   label: string;
   param: string;
   options: ReadonlyArray<{ value: string; label: string }>;
-  /** Does this product carry this chip value? */
-  match: (product: Product, value: string) => boolean;
 }
 
 /* --- Category ------------------------------------------------------------- */
@@ -133,7 +116,8 @@ export interface CategoryConfig {
      *  #67). Tires never set this; their grid and padding are untouched. */
     dense?: boolean;
   } | null;
-  chips: ChipGroupConfig;
+  /** The chip row, or `null` when the category has none (wheels). */
+  chips: ChipGroupConfig | null;
   /**
    * The vehicle finder on this category's results page — the `Change vehicle`
    * disclosure in `ResultsToolbar` and the vehicle chip beside it.
@@ -204,93 +188,48 @@ export interface CategoryConfig {
 
 /** Chip copy verbatim and in artboard order — `results-desktop.html:135`
  *  (`All-season` lowercase s, unlike the card badge `All-Season`). Values are
- *  the `ProductBadge` keys they filter on; `summer` has no seed product yet. */
+ *  the `ProductBadge` keys, which are the database's season enum spelled with
+ *  a hyphen. `All-weather` is new copy (D105b), placed beside the season it is
+ *  most often confused with. */
 const TIRE_SEASONS: ChipGroupConfig = {
   label: "Season",
   param: "season",
   options: [
     { value: "all-season", label: "All-season" },
+    { value: "all-weather", label: "All-weather" },
     { value: "winter", label: "Winter" },
     { value: "summer", label: "Summer" },
   ],
-  match: (product, value) =>
-    product.badges.some((badge) => badge === value),
 };
 
 const TIRE_SIZE_FIELDS: readonly SizeFieldConfig[] = [
-  {
-    param: "width",
-    caption: "Width",
-    read: (product) => parseTireSize(product.size)?.width ?? null,
-  },
-  {
-    param: "profile",
-    caption: "Profile",
-    read: (product) => parseTireSize(product.size)?.profile ?? null,
-  },
-  {
-    param: "rim",
-    caption: "Rim",
-    labelPrefix: "R",
-    strip: /^[Rr]/,
-    read: (product) => parseTireSize(product.size)?.rim ?? null,
-  },
+  { param: "width", caption: "Width" },
+  { param: "profile", caption: "Profile" },
+  { param: "rim", caption: "Rim", labelPrefix: "R", strip: /^[Rr]/ },
 ];
 
 /* --- Wheels --------------------------------------------------------------- */
 
-/** New copy (`.claude/rules/ui.md`): short, declarative, no em dash. Order is
- *  darkest to lightest, which is how the chip row reads as a scale rather than
- *  an arbitrary list. */
-const WHEEL_FINISHES: ChipGroupConfig = {
-  label: "Finish",
-  param: "finish",
-  options: [
-    { value: "gloss-black", label: "Gloss black" },
-    { value: "machined", label: "Machined" },
-    { value: "bronze", label: "Bronze" },
-    { value: "silver", label: "Silver" },
-  ],
-  match: (product, value) => product.wheel?.finish === value,
-};
-
 const WHEEL_SIZE_FIELDS: readonly SizeFieldConfig[] = [
-  {
-    param: "diameter",
-    caption: "Diameter",
-    /* The seed writes `18`; the label adds the inch mark the buyer reads. */
-    labelPrefix: "",
-    read: (product) => product.wheel?.diameter ?? null,
-  },
-  {
-    param: "width",
-    caption: "Width",
-    read: (product) => product.wheel?.width ?? null,
-  },
-  {
-    param: "bolt",
-    caption: "Bolt pattern",
-    /* `5x114.3` in the URL, `5×114.3` (U+00D7) on screen — the same
-       ASCII-value / typographic-label split the tire rim uses for `R16`. */
-    read: (product) => product.wheel?.bolt ?? null,
-    sort: "text",
-  },
+  { param: "diameter", caption: "Diameter" },
+  { param: "width", caption: "Width" },
+  /* `5x114.3` in the URL and in the select: the value stays ASCII so a
+     hand-typed URL and a form submit spell it the same way. */
+  { param: "bolt", caption: "Bolt pattern" },
 ];
 
 /* --- Accessories ---------------------------------------------------------- */
 
+/** One chip per `AccessoryType`, in the database enum's order, with the same
+ *  words `adapter.ts` `ACCESSORY_LABEL` uses for the spec table. New copy
+ *  under `.claude/rules/ui.md`. */
 const ACCESSORY_TYPES: ChipGroupConfig = {
   label: "Type",
   param: "type",
-  /* Follows the client's photography (D63) — a type without a product shot
-     does not belong here; see `AccessoryType`. */
-  options: [
-    { value: "tpms", label: "TPMS sensors" },
-    { value: "lug-nuts", label: "Lug nuts" },
-    { value: "wheel-locks", label: "Wheel locks" },
-    { value: "centre-caps", label: "Centre caps" },
-  ],
-  match: (product, value) => product.accessoryType === value,
+  options: (Object.keys(ACCESSORY_LABEL) as AccessoryType[]).map((value) => ({
+    value,
+    label: ACCESSORY_LABEL[value],
+  })),
 };
 
 /* --- The table ------------------------------------------------------------ */
@@ -328,7 +267,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
       crumb: "Wheels",
       nav: "wheels",
       size: { label: "Wheel size", fields: WHEEL_SIZE_FIELDS, dense: true },
-      chips: WHEEL_FINISHES,
+      chips: null,
       finder: { cta: "Find my wheels" },
       priceLabel: "Price per wheel",
       unit: {
