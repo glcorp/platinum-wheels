@@ -128,8 +128,12 @@ options). Same streaming mechanism as **D80**, seen from the other side. Verify 
 `next build && next start`, never against the dev server.
 
 ## Open
-- Real fitment data source and who supplies it (root `llm.md` §7.3). Owner / client. Since D67 this
-  is four facts per vehicle, not two, and thread pitch is the one a wrong value damages a wheel over.
+- ~~Real fitment data source and who supplies it.~~ **Answered 2026-09-30 by D110:** the Year / Make /
+  Model list is `scripts/data/vehicles.csv` (NHTSA vPIC), and fitment is a hand-kept sheet the
+  co-founder fills from manufacturer sources. **Neither is wired in yet** — `data.ts` still ships the
+  D27 seed and the D48(4) placeholder map. Since D67 a vehicle resolves to four facts, not two, and
+  thread pitch is the one a wrong value damages a wheel over; the sheet keeps it optional for that
+  reason.
 - ~~Whether `/results` reads the three params or ignores them.~~ Answered: it parses `year`/`make`/`model`
   (all three or none) into `ResultsQuery.vehicle` (`src/features/results/query.ts:82-84,113`) and uses it
   only for the toolbar chip and the disclosure copy; it filters nothing, because no fitment data exists —
