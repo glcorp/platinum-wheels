@@ -358,3 +358,12 @@ export type PaymentAttempt = typeof paymentAttempts.$inferSelect;
 export type NewPaymentAttempt = typeof paymentAttempts.$inferInsert;
 export type PaymentEvent = typeof paymentEvents.$inferSelect;
 export type NewPaymentEvent = typeof paymentEvents.$inferInsert;
+
+/* ===========================================================================
+   Catalogue
+   =========================================================================== */
+
+// Products, specs, images and vendor sources live in their own file. They are
+// re-exported here because `drizzle.config.ts` and `client.ts` both read the
+// schema from this one module.
+export * from "./catalog-schema";
