@@ -84,6 +84,10 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
   the framework requires it to own, and `RouteError` — no component code of its own. Nothing else under `src/app/` may carry the directive, and the
   slop grep should treat any other occurrence as the failure it was always meant to catch.
 - All SEO-relevant content is server-rendered.
+- **One canonical origin**, `SITE_URL` in `src/lib/site.ts`: `https://platinumwheels.ca`, no `www`. Every
+  canonical URL is the clean path; a search, filter or quantity URL never makes a second address (D112).
+- **Search engines are blocked until launch** behind `SEARCH_INDEXING_ENABLED`, on only at exactly `true`
+  (D112). The rules, and what structured data may never carry, are in `src/features/seo/llm.md`.
 - `next/image` only, always with `sizes` and a reserved aspect box; the hero carries `priority`.
 - `next/link` for every internal link.
 - One `<h1>` per page; `header`/`nav`/`main`/`footer` landmarks present.

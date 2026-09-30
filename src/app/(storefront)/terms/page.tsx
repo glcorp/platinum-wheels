@@ -6,6 +6,8 @@ import {
   ProsePage,
   ProseSection,
 } from "@/components/site/prose-page";
+import { pageMetadata } from "@/features/seo/metadata";
+import { ROUTES } from "@/lib/routes";
 import { SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
@@ -34,10 +36,11 @@ import { SITE } from "@/lib/site";
        (`docs/decisions.md` §7 forbids displaying counts).
    --------------------------------------------------------------------------- */
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Terms",
   description: `The terms that apply to quotes and pricing from ${SITE.legalName}.`,
-};
+  path: ROUTES.terms,
+});
 
 /* One list of sections, mapped straight into `ProseSection`s below. */
 const SECTIONS: ReadonlyArray<{

@@ -5,9 +5,9 @@ The product domain: what a product *is* in this build, and the card that renders
 (2026-09-21) that means three categories, not one — tires, wheels and accessories — and this folder also
 owns the table that tells the rest of the build how they differ. `ProductCard` is "the
 storefront's most reused component" (`product-card.tsx:10`) — one shell with three homes, the home
-`featured-tires` row, the `/results` grid and the PDP `similar-products` row, all three of which measure
+`featured-tires` row, the `/tires` grid and the PDP `similar-products` row, all three of which measure
 byte-identically, so there is one component and no per-context variant (`product-card.tsx:12-18`).
-Delete this folder and every route loses its product surface, and `/results`, `/wheels` and
+Delete this folder and every route loses its product surface, and `/tires`, `/wheels` and
 `/accessories` lose the config that distinguishes them.
 
 ## Owns
@@ -23,7 +23,7 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   card instances, and four cut-outs cover the nine SKUs (D43). A per-SKU photo set removes every `image`
   and leaves `slug` doing the work again. Optional `studdable?: boolean` is the PDP spec table's
   `Winter (studdable)` row (D53(2)); it is deliberately **not** pushed into `badges`, which would give
-  that card a second badge and move a measured `/results` parity row. Carried by
+  that card a second badge and move a measured `/tires` parity row. Carried by
   `zeta-antarctica-sport` and its 235/40R18 sibling — the drawn PDP subject.
   **D58 added** `ProductCategory`, `AccessoryType`, `WheelSpec` (`WheelFinish` went with the finish filter, D105b), the optional
   `category` / `wheel` / `accessoryType` fields, `productCategory()` (absent `category` = tires) and
@@ -184,7 +184,7 @@ in place.
 - **Don't list `transform` in the hover transition** to match the artboard string — it would be inert
   (DEVIATIONS #15).
 - **Don't make the card photo's `share` a plain string** to "fix" a missing morph. Untyped, every slug
-  present on both pages pairs and flies at once — Home → `/results` flew six photos (D92b).
+  present on both pages pairs and flies at once — Home → `/tires` flew six photos (D92b).
 
 ## Open
 7. ~~**Wire the pages to `queries.ts`**~~ **Done by D108b**, with the four UI changes D105b listed.
@@ -192,8 +192,8 @@ in place.
    on every request: measured at 6 to 97 ms with all ~46k vendor rows, and their filter combinations
    are unbounded, so a cache there would grow without limit for little gain. Revisit if a page is slow
    in production. Owner.
-11. **No sitemap yet.** `listProductUrls()` is ready for one, but the site has no canonical URL in code
-    and the public domain still serves the goodwill site (D96). It belongs with the SEO work. Owner.
+11. ~~**No sitemap yet.**~~ **Closed 2026-09-30 by D112:** `src/features/seo/sitemap.ts` calls
+    `listProductUrls()` once per category, behind the indexing flag.
 12. **`public/images/products/*.webp` is now used by `/styleguide` only.** The seed cut-outs stay until
     real product photos are uploaded. Owner.
 9. **Tire sizes the parser refuses**, all real but none in the vendor sheets: commercial `11R22.5` and

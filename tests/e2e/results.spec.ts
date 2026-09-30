@@ -1,5 +1,5 @@
 /**
- * Functional flows on the three results routes (D58): `/results` (tires),
+ * Functional flows on the three results routes (D58): `/tires` (tires),
  * `/wheels`, `/accessories`. QA pass D91b, agent RES. See `tests/llm.md`.
  *
  * State is the URL (D44): every assertion here reads the URL, the controls and
@@ -40,7 +40,7 @@ function watchProblems(page: Page) {
 type Category = "tires" | "wheels" | "accessories";
 
 const ROUTE: Record<Category, string> = {
-  tires: "/results",
+  tires: "/tires",
   wheels: "/wheels",
   accessories: "/accessories",
 };
@@ -725,7 +725,7 @@ test.describe("result states", () => {
     await expectGridAgreesWithCount(page);
     await expectBadge(page, 2);
 
-    // HANDOFF.md §5: `/results?rim=R17` strips to 17 → 3 matches · 6 similar.
+    // HANDOFF.md §5: `/tires?rim=R17` strips to 17 → 3 matches · 6 similar.
     await page.goto(`${ROUTE.tires}?rim=R17`);
     await settle(page);
     await expect(countLine(page)).toHaveText("3 matches · 6 similar");

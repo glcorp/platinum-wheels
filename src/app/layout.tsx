@@ -4,6 +4,9 @@ import "./globals.css";
 import Script from "next/script";
 import { HashScroll } from "@/components/site/hash-scroll";
 import { NavProgress } from "@/components/site/nav-progress";
+import { siteRobots } from "@/features/seo/indexing";
+import { SITE_PREVIEW } from "@/features/seo/metadata";
+import { SITE_URL } from "@/lib/site";
 
 /* D92b motion bootstrap — needs no hydration and adds no `"use client"`.
    (1) Image fade-in: sets `data-img-fade` on <html> and marks each image
@@ -15,7 +18,7 @@ import { NavProgress } from "@/components/site/nav-progress";
    `beforeInteractive` script as a `self.__next_s` push that its runtime
    executes at hydration, after the document has parsed. Any image already
    loaded by then had fired its `load` unseen, stayed unmarked and so stayed
-   at opacity 0 for good — measured on `/results` at 1440, the second row of
+   at opacity 0 for good — measured on `/tires` at 1440, the second row of
    cards painted blank (D91b). So after arming the listeners it also marks
    every image that is already `complete`; the listener covers the rest.
    (2) Press feedback on iOS: Safari applies `:active` only when a touch
@@ -23,13 +26,26 @@ import { NavProgress } from "@/components/site/nav-progress";
    iPhone without this one passive no-op. */
 const MOTION_BOOT = `(function(){var d=document;d.documentElement.setAttribute("data-img-fade","");function m(e){var t=e.target;if(t&&t.tagName==="IMG")t.setAttribute("data-loaded","")}d.addEventListener("load",m,true);d.addEventListener("error",m,true);for(var i=d.images,k=0;k<i.length;k++)if(i[k].complete)i[k].setAttribute("data-loaded","");d.addEventListener("touchstart",function(){},{passive:true})})();`;
 
+/* Site-wide metadata (D112). What is set here is inherited by every route that
+   does not set the same field itself, and the merge is shallow, so an
+   indexable page builds its whole set with `pageMetadata()`
+   (`src/features/seo/metadata.ts`) rather than adding to this one.
+   - `metadataBase` is the one canonical origin. Every relative canonical and
+     preview-image URL below it resolves against it.
+   - `robots` is the launch switch: `noindex` on every page until
+     `SEARCH_INDEXING_ENABLED` is exactly `true` (`src/features/seo/indexing.ts`).
+   - **No `alternates.canonical` here.** A canonical set on the root layout
+     would be inherited by every page as `/`. */
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Platinum Wheels and Tire Solutions — Brampton, Ontario",
+    default: "Tires, Wheels and Accessories in Brampton · Platinum Wheels",
     template: "%s · Platinum Wheels",
   },
   description:
-    "Tires, wheels and accessories in Brampton, Ontario. Search by your vehicle — we match, confirm fitment and quote.",
+    "Brampton-based online store for tires, wheels and accessories. Search by your vehicle. We confirm the fitment and send you a quote.",
+  robots: siteRobots(),
+  ...SITE_PREVIEW,
 };
 
 export const viewport: Viewport = {

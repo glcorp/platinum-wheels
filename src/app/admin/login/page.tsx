@@ -10,7 +10,7 @@ import { SITE } from "@/lib/site";
 /* ---------------------------------------------------------------------------
    /admin/login — the sign-in page (D91)
 
-   NO ARTBOARD DRAWS THIS. The `design/` export covers `/`, `/results` and
+   NO ARTBOARD DRAWS THIS. The `design/` export covers `/`, `/tires` and
    `/products/[slug]` and nothing else, so the admin has no authority-level-2
    source at all (D89). Every value on this page comes from the existing token
    system, `docs/decisions.md` and `.claude/rules/ui.md` — nothing is invented

@@ -20,7 +20,7 @@ import { PRIMARY_CONTACT } from "@/lib/site";
    D  the results column is `display:flex;flex-direction:column;gap:80px`
       (results-desktop.html:151) and each section `gap:32px` (:152); the
       sections carry NO padding of their own — the grid shell in
-      `src/app/(storefront)/results/page.tsx` provides `40px 48px 0`.
+      `src/app/(storefront)/tires/page.tsx` provides `40px 48px 0`.
    M  each section carries its own padding: best `40px 16px 0` with `gap:20px`
       (results-mobile.html:102), similar `56px 16px 0` (:220).
    Tablet 720-1099 keeps the mobile arrangement (D46) and steps the page
@@ -301,7 +301,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
           </p>
           {empty ? <p className={SUPPORT}>{copy.empty}</p> : null}
         </div>
-        {/* The first row preloads: `/results` has no hero, so a best-matches
+        {/* The first row preloads: `/tires` has no hero, so a best-matches
             card is the LCP element. Lighthouse mobile, 2026-09-21, measured
             LCP 3.4s against the 2.5s gate with the first card image
             lazy-loaded and 523ms of resource load delay

@@ -9,7 +9,7 @@
  *   - CLS from `layout-shift` entries (buffered, `hadRecentInput` excluded as
  *     the metric defines it) over load + a full scroll + the page's
  *     interactions. Gate < 0.05 (`docs/decisions.md` §9), target 0.
- *   - A client navigation (PDP → /results) must not shift layout: every
+ *   - A client navigation (PDP → /tires) must not shift layout: every
  *     shift after the click is counted, input-excluded or not. This was the
  *     `loading.tsx` skeleton → page swap until D91b removed that file.
  *   - Long tasks during the interactions: count and total, reported.
@@ -169,7 +169,7 @@ async function openAndCloseDrawer(page: Page, results: Record<string, number>) {
 
 const PAGES = [
   { kind: "home", path: "/" },
-  { kind: "results", path: "/results" },
+  { kind: "results", path: "/tires" },
   { kind: "pdp", path: `/products/${SLUG.tire}?${VEHICLE}&qty=4` },
   { kind: "prose", path: "/about" },
 ] as const;
@@ -247,7 +247,7 @@ test.describe("perf under 4× CPU + Slow 4G", () => {
 
       const afterInteractions = await now(page);
 
-      // Client navigation PDP → /results. D62's loading.tsx skeleton swap is
+      // Client navigation PDP → /tires. D62's loading.tsx skeleton swap is
       // gone (D91b); count every shift after the click, input-excluded or not.
       let swapShift = 0;
       let swapSources: string[] = [];
@@ -255,10 +255,10 @@ test.describe("perf under 4× CPU + Slow 4G", () => {
         const tNav = await now(page);
         const crumb = page
           .getByRole("navigation", { name: "Breadcrumb" })
-          .getByRole("link", { name: "Results", exact: true })
+          .getByRole("link", { name: "Tires", exact: true })
           .filter({ visible: true });
         await crumb.click();
-        await expect(page).toHaveURL(/\/results/, { timeout: 60_000 });
+        await expect(page).toHaveURL(/\/tires/, { timeout: 60_000 });
         await revealed(page);
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
         const swap = (await perfLog(page)).shifts.filter((s) => s.t >= tNav);
@@ -299,7 +299,7 @@ test.describe("perf under 4× CPU + Slow 4G", () => {
       report(info, "INP proxy (max event duration per interaction, ms)", inp);
       report(info, "LCP (PARKED, D54 — reported, never gated)", lcp ? `${Math.round(lcp.t)} ms on ${lcp.el}` : "none");
 
-      // Accepted by the owner (D91b, VPE-8): on /results the filter commit lands
+      // Accepted by the owner (D91b, VPE-8): on /tires the filter commit lands
       // > 500ms after input under Slow 4G, so the kept D92b card-move motion
       // counts as a shift there. Load + scroll is still gated; the interaction
       // phase is reported above and carried by the fixme below.
@@ -308,7 +308,7 @@ test.describe("perf under 4× CPU + Slow 4G", () => {
           ? counted.filter((s) => s.t < interactionsStart).reduce((n, s) => n + s.value, 0)
           : cls;
       expect.soft(gated, `CLS over load + scroll${pg.kind === "results" ? "" : " + interactions"} (sources: ${[...new Set(counted.flatMap((s) => s.sources))].join(", ")})`).toBeLessThan(CLS_GATE);
-      expect.soft(swapShift, `layout shift across the PDP → /results crumb navigation (${swapSources.join(", ")})`).toBeLessThan(0.01);
+      expect.soft(swapShift, `layout shift across the PDP → /tires crumb navigation (${swapSources.join(", ")})`).toBeLessThan(0.01);
       for (const [label, ms] of Object.entries(inp)) {
         expect.soft(ms, `INP proxy for "${label}" under 4× CPU`).toBeLessThanOrEqual(INP_FLAG_MS);
       }

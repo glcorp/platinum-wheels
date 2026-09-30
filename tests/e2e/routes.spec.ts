@@ -29,7 +29,7 @@ const NO_CURRENT = [
 
 const CURRENT: Array<{ path: string; item: Item }> = [
   { path: "/", item: "Tires" },
-  { path: "/results", item: "Tires" },
+  { path: "/tires", item: "Tires" },
   { path: "/wheels", item: "Wheels" },
   { path: "/accessories", item: "Accessories" },
   { path: `/products/${SLUG.tire}`, item: "Tires" },
@@ -106,20 +106,22 @@ for (const { path, item } of CURRENT) {
 
 /* ---------- Part 2: status table ---------- */
 
-const OK = ["/", "/results", "/wheels", "/accessories", "/about", "/privacy", "/terms", "/styleguide", "/favicon.ico"];
+// `/robots.txt` answers 200 in both states of the indexing flag; what it says,
+// and `/sitemap.xml` (a bare 404 until the flag is on), are `seo.spec.ts` (D112).
+const OK = ["/", "/tires", "/wheels", "/accessories", "/about", "/privacy", "/terms", "/styleguide", "/favicon.ico", "/robots.txt"];
 
 const NOT_FOUND = [
   "/products",
   "/products/not-a-slug",
   "/products/ZETA-ANTARCTICA-SPORT",
   `/products/${SLUG.tire}/extra`,
-  "/Results",
+  "/Tires",
+  "/tires/x",
+  // The tire category lived here until D112; it moved with no redirect.
+  "/results",
   "/results/x",
-  "/tires",
   "/contact",
   "/index.html",
-  "/robots.txt",
-  "/sitemap.xml",
   "/apple-touch-icon.png",
   "/manifest.json",
   "/.env",
@@ -130,7 +132,7 @@ const NOT_FOUND = [
 
 const SLASH_REDIRECT: Array<[string, string]> = [
   ["/products/", "/products"],
-  ["/results/", "/results"],
+  ["/tires/", "/tires"],
   [`/products/${SLUG.tire}/`, `/products/${SLUG.tire}`],
 ];
 
@@ -181,7 +183,7 @@ for (const path of NOT_FOUND) {
     );
     await expect(page.getByRole("main").getByRole("link", { name: "Shop tires" })).toHaveAttribute(
       "href",
-      "/results",
+      "/tires",
     );
     await expect(page.getByRole("main").getByRole("link", { name: /^Call / })).toHaveAttribute(
       "href",

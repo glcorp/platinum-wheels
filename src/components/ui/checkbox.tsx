@@ -35,7 +35,7 @@ import { join } from "@/lib/cx";
  * `consent` is this primitive's original and only drawn shape: the CASL row's
  * 20px box with its own 13/14px muted copy and a 44px min row.
  *
- * `facet` is the `/results` filter row, which the same three exports draw at a
+ * `facet` is the `/tires` filter row, which the same three exports draw at a
  * different size: an **18px** box (`width:18px;height:18px`,
  * results-desktop.html:141 / results-mobile-filters.html:80) beside copy the
  * caller supplies — the rail's `name flex:1` + 13px tabular count, or the

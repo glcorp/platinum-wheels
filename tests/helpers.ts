@@ -22,8 +22,8 @@ export const VEHICLE = "year=2021&make=Honda&model=Civic";
 /** Every route the matrix covers (`design/reports/qa.md` §1). */
 export const ROUTES = [
   { name: "home", path: "/" },
-  { name: "results", path: "/results" },
-  { name: "results-vehicle", path: `/results?${VEHICLE}` },
+  { name: "results", path: "/tires" },
+  { name: "results-vehicle", path: `/tires?${VEHICLE}` },
   { name: "wheels", path: "/wheels" },
   { name: "accessories", path: "/accessories" },
   { name: "pdp-tire", path: `/products/${SLUG.tire}?${VEHICLE}&qty=4` },

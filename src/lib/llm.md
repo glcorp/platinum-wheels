@@ -15,8 +15,12 @@ the next session guesses which of the two phone numbers is real.
   emitted class string must stay byte-identical, and the consolidation was verified by diffing the
   `class="…"` attributes of all six rendered pages before and after. Zero imports, which is what keeps
   `src/lib/` free of any feature dependency (D37).
-- [`site.ts`](site.ts) — four named exports, sourced from `design/DESIGN.md` "Contact block (canonical)"
-  (`site.ts:1-8`):
+- [`site.ts`](site.ts) — six named exports. Four are sourced from `design/DESIGN.md` "Contact block
+  (canonical)" (`site.ts:1-8`); two were added by D112:
+  - `SITE_URL` — `https://platinumwheels.ca`, the one canonical origin (apex, no `www`, no trailing
+    slash). A constant, not an env var, so a preview still names the real site as canonical.
+  - `CONTACT_HOURS` — `SITE.hours` as data (days, `09:00`, `20:00`) for structured data only. **Phone
+    hours, not opening hours**: there is no shop (owner, 2026-09-30).
   - `SITE` — `name`, `legalName`, `tagline`, `city`, `province`, `email`, `hours`, `hoursLabel`, and
     `priceNote` (`Brampton, Ontario · Prices in CAD, before tax`, the footer line required by
     `docs/decisions.md` §7). **Load-bearing (D77):** prices render a bare `$` with no currency code,
@@ -35,7 +39,9 @@ the next session guesses which of the two phone numbers is real.
     brand strip (`design/inventory/home.md:728`).
 
 - [`routes.ts`](routes.ts) — `ROUTES` (every internal href), `PRODUCT_PATH`, `productRoute()`, `quoteRoute()`. The
-  one place a path literal lives (D39); components import from here, never write `/results` themselves.
+  one place a path literal lives (D39); components import from here, never write `/tires` themselves.
+  **The tire category is `ROUTES.tires` = `/tires` since D112**; the old `ROUTES.results` key and the
+  `/results` path are gone.
 
 ## Rules
 - **Nothing contact-related is hardcoded in a component.** Phone, email, hours, address, legal name and

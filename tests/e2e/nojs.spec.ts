@@ -70,7 +70,7 @@ async function ready(page: Page) {
 }
 
 const CATEGORIES = [
-  { name: "tires", route: "/results", cta: "Find my tires" },
+  { name: "tires", route: "/tires", cta: "Find my tires" },
   { name: "wheels", route: "/wheels", cta: "Find my wheels" },
   { name: "accessories", route: "/accessories", cta: "Find my accessories" },
 ] as const;
@@ -91,13 +91,13 @@ function paramsOf(page: Page) {
 // --- 1. Finder: home + each category, via the native <details> --------------
 
 test.describe("finder submits as a plain GET", () => {
-  test("home hero finder -> /results with the vehicle", async ({ page }) => {
+  test("home hero finder -> /tires with the vehicle", async ({ page }) => {
     await page.goto("/");
     await ready(page);
     const form = finder(page);
     await pickVehicle(form);
     await Promise.all([
-      page.waitForURL(/\/results\?/),
+      page.waitForURL(/\/tires\?/),
       form.getByRole("button", { name: /Find my tires/ }).click(),
     ]);
     const p = paramsOf(page);
@@ -145,7 +145,7 @@ test.describe("finder submits as a plain GET", () => {
   test("results with a vehicle: 'Change vehicle' re-opens and re-submits", async ({
     page,
   }) => {
-    await page.goto(`/results?${VEHICLE}`);
+    await page.goto(`/tires?${VEHICLE}`);
     await ready(page);
     const summary = page.locator('[data-probe="change-vehicle"]');
     await expect(summary).toContainText("Change vehicle");
@@ -227,7 +227,7 @@ test.describe("desktop rail without JS (D83)", () => {
   test("size + chip + brand + price all commit through one GET", async ({
     page,
   }) => {
-    await page.goto(`/results?${VEHICLE}`);
+    await page.goto(`/tires?${VEHICLE}`);
     await ready(page);
     const rail = page.getByRole("complementary", { name: "Filters" });
     const width = rail.getByLabel("Width", { exact: true });
@@ -284,7 +284,7 @@ test.describe("desktop rail without JS (D83)", () => {
     // With scripting off the `$min` / `$max` readout is React state and never
     // re-renders — the thumb moves and the number beside it does not. Asserting
     // the correct behaviour; see findings NJR for the measurement.
-    await page.goto("/results");
+    await page.goto("/tires");
     await ready(page);
     const rail = page.getByRole("complementary", { name: "Filters" });
     const minSlider = rail.getByRole("slider", { name: "Minimum price" });
@@ -304,7 +304,7 @@ test("below 1100 without JS the sheet cannot open and no noscript submit renders
   page,
 }, info) => {
   test.skip(!usesSheet(info), "sheet arrangement only");
-  await page.goto("/results");
+  await page.goto("/tires");
   await ready(page);
   await expect(
     page.getByRole("complementary", { name: "Filters" }),
@@ -325,7 +325,7 @@ test("below 1100 without JS the sheet cannot open and no noscript submit renders
 test("Load more is a ?show=all link that reveals the hidden cards", async ({
   page,
 }) => {
-  await page.goto("/results");
+  await page.goto("/tires");
   await ready(page);
   const cards = page.locator('[data-probe="best-grid"] article');
   const before = await cards.count();
@@ -442,11 +442,11 @@ test.describe("navigation without JS below md: 1100", () => {
   });
 
   test("footer still reaches every category and page", async ({ page }) => {
-    await page.goto("/results");
+    await page.goto("/tires");
     await loaded(page);
     const footer = page.getByRole("contentinfo");
     for (const [name, href] of [
-      ["Tires", "/results"],
+      ["Tires", "/tires"],
       ["Wheels", "/wheels"],
       ["Accessories", "/accessories"],
       ["About the shop", "/about"],
@@ -463,7 +463,7 @@ test.describe("navigation without JS below md: 1100", () => {
   }) => {
     // The drawer is a `<dialog>` island (D31), so the server renders the trigger as
     // a link to the footer's nav columns; the island swaps in the button on hydration.
-    await page.goto("/results");
+    await page.goto("/tires");
     await loaded(page);
     const menu = page.getByRole("banner").getByRole("link", { name: "Menu", exact: true });
     await expect(menu).toBeVisible();
@@ -485,7 +485,7 @@ test.describe("navigation without JS below md: 1100", () => {
     test.use({ javaScriptEnabled: true });
     test("the header with the Menu link passes axe (NJR-5, D91b)", async ({ page }) => {
       await page.route(/\/_next\/static\/.*\.js/, (route) => route.abort());
-      await page.goto("/results");
+      await page.goto("/tires");
       await loaded(page);
       await expect(
         page.getByRole("banner").getByRole("link", { name: "Menu", exact: true }),
@@ -507,7 +507,7 @@ test.describe("with JS on", () => {
     page,
   }, info) => {
     test.skip(usesSheet(info), "rail only");
-    await page.goto("/results");
+    await page.goto("/tires");
     await settle(page);
     await expect(
       page.getByRole("button", { name: "Apply filters" }),

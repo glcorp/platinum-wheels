@@ -6,7 +6,7 @@ Since **D58** (2026-09-21) it serves **all three catalogue categories** from one
 and an accessory are the same page, and everything that differs (spec rows, price unit, quantity
 wording, breadcrumb crumb and back link, similar list) is derived from the product's own
 `CategoryConfig`, never branched in a component. It is the only page in the build where a visitor
-converts — every `Request a quote` CTA on `/` and `/results` lands on the `#quote` anchor here
+converts — every `Request a quote` CTA on `/` and `/tires` lands on the `#quote` anchor here
 (`src/lib/routes.ts` `quoteRoute()`), so this folder owns the storefront's one form, and the
 quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
 
@@ -99,11 +99,11 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
   still single-column, and to **three** at `md` (1100–1319, measured) — past that ceiling, no artboard to
   license it. `56` is the token `winter-promo.tsx` already uses for this gap (D41 "promo h2 56"); it
   holds through 720–1319 (one line to 1099, a clean two after), 88 resuming only at `lg` (1320).
-- **Spec table is derived, never typed** (D53) — the same principle as D42 on `/results`. Six rows from
+- **Spec table is derived, never typed** (D53) — the same principle as D42 on `/tires`. Six rows from
   `Product` + `studdable`; if a value cannot be derived the row is dropped, not invented.
 - **The gallery is one image, no thumbnails** (D53). The desktop column's inert `gap:12px` is the slot a
   thumb strip *would* take; the export has no thumbs, dots, arrows or zoom (`product.md` §4). D7.
-- **`ProductCard` renders the similar row unchanged.** It is the same card as home and `/results`
+- **`ProductCard` renders the similar row unchanged.** It is the same card as home and `/tires`
   (`src/features/catalog/llm.md`); no PDP variant.
 - **CASL renders unticked** (`docs/decisions.md:118`) — `Checkbox variant="consent"` refuses `checked`.
 - **Sample form data does not ship** (`Priya Sandhu` etc., `design/DEVIATIONS.md` "Sample data") — fields render empty, real placeholders only.
@@ -111,7 +111,7 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
   Tokens only, no arbitrary values (`.claude/rules/ui.md`).
 - **Motion (D92b).** `pdp-gallery.tsx` wraps its image in the `product-photo-<slug>` view transition with
   `share="morph"` — a plain string, because the gallery is the fixed end of every pair; the card side is
-  type-keyed (`catalog/llm.md`). The breadcrumb's `Results` crumb carries `["nav-back", "product-back"]`
+  type-keyed (`catalog/llm.md`). The breadcrumb's `Tires` crumb (`Results` until D112) carries `["nav-back", "product-back"]`
   and `prefetch={true}` so the reverse morph can form; `Home` carries `["nav-back"]`. `SimilarProducts`
   renders `morph={false}`, so PDP → PDP slides but does not morph. Quantity cells press
   (`active:translate-y-px`) and stay untyped `?qty=` links (D50). The error summary, success panel and

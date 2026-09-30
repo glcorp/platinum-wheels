@@ -803,7 +803,7 @@ test.describe("reflow", () => {
     try {
       for (const [path, trigger, dialogName] of [
         ["/", "Menu", "Menu"],
-        ["/results", "Filters", "Filters"],
+        ["/tires", "Filters", "Filters"],
       ] as const) {
         await p.goto(path);
         await settleFull(p);
@@ -951,7 +951,7 @@ test.describe("forced colours", () => {
   test("forced colours: control boundaries, check glyph and selected states", async ({ page }, info) => {
     test.skip(info.project.name !== "chromium-1440", "forced-colors emulation is Chromium-only; one width suffices");
     await page.emulateMedia({ forcedColors: "active" });
-    await page.goto("/results?season=winter&brand=Zeta");
+    await page.goto("/tires?season=winter&brand=Zeta");
     await settleFull(page);
     await page.screenshot({ path: info.outputPath("forced-colors-results-selected.png"), fullPage: true });
 
@@ -1099,7 +1099,7 @@ test.describe("reduced motion", () => {
   test("reduced motion: sheet, drawer, disclosure and skip link settle in one frame", async ({ page }, info) => {
     test.skip(!applies(info), "runs per engine at 1440 and on one phone per engine");
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/results");
+    await page.goto("/tires");
     await settleFull(page);
     const afterFrames = () =>
       page.evaluate(

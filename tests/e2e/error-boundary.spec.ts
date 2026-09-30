@@ -54,7 +54,7 @@ test.describe("root layout error", () => {
   test.skip(process.env.PW_ROOT_ERROR !== "1", "needs a server whose root layout throws");
 
   test("lands on the branded global-error, not Next's bare page", async ({ page }) => {
-    const res = await page.goto("/results");
+    const res = await page.goto("/tires");
     expect(res?.status()).toBe(500);
 
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
@@ -76,7 +76,7 @@ test.describe("root layout error", () => {
   });
 
   test("the root boundary passes axe", async ({ page }) => {
-    await page.goto("/results");
+    await page.goto("/tires");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     const { violations } = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])

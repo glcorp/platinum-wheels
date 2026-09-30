@@ -1,6 +1,15 @@
 # Platinum Wheels — session handoff
 
-**Last updated 2026-09-30 (all four open PRs combined into one branch for a single `glcorp` merge, D111).**
+**Last updated 2026-09-30 (SEO groundwork, D112, on branch `seo`, off `main` once #12 had merged).**
+Search engines stay blocked until launch behind `SEARCH_INDEXING_ENABLED` (on only at exactly `true`; off
+in Vercel). Built behind it: `/robots.txt`, a sitemap index with four files, canonical URLs and
+Open Graph and Twitter tags on every indexable page, structured data (an online store with no street
+address and no opening hours, products with no price) and two link-preview cards. **The tire category
+moved from `/results` to `/tires`**: `/results` in any older note below means today's `/tires`. Rules:
+`src/features/seo/llm.md`. Owner and client actions: `todo.md` S1 to S6, and **S1's order matters**: turn
+the flag on in the deploy that reaches the apex. Verified in both flag states by `tests/e2e/seo.spec.ts`.
+
+**Before that, 2026-09-30 (all four open PRs combined into one branch for a single `glcorp` merge, D111).**
 The branch brings **#11** the vehicle list snapshot (D110), **#8** Converge payments (D105–D108), **#9** the
 catalogue database with its server code (D105b–D107b, migration `0002`) and **#10** the page wiring
 (D108b, D109): every storefront page reads the database and the seed is deleted.
@@ -167,11 +176,11 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 |---|---|
 | Library | 26 `llm.md` files. Root = register (D1–D57) + template + folder map + 20 open items. |
 | `/` | `SiteHeader over-hero`, 8 home sections, `SiteFooter` (D38). Parity `design/reports/home.md`. |
-| `/results` · `/wheels` · `/accessories` | **One** composition, `results/components/results-page.tsx`, called by three thin `page.tsx` with a `category` (D58). URL-driven search over that category's seed (D44): `ResultsToolbar`, `FilterSortBar`, `md:results-grid` (rail + grid), `CallCtaPanel`. Parity `design/reports/results.md` covers `/results`; the other two are **not parity rows** and inherit it by rendering the same tree (`DEVIATIONS.md` #49). |
+| `/tires` (was `/results` until D112) · `/wheels` · `/accessories` | **One** composition, `results/components/results-page.tsx`, called by three thin `page.tsx` with a `category` (D58). URL-driven search over that category's seed (D44): `ResultsToolbar`, `FilterSortBar`, `md:results-grid` (rail + grid), `CallCtaPanel`. Parity `design/reports/results.md` covers `/results`; the other two are **not parity rows** and inherit it by rendering the same tree (`DEVIATIONS.md` #49). |
 | `/products/[slug]` | `productView(product, searchParams)` → one `ProductView`; breadcrumb, `pdp-split` gallery + sticky buy panel, specs, quote band, similar row. Parity `design/reports/product.md`. |
 | `src/features/product/` | `types.ts`, `view.ts` (all derivation), `actions.ts` (`"use server"`), **10** components; one island `quote-form.tsx`. Two authored states in their own modules so `/styleguide` renders the real thing: `quote-success.tsx` (D51) and `quote-error-summary.tsx` (D57). |
 | `src/features/results/` | `types.ts`, `query.ts`, `search.ts`, 9 components (D58 added `results-page.tsx`); islands `sort-select`, `filter-panel`, `filter-sheet`. D42–D49, D58, D59. **Nothing here branches on the category** — components read `view.facets`, and what differs is data in `catalog/categories.ts`. |
-| Finder | `src/features/finder/` — native selects, GET to `ROUTES.results` by default with `action`/`cta` overrides (D27/D28/D58); `variant="inline"` for `Change vehicle` (D45); **placeholder `FITMENT` map** now carrying a **bolt pattern** as well as a tire size (D48, D58). `/wheels` submits to `/wheels`; `/accessories` renders no finder at all (D59(2)). |
+| Finder | `src/features/finder/` — native selects, GET to `ROUTES.tires` by default with `action`/`cta` overrides (D27/D28/D58); `variant="inline"` for `Change vehicle` (D45); **placeholder `FITMENT` map** now carrying a **bolt pattern** as well as a tire size (D48, D58). `/wheels` submits to `/wheels`; `/accessories` renders no finder at all (D59(2)). |
 | Catalog | **The seed named in this row was deleted by D108b; every page reads the database (`src/features/catalog/llm.md`). The component notes still hold.** `FEATURED_PRODUCTS` (4), `PRODUCTS` (9 tires), **`WHEELS` (9)** and **`ACCESSORIES` (9)**, one unavailable each, plus `ALL_PRODUCTS` / `productsIn()` (D43, D58). `Product` gained optional `category` (**absent = tires**, which is what keeps every measured tire row byte-identical), `wheel`, `accessoryType`; plus `productCategory()` and `productImageSrc()`. **`categories.ts` is the per-category table** (`CATEGORY_CONFIG`) read by `results/`, `product/` and `ProductCard` — it lives in `catalog/` because D37 routes cross-feature imports through there, and it imports no seed so a client island can use it. `ProductCard` is the most reused component in the build and is unchanged on all three categories. |
 | Chrome | `site-header`, `site-nav-drawer`, `site-footer` (no social row, D34), `page-stub`. Skip link in `layout.tsx` (D57). |
 | Primitives | **Ten**, hand-built and token-only in `src/components/ui/`. Every variant and state is on `/styleguide`. Neither the PDP, nor D57, nor D58 needed a new primitive — D58 added exactly one optional prop, `Price.unit`, defaulting to the drawn tire string. |
@@ -184,6 +193,7 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | `/admin/login` | Flush-left 420px sign-in column, username + password (D91). Redirects to `/admin` if already signed in. |
 | `/admin/styleguide` | The admin's authored states (D93), gated. Renders the real components inert. |
 | `src/features/admin/` | `types.ts` (contract), `session.ts` (one shared sign-in, hardened by D95: scrypt hash, signed `__Host-` cookie, CSRF + origin checks), two `"use server"` actions that call `requireAdminAction()` first, 6 components; islands `login-form`, `payment-link-form`, `copy-link-button`. `scripts/hash-admin-password.mjs` makes `ADMIN_PASSWORD_HASH`. |
+| SEO | `src/features/seo/` (D112): indexing flag `SEARCH_INDEXING_ENABLED` (off in Vercel until launch), `/robots.txt`, `/sitemap.xml` + `/sitemaps/*.xml`, `pageMetadata()` on every indexable page, JSON-LD (`OnlineStore`, `WebSite`, `Product` with no offer, `BreadcrumbList`), `/opengraph-image` and `/products/<slug>/og.jpg`. Verified by `tests/e2e/seo.spec.ts` in both flag states. |
 | Stubs left | `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). `/wheels` and `/accessories` left this list on 2026-09-21 (D58). |
 
 ---

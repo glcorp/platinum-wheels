@@ -10,7 +10,7 @@ import { FinderModelSync } from "@/features/finder/components/finder-model-sync"
  * "Find my tires" CTA. Overlaps the hero (design/inventory/home.md:35-37,
  * §2.3 lines 152-165). Ships unselected with a placeholder option per select
  * (D28); the artboard pre-fill `2021 / Honda / Civic` is sample data and does
- * not ship. No JS required to submit — plain GET to ROUTES.results.
+ * not ship. No JS required to submit — plain GET to ROUTES.tires.
  *
  * Still a Server Component after D70. The `Model` select renders every make's
  * models under an `<optgroup>` per make, which is the whole list a
@@ -32,7 +32,7 @@ import { FinderModelSync } from "@/features/finder/components/finder-model-sync"
  * vehicle at all. Nothing downstream can receive a value it cannot handle.
  *
  * Submit target and CTA copy are per category (D58). The home hero and
- * `/results` keep the drawn `ROUTES.results` + `Find my tires`, byte for byte;
+ * `/tires` keep the drawn `ROUTES.tires` + `Find my tires`, byte for byte;
  * `/wheels` submits to `/wheels` and reads `Find my wheels`, and `/accessories`
  * to `/accessories` reading `Find my accessories` (D67) — so the disclosure
  * never throws a visitor back to tires. All three targets come from
@@ -42,7 +42,7 @@ import { FinderModelSync } from "@/features/finder/components/finder-model-sync"
  * Two placements, one form:
  * - `hero` (default, unchanged) — the home page panel that overlaps the hero
  *   photo: negative top margin plus its own side margins and container cap.
- * - `inline` (D45) — the `/results` toolbar's `Change vehicle` disclosure.
+ * - `inline` (D45) — the `/tires` toolbar's `Change vehicle` disclosure.
  *   Drops the overlap and the side margins/cap so the panel takes its
  *   parent's width; the padding, border, fields and CTA are identical.
  *   Only ever one finder per page, so the field `id`s stay unique.
@@ -50,8 +50,8 @@ import { FinderModelSync } from "@/features/finder/components/finder-model-sync"
 export interface VehicleFinderProps {
   variant?: "hero" | "inline";
   /**
-   * Where the GET submit lands. Defaults to `ROUTES.results`, the drawn
-   * target, so the home hero and `/results` are unchanged; `/wheels` passes
+   * Where the GET submit lands. Defaults to `ROUTES.tires`, the drawn
+   * target, so the home hero and `/tires` are unchanged; `/wheels` passes
    * its own route (D58).
    */
   action?: string;
@@ -72,7 +72,7 @@ export interface VehicleFinderProps {
 
 export function VehicleFinder({
   variant = "hero",
-  action = ROUTES.results,
+  action = ROUTES.tires,
   cta = "Find my tires",
   carry = [],
 }: VehicleFinderProps) {

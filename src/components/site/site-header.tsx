@@ -46,7 +46,7 @@ export function SiteHeader({
 }: {
   variant: "over-hero" | "solid";
   /** The current nav item. Every drawn route passes its own explicitly
-   *  (tires on `/`, `/results` and tire PDPs, results-desktop.html:93). Omitted
+   *  (tires on `/`, `/tires` and tire PDPs, results-desktop.html:93). Omitted
    *  means NO item is current, which is what `/about`, `/privacy`, `/terms`
    *  and the 404 need: they belong to none of the four. It used to default to
    *  "tires", so those pages marked Tires as current in the desktop row and

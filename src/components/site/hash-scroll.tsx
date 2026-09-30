@@ -19,7 +19,7 @@
    ran against the skeleton.
 
    D91b removed `loading.tsx`, which removed that cause on both paths —
-   measured on the production build, header `Contact` from `/results` and
+   measured on the production build, header `Contact` from `/tires` and
    footer `How it works` from `/about` land on all ten projects that failed
    (three engines, phones, tablets, 320), 180 of 180 navigations, with this
    file's code unchanged. It stays as a safety net: any

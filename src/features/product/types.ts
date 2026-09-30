@@ -3,7 +3,7 @@
  * build agents code against one shape (D25, the pattern that worked at
  * `page results`: `src/features/results/types.ts`).
  *
- * Two halves, same as `/results`:
+ * Two halves, same as `/tires`:
  *   `view.ts`  — pure derivation from a `Product` + the raw query (no I/O).
  *   `actions.ts` — the quote-form Server Action (D51).
  *
@@ -86,7 +86,7 @@ export const CUSTOM_QUANTITY_MIN = 1;
 export const CUSTOM_QUANTITY_MAX = 99;
 
 /** Query-string params this route reads. `qty` is its own (D50); the vehicle
- *  trio arrives from `/results` and is passed straight through to the
+ *  trio arrives from `/tires` and is passed straight through to the
  *  breadcrumb's back-link and the quote chip. */
 export const PRODUCT_PARAM = {
   qty: "qty",
@@ -169,7 +169,7 @@ export interface ProductView {
    *  quote chip's second half and the quote paragraph's vehicle clause. Absent
    *  → both genericise, they never invent a vehicle (D47(5) precedent). */
   vehicle: Vehicle | null;
-  /** The product's own category route — `/results`, `/wheels` or
+  /** The product's own category route — `/tires`, `/wheels` or
    *  `/accessories` (D58) — carrying every inbound param except `qty`, so the
    *  breadcrumb returns to the search the visitor came from
    *  (`design/manifest.md` §3). */

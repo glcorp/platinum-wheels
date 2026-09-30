@@ -1,5 +1,5 @@
 /**
- * Per-category configuration — the one table that makes `/results`, `/wheels`
+ * Per-category configuration — the one table that makes `/tires`, `/wheels`
  * and `/accessories` the same page (D58).
  *
  * Owner, 2026-09-21: *"also add wheels and accessories to scope. keep them
@@ -83,12 +83,13 @@ export interface ChipGroupConfig {
 
 export interface CategoryConfig {
   category: ProductCategory;
-  /** This category's results route. Tires keep `/results` (D39), so every
-   *  measured URL on the built page is untouched. */
+  /** This category's results route. Tires is `/tires` (D112; it was
+   *  `/results`, D39). */
   route: string;
   /**
-   * Breadcrumb leaf and `<title>`. Tires keep the artboard's `Results`
-   * verbatim (`results-desktop.html:112`); the other two are new copy.
+   * Breadcrumb leaf. Tires read `Tires` since D112 (owner, 2026-09-30,
+   * `design/DEVIATIONS.md` #95); the artboard draws `Results`
+   * (`results-desktop.html:112`). The other two are new copy.
    *
    * There is no `label` field. It existed only for the rail's `Category` group
    * row (`Tires` / `Wheels` / `Accessories`, `results-desktop.html:125`), and
@@ -238,8 +239,8 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
   {
     tires: {
       category: "tires",
-      route: ROUTES.results,
-      crumb: "Results",
+      route: ROUTES.tires,
+      crumb: "Tires",
       nav: "tires",
       size: { label: "Tire size", fields: TIRE_SIZE_FIELDS },
       chips: TIRE_SEASONS,

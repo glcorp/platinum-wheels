@@ -28,6 +28,12 @@ database** (Open, below), and the rules in this file apply again from that day.
   `e2e/environment.spec.ts` (offline, blocked storage, failed images/fonts, CPU races, rotation, zoom, print,
   two tabs). `PW_ROOT_ERROR=1` enables the root-layout-error tests in `error-boundary.spec.ts` and needs a
   scratch server whose root layout throws.
+- `e2e/seo.spec.ts` (D112) — the search-facing contract, network only (no browser, one project):
+  `robots.txt` and the sitemaps by flag and by host, the robots meta, canonical and preview tags of every
+  indexable page, the never-indexed pages, and the structured data, which fails on any address, opening
+  hours, price, offer, rating or review. **One run sees one flag state**: run it once as is and once with
+  `SEARCH_INDEXING_ENABLED=true` against a build made with the same value. Its product test skips
+  until the fixture database exists (D111); everything else needs no database rows.
 - `e2e/**/__screenshots__/` — `toHaveScreenshot` baselines (macOS, Chromium only). Committed.
 
 ## Rules

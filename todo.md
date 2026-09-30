@@ -127,6 +127,57 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
    - **Depends on:** the Vercel plan. Hobby is non-commercial only, and only `glcorp`-authored merge
      commits deploy. See root `llm.md` §7.24.
 
+## Owner, at launch — search (D112)
+
+S1. **Turn search indexing on in the same deploy that goes onto the apex.**
+   - **Why:** the storefront ships with search engines blocked (`SEARCH_INDEXING_ENABLED` unset or
+     `false`). The page-level `noindex` is fixed when the site is built, so a build made with the flag
+     off stays `noindex` wherever it is served. **`platinumwheels.ca` ranks today with the goodwill
+     site.** Pointing it at a flag-off build tells Google to drop it.
+   - **How:** in Vercel, set `SEARCH_INDEXING_ENABLED` to exactly `true` for **Production only**
+     (lower case, no spaces; anything else is off) and **redeploy**. Only then move the apex (item 6).
+   - **Done when:** `curl https://platinumwheels.ca/robots.txt` shows `Allow: /` and the `Sitemap:` line;
+     the home page's source has `<meta name="robots" content="index, follow, …">`;
+     `https://platinumwheels.ca/sitemap.xml` lists four files; and `robots.txt` on
+     `admin.platinumwheels.ca`, `pay.platinumwheels.ca` and the `*.vercel.app` URL still says
+     `Disallow: /`.
+S2. **Redirect `www.platinumwheels.ca` to the apex** in Vercel (Domains, add `www`, "Redirect to
+   `platinumwheels.ca`").
+   - **Why:** `www` answers 200 with the same pages today (measured 2026-09-30), a duplicate of every
+     URL. The storefront names the apex as canonical and refuses to list itself on `www`.
+   - **Done when:** `curl -I https://www.platinumwheels.ca/` answers 308 to `https://platinumwheels.ca/`.
+S3. **Verify the domain in Google Search Console and submit the sitemap.**
+   - **How:** add a **Domain** property for `platinumwheels.ca`, publish the TXT record it gives in
+     Cloudflare (TXT records are never proxied), then submit `https://platinumwheels.ca/sitemap.xml`.
+   - **Why:** with no third-party scripts on the site (`docs/decisions.md` §6), Search Console is the
+     only place search data shows up.
+   - **Done when:** the sitemap reads "Success" and the four child sitemaps are listed.
+   - **Bing too:** add the site in Bing Webmaster Tools (it can import from Search Console) and submit
+     the same sitemap. Copilot answers from Bing's index, and ChatGPT search uses Bing among its sources.
+S3b. **Check that nothing blocks AI search crawlers**, unless the owner wants them blocked.
+   - **Why:** `robots.txt` admits every crawler once indexing is on, which is what lets ChatGPT search,
+     Perplexity, Claude and Copilot cite the site. A dashboard toggle can still block them.
+   - **How:** in Vercel, Firewall, confirm the **AI Bots** managed ruleset and **Bot Protection** are
+     off (both are off by default). In Cloudflare, item 6 already makes the website records DNS only,
+     which takes Cloudflare's AI-bot blocking out of the path.
+
+## Client, via the owner — search (D112)
+
+S4. **Decide how customers receive their goods.**
+   - **Why:** the site describes an online store based in Brampton because this is undecided. A
+     **Google Business Profile is only allowed if the owners meet customers in person** (delivery or
+     installation); an online-only business is not eligible.
+   - **Then:** if they do, create the profile as a service-area business with the **address hidden** and
+     Brampton as the area, and the site links to it. If they do not, create none.
+S5. **Confirm the legal name.** The storefront says `Platinum Wheels and Tire Solutions`; the goodwill
+   site's markup says `… Inc.`. The value is `SITE.legalName` in `src/lib/site.ts`.
+
+## Later — search (D112)
+
+S6. **Add prices to the product structured data** once the owner settles the pricing rule and confirms
+   prices are shown publicly. Until then a product's markup has no offer, by ruling, and so does not
+   qualify for Google's product rich result. `src/features/seo/schema.ts`.
+
 ## Client, via the owner
 
 8. **Street address.** The email footer ships with `Brampton, ON` for now (owner ruling 2026-09-23).

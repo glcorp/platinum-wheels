@@ -108,7 +108,7 @@ const t = (text: string, extra: Omit<Loc, "text"> = {}): Loc => ({ text, ...extr
 const css = (sel: string, extra: Omit<Loc, "css"> = {}): Loc => ({ css: sel, ...extra });
 
 const TYPE: Prop[] = ["font-family", "font-size", "font-weight", "line-height", "letter-spacing", "text-transform", "color"];
-const RESULTS_STAGED = `/results?width=215&profile=55&rim=16&${VEHICLE}`;
+const RESULTS_STAGED = `/tires?width=215&profile=55&rim=16&${VEHICLE}`;
 const PDP_STAGED = `/products/${SLUG.tire}?${VEHICLE}&qty=4`;
 
 /* ------------------------------------------------------------------------ */

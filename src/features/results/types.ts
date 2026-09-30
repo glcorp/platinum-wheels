@@ -15,7 +15,7 @@
  * **Tires are unchanged.** `category` is carried, not serialised — each
  * category has its own route (D58) — and the tire category's params are the
  * measured `width` / `profile` / `rim` / `season`, emitted in the same order,
- * so every URL, probe and parity row on the built `/results` still holds.
+ * so every URL, probe and parity row on the built `/tires` still holds.
  */
 
 import type { Product, ProductCategory } from "@/features/catalog/types";
