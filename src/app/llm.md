@@ -34,6 +34,8 @@ entire site loses its type or its palette at once.
   the layout's font variables and classes, renders `RouteError`. Catches only a throw in `layout.tsx`. With
   JS off Next serves an empty `__next_error__` shell for that case — a framework limit, not fixable here.
 - [`(storefront)/`](<(storefront)/llm.md>) — the storefront route group. Has its own `llm.md`.
+- [`admin/`](admin/llm.md) — the staff tool segment (D89). Has its own `llm.md`.
+- [`pay/`](pay/llm.md) — the customer payment routes on `pay.platinumwheels.ca` (D105). Has its own `llm.md`.
 
 ## Rules
 `globals.css`, in the ten lines worth internalising — point at the file, don't restate its comments:
