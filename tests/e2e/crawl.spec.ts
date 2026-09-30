@@ -692,7 +692,10 @@ for (const route of ROUTES) {
 
       // -- 1. hit test ------------------------------------------------------
       const hits: HitResult[] = [];
-      const testable = ctls.filter((c) => !c.offscreen);
+      // The D104 honeypot is an `sr-only`, `aria-hidden`, untabbable input on purpose:
+      // nobody can reach it, so nobody can be blocked from it. Tabbable-in-aria-hidden is
+      // still reported below.
+      const testable = ctls.filter((c) => !c.offscreen && !(c.ariaHidden && !c.tabbable));
       for (const c of ctls.filter((c) => c.offscreen)) {
         // The skip link waits off-canvas until it takes focus (D57 C1).
         note("offscreen-until-focus", `${c.tag} "${c.name}" ${c.href ?? ""} at (${c.rect.x | 0},${c.rect.y | 0})`);

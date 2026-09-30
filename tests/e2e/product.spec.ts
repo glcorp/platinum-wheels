@@ -13,7 +13,12 @@
  * `.click()` forces a full reload and masked D84.
  */
 import { test, expect, type Page } from "@playwright/test";
-import { SLUG, VEHICLE, isPhone, isTouch, scrollSettled, settle, watchProblems } from "../helpers";
+import { SLUG, VEHICLE, isPhone, isTouch, scrollSettled, settle, watchProblems, skipQuoteTimer } from "../helpers";
+
+// D104: the quote form drops a submit made within 3 s of render; see helpers.ts.
+test.beforeEach(async ({ page }) => {
+  await skipQuoteTimer(page);
+});
 
 /** `src/features/catalog/data.ts` — slug → category, for D59(6). Seed data (D48). */
 const CATEGORY_SLUGS = {

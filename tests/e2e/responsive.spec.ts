@@ -24,8 +24,12 @@ import {
   SLUG,
   VEHICLE,
   settle,
-  expectNoHorizontalOverflow,
-} from "../helpers";
+  expectNoHorizontalOverflow, skipQuoteTimer } from "../helpers";
+
+// D104: the quote form drops a submit made within 3 s of render; see helpers.ts.
+test.beforeEach(async ({ page }) => {
+  await skipQuoteTimer(page);
+});
 
 const WIDTHS = [
   320, 360, 375, 390, 412, 600, 720, 768, 900, 1024, 1099, 1100, 1280, 1366,

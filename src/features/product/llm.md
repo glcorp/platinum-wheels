@@ -27,11 +27,16 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
   Finish from `product.wheel`; an **accessory** builds Brand / Model / Type / Fits. Wheels and
   accessories carry **no badges** (D59(4)). `backHref` points at the product's own category route, and
   `buildSimilar` never leaves the product's own category, ranking by shared chip value (D59(6)).
-- `actions.ts` — `submitQuote`, the `"use server"` action (D51). Validates, returns `QuoteFormState`.
-  **It does not send anything** — the delivery call is a marked TODO until the client supplies a
-  destination (root `llm.md` §7). Looks `slug` up (`catalog/findProduct`/`productCategory`) so an
+- `actions.ts` — `submitQuote`, the `"use server"` action (D51). Spam checks first (honeypot
+  `website`, 3 s timer from the hidden `renderedAt`; a bot gets a normal `success`), then validation,
+  then `deliverQuote()` (D104). A failed owner alert returns `status: "failed"` with the typed values.
+  Looks `slug` up (`catalog/findProduct`/`productCategory`) so an
   unrecognised `quantity` falls back to the product's own category default, not a flat `4` (2026-09-22
   fix, was category-blind); bounds a non-blank `customQuantity` to 1–99, blank legal (`DEVIATIONS.md` #70).
+- `quote-email.ts` — `deliverQuote()` (D104): the owner alert and the fixed auto-reply, plain text,
+  through Resend's REST API with `fetch`. **Sends only when `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` is exactly
+  `true`**; needs `RESEND_API_KEY` and `LEAD_CAPTURE_EMAIL` (the shop address: sender and alert inbox). Never logs personal data. Not a `"use server"` file: only
+  `actions.ts` imports it.
 - `components/pdp-breadcrumb.tsx` · `pdp-gallery.tsx` · `buy-panel.tsx` · `quantity-control.tsx` —
   the split column. `product-desktop.html:101-125`, `product-mobile.html:90-100`.
 - `components/specifications.tsx` · `similar-products.tsx` — `:126-131` / `:159-315`.
@@ -43,6 +48,7 @@ quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
   `tabIndex` are props: the live form passes and focuses them; the styleguide renders it inert.
 - `components/quote-error-summary.tsx` — `QuoteErrorSummary`, the authored **failed**-submit
   announcement (D57, audit C2/C3, `DEVIATIONS.md` #46), same module shape and props as above.
+  `sendFailed` (D104) swaps the count sentence for the could-not-send one with the fallback phone.
   `role="alert"` is implicitly assertive/atomic, so **mounting the node is the announcement**; it renders
   `null` at a count of 0. **Reachable only because the form is `noValidate`** (D65 — see Rules).
 
@@ -145,10 +151,8 @@ context="pdp"`), **D37** (imports go through `catalog/`), **D47(2)** (no trust l
   of things *cards* vary on (`src/features/catalog/llm.md`).
 
 ## Open
-1. **PARKED (D54) — where a submitted quote goes.** `actions.ts` validates and returns success; nothing
-   is sent, and the delivery call is a marked `TODO`. The UI half is complete and measured; the wiring
-   needs a backend, which this engagement does not cover. Owner, 2026-09-21: *"we are just building ui so
-   park these"*. Do not implement it unprompted. **Owner, then client.**
+1. ~~**Where a submitted quote goes.**~~ **Closed 2026-09-24 by D104** (email via Resend, behind
+   `AUTO_EMAIL_LEAD_CAPTURE_ENABLED`). All three env vars are in Vercel with the flag `false`; turning it on is `todo.md` item 2.
 2. **`Vehicle` is declared three times** — here, `results/types.ts`, and implied by `finder/`. A third
    consumer means it belongs in `src/lib/`. Coordinator or **owner** (root `llm.md` §7).
 3. **`M+S` is derived from the winter badge**, not a fact `Product` carries (`types.ts` `PdpBadge`).

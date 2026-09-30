@@ -30,8 +30,12 @@ import {
   settle,
   usesSheet,
   viewportWidth,
-  watchProblems,
-} from "../helpers";
+  watchProblems, skipQuoteTimer } from "../helpers";
+
+// D104: the quote form drops a submit made within 3 s of render; see helpers.ts.
+test.beforeEach(async ({ page }) => {
+  await skipQuoteTimer(page);
+});
 
 /* --- Fixtures ------------------------------------------------------------- */
 

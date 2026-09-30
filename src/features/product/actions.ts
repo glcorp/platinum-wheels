@@ -10,17 +10,23 @@
    (`src/features/product/types.ts`), written before this file (D25) — nothing
    here invents a field name or an allowed value.
 
-   Validation only. **This action sends nothing anywhere** — see the TODO
-   below. No dependency is added, nothing is written to disk, nothing is
-   called out to the network (root task brief; `src/features/product/llm.md`
-   Open #1: "Owner, then client").
+   Order (D104): the spam checks (honeypot, then the fill timer) come first
+   and answer a bot with a normal `success` so it learns nothing; then field
+   validation; then delivery by email (`quote-email.ts`), which sends only
+   when `AUTO_EMAIL_LEAD_CAPTURE_ENABLED=true`. With the flag off the action
+   validates, logs and returns `success`, which is how the live form is
+   tested. Nothing is written to disk or a database.
 
    Error copy is new copy, authored under `.claude/rules/ui.md` "Copy": short,
    specific, sentence case, no em dashes, tells the person what to do.
    --------------------------------------------------------------------------- */
 
+import { headers } from "next/headers";
+
+import { categoryConfig } from "@/features/catalog/categories";
 import { findProduct } from "@/features/catalog/data";
 import { productCategory } from "@/features/catalog/types";
+import { deliverQuote } from "@/features/product/quote-email";
 import {
   CONTACT_METHODS,
   CUSTOM_QUANTITY_MAX,
@@ -29,6 +35,8 @@ import {
   DEFAULT_QUANTITY_BY_CATEGORY,
   QUANTITY_OPTIONS,
   QUOTE_FIELD,
+  QUOTE_MIN_FILL_MS,
+  quantityQuoteLabel,
   type ContactMethod,
   type QuantityKey,
   type QuoteFormState,
@@ -110,6 +118,20 @@ export async function submitQuote(
   // unticked). Only ever echoed back on `invalid`, below.
   const consented = formData.get(QUOTE_FIELD.consent) !== null;
 
+  // Form protection, owner ruling 2026-09-23 (D104). A person never fills the
+  // off-screen honeypot and never submits within 3 s of the page rendering.
+  // A missing or unparsable timestamp means the field was stripped, which a
+  // real browser never does. Either way: pretend it worked, send nothing.
+  if (readString(formData, QUOTE_FIELD.website) !== "") {
+    logSpam("honeypot", slug);
+    return { status: "success" };
+  }
+  const renderedAt = Number(readString(formData, QUOTE_FIELD.renderedAt));
+  if (!Number.isFinite(renderedAt) || renderedAt <= 0 || Date.now() - renderedAt < QUOTE_MIN_FILL_MS) {
+    logSpam("too_fast", slug);
+    return { status: "success" };
+  }
+
   // The unknown-value fallback below is category-aware: which cell is
   // "the" default differs by category (D65 — accessories open on `1`, tires
   // and wheels on `4`), so falling back to the flat `4` for every category
@@ -175,15 +197,15 @@ export async function submitQuote(
   }
 
   // CASL consent is opt-in (docs/decisions.md:118): the box is read only to
-  // decide what ships in a future delivery payload, never to gate success. An
-  // unticked box is never an error.
+  // write the consent record into the owner alert (D104), never to gate
+  // success. An unticked box is never an error.
   //
   // WDG-10 (owner ruling 2026-09-30): React resets an uncontrolled form after
   // an action, so a visitor who ticked the box and then hit an unrelated error
   // found it silently unticked. On `invalid` ONLY, their own tick is echoed
   // back (below) and `quote-form.tsx` renders it through `Checkbox`'s
-  // `restoreChecked`. It is never echoed when unticked, never on `success`,
-  // and a fresh form still renders unticked.
+  // `restoreChecked`. It is echoed on `failed` too (the visitor retries without
+  // retyping), never when unticked, never on `success`, and a fresh form still renders unticked.
 
   if (Object.keys(errors).length > 0) {
     return {
@@ -202,18 +224,62 @@ export async function submitQuote(
     };
   }
 
-  // TODO(delivery): this inquiry is validated and discarded. The client has
-  // supplied no destination — no inbox, no CRM, no form endpoint — to send it
-  // to (src/features/product/llm.md "Open" #1: "Owner, then client"). When one
-  // exists, this is where the email/CRM call goes; until then this action
-  // must not add a dependency, write to disk, or reach the network.
-  //
-  // When it is wired: this inquiry carries a `slug`, never a price string, and
-  // it must stay that way unless the price is spelled with its currency. Since
-  // D77 (2026-09-22) `formatPrice()` returns a bare `$129` — correct on the
-  // site, where the footer states the currency once, and wrong in an email,
-  // which has no footer. Compose any amount in a message as `$129 CAD`
-  // explicitly; do not reuse the presentation helper (`docs/decisions.md` §7).
+  // Delivery (D104). The emails carry a product name, never a price: since
+  // D77 `formatPrice()` returns a bare `$129`, which is wrong in an email with
+  // no footer to state the currency. If a price is ever added, spell it
+  // `$129 CAD` explicitly (`docs/decisions.md` §7).
+  const config = categoryConfig(category);
+  const quantityLabel =
+    quantity === "custom"
+      ? customQuantity !== ""
+        ? `Custom: ${customQuantity} ${config.unit.many}`
+        : "Custom (no number given)"
+      : quantityQuoteLabel(quantity, config.unit);
+
+  const outcome = await deliverQuote({
+    slug,
+    productName: product ? `${product.brand} ${product.model}, ${product.size}` : null,
+    pageUrl: await pageUrl(slug),
+    quantity: quantityLabel,
+    contact: CONTACT_METHODS.find((method) => method.value === contact)?.label ?? contact,
+    vehicle: readString(formData, QUOTE_FIELD.vehicle).slice(0, 80),
+    name,
+    email,
+    phone,
+    message,
+    consent: formData.get(QUOTE_FIELD.consent) !== null,
+    consentWording: config.copy.quoteConsent,
+    submittedAt: new Date(),
+  });
+
+  if (outcome.status === "failed") {
+    return {
+      status: "failed",
+      values: {
+        name,
+        email,
+        phone,
+        message,
+        quantity,
+        customQuantity,
+        contact,
+        ...(consented ? { [QUOTE_FIELD.consent]: "on" } : {}),
+      },
+    };
+  }
 
   return { status: "success" };
+}
+
+/** The page the inquiry came from, for the consent record. Built from the
+ *  request host so a preview deployment reports its own URL. */
+async function pageUrl(slug: string): Promise<string> {
+  const requestHeaders = await headers();
+  const host =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "platinumwheels.ca";
+  return `https://${host}/products/${encodeURIComponent(slug)}`;
+}
+
+function logSpam(reason: "honeypot" | "too_fast", slug: string): void {
+  console.warn(JSON.stringify({ event: `quote.spam.${reason}`, slug }));
 }

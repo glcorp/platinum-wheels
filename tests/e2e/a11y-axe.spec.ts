@@ -17,7 +17,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 
-import { ROUTES, SLUG, VEHICLE, isPhone, settle, usesSheet, viewportWidth } from "../helpers";
+import { ROUTES, SLUG, VEHICLE, isPhone, settle, usesSheet, viewportWidth, skipQuoteTimer } from "../helpers";
+
+// D104: the quote form drops a submit made within 3 s of render; see helpers.ts.
+test.beforeEach(async ({ page }) => {
+  await skipQuoteTimer(page);
+});
 
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 

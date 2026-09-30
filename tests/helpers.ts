@@ -153,3 +153,33 @@ export async function expectNoHorizontalOverflow(page: Page) {
   expect(offenders, "elements escaping the viewport").toEqual([]);
   expect(scrollWidth, "document scrollWidth").toBeLessThanOrEqual(clientWidth);
 }
+
+/**
+ * The quote form ignores a submit made less than `QUOTE_MIN_FILL_MS` (3 s)
+ * after the page rendered and answers "success" without validating (D104,
+ * `submitQuote`). Tests submit in milliseconds, so with JS on they backdate the
+ * hidden `renderedAt` field just before each submit. Without JS nothing can run
+ * a script, so a no-JS test waits the real time instead (`waitForQuoteTimer`).
+ */
+export async function skipQuoteTimer(page: Page) {
+  await page.addInitScript(() => {
+    document.addEventListener(
+      "submit",
+      (event) => {
+        const field = (event.target as HTMLFormElement | null)?.querySelector<HTMLInputElement>(
+          'input[name="renderedAt"]',
+        );
+        if (field) field.value = "1";
+      },
+      true,
+    );
+  });
+}
+
+/** Wait until the server's 3 s "too fast to be a person" window has passed. */
+export async function waitForQuoteTimer(page: Page) {
+  await page.waitForFunction(() => {
+    const field = document.querySelector<HTMLInputElement>('input[name="renderedAt"]');
+    return field ? Date.now() - Number(field.value) > 3200 : true;
+  }, null, { timeout: 15_000 }).catch(() => undefined);
+}

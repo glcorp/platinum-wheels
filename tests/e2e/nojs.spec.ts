@@ -389,6 +389,10 @@ test.describe("PDP without JS", () => {
       .locator("form")
       .filter({ has: page.getByLabel(/Full name/) });
     await expect(form).toHaveAttribute("method", /post/i);
+    // D104: the server ignores a submit within 3 s of render, and with JS off no
+    // script can backdate the hidden field, so wait the real time (no condition
+    // is observable without JS).
+    await page.waitForTimeout(3300);
     // Empty submit: server-side validation must answer (noValidate, D65).
     await Promise.all([
       page.waitForLoadState("load"),
@@ -402,6 +406,8 @@ test.describe("PDP without JS", () => {
       "true",
     );
 
+    // The re-render restarted the 3 s window (D104).
+    await page.waitForTimeout(3300);
     // Valid submit: the success panel replaces the form.
     const again = page
       .locator("form")

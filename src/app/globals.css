@@ -1475,6 +1475,10 @@ dialog:modal {
     background-color: transparent !important;
     box-shadow: none !important;
     text-shadow: none !important;
+    /* The base layer eases colour changes (D92b); switching to print would
+       otherwise start a 120ms fade from the screen colours, and anything read
+       or rendered in that window is a half-way grey. */
+    transition: none !important;
   }
   header [data-print="hide"],
   header button,

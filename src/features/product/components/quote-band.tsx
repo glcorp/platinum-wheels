@@ -139,6 +139,15 @@ export function QuoteBand({ view }: QuoteBandProps) {
                has no business importing the category table. */
             placeholder={view.config.copy.quotePlaceholder}
             consent={view.config.copy.quoteConsent}
+            /* D104: the vehicle rides along to the owner alert, and the
+               render time starts the fill timer. The page reads
+               `searchParams`, so it renders per request and this is the
+               real render time, not the build's. This is a Server
+               Component: it renders once per request and never re-renders,
+               which is the case the purity rule guards against. */
+            vehicle={vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : ""}
+            // eslint-disable-next-line react-hooks/purity -- server render, once per request (D104)
+            renderedAt={Date.now()}
           />
         </div>
       </div>
