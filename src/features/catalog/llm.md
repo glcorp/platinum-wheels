@@ -69,7 +69,7 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   `ALL_PRODUCTS`. All of it is placeholder data (D48) — the tire rows are untouched and carry no
   `category` field, which is what keeps every measured card byte-identical.
 
-- **The database-backed catalogue (D105, D106). Built; no page reads it yet**, so every route still
+- **The database-backed catalogue (D105b, D106b). Built; no page reads it yet**, so every route still
   renders the seed above. It was exercised against a throwaway Postgres loaded with the vendor sheets;
   **no test file is committed.**
   - [`catalog-types.ts`](catalog-types.ts) — the data contract: `CatalogProduct`, `ProductFilters`,
@@ -89,10 +89,10 @@ Delete this folder and every route loses its product surface, and `/results`, `/
 
 ## Rules
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
-  `hidden` product or a vendor source; `store.ts` returns both (D105).
+  `hidden` product or a vendor source; `store.ts` returns both (D105b).
 - **Listings show `published` only; a product page loads `published` and `discontinued`; `hidden` is a
-  404.** There is no in-stock flag (D105).
-- **A slug is written once, at create, and never rewritten** (D107).
+  404.** There is no in-stock flag (D105b).
+- **A slug is written once, at create, and never rewritten** (D107b).
 - **`queries.ts`, `store.ts` and `rows.ts` are server only.** They open database connections. A
   `"use client"` file may import `catalog-types.ts`, `product-input.ts`, `size.ts` and `slug.ts`.
 - **Nothing enters `Product` that the cards do not vary on.** The field list traces to
@@ -170,8 +170,8 @@ in place.
   `src/features/catalog/types.ts` (`:7`); `next/image`, `next/link` (`:1-2`); `src/app/globals.css` for
   `photo-inset-card`, `photo-vignette`, `transition-card`, `tap-extend`, `display`, `numeral`;
   `public/images/products/<slug>.webp`.
-- **Depends on (D105):** `src/db/` (`getDb()`, the catalogue tables).
-- **Depended on by (D105):** `src/features/admin/` — `product-queries.ts` and `product-actions.ts` call
+- **Depends on (D105b):** `src/db/` (`getDb()`, the catalogue tables).
+- **Depended on by (D105b):** `src/features/admin/` — `product-queries.ts` and `product-actions.ts` call
   `store.ts` and `product-input.ts`.
 - **Depended on by:** `src/app/(storefront)/styleguide/page.tsx`; `src/features/home/` (featured row,
   D29); `src/features/results/` — `search.ts` filters, sorts and splits `productsIn(category)` and is the
@@ -195,7 +195,7 @@ in place.
   present on both pages pairs and flies at once — Home → `/results` flew six photos (D92b).
 
 ## Open
-7. **Wire the pages to `queries.ts`** and retire `data.ts`. Four UI changes come with it (D105): an
+7. **Wire the pages to `queries.ts`** and retire `data.ts`. Four UI changes come with it (D105b): an
    all-weather chip and badge; the wheel finish filter removed, finish shown in the specifications;
    accessory types go from four to nine; the unavailable card keyed on `discontinued` instead of
    `available`. `results/search.ts` also treats "similar" as everything else in the filtered set, which

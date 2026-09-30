@@ -117,7 +117,7 @@ export async function createProductAction(
   const parsed = parseProductInput(readerFromFormData(formData));
   if (!parsed.ok) return invalid(formData, parsed.errors);
 
-  // A product made here always starts hidden, whatever the form posted (D107):
+  // A product made here always starts hidden, whatever the form posted (D107b):
   // publishing is its own, deliberate step.
   return fromWriteResult(
     formData,

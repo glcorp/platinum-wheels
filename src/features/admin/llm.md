@@ -11,7 +11,7 @@ quote-first model terminates in a phone call with nothing to send.
 Since D99–D108 it is backed by real payments: the builder writes a `payment_links` row through
 `src/features/payments/` and hands back the customer's `pay.platinumwheels.ca/pay/<token>` URL, and the
 links list shows which links were paid (D106). Sign-in is still one shared account, hardened by D95
-rather than replaced by an auth system. Since D105 the folder also holds the product admin's server side
+rather than replaced by an auth system. Since D105b the folder also holds the product admin's server side
 (gated reads and Server Actions); its screens are not built.
 
 ## Owns
@@ -33,7 +33,7 @@ rather than replaced by an auth system. Since D105 the folder also holds the pro
   `requireAdminAction()` first. `createPaymentLink` validates amount, description and expiry, then
   creates the link (idempotent on a per-render key). `cancelPaymentLink` serves the links list
   (D106). There is no check-payment action: the admin never calls the gateway (D108).
-- [`product-types.ts`](product-types.ts) — the product admin contract (D105): `PRODUCT_ID_FIELD`,
+- [`product-types.ts`](product-types.ts) — the product admin contract (D105b): `PRODUCT_ID_FIELD`,
   `PRODUCT_STATUS_FIELD`, `ProductFormState`, `ProductStatusState`, `ProductListQuery`. The product's
   own field names are `PRODUCT_FIELD` in `@/features/catalog/product-input`.
 - [`product-queries.ts`](product-queries.ts) — gated reads for Server Components: `adminListProducts`,
@@ -111,7 +111,7 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 - **Depends on:** `src/components/ui/` (button, input, field-label), `src/lib/site.ts` (`SITE`),
   `next/headers`, `next/navigation`, `node:crypto`. Nothing else — no new dependency.
 - **Depended on by:** `src/app/admin/` (layout, three routes).
-- **Depends on (D105):** `src/features/catalog/` — `store.ts`, `product-input.ts`, `catalog-types.ts`.
+- **Depends on (D105b):** `src/features/catalog/` — `store.ts`, `product-input.ts`, `catalog-types.ts`.
   This is the D37 graph's existing direction (`features → catalog`), so no edge is reversed.
 - **Deliberately does not touch:** `src/features/finder|home|product|results/`. The admin shares the
   primitives and the tokens, and nothing else.
@@ -134,9 +134,9 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
   consolidated into [`src/lib/cx.ts`](../../lib/cx.ts) by D63. Import `cx` / `join` from `@/lib/cx`
   when a conditional class list needs one; the admin currently needs neither.
 - **Don't add a delete action for products.** A product leaves the site by becoming `hidden` or
-  `discontinued`, so old links keep working (D105).
+  `discontinued`, so old links keep working (D105b).
 - **Don't let a bulk status change run with no ticked rows and no filter.** `bulkSetProductStatus`
-  refuses it; an empty submit must never mean the whole catalogue (D107).
+  refuses it; an empty submit must never mean the whole catalogue (D107b).
 - **Don't put a product read in a `"use server"` file.** Every export there is a public POST endpoint.
 - **Don't build the admin shell here yet.** `AdminTopBar` is intentionally minimal; product CRUD will
   reshape navigation, and a full shell built now is thrown away.
@@ -148,7 +148,7 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
    need their own logins. Owner.
 2. **PSP selection.** Until one is chosen, `createPaymentLink` fabricates a URL. The client was to come
    back with a demo account. Client, via owner.
-3. **Product CRUD screens.** The server side exists (D105); the list, the create/edit form and their
+3. **Product CRUD screens.** The server side exists (D105b); the list, the create/edit form and their
    `/admin/styleguide` states are not built, and `ADMIN_ROUTES` has no product routes yet. Image upload
    (Vercel Blob) is its own session; `product_images` is ready for it. **The actions return state and
    do not re-render the route**: the screens must call `refresh()` (or the actions must, once there is a
