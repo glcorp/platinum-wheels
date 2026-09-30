@@ -1,5 +1,24 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-09-30 (three open PRs combined into one branch for a single `glcorp` merge).** The
+branch brings **#11** the vehicle list snapshot (D110), **#8** Converge payments (D105–D108) and **#9**
+the catalogue database with its server code (D105b–D107b, migration `0002`). No page reads the catalogue
+yet, so every storefront route still renders the seed. The catalogue's decision rows were suffixed at
+this merge because `payments` had published D105–D107 first (root `llm.md` §5b, header note).
+- **Checked on the combined tree:** `npm run check`, `npm run db:check`, `drizzle-kit generate` (no
+  schema drift) and `next build`. Migrations `0000`–`0002` applied through `scripts/db-migrate.mjs` to a
+  throwaway Postgres (PGlite), and a second run was a no-op. In a browser against that database: sign
+  in, generate a link, open `/pay/<token>`, press Pay with no gateway configured (*Online payment is not
+  available right now*), cancel the link, and the closed page. The D97 and D105 host rules with
+  `VERCEL_ENV=production`.
+- **Not checked:** the e2e suite (§5) was not re-run, because this machine lacks the browser build
+  Playwright 1.63 asks for; the storefront code is byte-identical to `main`. No real Converge call has
+  been made (`todo.md` P2).
+- **#10 (every storefront page reads the database, D108b/D109) is not in the branch.** Owner, 2026-09-30:
+  it merges after the approved catalogue is loaded. It also has to be reconciled with D91b–D93b first:
+  it deletes the seed the e2e suite asserts on, and it rewrites `results/search.ts`, where D93b's
+  hostile-query rules live.
+
 **Last updated 2026-09-30 (the D93b senior pass and D94b home photos, then `origin/main` merged: admin, payments database and quote email, D89–D104).** The D91b QA pass (a committed Playwright + axe suite, §5) precedes it. Earlier summaries follow.
 
 **Production runs `main` at `2df8092` (2026-09-24).** PR #5 combined four PRs into one merge:

@@ -146,8 +146,9 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 1. **What D95 declined:** per-user accounts, a second factor, per-session revocation (changing the
    password or `ADMIN_SESSION_SECRET` signs everyone out at once). Revisit if staff beyond the owner
    need their own logins. Owner.
-2. **PSP selection.** Until one is chosen, `createPaymentLink` fabricates a URL. The client was to come
-   back with a demo account. Client, via owner.
+2. ~~**PSP selection.**~~ **Closed by D99 and D107:** the PSP is Converge and the builder creates real
+   links. What is left is proving it against the gateway, which waits on the owner actions in `todo.md`
+   "Owner — payments".
 3. **Product CRUD screens.** The server side exists (D105b); the list, the create/edit form and their
    `/admin/styleguide` states are not built, and `ADMIN_ROUTES` has no product routes yet. Image upload
    (Vercel Blob) is its own session; `product_images` is ready for it. **The actions return state and
