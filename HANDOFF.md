@@ -436,6 +436,16 @@ parked row.
   expiry, append-only events with no PIN, and XML parsing. The harness is not in the repo (no test
   runner is configured). **That run was on 2026-09-24, before D108.** The reconcile code it covered is
   gone; after the removal only `tsc`, `eslint` and `next build` were re-run.
+- **2026-10-01, branch `payments-closure` (D119–D121):** `/pay/notify` for Converge's export script
+  (off until `CONVERGE_NOTIFY_*` exist; Elavon range + Basic auth; `/pay/return` skips its query when
+  notify settled first, so 1 Fixie request per payment); the shop's "Payment received" / "Refund needed"
+  email (D120, no flag); the `REPLACE_ME` PIN placeholder counts as unset. Vercel now has
+  `pay.platinumwheels.ca`, `CONVERGE_ENV=demo`, `CONVERGE_USER_ID=apiuser116349`, the PIN placeholder.
+  Verified: `tsc`, `eslint`, `next build`, and the IP-range boundaries by hand. **No service tests this
+  round** (owner: *"no tests needed"*). Elavon's sample export POST has no `ssl_invoice_number`, so
+  notify may match nothing until proven otherwise (`src/features/payments/llm.md` Open #2).
+- **Until the Cloudflare `pay` CNAME exists, production payment links point at a host that does not
+  resolve** (`todo.md` P4).
 - **Not verified yet: a real Converge call.** Blocked on Elavon allowlisting the Fixie IPs. The
   walkthrough once unblocked: create a `$1.00` link → pay with Visa `4000000000000002` → paid; `$1.88` →
   declined, then retry. The UNCONFIRMED wire details are listed in `docs/payments.md` §10.

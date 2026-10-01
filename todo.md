@@ -76,35 +76,38 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
 
 ## Owner — payments (Converge demo; design in `docs/payments.md`)
 
-P1. **Rotate the Converge demo PIN.**
-   - **Why:** it was pasted into a chat on 2026-09-23 (`docs/payments.md` §8.1).
-   - **How:** Converge portal → Employees → the API user → generate a new PIN. Put it in Vercel and
-     `.env.local`, never in a chat. **Five wrong PINs block the calling IP**, so copy it carefully.
-P2. **Fixie (free) and the Elavon allowed list.** Nothing works until this is done.
-   - **How:** sign up at usefixie.com, create an app, and note its **Proxy URL** and its **two outbound
-     IPs**. Email `sedevportalsupport@elavon.com` and ask them to add both IPs to the demo account's
-     Online Security Allowed List. The portal's Allowed List Manager only displays the list.
+**Done 2026-10-01 (D121):** Fixie, through the Vercel integration (`FIXIE_URL` is set);
+`pay.platinumwheels.ca` added to the Vercel project; `CONVERGE_ENV=demo`,
+`CONVERGE_USER_ID=apiuser116349` and a `CONVERGE_PIN` placeholder (`REPLACE_ME`) in Vercel.
+
+P1. **Rotate the Converge demo PIN and put it in Vercel.**
+   - **Why:** the old one was pasted into a chat on 2026-09-23 (`docs/payments.md` §8.1).
+   - **How:** Converge portal → Employees → **`apiuser116349`** → generate a new PIN. Vercel → project →
+     Settings → Environment Variables → `CONVERGE_PIN` → Edit → paste. Never in a chat. **Five wrong PINs
+     block the calling IP** (the Fixie IPs), so copy it carefully.
+   - In the same place, add **`CONVERGE_ACCOUNT_ID`** (plain, Production + Preview): the account / merchant
+     ID from Elavon's demo email.
+   - Then **redeploy production**: env changes only reach a new deployment.
+P2. **Elavon: the allowed list, and the export script.** Nothing works until the allowed list is done.
+   - **How:** read the **two outbound IPs** in the Fixie dashboard (Vercel → Integrations → Fixie → Manage).
+     Email `sedevportalsupport@elavon.com` and ask them to add both to the demo account's Online Security
+     Allowed List. The portal's Allowed List Manager only displays the list.
    - **Done when:** the IPs appear under Settings → Online Security Allowed List Manager → Valid IP
      Addresses.
-   - **In the same email, ask for an export script** (D108 follow-up; Elavon quotes up to 12 business
-     days). Destination: `https://pay.platinumwheels.ca/pay/notify`. Ask two things: does the POST
-     include `ssl_invoice_number`, and can the demo account use it. **The route is not built yet**; it
-     gets built once Elavon confirms. Until then a payment costs 2 Fixie requests instead of 1.
+   - **In the same email, ask for an export script** (D119; up to 12 business days) to
+     `https://pay.platinumwheels.ca/pay/notify`, **with HTTP Basic authentication**. Ask: does the POST
+     include `ssl_invoice_number` (their sample does not), and can the demo account use it. When they set
+     it up, put the username and password in Vercel as `CONVERGE_NOTIFY_USER` (plain) and
+     `CONVERGE_NOTIFY_PASSWORD` (Sensitive), Production only, and redeploy. Until then the route is off.
 P3. **Converge portal → Settings → Hosted Payments.**
    - Response Page → **Redirect URL**, the Decline button link, and Payment Page → **Cancel Link**:
-     `https://pay.platinumwheels.ca/pay/return`. While testing on a preview or locally, use that host's
-     `/pay/return` instead.
+     `https://pay.platinumwheels.ca/pay/return`.
    - Leave address fields optional: if they are required, token requests fail with `ssl_avs_address
      required`.
-P4. **`pay.platinumwheels.ca`** (D105).
-   - Vercel → project `platinum-wheels` → Domains → add `pay.platinumwheels.ca`, and copy the per-project
-     CNAME it shows (for `admin` it was `b3b61a760d17a44c.vercel-dns-017.com`; HANDOFF §8.31).
-   - Cloudflare DNS: `CNAME pay → <that value>`, **DNS only (grey cloud)**, exactly like `admin` (D96:
-     proxying it breaks the certificate with a 525).
+P4. **Cloudflare DNS for `pay.platinumwheels.ca`** (D105). The Vercel half is done.
+   - `CNAME pay → b3b61a760d17a44c.vercel-dns-017.com`, **DNS only (grey cloud)**, exactly like `admin`
+     (D96: proxying it breaks the certificate with a 525).
    - **Done when:** `https://pay.platinumwheels.ca/pay/done` loads.
-P5. **Vercel env vars** (Production and Preview): `CONVERGE_ENV=demo`, `CONVERGE_ACCOUNT_ID`,
-   `CONVERGE_USER_ID`, and as **Sensitive** `CONVERGE_PIN` and `FIXIE_URL`. The same values go in
-   `.env.local` for local testing, with a Neon **dev** branch URL.
 P6. **Demo expires 2026-10-18.** Ask `#SEDevPortalSupport@elavon.com` for an extension by **2026-10-13**.
 
 ## Client — payments go-live

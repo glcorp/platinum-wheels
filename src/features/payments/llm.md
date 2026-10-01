@@ -11,15 +11,18 @@ links point at nothing.
 
 - [`types.ts`](types.ts) — the contract: the `Gateway` interface the service talks to, `GatewayTransaction`,
   and `linkState()` (expiry is derived, never stored).
-- [`config.ts`](config.ts) — env vars (`CONVERGE_*`, `FIXIE_URL`), `PAY_HOST`, and the link URL builder.
-  Server only: it reads the PIN.
+- [`config.ts`](config.ts) — env vars (`CONVERGE_*`, `FIXIE_URL`, `CONVERGE_NOTIFY_*`), `PAY_HOST`, and the
+  link URL builder. Server only: it reads the PIN. The placeholder `REPLACE_ME` counts as unset (D121).
 - [`converge.ts`](converge.ts) — the Converge adapter: session token, `txnquery` by transaction id,
-  the static-IP proxy, XML parsing, and the whitelist that redacts gateway data. The only
+  the static-IP proxy, XML parsing, the whitelist that redacts gateway data, and the export script's
+  source ranges and parser (D119). The only
   file that speaks Elavon's wire format.
 - [`money.ts`](money.ts) — integer cents ⇄ `"452.60"` without floats.
 - [`service.ts`](service.ts) — every state change: `createLink` (idempotent), `cancelLink`, `listLinks`,
-  `getPayPage`, `startAttempt` (row lock, then network), `handleReturn`. The money rules are listed at
+  `getPayPage`, `startAttempt` (row lock, then network), `handleReturn`, `handleNotify` (D119). The money rules are listed at
   the top of the file.
+- [`payment-email.ts`](payment-email.ts) — the shop's "Payment received" / "Refund needed" email via
+  Resend (D120). Sent after the commit, by whichever path settled the attempt.
 - [`pay-actions.ts`](pay-actions.ts) — `"use server"`. `startPayment`: the Pay button. Its only input is the
   link token, bound by the page.
 - [`components/pay-button.tsx`](components/pay-button.tsx) — client island. Opens a session, then POSTs the
@@ -32,8 +35,10 @@ links point at nothing.
   invoice number and amount match the attempt.
 - **Every state change writes a `payment_events` row in the same transaction.** Events are append-only
   (DB trigger), and gateway data goes in only through `REDACTED_FIELDS`.
-- **The return redirect is the only thing that settles an attempt (D108).** No cron and no staff check:
-  each would cost Fixie requests. An attempt with no return stays `pending`.
+- **Only the return redirect and Converge's export script settle an attempt (D108, D119).** No cron and
+  no staff check: each would cost Fixie requests. An attempt with neither stays `pending`.
+- **The export script is trusted on source range plus Basic credentials, never on its own.** It is
+  unsigned. Its fields go through `toGatewayTransaction` and the same amount and invoice checks as a query.
 - **Row lock first, network after.** `startAttempt` commits the pending attempt before calling Converge,
   so a 60 s gateway timeout never holds a lock.
 - **A second approval is `duplicate`, never `approved`.** The unique index makes it impossible anyway.
@@ -72,6 +77,7 @@ links point at nothing.
 1. The items `docs/payments.md` §10 marks UNCONFIRMED (`ssl_merchant_id` vs `ssl_account_id`,
    `ssl_description` on the token call, GET or POST on the return, the `txnquery` single-result shape).
    All are settled by the first demo call.
-2. A payment-received email to the owner. Not built; Resend is on `main` since D104.
-3. **The export-script webhook** (`/pay/notify`, D108 follow-up): 1 Fixie request per payment, and it
-   settles payments whose customer closed the tab. Waits on Elavon (`docs/payments.md` §8.9).
+2. **The export script is built (D119) but unproven.** Elavon's sample POST has no `ssl_invoice_number`;
+   if the real one lacks it too, notify matches nothing (logged as `unmatched`) and the 1-request saving
+   does not happen. Then the option is to send our invoice in a field Converge echoes back, or to match
+   on `ssl_txn_id` after the return has run once.
