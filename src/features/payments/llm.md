@@ -18,6 +18,7 @@ links point at nothing.
   file that speaks Elavon's wire format.
 - [`money.ts`](money.ts) — integer cents ⇄ `"452.60"` without floats.
 - [`service.ts`](service.ts) — every state change: `createLink` (idempotent), `cancelLink`, `listLinks`,
+  `countOpenLinks` (the admin home's tile, D118),
   `getPayPage`, `startAttempt` (row lock, then network), `handleReturn`. The money rules are listed at
   the top of the file.
 - [`pay-actions.ts`](pay-actions.ts) — `"use server"`. `startPayment`: the Pay button. Its only input is the

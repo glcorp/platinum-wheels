@@ -8,6 +8,7 @@ import { PayButton } from "@/features/payments/components/pay-button";
 import { displayCents } from "@/features/payments/money";
 import { getPayPage } from "@/features/payments/service";
 import type { PaymentAttempt } from "@/features/payments/types";
+import { SHOP_DATE_TIME } from "@/lib/time";
 
 /* ---------------------------------------------------------------------------
    /pay/<token> — the page a customer opens from the shop's email (D100).
@@ -29,11 +30,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
 };
 
-const DATE = new Intl.DateTimeFormat("en-CA", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "America/Toronto",
-});
+/** Brampton time, like every date the application shows (`@/lib/time`). */
+const DATE = SHOP_DATE_TIME;
 
 function attemptNotice(attempt: PaymentAttempt | null): string | null {
   if (!attempt) return null;

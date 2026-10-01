@@ -8,7 +8,7 @@ import { ADMIN_ROUTES } from "@/features/admin/types";
 import { SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
-   /admin/login — the sign-in page (D91)
+   /login (admin host) — the sign-in page (D91, URL per D115)
 
    NO ARTBOARD DRAWS THIS. The `design/` export covers `/`, `/results` and
    `/products/[slug]` and nothing else, so the admin has no authority-level-2
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 
 export default async function AdminLoginPage() {
   /* Already signed in? Skip the form. Without this, returning to a bookmarked
-     /admin/login while holding a valid session presents a sign-in prompt to
+     /login while holding a valid session presents a sign-in prompt to
      someone who is already through the gate, which reads as a bug. */
   if (await hasAdminSession()) {
     redirect(ADMIN_ROUTES.home);

@@ -78,6 +78,12 @@ Delete this folder and every route loses its product surface, and `/results`, `/
     normalisers. Pure. [`slug.ts`](slug.ts) — `buildProductSlug()`. Pure.
   - [`rows.ts`](rows.ts) — the product + specs join and the row mapper, shared by `queries.ts` and
     `store.ts`.
+  - [`lookups.ts`](lookups.ts) — small staff reads beside `store.ts` (D116): `listVendors`, `brandExists`,
+    `vendorExists` (the pick-from-existing dropdowns and their server-side check) and
+    `countProductsByStatus`. Not gated.
+  - [`photos.ts`](photos.ts) — `product_images` reads and writes for the admin (D117): list, add (locks the
+    product row; at most `MAX_PHOTOS_PER_PRODUCT`, 8), remove, move. Keeps each product's photos numbered
+    0..n-1 and bumps `products.updated_at`. Talks to Postgres only; Blob is `src/features/admin/`'s job.
 
 ## Rules
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
@@ -85,7 +91,7 @@ Delete this folder and every route loses its product surface, and `/results`, `/
 - **Listings show `published` only; a product page loads `published` and `discontinued`; `hidden` is a
   404.** There is no in-stock flag (D105b).
 - **A slug is written once, at create, and never rewritten** (D107b).
-- **`queries.ts`, `store.ts` and `rows.ts` are server only.** They open database connections. A
+- **`queries.ts`, `store.ts`, `rows.ts`, `lookups.ts` and `photos.ts` are server only.** They open database connections. A
   `"use client"` file may import `catalog-types.ts`, `product-input.ts`, `size.ts` and `slug.ts`.
 - **Nothing enters `Product` that the cards do not vary on.** The field list traces to
   `design/inventory/results.md:363`; adding a field means measuring it first.

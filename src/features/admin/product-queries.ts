@@ -18,6 +18,8 @@ import {
   listAllProducts,
   listBrands,
 } from "@/features/catalog/store";
+import { countProductsByStatus, listVendors } from "@/features/catalog/lookups";
+import { listProductPhotos, type ProductPhoto } from "@/features/catalog/photos";
 
 import { requireAdminSession } from "./session";
 import { PRODUCT_LIST_PAGE_SIZE, type ProductListQuery } from "./product-types";
@@ -57,4 +59,23 @@ export async function adminGetProduct(id: string): Promise<AdminProduct | null> 
 export async function adminListBrands(): Promise<string[]> {
   await requireAdminSession();
   return listBrands();
+}
+
+/** Vendor names already on a product source, for the sources dropdown (D116). */
+export async function adminListVendors(): Promise<string[]> {
+  await requireAdminSession();
+  return listVendors();
+}
+
+/** One product's photos with their ids, for the photo manager (D117). */
+export async function adminListPhotos(productId: string): Promise<ProductPhoto[]> {
+  await requireAdminSession();
+  if (!UUID.test(productId)) return [];
+  return listProductPhotos(productId);
+}
+
+/** How many products the storefront lists: the admin home's products tile. */
+export async function adminCountPublished(): Promise<number> {
+  await requireAdminSession();
+  return countProductsByStatus("published");
 }
