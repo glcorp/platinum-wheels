@@ -12,6 +12,7 @@
     "design": "npx --yes serve design -l 4000",
     "assets": "node scripts/prepare-assets.mjs",
     "vehicles:fetch": "node scripts/vehicles-fetch.mjs",
+    "catalog:import": "tsx scripts/catalog-import.ts",
     "test:e2e": "playwright test",
     "admin:hash-password": "node scripts/hash-admin-password.mjs",
     "db:generate": "drizzle-kit generate",
@@ -36,11 +37,13 @@
     "@types/pg": "8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "csv-parse": "7.0.3",
     "drizzle-kit": "0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.0-canary.37",
     "sharp": "^0.35.4",
     "tailwindcss": "^4",
+    "tsx": "4.23.15",
     "typescript": "^5"
   }
 }

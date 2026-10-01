@@ -94,6 +94,7 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
   `Snowleopard` each appear twice. The drawn heading `Winter sets, in stock now.` admits only winter,
   in-stock SKUs and the seed holds exactly two more of those. Six distinct models needs real catalogue
   data. Owner / client.
-- **`FEATURED_SLUGS` holds placeholder slugs** (D108b): six winter tires from the vendors' own sheets. They
-  resolve only if the approved catalogue carries the same products. Replace them once that data is
+- **`FEATURED_SLUGS` holds placeholder slugs** (D108b): six winter tires from the vendors' own sheets. All
+  six resolve in the stand-in load (D113), where they have no price and no photo. They
+  resolve after the approved catalogue only if it carries the same products. Replace them once that data is
   loaded, and keep six or more so both desktop arrows have something to scroll (D74). Owner.

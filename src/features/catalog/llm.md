@@ -70,14 +70,24 @@ Delete this folder and every route loses its product surface, and `/results`, `/
     brand a category carries, whatever is filtered; D111), `listProductUrls`.
     The only place visibility is decided.
   - [`store.ts`](store.ts) — staff reads and every write: `listAllProducts`, `getProductById`,
-    `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`.
+    `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`, and
+    `createProductsBatch` (D114), the bulk form of `createProduct` for a catalogue load: one INSERT
+    per table for a whole batch, inside the caller's transaction, with nothing looked up.
     **Not gated**; `src/features/admin/` is the gate.
   - [`product-input.ts`](product-input.ts) — `PRODUCT_FIELD` and `parseProductInput()`, the one
     validator every writer goes through. Pure.
   - [`size.ts`](size.ts) — `parseTireSizeSpec()` (metric and flotation) and the bolt-pattern
-    normalisers. Pure. [`slug.ts`](slug.ts) — `buildProductSlug()`. Pure.
+    normalisers. Pure. [`slug.ts`](slug.ts) — `buildProductSlug()`, and `nextFreeSlug()`, the one
+    `-2`, `-3` rule a single create and a bulk load share. Pure.
   - [`rows.ts`](rows.ts) — the product + specs join and the row mapper, shared by `queries.ts` and
     `store.ts`.
+- **The catalogue import (D113, D114).** Run by `scripts/catalog-import.ts`.
+  - [`import-mapping.ts`](import-mapping.ts) — `IMPORT_MAPPING`: CSV header → product field, the exact
+    value renames, the numbered source columns and the photo columns. **The one file to edit when the
+    catalogue file's layout changes.** Pure.
+  - [`import-plan.ts`](import-plan.ts) — `planImport()`: rows in; what would be created (each with its
+    slug) and what is refused, with the reason and the column, out. Drives the dry run and the real
+    load alike. Pure.
 
 ## Rules
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
@@ -87,6 +97,11 @@ Delete this folder and every route loses its product surface, and `/results`, `/
 - **A slug is written once, at create, and never rewritten** (D107b).
 - **`queries.ts`, `store.ts` and `rows.ts` are server only.** They open database connections. A
   `"use client"` file may import `catalog-types.ts`, `product-input.ts`, `size.ts` and `slug.ts`.
+- **The import reports; it does not repair** (D113). A row is valid as the file gives it, after the
+  mapping's exact renames, or it is refused and listed. No cleanup, no de-duplication, no guessing in
+  `import-plan.ts` or `import-mapping.ts`. Two rows with one vendor + SKU are both refused.
+- **`createProductsBatch` must write exactly what `createProduct` writes.** Change one, change the
+  other, and compare them on a real Postgres (checked row for row on 2,345 products, D114).
 - **Nothing enters `Product` that the cards do not vary on.** The field list traces to
   `design/inventory/results.md:363`; adding a field means measuring it first.
 - **Deliberately absent, and must stay absent:** stock counts, shipping, ratings, invented specs
@@ -165,6 +180,8 @@ in place.
 - **Depends on (D105b):** `src/db/` (`getDb()`, the catalogue tables).
 - **Depended on by (D105b):** `src/features/admin/` — `product-queries.ts` and `product-actions.ts` call
   `store.ts` and `product-input.ts`.
+- **Depended on by (D113):** `scripts/catalog-import.ts` — `import-plan.ts`, `import-mapping.ts` and
+  `store.ts` `createProductsBatch`.
 - **Depended on by:** `src/app/(storefront)/styleguide/page.tsx`; `src/features/home/` (featured row,
   D29); `src/features/results/` — `search.ts` asks `queries.ts` for the lists and facets and is the
   only place results are computed (D44), `query.ts` and `filter-panel.tsx` read `CATEGORY_CONFIG`, and
@@ -187,6 +204,14 @@ in place.
   present on both pages pairs and flies at once — Home → `/results` flew six photos (D92b).
 
 ## Open
+13. **The catalogue holds the STAND-IN load, not the approved data** (D113): 44,143 products from the
+    scraped vendor sheets, all `published`, no prices, no photos, duplicates across vendors not
+    merged. When the co-founder's cleaned CSV arrives the catalogue is emptied and loaded fresh, and
+    emptying it is its own effort: nothing in the repo does it. Owner.
+14. **10,249 stand-in slugs carry a `-2`, `-3` …**, mostly PRO WHEELS wheels that share brand, model,
+    size, bolt pattern, offset and finish and differ only in something the slug does not read (centre
+    bore, SKU). Those suffixes follow file order, so they move if the file's order does. Whether the
+    wheel slug should carry more is the owner's call (D107b(1)).
 7. ~~**Wire the pages to `queries.ts`**~~ **Done by D108b**, with the four UI changes D105b listed.
 8. **Only the home row is cached** (`home/featured.ts`, D109; by tag with no timer since D111). The results and product pages read Postgres
    on every request: measured at 6 to 97 ms with all ~46k vendor rows, and their filter combinations

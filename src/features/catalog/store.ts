@@ -44,6 +44,7 @@ import type {
   AdminListInput,
   AdminProduct,
   AdminProductFilter,
+  NewProduct,
   ProductInput,
   ProductList,
   ProductSource,
@@ -58,7 +59,7 @@ import {
   withSpecs,
   type Executor,
 } from "./rows";
-import { buildProductSlug } from "./slug";
+import { buildProductSlug, nextFreeSlug } from "./slug";
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -227,11 +228,7 @@ async function freeSlug(db: Executor, base: string): Promise<string> {
         )
     ).map((row) => row.slug),
   );
-  if (!taken.has(base)) return base;
-  for (let suffix = 2; ; suffix += 1) {
-    const candidate = `${base}-${suffix}`;
-    if (!taken.has(candidate)) return candidate;
-  }
+  return nextFreeSlug(base, taken);
 }
 
 /** The first of `sources` that a DIFFERENT product already carries. */
@@ -386,6 +383,73 @@ export async function createProduct(
       throw error;
     }
   }
+}
+
+/**
+ * The bulk form of `createProduct`, for a catalogue load: the same rows, one
+ * INSERT per table for the whole batch instead of eight round trips per
+ * product. Over a network that is the difference between minutes and a day.
+ *
+ * What `createProduct` checks per product, the caller checks once for the
+ * whole load: every slug is free and no vendor SKU is carried twice. Nothing
+ * is looked up here. The unique indexes still refuse a clash, and then the
+ * statement throws and the caller's transaction takes the whole batch back.
+ *
+ * Pass a transaction, so a batch lands whole or not at all. Returns the new
+ * ids, in the batch's order.
+ */
+export async function createProductsBatch(
+  tx: Executor,
+  batch: readonly NewProduct[],
+): Promise<string[]> {
+  if (batch.length === 0) return [];
+  // Ids are made here rather than read back, so each spec and source row can
+  // name its product without a round trip.
+  const rows = batch.map((item) => ({ ...item, id: crypto.randomUUID() }));
+
+  await tx.insert(products).values(
+    rows.map(({ id, slug, input }) => ({
+      id,
+      category: input.category,
+      slug,
+      brand: input.brand,
+      model: input.model,
+      name: input.name,
+      description: input.description,
+      price: input.price,
+      status: input.status ?? "hidden",
+      gtin: input.gtin,
+    })),
+  );
+
+  const tires: (typeof tireSpecs.$inferInsert)[] = [];
+  const wheels: (typeof wheelSpecs.$inferInsert)[] = [];
+  const accessories: (typeof accessorySpecs.$inferInsert)[] = [];
+  const sources: (typeof productSources.$inferInsert)[] = [];
+  for (const { id, input } of rows) {
+    switch (input.category) {
+      case "tires":
+        tires.push({ productId: id, ...input.specs });
+        break;
+      case "wheels":
+        wheels.push({ productId: id, ...input.specs });
+        break;
+      case "accessories":
+        accessories.push({ productId: id, ...input.specs });
+        break;
+    }
+    for (const source of input.sources) {
+      sources.push({ productId: id, ...source });
+    }
+  }
+  if (tires.length > 0) await tx.insert(tireSpecs).values(tires);
+  if (wheels.length > 0) await tx.insert(wheelSpecs).values(wheels);
+  if (accessories.length > 0) {
+    await tx.insert(accessorySpecs).values(accessories);
+  }
+  if (sources.length > 0) await tx.insert(productSources).values(sources);
+
+  return rows.map((row) => row.id);
 }
 
 /**

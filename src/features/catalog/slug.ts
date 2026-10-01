@@ -50,3 +50,16 @@ export function buildProductSlug(input: ProductInput): string {
   // The CHECK refuses a trailing hyphen, which a cut at the limit can leave.
   return slug.replace(/-+$/g, "") || "product";
 }
+
+/**
+ * `base`, or `base-2`, `base-3` … whichever is the first not in `taken`. One
+ * rule for a single create (the store asks the database what is taken) and a
+ * bulk load (the importer keeps the set as it goes).
+ */
+export function nextFreeSlug(base: string, taken: ReadonlySet<string>): string {
+  if (!taken.has(base)) return base;
+  for (let suffix = 2; ; suffix += 1) {
+    const candidate = `${base}-${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}

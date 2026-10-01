@@ -1,5 +1,23 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-09-30 (the catalogue import, and a stand-in catalogue loaded into production, D113 and D114).**
+- **Production now lists 44,143 products**: 9,785 tires, 33,901 wheels, 457 accessories, from the
+  scraped vendor sheets. All `published`, **no prices** (every card reads `Inquire for price`), **no
+  photos** (every card is the placeholder tile), duplicates across vendors not merged. It is a stand-in
+  until the co-founder's cleaned CSV arrives.
+- **The import is `npm run catalog:import -- <file.csv>`** (`scripts/catalog-import.ts`): a dry run
+  unless `--write`, create-only, into an empty catalogue only. The column layout is one file,
+  `src/features/catalog/import-mapping.ts`; the suggested file layout is `docs/catalogue-csv.md`.
+- **1,583 of the 45,726 scraped rows were refused** and listed for the co-founder: 1,446 with no brand,
+  94 sharing a vendor SKU, and the rest a bad size, bolt pattern, backspacing or an over-long name.
+- **Checked:** the full load on a throwaway Postgres; the batch writer against `createProduct` row for
+  row on 2,345 products; a batch that breaks a unique index leaves nothing behind; a second run is
+  refused; the production tables against the rehearsal tables by checksum; and the deployed `/results`,
+  `/wheels`, `/accessories` and a product page. **No test file is committed.**
+- **Not checked:** the home featured row, which shows a bulk load only after a deploy (D111).
+- **Owed next:** reset the Neon password (`todo.md` item 9); a deploy, for the home row; the cleaned
+  CSV, then empty the catalogue and load it fresh (emptying is not built); photos (Vercel Blob).
+
 **Last updated 2026-09-30 (all four open PRs combined into one branch for a single `glcorp` merge, D111).**
 The branch brings **#11** the vehicle list snapshot (D110), **#8** Converge payments (D105–D108), **#9** the
 catalogue database with its server code (D105b–D107b, migration `0002`) and **#10** the page wiring

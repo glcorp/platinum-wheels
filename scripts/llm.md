@@ -28,6 +28,12 @@ from `design/assets/`, and parity becomes eyeballing — which
 - [`db-migrate.mjs`](db-migrate.mjs) — applies `drizzle/*.sql` via `DATABASE_URL_UNPOOLED`. Runs first in
   `npm run build`, so every Vercel build migrates its own Neon branch (preview) or main (production)
   before `next build`. Exits 1 on Vercel with no URL; skips locally. Also `npm run db:migrate`.
+- [`catalog-import.ts`](catalog-import.ts) — `npm run catalog:import -- <file.csv>` (D113). Reads a
+  catalogue CSV, runs every row through the product validator and writes a report folder
+  (`summary.txt`, `rejected.csv`, `products.csv`). A dry run unless `--write` is given; then it loads the
+  valid rows into an **empty** catalogue, in batches over parallel connections. The database is
+  `IMPORT_DATABASE_URL`. The thinking is in `src/features/catalog/import-plan.ts`, the column layout in
+  `import-mapping.ts`, and the suggested file layout in `docs/catalogue-csv.md`.
 
 ## Rules
 - **`client-assets/` is where client material supplied AFTER the design export goes** (D63).
@@ -38,7 +44,13 @@ from `design/assets/`, and parity becomes eyeballing — which
   (D63). Chrome highlights are as bright as the background, so a global threshold punches holes through
   the product; the flood-fill only removes background connected to the image edge. The 215 threshold is
   measured, not guessed — see the block comment above `keyBackground()`.
-- **Plain Node, not application source.** `.mjs` and `.js` are outside tsc's scope — `tsconfig.json:25-32`
+- **`catalog-import.ts` is the one TypeScript script** (D114). It must run the app's own validator
+  and store, so `tsx` runs it and `npm run check` type-checks it. It is `.ts`, not `.mts`: the repo has
+  no `"type": "module"`, and an ES-module script cannot see what `src/db/schema.ts` re-exports.
+- **The import never reads `DATABASE_URL`.** It takes `IMPORT_DATABASE_URL` only, so a load reaches a
+  database somebody named on purpose, and it should be the direct Neon address, not the pooled one.
+- **Import reports go to `import-report/`, which is git-ignored.** They hold vendor data row by row.
+- **Plain Node, not application source** (all scripts but `catalog-import.ts`). `.mjs` and `.js` are outside tsc's scope — `tsconfig.json:25-32`
   includes `**/*.ts`, `**/*.tsx` and `**/*.mts` only, so `npm run typecheck` never sees these files.
   `eslint .` (`package.json:10`) *does* lint them: `scripts/` is not in the ignore list
   (`eslint.config.mjs:9-19`).
@@ -74,8 +86,12 @@ from `design/assets/`, and parity becomes eyeballing — which
 ## Don't
 - Don't move migrations out of the build without a replacement: the Neon URLs are Vercel **Sensitive**,
   so the build is the only place they can be read (`docs/payments.md` §7).
-- Don't rewrite these in TypeScript "for consistency". They are executed by `node` directly and are
-  deliberately outside the compile graph (`tsconfig.json:25-32`).
+- Don't rewrite the `.mjs` scripts in TypeScript "for consistency". They are executed by `node`
+  directly and are deliberately outside the compile graph (`tsconfig.json:25-32`).
+- Don't add cleanup, de-duplication or an update path to `catalog-import.ts`. It reports bad rows and
+  only ever creates (D113). Don't add an "empty the catalogue" flag to it either: that was ruled a
+  separate effort.
+- Don't point `catalog-import.ts --write` at any database without the owner's say-so.
 - Don't remove or relax the upscale guard to make two blurry cut-outs fill the canvas. The warning *is*
   the client blocker (`HANDOFF.md` §7).
 - Don't paste `probe()` output verbatim into a report — the report holds the diffed table and its
