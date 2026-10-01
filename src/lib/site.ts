@@ -33,7 +33,25 @@ export const SITE = {
    * (`docs/decisions.md` §7).
    */
   priceNote: "Brampton, Ontario · Prices in CAD, before tax",
+  /** The footer line while prices are switched off (D122): with no price on
+   *  the site there is no currency to declare. */
+  placeNote: "Brampton, Ontario",
 } as const;
+
+/**
+ * Whether the storefront shows prices at all (D122). Off for launch, by the
+ * client's ruling: the vendor sheets mix retail, dealer and with-shipping
+ * figures, so no single rule turns them into a customer price. Off hides every
+ * price on the site: cards, the product page, the price filter, the price sorts
+ * and the footer's currency line. The cart never shows a price either way.
+ *
+ * On only at exactly `true` (the D104 / D112 pattern). `NEXT_PUBLIC_` because
+ * `ProductCard` also renders inside the home carousel's client island, and a
+ * server-only variable reads `undefined` there, which would split the server
+ * and client renders. The value is inlined at build time, so turning prices
+ * on or off takes a redeploy.
+ */
+export const PRICES_VISIBLE = process.env.NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED === "true";
 
 /**
  * `SITE.hours` as data, for structured data only (D112). These are the hours

@@ -20,7 +20,7 @@
 
 import { FilterSheet } from "@/features/results/components/filter-sheet";
 import { SortSelect } from "@/features/results/components/sort-select";
-import type { ResultsView } from "@/features/results/types";
+import { HAS_SORT_CHOICE, type ResultsView } from "@/features/results/types";
 
 export interface FilterSortBarProps {
   view: ResultsView;
@@ -33,12 +33,20 @@ export function FilterSortBar({ view }: FilterSortBarProps) {
       /* Hook for `globals.css`'s scroll-padding rule, which keeps a keyboard
          focus target from landing under this bar (WCAG 2.4.11, D91b). */
       data-sticky-filter-bar=""
-      className="sticky top-17 z-3 mt-4 grid grid-cols-2 gap-2 border-y border-border bg-scrim-strong px-4 py-3 sm:top-22 sm:px-8 md:hidden"
+      /* D122: with prices off there is nothing to sort by, so `Filters` takes
+         the whole bar. */
+      className={
+        HAS_SORT_CHOICE
+          ? "sticky top-17 z-3 mt-4 grid grid-cols-2 gap-2 border-y border-border bg-scrim-strong px-4 py-3 sm:top-22 sm:px-8 md:hidden"
+          : "sticky top-17 z-3 mt-4 grid grid-cols-1 gap-2 border-y border-border bg-scrim-strong px-4 py-3 sm:top-22 sm:px-8 md:hidden"
+      }
     >
       {/* Left cell: the trigger; its `<dialog>` is `position:fixed`, so it is
           out of flow and never takes a grid track. */}
       <FilterSheet view={view} />
-      <SortSelect variant="bar" id="results-sort-bar" query={view.query} />
+      {HAS_SORT_CHOICE ? (
+        <SortSelect variant="bar" id="results-sort-bar" query={view.query} />
+      ) : null}
     </div>
   );
 }

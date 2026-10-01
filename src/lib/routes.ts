@@ -36,16 +36,14 @@ export const ROUTES = {
   privacy: "/privacy",
   terms: "/terms",
   styleguide: "/styleguide",
+  /** The browser-only cart, where a quote is requested (D122). */
+  cart: "/cart",
 } as const;
 
-/** `/products/<slug>`; the `#quote` anchor is the PDP's own quote band
- *  (design/inventory/product.md:121) — quote-first, no cart. */
+/** `/products/<slug>`. Since D122 the product page has no quote form and no
+ *  `#quote` anchor: a quote is requested from the cart (`ROUTES.cart`). */
 export const PRODUCT_PATH = "/products";
 
 export function productRoute(slug: string): string {
   return `${PRODUCT_PATH}/${slug}`;
-}
-
-export function quoteRoute(slug: string): string {
-  return `${PRODUCT_PATH}/${slug}#quote`;
 }

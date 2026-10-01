@@ -29,6 +29,9 @@ export interface SimilarProductsProps {
    *  desktop bottom padding, so two stacked rows sit one section gap apart
    *  instead of two. */
   leads?: boolean;
+  /** The page's checked vehicle, saved on a cart line by each card's
+   *  `Add to cart` (D122), or `""`. */
+  vehicle?: string;
 }
 
 /* Section: mobile `padding:56px 0 0 16px;gap:20px` — left-padded,
@@ -76,6 +79,7 @@ export function SimilarProducts({
   heading = "Similar products",
   probe = "similar",
   leads = false,
+  vehicle = "",
 }: SimilarProductsProps) {
   if (products.length === 0) {
     return null;
@@ -118,6 +122,7 @@ export function SimilarProducts({
             product={product}
             morph={false}
             sizes={CARD_SIZES}
+            vehicle={vehicle}
           />
         ))}
       </div>

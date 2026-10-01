@@ -74,6 +74,7 @@ import {
   type SizeOption,
 } from "@/features/results/types";
 import { cx } from "@/lib/cx";
+import { PRICES_VISIBLE } from "@/lib/site";
 
 /* --- Shared bits ---------------------------------------------------------- */
 
@@ -813,24 +814,28 @@ export function FilterPanel({
       </div>
 
       {/* 4 — Price per tire / wheel / item -------------------------------- */}
-      <div
-        data-probe="group-price"
-        role="group"
-        aria-labelledby={`${idPrefix}-price-label`}
-        className={shellPrice}
-      >
-        <GroupLabel id={`${idPrefix}-price-label`} mark={rail}>
-          {facets.priceLabel}
-        </GroupLabel>
-        <PriceGroup
-          idPrefix={idPrefix}
-          rail={rail}
-          min={facets.price.min}
-          max={facets.price.max}
-          selectedMin={facets.price.selectedMin}
-          selectedMax={facets.price.selectedMax}
-        />
-      </div>
+      {/* D122: not rendered while prices are switched off; `query.ts` ignores
+          a `min`/`max` in the URL then too. */}
+      {PRICES_VISIBLE ? (
+        <div
+          data-probe="group-price"
+          role="group"
+          aria-labelledby={`${idPrefix}-price-label`}
+          className={shellPrice}
+        >
+          <GroupLabel id={`${idPrefix}-price-label`} mark={rail}>
+            {facets.priceLabel}
+          </GroupLabel>
+          <PriceGroup
+            idPrefix={idPrefix}
+            rail={rail}
+            min={facets.price.min}
+            max={facets.price.max}
+            selectedMin={facets.price.selectedMin}
+            selectedMax={facets.price.selectedMax}
+          />
+        </div>
+      ) : null}
 
       {/* The rail's only submit, and only for a visitor with scripting off.
           `Apply` was removed on owner instruction (DEVIATIONS.md #71, D82) —

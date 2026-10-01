@@ -729,9 +729,14 @@ export async function getSimilarProducts(
  * The published products behind a list of slugs, in the list's own order. A
  * slug that does not exist, or whose product is hidden or discontinued, is
  * simply absent from the result: a hand-picked row shrinks, it never breaks.
+ *
+ * `includeDiscontinued` is the cart's (D122): a discontinued product stays in
+ * a visitor's cart, marked, and still reaches the shop in a quote request, so
+ * the cart reads both statuses the product page reads. Hidden is still absent.
  */
 export async function getProductsBySlugs(
   slugs: readonly string[],
+  { includeDiscontinued = false }: { includeDiscontinued?: boolean } = {},
 ): Promise<CatalogProduct[]> {
   const wanted = [...new Set(slugs)].filter(
     (slug) => slug.length <= SLUG_MAX_LENGTH && SLUG.test(slug),
@@ -741,7 +746,12 @@ export async function getProductsBySlugs(
   const rows = await withSpecs(
     db.select(PRODUCT_SELECTION).from(products).$dynamic(),
   ).where(
-    and(inArray(products.slug, wanted), eq(products.status, "published")),
+    and(
+      inArray(products.slug, wanted),
+      includeDiscontinued
+        ? inArray(products.status, ["published", "discontinued"])
+        : eq(products.status, "published"),
+    ),
   );
   const bySlug = new Map(
     (await toCatalogProducts(db, rows)).map((product) => [product.slug, product]),

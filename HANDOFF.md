@@ -1,5 +1,24 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-01 (the cart, D122 and D123, on branch `quote-cart`, stacked on `seo` / #13).**
+A customer now adds products to a **browser-only cart** and sends **one** quote request from `/cart`; the
+product page has no quote band. `Add to cart` replaces `Request a quote` on every card and the PDP; the
+header carries a cart link with a count after the phone at every width; the D51 form, unchanged but for
+its quantity fields, opens in a dialog on `/cart`; one request sends one owner alert and one auto-reply
+listing every line (D104). **Every storefront price is off for launch** behind
+`NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED` (`todo.md` C1). Rules: `src/features/cart/llm.md`,
+`src/lib/llm.md`; deviations #96, #97.
+- **Checked:** `npm run check`, `next build`; on a local production build against a PGlite fixture
+  (six products, one discontinued): add from a card and the PDP (`Added ✓`, count pop, `View cart`
+  prompt), `Custom` quantity with its blank-field error, re-add growing the quantity, the vehicle carried
+  from a checked PDP URL, `/cart` at 375, 800 and 1440, stepper and `Remove`, a product hidden in the
+  database removed with the note, the dialog's empty submit (three field errors, focus on name), a valid
+  send (cart emptied, success panel, `quote.email.disabled` with the line count), and both email bodies
+  rendered against a stubbed Resend.
+- **Not checked:** a real Resend send; the parked e2e suite (`tests/llm.md` Open, it still asserts the
+  quote band); Safari and Firefox; prices switched on (built and typechecked, not looked at).
+- **Merge order:** after #13, which this branch is cut from.
+
 **Last updated 2026-09-30 (SEO groundwork, D112, on branch `seo`, off `main` once #12 had merged).**
 Search engines stay blocked until launch behind `SEARCH_INDEXING_ENABLED` (on only at exactly `true`; off
 in Vercel). Built behind it: `/robots.txt`, a sitemap index with four files, canonical URLs and

@@ -7,11 +7,11 @@ import { SiteHeader } from "@/components/site/site-header";
 import { BuyPanel } from "@/features/product/components/buy-panel";
 import { PdpBreadcrumb } from "@/features/product/components/pdp-breadcrumb";
 import { PdpGallery } from "@/features/product/components/pdp-gallery";
-import { QuoteBand } from "@/features/product/components/quote-band";
 import { SimilarProducts } from "@/features/product/components/similar-products";
 import { Specifications } from "@/features/product/components/specifications";
 import { loadProduct, loadProductRows } from "@/features/product/load";
 import { productView } from "@/features/product/view";
+import { vehicleLabel } from "@/features/product/types";
 import { JsonLd } from "@/features/seo/json-ld";
 import { pageMetadata } from "@/features/seo/metadata";
 import {
@@ -27,8 +27,10 @@ import { productRoute } from "@/lib/routes";
 
    One `ProductView` in, every section renders from it (the `/tires` pattern,
    D44). The quantity selection is a query param (D50), so every state of this
-   page is server rendered and survives a reload; the only client component on
-   the route is the quote form island (D51).
+   page is server rendered and survives a reload. The client islands are the
+   `Add to cart` buttons (D122); the quote band and its form, drawn between the
+   specifications and the similar row, moved to the cart in D122
+   (`design/DEVIATIONS.md` #96).
 
    Chrome is composed per page, not hoisted into a group layout (D38): `solid`
    header here, as the artboards draw it. The active nav item follows the
@@ -161,7 +163,6 @@ export default async function ProductPage({
             </div>
           </div>
 
-          <QuoteBand view={view} />
           {/* Undrawn (D108b): the same row as `Similar products`, above it, for
               this model's other sizes. Each renders only when it has cards. */}
           <SimilarProducts
@@ -169,8 +170,9 @@ export default async function ProductPage({
             probe="other-sizes"
             products={view.otherSizes}
             leads={view.similar.length > 0}
+            vehicle={vehicleLabel(view)}
           />
-          <SimilarProducts products={view.similar} />
+          <SimilarProducts products={view.similar} vehicle={vehicleLabel(view)} />
         </main>
         <SiteFooter />
       </PageTransition>

@@ -3,9 +3,11 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
+import { cartItem } from "@/features/catalog/cart-item";
+import { AddToCartPanel } from "@/features/product/components/add-to-cart-panel";
 import { QuantityControl } from "@/features/product/components/quantity-control";
-import type { ProductView } from "@/features/product/types";
-import { PRIMARY_CONTACT } from "@/lib/site";
+import { vehicleLabel, type ProductView } from "@/features/product/types";
+import { PRICES_VISIBLE, PRIMARY_CONTACT } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
    BuyPanel — the right column of the split (D "3": gallery 55 / panel 45).
@@ -150,17 +152,20 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
           category's PDP suffix (D58, `CategoryConfig.unit.pdp`) — a tire's is
           `per tire · before tax`, `Price`'s own default, so this is a no-op
           for the built page; a wheel renders `per wheel · before tax`. */}
-      <div className="sm:pt-2">
-        <Price
-          amount={product.price}
-          context="pdp"
-          /* A discontinued product (D105b): the amount dims, as it does on the
-             unavailable card. Undrawn on the PDP, so it borrows the card's
-             drawn treatment rather than inventing one. */
-          unavailable={!product.available}
-          unit={view.config.unit.pdp}
-        />
-      </div>
+      {/* D122: no price at all while prices are switched off. */}
+      {PRICES_VISIBLE ? (
+        <div className="sm:pt-2">
+          <Price
+            amount={product.price}
+            context="pdp"
+            /* A discontinued product (D105b): the amount dims, as it does on the
+               unavailable card. Undrawn on the PDP, so it borrows the card's
+               drawn treatment rather than inventing one. */
+            unavailable={!product.available}
+            unit={view.config.unit.pdp}
+          />
+        </div>
+      ) : null}
 
       <QuantityControl quantity={view.quantity} searchParams={searchParams} />
 
@@ -168,21 +173,17 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
           `gap:10px` desktop (`product.md` §3.5). `panel` size (`h-14 sm:h-15`
           = 56→60px) already reproduces the drawn pair unchanged. */}
       <div className="flex flex-col gap-2 pt-2 sm:gap-2.5">
-        {/* `#quote` is this page's own quote band anchor
-            (`src/lib/routes.ts` `quoteRoute()` doc: "the PDP's own quote
-            band") — an in-page fragment, not a routed path, so it is not a
-            `ROUTES` entry. */}
-        {/* Unavailable: the card's own drawn swap, ghost button and
-            `Inquire about restock` (`results-desktop.html:426`). The form
-            below still takes the enquiry. */}
-        <Button
-          variant={product.available ? "primary" : "secondary"}
-          size="panel"
-          fullWidth
-          href="#quote"
-        >
-          {product.available ? "Request a quote" : "Inquire about restock"}
-        </Button>
+        {/* D122: `Add to cart` replaces the drawn `Request a quote` (and the
+            unavailable `Inquire about restock`), adding what the cells above
+            say; the quote is requested from the cart. Same `panel` size and
+            the same primary / ghost swap for a discontinued product, so the
+            pair's drawn box is unchanged (`design/DEVIATIONS.md` #96). */}
+        <AddToCartPanel
+          slug={product.slug}
+          item={cartItem(product)}
+          quantity={view.quantity === "custom" ? null : Number(view.quantity)}
+          vehicle={vehicleLabel(view)}
+        />
         <Button
           variant="secondary"
           size="panel"

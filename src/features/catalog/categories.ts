@@ -153,6 +153,12 @@ export interface CategoryConfig {
     one: string;
     many: string;
   };
+  /** How many one press of a card's `Add to cart` puts in the cart (D122):
+   *  a set of four tires or wheels, one accessory. The PDP's `How many?`
+   *  cells open on the same number (`product/types.ts`
+   *  `DEFAULT_QUANTITY_BY_CATEGORY`, D65), so a card and its product page
+   *  agree. */
+  addQuantity: 1 | 4;
   copy: {
     /** `ResultsEmpty` body — undrawn, new copy under `.claude/rules/ui.md`.
      *  **All three values are deliberately identical.** The clause that used to
@@ -252,6 +258,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         one: "1 tire",
         many: "tires",
       },
+      addQuantity: 4,
       copy: {
         empty: "Nothing fits those filters yet. Clear them, or call us.",
         nearMiss: "size",
@@ -277,6 +284,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         one: "1 wheel",
         many: "wheels",
       },
+      addQuantity: 4,
       copy: {
         empty: "Nothing fits those filters yet. Clear them, or call us.",
         nearMiss: "fitment",
@@ -304,6 +312,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         one: "1 item",
         many: "items",
       },
+      addQuantity: 1,
       copy: {
         empty: "Nothing fits those filters yet. Clear them, or call us.",
         /* An accessory derives no SIZE from a vehicle, but since D67 it does

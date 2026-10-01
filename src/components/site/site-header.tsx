@@ -1,8 +1,11 @@
 /* ---------------------------------------------------------------------------
    SiteHeader — shared nav bar for all three designed routes (D7 / DEVIATIONS
-   #11). Server Component; the only client piece is the mobile drawer, which
+   #11). Server Component; the client pieces are the mobile drawer, which
    is extracted to `site-nav-drawer.tsx` (docs/decisions.md §4 "use client"
    never inside src/app/, only on leaf islands).
+
+   D122 adds the cart link (`cart-link.tsx`, the second client island here)
+   between the phone CTA and the menu, at every width.
 
    Two variants, one markup: `over-hero` is absolutely positioned inside the
    hero (design/manifest.md:44, "not sticky"); `solid` is the same bar on
@@ -25,6 +28,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ViewTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { CartLink } from "@/components/site/cart-link";
 import { SiteNavDrawer, type SiteNavDrawerLink } from "@/components/site/site-nav-drawer";
 import { PRIMARY_CONTACT } from "@/lib/site";
 import { ROUTES } from "@/lib/routes";
@@ -223,6 +227,11 @@ export function SiteHeader({
               <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
             </svg>
           </a>
+
+          {/* Cart — every width, after the phone and before the menu (D122,
+              owner ruling "Between phone and menu"; never inside the drawer).
+              A client island: the count lives in the browser. */}
+          <CartLink />
 
           {/* Drawer trigger — visible below md: (1100px), the tablet band
               keeps it alongside the pill CTA once the link row collapses. */}

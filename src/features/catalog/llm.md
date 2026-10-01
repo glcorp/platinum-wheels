@@ -39,8 +39,16 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   and D37 routes every cross-feature import through `catalog/`. It imports **no seed data**, so
   `filter-panel.tsx` (a `"use client"` island) can import it. **No `label` field since D71**: it fed only
   the rail's `Category` group, now unbuilt (#60).
+- [`components/add-to-cart-button.tsx`](components/add-to-cart-button.tsx) — `AddToCartButton`
+  (**D122**), the card's and the PDP's one CTA, a client island: the drawn CTA's `Button` box, primary or
+  (discontinued) ghost, writes the browser cart (`src/lib/cart.ts`) and reads `Added ✓` / `Updated ✓` for
+  1.8 s. Takes the quantity and the server-checked vehicle as props.
+- [`cart-item.ts`](cart-item.ts) — `cartItem(product)`, the one description of a product a cart line
+  shows (no price), shared by the card, the PDP and the cart's refresh (D122).
 - [`components/product-card.tsx`](components/product-card.tsx) — `ProductCard`, props
-  `{ product: Product }`. A Server Component: hover is pure CSS (`product-card.tsx:29-30`). Composes
+  `{ product: Product }`. A Server Component: hover is pure CSS (`product-card.tsx:29-30`). Since D122 its
+  CTA is `AddToCartButton` (category `addQuantity`, optional `vehicle` prop) and its `Price` renders only
+  while `PRICES_VISIBLE` (`DEVIATIONS.md` #96, #97). Composes
   `Badge`, `Button` and `Price` (`:4-6`). The photo src is `/images/products/` + `product.image ?? slug`
   + `.webp` (`product-card.tsx:160`). The photo is wrapped in a second `<Link>` to the same
   `productRoute(slug)` the model link uses, `tabIndex={-1} aria-hidden="true"` so it adds a pointer
@@ -66,7 +74,8 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `CatalogFacets`, `ProductInput`, `AdminProduct`, plus the four enum value lists. No database code,
     client-safe.
   - [`queries.ts`](queries.ts) — storefront reads: `listProducts`, `getFacets`, `getProductBySlug`,
-    `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs`, `getPriceBounds`, `getBrands` (every
+    `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs` (`includeDiscontinued` for the cart,
+    D122), `getPriceBounds`, `getBrands` (every
     brand a category carries, whatever is filtered; D111), `listProductUrls`.
     The only place visibility is decided.
   - [`store.ts`](store.ts) — staff reads and every write: `listAllProducts`, `getProductById`,
@@ -90,9 +99,9 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 - **Nothing enters `Product` that the cards do not vary on.** The field list traces to
   `design/inventory/results.md:363`; adding a field means measuring it first.
 - **Deliberately absent, and must stay absent:** stock counts, shipping, ratings, invented specs
-  (`docs/decisions.md:107`), and — because there is no cart — quantity, availability counts and any
-  add-to-cart affordance (`docs/decisions.md:105`, `types.ts:10-13`).
-- **Route shape comes from `src/lib/routes.ts`** (`productRoute()`, `quoteRoute()`, D39); the card owns no
+  (`docs/decisions.md:107`), and quantity or availability counts: since D122 the card adds to a cart, but
+  the cart (`src/lib/cart.ts`) keeps the quantities and the product carries none.
+- **Route shape comes from `src/lib/routes.ts`** (`productRoute()`, D39; `quoteRoute()` went with D122); the card owns no
   path literal — D18.
   Every `href` in all seven exports is `"#"` (`design/inventory/results.md:716`), so the shape is ours.
 - **Badges: WINTER first, at most two** (`design/DESIGN.md:201`, implemented `product-card.tsx:121-131`).
@@ -165,6 +174,10 @@ in place.
 - **Depends on (D105b):** `src/db/` (`getDb()`, the catalogue tables).
 - **Depended on by (D105b):** `src/features/admin/` — `product-queries.ts` and `product-actions.ts` call
   `store.ts` and `product-input.ts`.
+- **Depends on (D122):** `src/lib/cart.ts` (`addToCart`, `CartItem`), `src/lib/site.ts`
+  (`PRICES_VISIBLE`).
+- **Depended on by (D122):** `src/features/cart/` (`getProductsBySlugs`, `toProduct`, `cartItem`,
+  `CATEGORY_CONFIG`) and `src/features/product/` (`AddToCartButton`, `cartItem`).
 - **Depended on by:** `src/app/(storefront)/styleguide/page.tsx`; `src/features/home/` (featured row,
   D29); `src/features/results/` — `search.ts` asks `queries.ts` for the lists and facets and is the
   only place results are computed (D44), `query.ts` and `filter-panel.tsx` read `CATEGORY_CONFIG`, and
@@ -179,8 +192,8 @@ in place.
   (`docs/decisions.md:105-107`).
 - **Don't upscale a product cut-out to fix the two low-res SKUs.** `scripts/prepare-assets.mjs` refuses
   by design; it is a client blocker (D19, `HANDOFF.md` §7).
-- **Don't change the CTA copy.** `Request a quote` / `Inquire about restock` are artboard-verbatim
-  (`product-card.tsx:330`, `docs/decisions.md:105`).
+- **Don't change the CTA copy.** `Add to cart` is the owner's and the client's wording (D122,
+  `DEVIATIONS.md` #96); the drawn `Request a quote` now belongs to the cart page alone.
 - **Don't list `transform` in the hover transition** to match the artboard string — it would be inert
   (DEVIATIONS #15).
 - **Don't make the card photo's `share` a plain string** to "fix" a missing morph. Untyped, every slug

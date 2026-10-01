@@ -5,7 +5,9 @@
  *
  * Two halves, same as `/tires`:
  *   `view.ts`  — pure derivation from a `Product` + the raw query (no I/O).
- *   `actions.ts` — the quote-form Server Action (D51).
+ *
+ * The quote form and its Server Action left this folder for the cart in D122
+ * (`src/features/cart/`): the product page adds to the cart, the cart asks.
  *
  * The buy-panel quantity is a URL param (D50), so the page is fully server
  * rendered at every state and a reload keeps the selection. Everything the
@@ -13,7 +15,7 @@
  * data beyond the one `studdable` flag.
  */
 
-import type { CategoryConfig } from "@/features/catalog/categories";
+import { categoryConfig, type CategoryConfig } from "@/features/catalog/categories";
 import type { Product, ProductCategory } from "@/features/catalog/types";
 
 /* --- Quantity (D50) ------------------------------------------------------ */
@@ -34,60 +36,27 @@ export const QUANTITY_OPTIONS: ReadonlyArray<{
   { value: "custom", label: "Custom" },
 ];
 
-/**
- * How the quote form's Quantity select spells one cell. The artboard shows
- * `4 tires` (`product-desktop.html:146`) — that string is reproduced exactly
- * for a tire; the singular, the other counts and the two new categories are
- * new copy under `.claude/rules/ui.md` "Copy".
- *
- * Takes the unit pair rather than the category so the copy lives once, in
- * `CategoryConfig.unit` (`@/features/catalog/categories`), beside the card and
- * PDP price suffixes it has to agree with.
- */
-export function quantityQuoteLabel(
-  value: QuantityKey,
-  unit: { one: string; many: string },
-): string {
-  if (value === "custom") return "Another quantity";
-  if (value === "1") return unit.one;
-  return `${value} ${unit.many}`;
+/** Per-category default for the `How many?` cells: the category's
+ *  `addQuantity` (D122), the same number a card's `Add to cart` adds, so a card
+ *  and its product page agree. That is `4` for tires and wheels, the cell the
+ *  artboards draw selected (`product-desktop.html:114`), and `1` for an
+ *  accessory, which has no natural multiple: the Acorn Lug Nuts PDP once
+ *  opened on `4` for a product whose own size line reads `Set of 20` (craft
+ *  audit P1, D65). */
+function cellFor(quantity: 1 | 4): QuantityKey {
+  return quantity === 1 ? "1" : "4";
 }
 
-/** `4` is the cell the artboards draw selected (`product-desktop.html:114`).
- *  It is the default because the artboard chose it, not because a set of four
- *  is assumed — `Custom` is one click away and the quote form is free text. */
-export const DEFAULT_QUANTITY: QuantityKey = "4";
-
-/** Per-category default for the `How many?` cells.
- *
- *  Only the tire PDP is drawn, so `4` is artboard fidelity there and nowhere
- *  else — on `/wheels` it is also right (a set of four), but on an accessory it
- *  was an unexamined carry-over: the Acorn Lug Nuts PDP opens on `4` for a
- *  product whose own size line reads `Set of 20`, so the pre-filled quote asked
- *  for eighty lug nuts. Accessories are sold by the item or the set and have no
- *  natural multiple, so they open on `1`.
- *
- *  D63 ruled the *labels* stay as drawn on accessories; the selected default
- *  was not part of that ruling. Craft audit P1. */
-export const DEFAULT_QUANTITY_BY_CATEGORY: Record<
-  ProductCategory,
-  QuantityKey
-> = {
-  tires: DEFAULT_QUANTITY,
-  wheels: DEFAULT_QUANTITY,
-  accessories: "1",
+export const DEFAULT_QUANTITY_BY_CATEGORY: Record<ProductCategory, QuantityKey> = {
+  tires: cellFor(categoryConfig("tires").addQuantity),
+  wheels: cellFor(categoryConfig("wheels").addQuantity),
+  accessories: cellFor(categoryConfig("accessories").addQuantity),
 };
-
-/** Bounds for the free-text field the quote form renders when the buy
- *  panel's `Custom` cell is selected (D50, product `llm.md` Open #6). The
- *  form is `noValidate` (D65) — `actions.ts` is the enforcement; the
- *  `Input`'s `min`/`max` are affordance only. */
-export const CUSTOM_QUANTITY_MIN = 1;
-export const CUSTOM_QUANTITY_MAX = 99;
 
 /** Query-string params this route reads. `qty` is its own (D50); the vehicle
  *  trio arrives from `/tires` and is passed straight through to the
- *  breadcrumb's back-link and the quote chip. */
+ *  breadcrumb's back-link, and is read by `Add to cart` at the moment of the
+ *  add (`src/lib/cart.ts` `vehicleFromLocation`, D122). */
 export const PRODUCT_PARAM = {
   qty: "qty",
   year: "year",
@@ -108,6 +77,13 @@ export interface Vehicle {
   year: string;
   make: string;
   model: string;
+}
+
+/** `2021 Honda Civic`, or `""`: what `Add to cart` saves on a cart line
+ *  (D122). Only ever a vehicle `view.ts` has checked against the finder. */
+export function vehicleLabel(view: Pick<ProductView, "vehicle">): string {
+  const { vehicle } = view;
+  return vehicle === null ? "" : `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
 }
 
 /* --- Badges -------------------------------------------------------------- */
@@ -159,24 +135,20 @@ export interface ProductView {
   /** `215/55R16 97T XL` — space-joined, the buy panel's numeral under the
    *  `<h1>` (`product.md` §3.2). The cards keep the ` · ` form. */
   sizeLine: string;
-  /** `Zeta Antarctica Sport` — brand + model, the desktop breadcrumb leaf and
-   *  the first half of the quote chip. Mobile's leaf is `product.model`. */
+  /** `Zeta Antarctica Sport` — brand + model, the desktop breadcrumb leaf.
+   *  Mobile's leaf is `product.model`. */
   fullName: string;
   specs: readonly ProductSpecRow[];
   badges: readonly PdpBadge[];
   quantity: QuantityKey;
-  /** Present only when all three finder params are in the URL; drives the
-   *  quote chip's second half and the quote paragraph's vehicle clause. Absent
-   *  → both genericise, they never invent a vehicle (D47(5) precedent). */
+  /** Present only when all three finder params are in the URL. Never
+   *  invented (D47(5) precedent). */
   vehicle: Vehicle | null;
   /** The product's own category route — `/tires`, `/wheels` or
    *  `/accessories` (D58) — carrying every inbound param except `qty`, so the
    *  breadcrumb returns to the search the visitor came from
    *  (`design/manifest.md` §3). */
   backHref: string;
-  /** `Zeta Antarctica Sport 215/55R16 · 2021 Honda Civic`, or just the first
-   *  half when no vehicle is in the URL. The quote band's chip value. */
-  inquiryContext: string;
   /**
    * Up to four cards, never another size of this same model and never another
    * category (D52, D58 — a wheel PDP never recommends a tire). Closest first:
@@ -190,84 +162,3 @@ export interface ProductView {
    */
   otherSizes: readonly Product[];
 }
-
-/* --- Quote form (D51) ---------------------------------------------------- */
-
-export type QuoteField =
-  | "name"
-  | "email"
-  | "phone"
-  | "quantity"
-  | "customQuantity"
-  | "contact"
-  | "message"
-  | "consent";
-
-/** Field `name` attributes. Also the keys of `errors` and `values`. */
-export const QUOTE_FIELD = {
-  name: "name",
-  email: "email",
-  phone: "phone",
-  quantity: "quantity",
-  /** Free-text count, rendered only while `quantity === "custom"`
-   *  (D50 Open #6, `quote-form.tsx`). Optional — blank stays legal. */
-  customQuantity: "customQuantity",
-  contact: "contact",
-  message: "message",
-  consent: "consent",
-  /** Hidden: which product this inquiry is about. */
-  slug: "slug",
-  /** Hidden: the vehicle from the page URL, `2021 Honda Civic`, or blank.
-   *  Goes into the owner alert only (D104). */
-  vehicle: "vehicle",
-  /** Hidden: when the server rendered the form, epoch ms. A submit sooner
-   *  than `QUOTE_MIN_FILL_MS` after it is treated as a bot (D104). */
-  renderedAt: "renderedAt",
-  /** Honeypot (D104). Off-screen and out of the tab order; a person never
-   *  fills it, a form-filling bot usually does. Named like the goodwill
-   *  site's own honeypot field. */
-  website: "website",
-} as const;
-
-/** The timer half of the form protection (owner ruling 2026-09-23, D104). */
-export const QUOTE_MIN_FILL_MS = 3_000;
-
-/** The segmented control, artboard-verbatim and in drawn order
- *  (`product-desktop.html:147`). `Phone` is drawn selected; it is the default
- *  because the artboard chose it. */
-export type ContactMethod = "phone" | "email" | "whatsapp";
-
-export const CONTACT_METHODS: ReadonlyArray<{
-  value: ContactMethod;
-  label: string;
-}> = [
-  { value: "phone", label: "Phone" },
-  { value: "email", label: "Email" },
-  { value: "whatsapp", label: "WhatsApp" },
-];
-
-export const DEFAULT_CONTACT_METHOD: ContactMethod = "phone";
-
-/**
- * What the Server Action returns to `useActionState`. `idle` is the initial
- * state; `invalid` re-renders the form with per-field messages and the values
- * the visitor typed, so nothing is lost; `success` swaps the form for the
- * confirmation panel — a state no artboard draws, so it is authored under
- * `.claude/rules/ui.md` and goes on `/styleguide` (`HANDOFF.md` §6).
- */
-export interface QuoteFormState {
-  /** `failed` (D104): the inquiry was valid but the owner alert could not be
-   *  sent, so the lead would be lost. The form stays up with what was typed
-   *  and asks the visitor to try again or call. */
-  status: "idle" | "invalid" | "failed" | "success";
-  errors?: Partial<Record<QuoteField, string>>;
-  /** Echoed back on `invalid` and `failed`. Never echoed on `success`. */
-  values?: Partial<Record<QuoteField, string>>;
-  /** A whole-form notice with no field behind it: the send itself failed
-   *  (offline, dropped connection). Set by `quote-form.tsx`'s client wrapper,
-   *  never by the Server Action (D93b, ENV-1). Always with `status: "invalid"`
-   *  and empty `errors`, and `values` echoes everything the visitor typed. */
-  notice?: string;
-}
-
-export const QUOTE_INITIAL_STATE: QuoteFormState = { status: "idle" };

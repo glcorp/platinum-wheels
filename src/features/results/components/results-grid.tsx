@@ -135,9 +135,12 @@ function CardGrid({
   products,
   probe,
   priorityCount = 0,
+  vehicle,
 }: {
   products: readonly Product[];
   probe: string;
+  /** The checked search vehicle, saved on a cart line by `Add to cart`. */
+  vehicle: string;
   /** How many leading cards preload their photo instead of lazy-loading it. */
   priorityCount?: number;
 }) {
@@ -174,6 +177,7 @@ function CardGrid({
             product={product}
             priority={index < priorityCount}
             sizes={CARD_SIZES}
+            vehicle={vehicle}
           />
         </ViewTransition>
       ))}
@@ -243,6 +247,12 @@ export function ResultsGrid({ view }: ResultsGridProps) {
      best matches remain and the window is below its ceiling, or, on the first
      press, while the similar row is still at three of more. */
   const { best, similar } = view;
+  /* D122: the search vehicle rides on every card's `Add to cart`. `query.ts`
+     has already dropped any vehicle the finder does not offer (D91b). */
+  const vehicle =
+    view.query.vehicle === null
+      ? ""
+      : `${view.query.vehicle.year} ${view.query.vehicle.make} ${view.query.vehicle.model}`;
   const bestHidden = view.bestTotal - best.length;
   const similarHidden = view.similarTotal - similar.length;
   const atCeiling = view.query.show >= RESULTS_WINDOW.max;
@@ -329,7 +339,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
               : `No exact ${copy.nearMiss} match for your ${view.query.vehicle.year} ${view.query.vehicle.make} ${view.query.vehicle.model} yet. Similar ${copy.nearMiss}s are below.`}
           </p>
         ) : (
-          <CardGrid products={best} probe="best-grid" priorityCount={3} />
+          <CardGrid products={best} probe="best-grid" priorityCount={3} vehicle={vehicle} />
         )}
       </section>
 
@@ -348,7 +358,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
               Similar matches
             </h2>
           </div>
-          <CardGrid products={similar} probe="similar-grid" />
+          <CardGrid products={similar} probe="similar-grid" vehicle={vehicle} />
         </section>
       )}
 
