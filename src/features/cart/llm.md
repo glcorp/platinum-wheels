@@ -34,7 +34,9 @@ Server Actions and the emails.
   `CartRemovedNote` for `/styleguide`.
 - `components/cart-line.tsx` — one line: photo, brand, model link, size, `For <vehicle>`, the
   `Unavailable, we'll check restock` badge, a −/field/+ stepper (floor 1, committed on blur or Enter) and
-  `Remove`. Handlers optional, so the styleguide renders it inert.
+  `Remove`. Handlers optional, so the styleguide renders it inert. An unbranded accessory (D125) has no
+  brand label; its name stands alone there, in the added notice and in the owner alert
+  (`productName()`, `src/lib/product-name.ts`).
 - `components/quote-form.tsx` — the D51 form inside the dialog, minus the quantity fields. Reads the cart
   at the moment of sending (`getLines`). Send runs in `onSubmit` inside a try/catch (D93b ENV-1).
 - `components/quote-success.tsx` · `components/quote-error-summary.tsx` — the two authored states (D51,

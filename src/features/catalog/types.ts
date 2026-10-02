@@ -57,20 +57,27 @@ export function productCategory(product: Product): ProductCategory {
 
 /**
  * Accessory type. Values are the `type` filter's param values and the spec
- * table's `Type` row; labels live in `categories.ts`. The nine values are the
- * database's `accessory_type` enum spelled with hyphens (D105b): the list
- * follows what the vendors sell, no longer what was photographed (D63).
+ * table's `Type` row; labels are `ACCESSORY_LABEL` in `adapter.ts`. The
+ * fifteen values are the database's `accessory_type` enum with every
+ * underscore spelled as a hyphen: the vendors' own fifteen types (D125),
+ * which replaced the nine of D105b.
  */
 export type AccessoryType =
+  | "center-caps"
   | "lug-nuts"
-  | "wheel-locks"
+  | "cap-logos-inserts-hardware"
   | "hub-rings"
-  | "centre-caps"
-  | "tpms"
-  | "spacers"
+  | "lug-bolts"
   | "wheel-weights"
-  | "hub-caps"
-  | "other";
+  | "wheel-covers-trim"
+  | "wheel-spacers"
+  | "wheel-locks"
+  | "tpms-sensors-tools"
+  | "tools-gauges-organizers"
+  | "tire-studs"
+  | "valves-caps"
+  | "antennas"
+  | "tire-bags-storage";
 
 /**
  * The four wheel facts the PDP spec table draws and the three the rail filters
@@ -125,8 +132,11 @@ export interface Product {
    * (`design/assets/results-desktop.html:167`) and the body's brand line
    * (`:171`) — and again as the first half of the image `alt`
    * (`design/inventory/results.md:702`).
+   *
+   * `null` on an accessory the vendor sells unbranded (D125): a card has no
+   * brand to stamp, and nothing may invent one. A tire or wheel always has one.
    */
-  brand: string;
+  brand: string | null;
   /** `Antarctica Sport`. Display type, and the card's link to the product. A
    *  product with no model (most accessories) shows its name here. */
   model: string;
@@ -186,7 +196,7 @@ export interface Product {
    */
   wheel?: WheelSpec;
   /**
-   * Accessory-only fact: which of the nine types this is. Present iff
+   * Accessory-only fact: which of the fifteen types this is. Present iff
    * `category === "accessories"` (D58). It drives the `Type` chip filter and
    * the spec table's `Type` row.
    */

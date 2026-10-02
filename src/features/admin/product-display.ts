@@ -11,6 +11,8 @@ import type {
   AccessoryKind,
   AdminProduct,
   CatalogProduct,
+  ExtraSpec,
+  ProductSource,
   TireSeason,
 } from "@/features/catalog/catalog-types";
 import { PRODUCT_FIELD } from "@/features/catalog/product-input";
@@ -85,6 +87,44 @@ export function displayPrice(price: number | null): string | null {
   }).format(price);
 }
 
+/**
+ * What a vendor charges the shop, cents always shown: `$388.12`, `$129.00`
+ * (D125). Staff only; never on the storefront. Not `Price`, which forbids
+ * cents (`src/features/admin/llm.md` Don't).
+ */
+export function vendorPriceLabel(price: number): string {
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
+    currencyDisplay: "narrowSymbol",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
+}
+
+/**
+ * The cheapest priced source, or `null` when no vendor gave a price. A tie
+ * keeps the first, so the answer follows the order the sources were saved in.
+ */
+export function lowestVendorPrice(
+  sources: readonly ProductSource[],
+): { vendor: string; price: number } | null {
+  let lowest: { vendor: string; price: number } | null = null;
+  for (const source of sources) {
+    if (source.vendorPrice === null) continue;
+    if (lowest === null || source.vendorPrice < lowest.price) {
+      lowest = { vendor: source.vendor, price: source.vendorPrice };
+    }
+  }
+  return lowest;
+}
+
+/** Extra specs as the form's textarea holds them: one `Label: value` per
+ *  line, in the stored order (D125). The validator reads the same shape. */
+export function extraSpecsText(specs: readonly ExtraSpec[]): string {
+  return specs.map(({ label, value }) => `${label}: ${value}`).join("\n");
+}
+
 type Values = Record<string, string[]>;
 
 function put(values: Values, field: string, value: string | number | null | undefined): void {
@@ -115,11 +155,16 @@ export function productFormValues(product: AdminProduct): Values {
   put(values, f.description, product.description);
   if (product.price !== null) values[f.price] = [product.price.toFixed(2)];
   put(values, f.gtin, product.gtin);
+  put(values, f.extraSpecs, extraSpecsText(product.extraSpecs));
 
   if (product.sources.length > 0) {
     values[f.sourceVendor] = product.sources.map((source) => source.vendor);
     values[f.sourceSku] = product.sources.map((source) => source.vendorSku);
     values[f.sourceUrl] = product.sources.map((source) => source.vendorUrl ?? "");
+    // Cents kept as typed in the form (`388.10`, never `388.1`); blank = none.
+    values[f.sourcePrice] = product.sources.map((source) =>
+      source.vendorPrice === null ? "" : source.vendorPrice.toFixed(2),
+    );
   }
 
   switch (product.category) {
@@ -150,6 +195,9 @@ export function productFormValues(product: AdminProduct): Values {
       put(values, f.centerBoreMm, specs.centerBoreMm);
       put(values, f.backspacing, specs.backspacing);
       put(values, f.wheelFinish, specs.finish);
+      put(values, f.wheelFinishFamily, specs.finishFamily);
+      put(values, f.wheelColor, specs.color);
+      put(values, f.lugCount, specs.lugCount);
       put(values, f.material, specs.material);
       put(values, f.wheelSeatType, specs.seatType);
       put(values, f.loadRatingLbs, specs.loadRatingLbs);
@@ -161,6 +209,8 @@ export function productFormValues(product: AdminProduct): Values {
       const specs = product.specs;
       if (!specs) break;
       put(values, f.accessoryType, specs.accessoryType);
+      put(values, f.partType, specs.partType);
+      put(values, f.weightLb, specs.weightLb);
       put(values, f.threadSize, specs.threadSize);
       put(values, f.accessorySeatType, specs.seatType);
       put(values, f.accessoryFinish, specs.finish);

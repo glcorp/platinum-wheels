@@ -29,6 +29,7 @@ import type { Product, ProductCategory } from "@/features/catalog/types";
    `results/search.ts`: the finder's list is the only authority on what counts
    as a vehicle (D91b). */
 import { isFinderVehicle } from "@/features/finder/data";
+import { productName } from "@/lib/product-name";
 
 import {
   DEFAULT_QUANTITY_BY_CATEGORY,
@@ -121,10 +122,24 @@ function seasonLabel(season: TireSeason | null, studdable: boolean): string {
 }
 
 /**
+ * The vendor facts that have no column (D125), after every column row, in the
+ * order the vendor gave them, label and value exactly as stored. A pair with
+ * a blank half is dropped, the same rule as every other row (D109(6)). Never a
+ * price: the importer keeps prices out of `extraSpecs`, and a vendor's own
+ * price lives on its staff-only source row.
+ */
+function extraRows(detail: CatalogProductDetail): SpecRows {
+  return detail.extraSpecs.map(({ label, value }): [string, string | null] => {
+    const key = label.trim();
+    return [key, key === "" ? null : value.trim()];
+  });
+}
+
+/**
  * The first six tire rows are the artboard's, in its order (`product.md`
  * §2.5): Brand, Model, Size, Season, Load / speed, 3PMSF. The rest are facts
  * the catalogue carries that the seed never did (D108b), each shown only when
- * the vendor supplied it.
+ * the vendor supplied it, and then the vendor's extra facts (D125).
  */
 function buildSpecs(
   detail: CatalogProductDetail,
@@ -149,6 +164,7 @@ function buildSpecs(
       ["Ply rating", specs?.plyRating?.toString()],
       ["Run-flat", specs?.runFlat ? "Yes" : null],
       ["UTQG", specs?.utqg],
+      ...extraRows(detail),
     ]);
   }
 
@@ -164,6 +180,10 @@ function buildSpecs(
       /* The vendor's own wording, as it arrived (D105b): no finish filter, so
          nothing groups or renames it. */
       ["Finish", specs?.finish],
+      /* D125, the vendor sheets' own grouping and wording, as given. */
+      ["Finish family", specs?.finishFamily],
+      ["Colour", specs?.color],
+      ["Lug count", specs?.lugCount == null ? null : String(specs.lugCount)],
       ["Centre bore", measure(specs?.centerBoreMm ?? null, "mm")],
       ["Backspacing", measure(specs?.backspacing ?? null, "in")],
       ["Material", specs?.material],
@@ -171,6 +191,7 @@ function buildSpecs(
       ["Load rating", measure(specs?.loadRatingLbs ?? null, "lb")],
       ["TPMS compatible", yesNo(specs?.tpmsCompatible ?? null)],
       ["Winter use", yesNo(specs?.winterCompatible ?? null)],
+      ...extraRows(detail),
     ]);
   }
 
@@ -178,6 +199,8 @@ function buildSpecs(
   return specRows([
     ...lead,
     ["Type", specs && ACCESSORY_LABEL[accessoryParam(specs.accessoryType)]],
+    /* D125: the vendor's narrower kind within the type (`Center Cap`, `Logo`). */
+    ["Part type", specs?.partType],
     ["Thread size", specs?.threadSize && timesSign(specs.threadSize)],
     ["Seat type", specs?.seatType],
     ["Finish", specs?.finish],
@@ -187,6 +210,8 @@ function buildSpecs(
     ],
     ["Outer diameter", measure(specs?.outerDiameterMm ?? null, "mm")],
     ["Inner diameter", measure(specs?.innerDiameterMm ?? null, "mm")],
+    ["Weight", measure(specs?.weightLb ?? null, "lb")],
+    ...extraRows(detail),
   ]);
 }
 
@@ -333,7 +358,7 @@ export function productView(
   const config = configFor(product);
   const { sizeCode, loadSpeed } = splitSize(detail, product);
   const sizeLine = loadSpeed === "" ? sizeCode : `${sizeCode} ${loadSpeed}`;
-  const fullName = `${product.brand} ${product.model}`;
+  const fullName = productName(product.brand, product.model);
   const season = productSeason(product);
   const vehicle = parseVehicle(searchParams);
 

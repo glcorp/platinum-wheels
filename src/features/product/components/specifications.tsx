@@ -79,8 +79,11 @@ export function Specifications({ rows }: SpecificationsProps) {
           only; the coordinator's browser parity pass should confirm no clip. */}
       <table className="border-border-strong w-full border-t">
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.key} className={ROW}>
+          {/* Keyed by position as well as label: since D125 a vendor's extra
+              fact may repeat a column's label (`Finish`), and two rows must
+              never share a key. Rows are derived per render, never reordered. */}
+          {rows.map((row, index) => (
+            <tr key={`${index}-${row.key}`} className={ROW}>
               <th scope="row" className={KEY_CELL}>
                 {row.key}
               </th>

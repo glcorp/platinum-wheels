@@ -1,6 +1,24 @@
 # Platinum Wheels — session handoff
 
-**Last updated 2026-10-03 (the Converge SYSTEM error found and fixed, D125, branch `payments-handoff-form`).**
+**Last updated 2026-10-03 (the merged vendor CSV aligned with the database, D125, on branch
+`catalog-csv-alignment`).** `npm run catalog:build-csv -- --share <combined/share> --final <combined/final>
+--out <dir>` turns the co-founder's merged workbooks into one `catalogue.csv` the importer takes whole:
+42,165 products from 50,355 rows, each vendor a source with its own price (admin only), sparse vendor facts
+in `extra_specs`, the vendors' 15 accessory types. Outputs are in `~/Platinum Wheels Vendor Data/combined/share/output/`.
+- **Production's catalogue was emptied on 2026-10-03** (catalogue tables only; payment tables counted
+  unchanged), so migration `0003`'s guard passes. **Next:** `glcorp` merges this PR, the deploy migrates,
+  then the owner loads `npm run catalog:import -- catalogue.csv` (dry run, then `--write`) against the
+  direct Neon address (D113). Until then every listing reads `0 matches`.
+- **Checked on PGlite:** all four migrations, the `0003` guard both ways, builder run twice byte-identical,
+  importer dry run (0 refused) and full load, `next build`, storefront pages (no vendor price or vendor name
+  in any page source, no sideways scroll at 375 on the longest spec), admin edit page (sources with prices,
+  lowest price, new fields). `tsc` and `eslint` clean.
+- **Not checked:** anything on Vercel or Neon; photo upload (still a separate job); screenshots (pane hidden).
+- **Left for a look:** `needs-review.csv` (787 rows: brand splits checked against the market, 16 Vertex
+  tires whose "All Season" may be all-weather); `src/features/catalog/llm.md` is 283 lines, over the ~120
+  budget.
+
+**Last updated 2026-10-03 (the Converge SYSTEM error found and fixed, D125b, branch `payments-handoff-form`).**
 Every payment through our site failed on Converge's hosted page with `errorType SYSTEM` while a portal Buy
 Button approved. The cause was ours: the Pay island reused the Server Action form's DOM element for the
 hand-off, so the hidden `$ACTION_*` inputs Next.js renders for progressive enhancement were POSTed to

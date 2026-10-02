@@ -204,7 +204,7 @@ Elavon's Converge docs now live under `developer.elavon.com/products/hosted-paym
 | **Export scripts**: after a transaction Converge POSTs the result (form-encoded, ISO-8859-1) to a URL Elavon has registered; setup takes up to 12 business days; a non-200 reply is logged as a failed export. **Not signed.** Source ranges: `62.17.112.80/28`, `62.134.193.208/28`, `65.201.175.80/28`, `204.137.47.32/28`, `204.137.43.32/28`. It can send a username and password. **Their sample POST has no `ssl_invoice_number`**, a `SALE` type, a masked card (`47**********0084`) and an `authorization` header on authenticated posts (read 2026-10-01) | [export scripts](https://developer.elavon.com/products/hosted-payment-page/v1/export-scripts), read 2026-09-30 | D119: `/pay/notify`, `converge.ts` |
 | Demo test cards approve at `$X.00`; `$X.88` declines. Visa `4000000000000002`, Mastercard `5121212121212124` | [test cards](https://developer.elavon.com/test-cards) | the demo walkthrough |
 
-**Settled by the demo calls (2026-10-02/03, D125):** the account ID is sent as **`ssl_account_id`** (Elavon's
+**Settled by the demo calls (2026-10-02/03, D125b):** the account ID is sent as **`ssl_account_id`** (Elavon's
 current required name); `apiuser116349` needed Batch VIEW rights for `txnquery` (error 4014 without them);
 `ssl_description` is not sent (not needed); the invoice is `PW10001N2` (alphanumeric). **The cause of the
 hosted page's `errorType SYSTEM` "System error"** was the hand-off POST itself: the Pay form is a Next.js

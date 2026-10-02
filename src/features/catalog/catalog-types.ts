@@ -12,6 +12,7 @@
 
 import type {
   AccessorySpecsRow,
+  ExtraSpec,
   ProductRow,
   TireSpecsRow,
   WheelSpecsRow,
@@ -44,16 +45,26 @@ export const TIRE_SEASONS = [
   "winter",
 ] as const satisfies readonly TireSeason[];
 
+export type { ExtraSpec };
+
+/** The vendors' fifteen product types (D125), in the order the vendor sheets
+ *  rank them by count. Labels: `ACCESSORY_LABEL` in `adapter.ts`. */
 export const ACCESSORY_KINDS = [
+  "center_caps",
   "lug_nuts",
-  "wheel_locks",
+  "cap_logos_inserts_hardware",
   "hub_rings",
-  "centre_caps",
-  "tpms",
-  "spacers",
+  "lug_bolts",
   "wheel_weights",
-  "hub_caps",
-  "other",
+  "wheel_covers_trim",
+  "wheel_spacers",
+  "wheel_locks",
+  "tpms_sensors_tools",
+  "tools_gauges_organizers",
+  "tire_studs",
+  "valves_caps",
+  "antennas",
+  "tire_bags_storage",
 ] as const satisfies readonly AccessoryKind[];
 
 /* --- Product ------------------------------------------------------------- */
@@ -79,7 +90,8 @@ export type CatalogSpecs =
 export type CatalogProduct = {
   id: string;
   slug: string;
-  brand: string;
+  /** `null` only on an unbranded accessory (D125). */
+  brand: string | null;
   model: string | null;
   name: string;
   description: string | null;
@@ -87,6 +99,8 @@ export type CatalogProduct = {
   price: number | null;
   status: ProductStatus;
   gtin: string | null;
+  /** Vendor facts with no column, in vendor order (D125). Never a price. */
+  extraSpecs: readonly ExtraSpec[];
   updatedAt: Date;
   /** The first image by sort order: the card's photo. */
   image: CatalogImage | null;
@@ -195,6 +209,9 @@ export interface ProductSource {
   vendor: string;
   vendorSku: string;
   vendorUrl: string | null;
+  /** What this vendor charges the shop, cents kept (D125, F17). Staff only:
+   *  never on a storefront type, never in a storefront query. */
+  vendorPrice: number | null;
 }
 
 /** What the admin edits: the product, every image, and where to order it. */
@@ -223,7 +240,9 @@ export type AccessorySpecsInput = AccessorySpecs;
 
 /** A validated product, ready to write. `parseProductInput()` makes these. */
 export type ProductInput = {
-  brand: string;
+  /** `null` only for an accessory (D125); the validator refuses it on a tire
+   *  or wheel, and so does `products_brand_required`. */
+  brand: string | null;
   model: string | null;
   name: string;
   description: string | null;
@@ -235,6 +254,7 @@ export type ProductInput = {
    */
   status: ProductStatus | null;
   gtin: string | null;
+  extraSpecs: readonly ExtraSpec[];
   sources: readonly ProductSource[];
 } & (
   | { category: "tires"; specs: TireSpecsInput }

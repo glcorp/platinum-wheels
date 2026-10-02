@@ -164,6 +164,39 @@ const DEMO_UNDRAWN: Product[] = [
   },
 ];
 
+/* An accessory the vendor sells unbranded (D125), with a photo and without:
+   no brand stamp, no brand line, and an empty tile where the brand would be
+   set. Its descriptive name carries the card. */
+const DEMO_UNBRANDED: Product[] = [
+  {
+    category: "accessories",
+    slug: "demo-unbranded",
+    image: "/images/products/gorilla-lug-nuts-acorn.webp",
+    brand: null,
+    model: "Chrome Acorn Lug Nut Kit",
+    size: "Set of 20 · 12×1.5",
+    price: null,
+    currency: "CAD",
+    badges: [],
+    threePeakMountainSnowflake: false,
+    available: true,
+    accessoryType: "lug-nuts",
+  },
+  {
+    category: "accessories",
+    slug: "demo-unbranded-no-photo",
+    brand: null,
+    model: "Chrome Valve Stem Caps",
+    size: "Set of 4",
+    price: null,
+    currency: "CAD",
+    badges: [],
+    threePeakMountainSnowflake: false,
+    available: true,
+    accessoryType: "valves-caps",
+  },
+];
+
 const DISPLAY_RAMP = [
   { util: "text-display-120", note: "Home hero. Once per page.", cls: "text-display-120" },
   { util: "text-display-88", note: "Section heroes, PDP titles.", cls: "text-display-88" },
@@ -538,6 +571,20 @@ export default function StyleguidePage() {
             tile in the same square, and one with no price reads{" "}
             <code className="text-ink">Inquire for price</code> at the height
             the amount would take, so both line up with their neighbours.
+          </p>
+          <div className="mt-10 grid grid-cols-1 gap-4 xs:grid-cols-2 md:grid-cols-4">
+            {[
+              ...DEMO_UNDRAWN.filter((p) => p.category === "accessories"),
+              ...DEMO_UNBRANDED,
+            ].map((p) => (
+              <ProductCard key={p.slug} product={p} morph={false} />
+            ))}
+          </div>
+          <p className="text-14 leading-body text-ink-dim mt-6">
+            A branded accessory beside two the vendor sells unbranded, with a
+            photo and without. No brand means no stamp, no brand line and an
+            empty tile; the name starts a line higher and the card keeps its
+            row&rsquo;s height, CTA on the same baseline.
           </p>
         </Block>
 

@@ -144,7 +144,7 @@ async function createSession(config: ConvergeConfig, request: SessionRequest): P
     // No `ssl_description`: the description stays ours, on the pay page; the
     // invoice number identifies the payment in Converge. (It was dropped on
     // 2026-10-03 as a suspect for the hosted page's SYSTEM error; the cause
-    // was the hand-off form, D125. It is simply not needed.)
+    // was the hand-off form, D125b. It is simply not needed.)
   });
 
   const result = await post(config, HOSTS[config.environment].token, form);

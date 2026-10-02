@@ -117,7 +117,9 @@ export function PdpBreadcrumb({ view, className }: PdpBreadcrumbProps) {
           <span className="text-ink" aria-current="page">
             {/* Brand half — desktop only, so the leaf reads `Zeta Antarctica
                 Sport` at `sm:` and up and `Antarctica Sport` below it. */}
-            <span className="hidden sm:inline">{view.product.brand} </span>
+            {view.product.brand ? (
+              <span className="hidden sm:inline">{view.product.brand} </span>
+            ) : null}
             {view.product.model}
           </span>
         </li>

@@ -13,6 +13,7 @@
     "assets": "node scripts/prepare-assets.mjs",
     "vehicles:fetch": "node scripts/vehicles-fetch.mjs",
     "catalog:import": "tsx scripts/catalog-import.ts",
+    "catalog:build-csv": "tsx scripts/catalog-csv-build.ts",
     "test:e2e": "playwright test",
     "admin:hash-password": "node scripts/hash-admin-password.mjs",
     "db:generate": "drizzle-kit generate",
@@ -43,6 +44,7 @@
     "drizzle-kit": "0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.0-canary.37",
+    "exceljs": "4.4.0",
     "tailwindcss": "^4",
     "tsx": "4.23.15",
     "typescript": "^5"

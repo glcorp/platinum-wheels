@@ -45,6 +45,7 @@ import {
   type QuoteFormState,
 } from "@/features/cart/types";
 import type { CartItem } from "@/lib/cart";
+import { productName } from "@/lib/product-name";
 import { productRoute } from "@/lib/routes";
 
 /* `src/lib/cart.ts` holds the same two numbers; a `"use server"` file can
@@ -304,7 +305,9 @@ export async function submitCartQuote(
     const unit = product ? cartItem(product).unit : { one: "1", many: "" };
     return {
       slug: line.slug,
-      productName: product ? `${product.brand} ${product.model}, ${product.size}` : null,
+      productName: product
+        ? `${productName(product.brand, product.model)}, ${product.size}`
+        : null,
       quantity:
         line.quantity === 1 ? unit.one : `${line.quantity} ${unit.many}`.trim(),
       available: product ? product.available : true,

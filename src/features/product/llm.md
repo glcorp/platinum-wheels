@@ -20,9 +20,13 @@ Action, its emails and its two authored states moved there.
   Since D108b it takes `CatalogProductDetail` plus the two rows and makes the card-shaped `Product` with
   `toProduct()`. Per category (D58): a **tire** builds the six drawn spec rows first, then Load range /
   Ply rating / Run-flat / UTQG when given; a **wheel** Brand / Model / Size / Bolt pattern / Offset /
-  Finish, then Centre bore, Backspacing, Material, Seat type, Load rating, TPMS, Winter use; an
-  **accessory** Brand / Model / Type, then Thread size, Seat type, Finish, Pack quantity and diameters.
-  **A row with no value is dropped** (D53(1)). The vehicle is accepted only via `isFinderVehicle` (D91b).
+  Finish, then Finish family / Colour / Lug count (D125), Centre bore, Backspacing, Material, Seat type,
+  Load rating, TPMS, Winter use; an **accessory** Brand / Model / Type, then Part type (D125), Thread
+  size, Seat type, Finish, Pack quantity, diameters and Weight (`2.5 lb`, D125). **Every category then
+  appends the product's `extraSpecs`** (D125), the vendor facts with no column, in vendor order, label
+  and value as stored. **A row with no value is dropped** (D53(1), D109(6)), which is also how an
+  unbranded accessory loses its `Brand` row. `fullName` is `productName()` (`src/lib/product-name.ts`),
+  so it is the bare name when there is no brand. The vehicle is accepted only via `isFinderVehicle` (D91b).
 - `load.ts` — server only (D108b). `loadProduct(slug)` in React `cache()`, and `loadProductRows(detail)`.
 - `components/pdp-breadcrumb.tsx` · `pdp-gallery.tsx` · `buy-panel.tsx` · `quantity-control.tsx` — the
   split column. `product-desktop.html:101-125`, `product-mobile.html:90-100`.
@@ -54,6 +58,12 @@ Action, its emails and its two authored states moved there.
   a prop to every `Add to cart` on the page, including both product rows. Never read from the URL in the
   browser: an unchecked URL could write its own text into the cart and the owner alert.
 - **Spec table is derived, never typed** (D53). **The gallery is one image, no thumbnails** (D53).
+  Rows are keyed by position and label, because an extra spec may repeat a column's label (D125).
+- **No brand, no brand element (D125).** An unbranded accessory renders no brand label in the buy panel,
+  no brand half in the breadcrumb leaf, an empty gallery placeholder tile, and image alt text of its name
+  alone. Nothing stands in for the brand.
+- **A vendor's own price never reaches this page** (D125). It lives on the staff-only source row;
+  `queries.ts` does not select it and nothing here may ask for it.
 - **`ProductCard` renders the product rows unchanged** (`src/features/catalog/llm.md`); no PDP variant.
 - Server Components by default; one `"use client"` leaf here (`add-to-cart-panel.tsx`). Named exports, no
   barrel. Tokens only (`.claude/rules/ui.md`).
@@ -68,7 +78,8 @@ Action, its emails and its two authored states moved there.
 | D91b | 2026-09-29 | (1) `view.ts` accepts a vehicle only via `isFinderVehicle`, the one cross-feature import outside `catalog/`, on `results/search.ts`'s precedent; (5) cells 1/2/4 are `scroll={false}` and every cell carries `data-qty-cell`; (6) the h1 is `text-ink` and `wrap-anywhere`, the size numeral `leading-flat`, the mobile price row loses a stray `pt-2`. Items (2)–(4), about the quote form, moved with it to `src/features/cart/` (D122). | QA pass (`design/reports/qa.md`). | D91b |
 | — | — | None other folder-scoped. | Every PDP ruling is global. | root `llm.md` §5b |
 
-Referenced: **D50** (quantity is `?qty=`), **D52** (similar = same season, self excluded), **D53** (derived
+Referenced: **D125** (unbranded accessories, the new spec rows, `extraSpecs`, vendor price staff only),
+**D50** (quantity is `?qty=`), **D52** (similar = same season, self excluded), **D53** (derived
 rulings), **D6** (no sticky buy bar), **D21** (`Price context="pdp"`), **D37** (imports go through
 `catalog/`), **D47(2)** (no trust line), **D122** (the cart; this page adds, the cart asks).
 

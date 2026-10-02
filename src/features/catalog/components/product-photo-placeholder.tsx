@@ -15,12 +15,16 @@
  * set flush-left at the bottom of the box: the top edge belongs to the badges.
  * Decorative: the brand is announced from the card body and the PDP heading,
  * so this is `aria-hidden`.
+ *
+ * An unbranded accessory (D125) has nothing to set, so the tile is empty: the
+ * same square and fill, no stand-in text. Its name is right below it.
  */
 
 import { cx } from "@/lib/cx";
 
 export interface ProductPhotoPlaceholderProps {
-  brand: string;
+  /** `null` on an unbranded accessory (D125): the tile renders empty. */
+  brand: string | null;
   /** `card` is the product grid, `gallery` the PDP's photo box. */
   context?: "card" | "gallery";
   /** The unavailable card dims its photo to 35%; the tile follows. */
@@ -42,18 +46,20 @@ export function ProductPhotoPlaceholder({
         dimmed && "opacity-35",
       )}
     >
-      <span
-        /* A brand name is never machine-translated (D93b, WDG-15). */
-        translate="no"
-        className={cx(
-          "display text-ink-dim break-words",
-          context === "card"
-            ? "text-display-24 sm:text-display-32"
-            : "text-display-40 sm:text-display-56",
-        )}
-      >
-        {brand}
-      </span>
+      {brand ? (
+        <span
+          /* A brand name is never machine-translated (D93b, WDG-15). */
+          translate="no"
+          className={cx(
+            "display text-ink-dim break-words",
+            context === "card"
+              ? "text-display-24 sm:text-display-32"
+              : "text-display-40 sm:text-display-56",
+          )}
+        >
+          {brand}
+        </span>
+      ) : null}
     </div>
   );
 }

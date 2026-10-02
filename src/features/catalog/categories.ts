@@ -227,9 +227,13 @@ const WHEEL_SIZE_FIELDS: readonly SizeFieldConfig[] = [
 
 /* --- Accessories ---------------------------------------------------------- */
 
-/** One chip per `AccessoryType`, in the database enum's order, with the same
- *  words `adapter.ts` `ACCESSORY_LABEL` uses for the spec table. New copy
- *  under `.claude/rules/ui.md`. */
+/** One chip per `AccessoryType`, in the order `adapter.ts` `ACCESSORY_LABEL`
+ *  lists them and with its words, the same ones the spec table's `Type` row
+ *  reads. Since D125 those are the vendors' fifteen types and their own labels
+ *  (`Center Caps`, `TPMS Sensors & Tools`), shipped as the vendors spell them.
+ *  A type key in a URL that is not one of these options (a pre-D125 `tpms`,
+ *  `spacers`, `other`) is dropped by `parseResultsQuery`, which keeps only
+ *  values this list offers, so an old link degrades to "no type filter". */
 const ACCESSORY_TYPES: ChipGroupConfig = {
   label: "Type",
   param: "type",

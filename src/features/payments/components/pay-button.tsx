@@ -9,7 +9,7 @@
    automatic submit still has a way forward.
 
    The hand-off form is a NEW element (its own `key`), never the Pay form
-   reused (D125). The server renders the Pay form with hidden `$ACTION_*`
+   reused (D125b). The server renders the Pay form with hidden `$ACTION_*`
    inputs for progressive enhancement; React leaves them in the DOM after
    hydration. When both states rendered a <form> at the same position, React
    kept that element, so the hand-off posted `$ACTION_KEY`, `$ACTION_1:0`
@@ -36,7 +36,7 @@ export function PayButton({ publicToken, amountLabel }: { publicToken: string; a
     if (state.status !== "redirect") return;
     const form = handoffRef.current;
     if (!form) return;
-    // Belt and braces: nothing but the token leaves this form (D125).
+    // Belt and braces: nothing but the token leaves this form (D125b).
     for (const input of Array.from(form.querySelectorAll("input"))) {
       if (input.name !== "ssl_txn_auth_token") input.remove();
     }

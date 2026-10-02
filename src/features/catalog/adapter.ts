@@ -31,12 +31,14 @@ export function seasonFromParam(value: string): TireSeason {
   return value.replace("-", "_") as TireSeason;
 }
 
+/** Every underscore: since D125 a type key can hold three
+ *  (`cap_logos_inserts_hardware`). */
 export function accessoryParam(kind: AccessoryKind): AccessoryType {
-  return kind.replace("_", "-") as AccessoryType;
+  return kind.replaceAll("_", "-") as AccessoryType;
 }
 
 export function accessoryFromParam(value: string): AccessoryKind {
-  return value.replace("-", "_") as AccessoryKind;
+  return value.replaceAll("-", "_") as AccessoryKind;
 }
 
 /* --- Size line ---------------------------------------------------------- */
@@ -76,17 +78,24 @@ function wheelSizeLine(
 }
 
 /** Shown on an accessory that states nothing about itself, and as the spec
- *  table's `Type`. The chip labels in `categories.ts` are the same words. */
+ *  table's `Type`. The chip labels in `categories.ts` are the same words.
+ *  The vendors' own labels, verbatim (D125); key order is the enum's. */
 export const ACCESSORY_LABEL: Readonly<Record<AccessoryType, string>> = {
-  "lug-nuts": "Lug nuts",
-  "wheel-locks": "Wheel locks",
-  "hub-rings": "Hub rings",
-  "centre-caps": "Centre caps",
-  tpms: "TPMS sensors",
-  spacers: "Wheel spacers",
-  "wheel-weights": "Wheel weights",
-  "hub-caps": "Hub caps",
-  other: "Other",
+  "center-caps": "Center Caps",
+  "lug-nuts": "Lug Nuts",
+  "cap-logos-inserts-hardware": "Cap Logos, Inserts & Hardware",
+  "hub-rings": "Hub Rings",
+  "lug-bolts": "Lug Bolts",
+  "wheel-weights": "Wheel Weights",
+  "wheel-covers-trim": "Wheel Covers & Trim",
+  "wheel-spacers": "Wheel Spacers",
+  "wheel-locks": "Wheel Locks",
+  "tpms-sensors-tools": "TPMS Sensors & Tools",
+  "tools-gauges-organizers": "Tools, Gauges & Organizers",
+  "tire-studs": "Tire Studs",
+  "valves-caps": "Valves & Caps",
+  antennas: "Antennas",
+  "tire-bags-storage": "Tire Bags & Storage",
 };
 
 function accessorySizeLine(

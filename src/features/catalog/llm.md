@@ -61,7 +61,8 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 - ~~`data.ts`~~ **Deleted by D108b.** The seed (nine tires, nine wheels, nine accessories, the featured
   row) is gone; every page reads the database. `/styleguide` keeps its own hand-built sample cards.
 - [`adapter.ts`](adapter.ts) — `toProduct()`: a database product (`CatalogProduct`) into the card-shaped
-  `Product` every component renders, plus the hyphen/underscore enum spelling and `ACCESSORY_LABEL`. The
+  `Product` every component renders, plus the hyphen/underscore enum spelling and `ACCESSORY_LABEL`
+  (since D125 the vendors' fifteen labels verbatim, `Center Caps` … `Tire Bags & Storage`). The
   one place the two shapes meet (D108b). Pure, client-safe.
 - [`cache-tag.ts`](cache-tag.ts) — `CATALOGUE_TAG`, the one tag for a cached catalogue read; the product
   admin's actions expire it on every write.
@@ -84,7 +85,10 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     per table for a whole batch, inside the caller's transaction, with nothing looked up.
     **Not gated**; `src/features/admin/` is the gate.
   - [`product-input.ts`](product-input.ts) — `PRODUCT_FIELD` and `parseProductInput()`, the one
-    validator every writer goes through. Pure.
+    validator every writer goes through. Pure. Since D125 it also reads `extra_specs` (`Label: value`
+    pairs, ` | ` or one per line, split on the first `: `), each source's `source_price`, the wheel
+    `finish_family` / `color` / `lug_count` and the accessory `part_type` / `weight_lb`; brand is
+    optional on an accessory only.
   - [`size.ts`](size.ts) — `parseTireSizeSpec()` (metric and flotation) and the bolt-pattern
     normalisers. Pure. [`slug.ts`](slug.ts) — `buildProductSlug()`, and `nextFreeSlug()`, the one
     `-2`, `-3` rule a single create and a bulk load share. Pure.
@@ -98,8 +102,9 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     0..n-1 and bumps `products.updated_at`. Talks to Postgres only; Blob is `src/features/admin/`'s job.
 - **The catalogue import (D113, D114).** Run by `scripts/catalog-import.ts`.
   - [`import-mapping.ts`](import-mapping.ts) — `IMPORT_MAPPING`: CSV header → product field, the exact
-    value renames, the numbered source columns and the photo columns. **The one file to edit when the
-    catalogue file's layout changes.** Pure.
+    value renames (the vendors' fifteen accessory labels, D125), the numbered source columns
+    (`source_vendor_n` / `_sku_n` / `_url_n` / `_price_n`) and the photo columns. **The one file to
+    edit when the catalogue file's layout changes.** Pure. Layout: `docs/catalogue-csv.md`.
   - [`import-plan.ts`](import-plan.ts) — `planImport()`: rows in; what would be created (each with its
     slug) and what is refused, with the reason and the column, out. Drives the dry run and the real
     load alike. Pure.
@@ -107,6 +112,16 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 ## Rules
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
   `hidden` product or a vendor source; `store.ts` returns both (D105b).
+- **A vendor's price never reaches the storefront (D125).** `product_sources.vendor_price` is what a
+  vendor charges the shop. No query in `queries.ts` selects `product_sources`; only `store.ts`
+  (`AdminProduct.sources[].vendorPrice`) reads it, and no storefront type (`Product`,
+  `CatalogProduct`) carries it. `extraSpecs` never holds a price either.
+- **`brand` is `null` only on an accessory (D125)**, which `products_brand_required` enforces. The
+  brand facet, `getBrands` and `listBrands` skip `null`; `getOtherSizes` matches a null brand with
+  `is null`; `Product.brand` is `string | null`, so a card renders no stamp rather than an invented one.
+- **Accessory types are the vendors' fifteen (D125).** `AccessoryType` is the enum key with **every**
+  underscore spelled as a hyphen (`cap-logos-inserts-hardware`), so `accessoryParam()` /
+  `accessoryFromParam()` use `replaceAll`.
 - **With prices off, `queries.ts` returns no price and orders by none (D124).** While `PRICES_VISIBLE` is
   false every product it returns has `price: null`, `getPriceBounds` is `null`/`null`, `min`/`max` are
   ignored, the price sorts read as `best`, and `best` and the similar row drop their price tie-break.
@@ -182,7 +197,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 |---|---|---|---|---|
 | D93b | 2026-09-30 | The `ProductCard` model link carries an `sr-only` size tail, so the same model in two sizes has distinct link names (WCAG 2.4.4); the brand stamp is `translate="no"`. Tests match the model name by regex prefix, never exactly. | Two links read identically to a screen reader. | QA pass; D93b |
 | D91b | 2026-09-29 | `ProductCard` takes an optional `sizes` (default unchanged); each grid passes its own. The photo box is a padded wrapping flex row, so the brand stamp wraps below the badges instead of overlapping them; the image link is `absolute inset-0`, the same box as before. | `sizes` said 50vw where the results grid is 1-up (400–719), so phones fetched about half the pixels they paint; the `Currently unavailable` badge overlapped the stamp by up to 34.6px at 1100–1180. | QA pass WDG-06, NJR-6; D91b |
-| — | — | None folder-scoped. | Every ruling that shapes this folder is global. | — |
+| — | 2026-10-03 | *Derived* under D125, each vetoable: (1) a vendor price of `0` refuses the row, where a display price of `0` is stored blank, because a silent 0 → blank would hide a sheet's error; (2) an `extra_specs` pair with no `: `, an empty half, a label twice (case-insensitive), a label over 60, a value over 2,000 (raised from 500 by owner ruling, 2026-10-03, so the longest vendor `Fits wheel` lists load) or more than 40 pairs refuses the row rather than dropping the pair; (3) `lug_bolts` joins `lug_nuts` and `wheel_locks` in the D67 thread match, since a bolt states a thread too; (4) an unbranded accessory's slug is model + name + size part. | The validator reports, it does not repair (D113); D125 split lug bolts out of lug nuts. | Coordinator brief, D125 |
 
 Referenced: **D18** (routes, and the one-pair-of-constants derivation), **D19** (cut-outs normalised to
 one 1000×1000 square canvas, never upscaled), **D21** (price suffix), **D29** (planned seed data),
@@ -213,6 +228,9 @@ in place.
   table, the back href, the units and the similar list, and `pdp-gallery.tsx` reads `productImageSrc()`.
 
 ## Don't
+- **Don't map an accessory label the vendors do not use onto one of the fifteen** in
+  `import-mapping.ts`. A sixteenth label is refused and reported; guessing its type is a repair (D113).
+- **Don't add `vendorPrice` to a storefront select or type** to "show the cost" anywhere public (D125).
 - **Don't add a second card variant per context.** All three homes measure identically
   (`product-card.tsx:12-18`); a variant would be three parity baselines instead of one.
 - **Don't hardcode `/products/…` at a call site.** Use `productRoute()` from `src/lib/routes.ts` (D18, D39).
@@ -228,21 +246,20 @@ in place.
   present on both pages pairs and flies at once — Home → `/tires` flew six photos (D92b).
 
 ## Open
-13. **The catalogue holds the STAND-IN load, not the approved data** (D113): 44,143 products from the
-    scraped vendor sheets, all `published`, no prices, no photos, duplicates across vendors not
-    merged. When the co-founder's cleaned CSV arrives the catalogue is emptied and loaded fresh, and
-    emptying it is its own effort: nothing in the repo does it. Owner.
-14. **10,249 stand-in slugs carry a `-2`, `-3` …**, mostly PRO WHEELS wheels that share brand, model,
+13. **Production's catalogue is empty** (since 2026-10-03). The D113 stand-in load (44,143 products from
+    the scraped vendor sheets) was truncated on the owner's instruction (*"remove only data linked to
+    products don't touch anything related to payments"*): the six catalogue tables only, in one
+    transaction that checked the payment tables' counts were unchanged before committing. Migration
+    `0003`'s guard therefore passes, and the D125 branch can merge. Until the D125 CSV is loaded,
+    every listing reads `0 matches` and the home featured row does not render. Owner, to run the load.
+14. **Moot while the catalogue is empty (2026-10-03); recheck after the D125 load.** **10,249 stand-in slugs carried a `-2`, `-3` …**, mostly PRO WHEELS wheels that share brand, model,
     size, bolt pattern, offset and finish and differ only in something the slug does not read (centre
     bore, SKU). Those suffixes follow file order, so they move if the file's order does. Whether the
     wheel slug should carry more is the owner's call (D107b(1)).
-7. ~~**Wire the pages to `queries.ts`**~~ **Done by D108b**, with the four UI changes D105b listed.
 8. **Only the home row is cached** (`home/featured.ts`, D109; by tag with no timer since D111). The results and product pages read Postgres
    on every request: measured at 6 to 97 ms with all ~46k vendor rows, and their filter combinations
    are unbounded, so a cache there would grow without limit for little gain. Revisit if a page is slow
    in production. Owner.
-11. ~~**No sitemap yet.**~~ **Closed 2026-09-30 by D112:** `src/features/seo/sitemap.ts` calls
-    `listProductUrls()` once per category, behind the indexing flag.
 12. **`public/images/products/*.webp` is now used by `/styleguide` only.** The seed cut-outs stay until
     real product photos are uploaded. Owner.
 9. **Tire sizes the parser refuses**, all real but none in the vendor sheets: commercial `11R22.5` and
@@ -251,9 +268,6 @@ in place.
 10. **A brand spelled two ways is two brands** (`GOODYEAR` / `Goodyear` in the scraped sheets): two facet
     rows, and "other sizes" split between them. The approved CSV is expected to arrive clean; nothing
     here canonicalises it. Co-founder, via owner.
-1. ~~**`data.ts` is not written.**~~ Written: `FEATURED_PRODUCTS` (D29) and the nine-SKU `PRODUCTS`
-   (D43). All four featured SKUs still share `215/55R16` — the home row is "a staged result for that
-   vehicle, not a real merchandising selection" (`design/DEVIATIONS.md`, Sample data).
 2. **Four product images cover nine tire SKUs**, and two cut-outs are too low-resolution to normalise —
    client blockers, `HANDOFF.md` §7. Needs the client, not code.
 4. **Wheel and accessory imagery.** Wheels: **two** usable cut-outs cover nine SKUs — the third,
@@ -266,9 +280,5 @@ in place.
 5. **Nobody has confirmed the shop stocks Touren, Spec-1, Gorilla, Bosch or Sentali.** The last two
    arrived with the accessory photography and are legible in it. Joins the brand-confirmation blocker
    in `HANDOFF.md` §7. Client, via owner.
-6. **The accessory types follow the photography (D63).** `valve-stems` and `hub-rings` were invented and
-   had no imagery; they are gone, and `centre-caps` is in. Adding a type without a product shot for it
-   puts the build back where it started.
-3. ~~**Facet counts do not reconcile.**~~ Answered by **D42**: every facet count, the result count,
-   `Filters (n)` and the price bounds are computed from this seed, never typed
-   (`design/DEVIATIONS.md` #25). The drawn numbers stay unreconciled and unused.
+6. ~~**The accessory types follow the photography (D63).**~~ **Superseded by D125:** the types are the
+   vendors' fifteen; D105b's nine (and D63's photographed four) are gone.

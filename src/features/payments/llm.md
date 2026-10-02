@@ -28,7 +28,7 @@ links point at nothing.
 - [`pay-actions.ts`](pay-actions.ts) — `"use server"`. `startPayment`: the Pay button. Its only input is the
   link token, bound by the page.
 - [`components/pay-button.tsx`](components/pay-button.tsx) — client island. Opens a session, then POSTs the
-  one-time token to the hosted page (D107) from a **new** form element that carries nothing else (D125).
+  one-time token to the hosted page (D107) from a **new** form element that carries nothing else (D125b).
 
 ## Rules
 
@@ -51,7 +51,7 @@ links point at nothing.
   credentials with one call before any loop.
 - **Nothing here is imported by a client component except `pay-actions.ts`** (a Server Action reference) and
   `components/`.
-- **Only `ssl_txn_auth_token` goes to the hosted page (D125).** The Pay form is a Server Action form, and the
+- **Only `ssl_txn_auth_token` goes to the hosted page (D125b).** The Pay form is a Server Action form, and the
   server renders hidden `$ACTION_*` inputs into it that React keeps after hydration. The hand-off form has
   its own `key` so it is a fresh element, and the effect strips every other input before `submit()`. Any
   extra field on that POST is stored on the Converge session and makes its hosted page fail with
@@ -81,7 +81,7 @@ links point at nothing.
 
 ## Open
 
-1. Settled 2026-10-03 (D125): the demo approves end to end. Still unconfirmed: the `txnquery`
+1. Settled 2026-10-03 (D125b): the demo approves end to end. Still unconfirmed: the `txnquery`
    single-result shape (both shapes are parsed), and whether a Converge return ever arrives as GET
    (an approval arrives as a POST with `ssl_txn_id`, `ssl_result`, `ssl_approval_code`).
 2. **The export script is built (D119) but unproven.** Elavon's sample POST has no `ssl_invoice_number`;

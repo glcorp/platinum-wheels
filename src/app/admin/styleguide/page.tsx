@@ -9,6 +9,10 @@ import { AdminTopBar } from "@/features/admin/components/admin-top-bar";
 import { LoginErrorSummary } from "@/features/admin/components/login-error-summary";
 import { PaymentLinkSuccess } from "@/features/admin/components/payment-link-success";
 import { ProductPhotos } from "@/features/admin/components/product-photos";
+import {
+  LowestVendorPriceNote,
+  ProductSourceRow,
+} from "@/features/admin/components/product-source-row";
 import { requireAdminSession } from "@/features/admin/session";
 import type { CatalogProduct } from "@/features/catalog/catalog-types";
 
@@ -60,6 +64,7 @@ const SAMPLE_TIRE: CatalogProduct = {
   price: 129.99,
   status: "published",
   gtin: null,
+  extraSpecs: [],
   updatedAt: new Date("2026-10-01T14:30:00-04:00"),
   image: null,
   category: "tires",
@@ -83,6 +88,43 @@ const SAMPLE_TIRE: CatalogProduct = {
     runFlat: false,
     utqg: null,
   },
+};
+
+/** An accessory the vendor sells unbranded (D125): no brand, a descriptive
+ *  name, the vendors' own type and part type. */
+const SAMPLE_UNBRANDED: CatalogProduct = {
+  id: "00000000-0000-4000-8000-000000000002",
+  slug: "sample-chrome-valve-stem-caps",
+  brand: null,
+  model: null,
+  name: "Chrome Valve Stem Caps",
+  description: null,
+  price: null,
+  status: "published",
+  gtin: null,
+  extraSpecs: [{ label: "Thread", value: "8V1" }],
+  updatedAt: new Date("2026-10-01T14:30:00-04:00"),
+  image: null,
+  category: "accessories",
+  specs: {
+    accessoryType: "valves_caps",
+    threadSize: null,
+    seatType: null,
+    finish: "Chrome",
+    packQuantity: 4,
+    partType: "Valve Cap",
+    weightLb: null,
+    outerDiameterMm: null,
+    innerDiameterMm: null,
+  },
+};
+
+/** A source row as the edit page shows it once a vendor price is saved. */
+const SAMPLE_SOURCE = {
+  vendor: "Sample Vendor",
+  sku: "SAMPLE-0001",
+  url: "",
+  price: "388.12",
 };
 
 function Block({
@@ -243,7 +285,7 @@ export default async function AdminStyleguidePage() {
           <Block
             id="sg-admin-products"
             title="Products"
-            note="The list card in each status, rendered inert: no tick box, no status buttons. A product with no photo shows its brand in the square, as the storefront does."
+            note="The list card in each status, rendered inert: no tick box, no status buttons. A product with no photo shows its brand in the square, as the storefront does; an unbranded accessory shows an empty square and says No brand."
           >
             <Row label="List card · published, priced">
               <ul className="max-w-measure">
@@ -259,6 +301,24 @@ export default async function AdminStyleguidePage() {
               <ul className="max-w-measure">
                 <AdminProductCard product={{ ...SAMPLE_TIRE, status: "discontinued" }} csrfToken={csrfToken} inert />
               </ul>
+            </Row>
+            <Row label="List card · accessory, no brand">
+              <ul className="max-w-measure">
+                <AdminProductCard product={SAMPLE_UNBRANDED} csrfToken={csrfToken} inert />
+              </ul>
+            </Row>
+            <Row label="Source row · with a vendor price">
+              {/* `inert`: the real row, out of the tab order and posting
+                  nothing (it sits in no form). */}
+              <div inert className="flex max-w-measure flex-col gap-5 sm:gap-6">
+                <LowestVendorPriceNote lowest={{ vendor: SAMPLE_SOURCE.vendor, price: 388.12 }} />
+                <ProductSourceRow
+                  index={0}
+                  row={SAMPLE_SOURCE}
+                  vendors={[SAMPLE_SOURCE.vendor]}
+                  errors={{}}
+                />
+              </div>
             </Row>
             <Row label="Tire size field · not a size">
               <div className="max-w-measure">

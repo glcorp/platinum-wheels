@@ -96,6 +96,9 @@ export function toCatalogProduct(
     price: product.price,
     status: product.status,
     gtin: product.gtin,
+    // `products_extra_specs_array` makes it an array; anything else would be
+    // a row written around the schema, and reads as no extra facts.
+    extraSpecs: Array.isArray(product.extraSpecs) ? product.extraSpecs : [],
     updatedAt: product.updatedAt,
     image,
     ...specsOf(row),

@@ -31,9 +31,9 @@
    tax or per-unit meaning: the shop has not decided what it is, and the column
    must not decide for them. It may be empty.
 
-   Deliberately NOT stored: vendor cost / MAP / MSRP / jobber, stock and
-   warehouse counts (this is a catalogue, not a store), French text, shipping
-   weights.
+   Deliberately NOT stored: MAP / MSRP / jobber, stock and warehouse counts
+   (this is a catalogue, not a store), French text. Each vendor's own price
+   IS stored since D125, on its `product_sources` row, staff only.
    --------------------------------------------------------------------------- */
 
 import { sql } from "drizzle-orm";
@@ -43,6 +43,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -95,17 +96,33 @@ export const tireSeason = pgEnum("tire_season", [
   "winter",
 ]);
 
+/** The vendors' own fifteen product types, one key each (D125). The label a
+ *  shopper reads is `ACCESSORY_LABEL` in `src/features/catalog/adapter.ts`. */
 export const accessoryType = pgEnum("accessory_type", [
+  "center_caps",
   "lug_nuts",
-  "wheel_locks",
+  "cap_logos_inserts_hardware",
   "hub_rings",
-  "centre_caps",
-  "tpms",
-  "spacers",
+  "lug_bolts",
   "wheel_weights",
-  "hub_caps",
-  "other",
+  "wheel_covers_trim",
+  "wheel_spacers",
+  "wheel_locks",
+  "tpms_sensors_tools",
+  "tools_gauges_organizers",
+  "tire_studs",
+  "valves_caps",
+  "antennas",
+  "tire_bags_storage",
 ]);
+
+/** One vendor fact with no column of its own, in the order the vendor gave
+ *  it: `{ label: "Weight (lb)", value: "28.9" }`. Only facts too sparse for a
+ *  column land here (D125). */
+export interface ExtraSpec {
+  label: string;
+  value: string;
+}
 
 /* ===========================================================================
    products
@@ -125,8 +142,10 @@ export const products = pgTable(
     slug: text("slug").notNull(),
 
     /** Plain text, spelled the way the storefront should show it. The Brand
-     *  filter lists the distinct values of this column. */
-    brand: text("brand").notNull(),
+     *  filter lists the distinct values of this column. Empty only on an
+     *  accessory the vendor sells unbranded (D125); a tire or wheel always
+     *  has one, which `products_brand_required` makes true. */
+    brand: text("brand"),
     /** `P-Zero`. Groups the sizes of one model ("other sizes"). Some
      *  accessories have none. */
     model: text("model"),
@@ -141,6 +160,13 @@ export const products = pgTable(
 
     /** Barcode (GTIN / UPC / EAN), when the vendor gives one. */
     gtin: text("gtin"),
+
+    /** Vendor facts too sparse for a column of their own (D125), shown in the
+     *  product page's specifications after the columns. */
+    extraSpecs: jsonb("extra_specs")
+      .$type<ExtraSpec[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -177,7 +203,15 @@ export const products = pgTable(
     ),
     check(
       "products_brand_length",
-      sql`char_length(btrim(${t.brand})) between 1 and 80`,
+      sql`${t.brand} is null or char_length(btrim(${t.brand})) between 1 and 80`,
+    ),
+    check(
+      "products_brand_required",
+      sql`${t.brand} is not null or ${t.category} = 'accessories'`,
+    ),
+    check(
+      "products_extra_specs_array",
+      sql`jsonb_typeof(${t.extraSpecs}) = 'array'`,
     ),
     check(
       "products_name_length",
@@ -335,6 +369,14 @@ export const wheelSpecs = pgTable(
     /** The vendor's own wording, shown as-is in the specifications. Free text
      *  on purpose: there is no finish filter, so nothing needs to group it. */
     finish: text("finish"),
+    /** The finish's family, `Gloss Black` / `Gunmetal & Grey`, as the vendor
+     *  sheets group it (D125). Free text; no filter reads it yet. */
+    finishFamily: text("finish_family"),
+    /** `Black`, `Machined`. */
+    color: text("color"),
+    /** Studs on the hub. Stored as the vendor gives it (D125), beside the bolt
+     *  patterns it usually repeats. */
+    lugCount: integer("lug_count"),
     material: text("material"),
     seatType: text("seat_type"),
     /** Pounds. A vendor that quotes kilograms is converted before it lands. */
@@ -360,7 +402,8 @@ export const wheelSpecs = pgTable(
       "wheel_specs_dimensions_positive",
       sql`${t.diameter} > 0 and ${t.width} > 0
         and (${t.centerBoreMm} is null or ${t.centerBoreMm} > 0)
-        and (${t.loadRatingLbs} is null or ${t.loadRatingLbs} > 0)`,
+        and (${t.loadRatingLbs} is null or ${t.loadRatingLbs} > 0)
+        and (${t.lugCount} is null or ${t.lugCount} between 3 and 12)`,
     ),
   ],
 );
@@ -384,6 +427,11 @@ export const accessorySpecs = pgTable(
     finish: text("finish"),
     /** Pieces in the pack. */
     packQuantity: integer("pack_quantity"),
+    /** The vendor's narrower kind within the type: `Center Cap`, `Logo`,
+     *  `Screw` (D125). */
+    partType: text("part_type"),
+    /** Pounds, as the vendor gives it (D125). */
+    weightLb: numeric("weight_lb", { precision: 8, scale: 2, mode: "number" }),
     /** Hub rings. */
     outerDiameterMm: numeric("outer_diameter_mm", {
       precision: 6,
@@ -412,6 +460,10 @@ export const accessorySpecs = pgTable(
     check(
       "accessory_specs_pack_quantity_positive",
       sql`${t.packQuantity} is null or ${t.packQuantity} > 0`,
+    ),
+    check(
+      "accessory_specs_weight_positive",
+      sql`${t.weightLb} is null or ${t.weightLb} > 0`,
     ),
   ],
 );
@@ -457,6 +509,17 @@ export const productSources = pgTable(
     vendorSku: text("vendor_sku").notNull(),
     /** The vendor's own product page, when it has one. */
     vendorUrl: text("vendor_url"),
+    /**
+     * What this vendor charges the shop, exactly as its portal gives it, cents
+     * kept (F17). Staff only, like the rest of this table: no storefront query
+     * selects it. It is not the display price; that is `products.price`, set
+     * by the shop (D125).
+     */
+    vendorPrice: numeric("vendor_price", {
+      precision: 10,
+      scale: 2,
+      mode: "number",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -468,6 +531,10 @@ export const productSources = pgTable(
     check(
       "product_sources_vendor_not_empty",
       sql`char_length(btrim(${t.vendor})) > 0`,
+    ),
+    check(
+      "product_sources_vendor_price_not_negative",
+      sql`${t.vendorPrice} is null or ${t.vendorPrice} >= 0`,
     ),
     check(
       "product_sources_vendor_sku_not_empty",

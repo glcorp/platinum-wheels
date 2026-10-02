@@ -75,7 +75,8 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
    sites. The fix is Resend Pro.
 9. **Reset the Neon database password.**
    - **Why:** the `neondb_owner` connection string was pasted into a chat on 2026-09-30 to run the
-     catalogue load (D113), so it is no longer a secret only Vercel holds.
+     catalogue load (D113), and again on 2026-10-03 to empty the catalogue, so it is no longer a secret
+     only Vercel holds.
    - **How:** in the Neon console, reset the password for role `neondb_owner`. The Vercel Neon
      integration owns `DATABASE_URL` and `DATABASE_URL_UNPOOLED`; check both changed there, then
      **redeploy**, because env changes only reach a new deployment.
@@ -96,7 +97,7 @@ P8. **Export script (D119), self-serve in the portal.** Point it at `https://pay
    with a username and password, then put them in Vercel as `CONVERGE_NOTIFY_USER` (plain) and
    `CONVERGE_NOTIFY_PASSWORD` (Sensitive), Production only, and redeploy. Until then the route is off.
 P9. **Rotate the PIN after demo testing.** The current one was pasted into a chat on 2026-10-02.
-P10. **Undo the 2026-10-03 diagnostics** now that the demo approves (D125): delete `CONVERGE_SEND_INVOICE`
+P10. **Undo the 2026-10-03 diagnostics** now that the demo approves (D125b): delete `CONVERGE_SEND_INVOICE`
    from Vercel (the code no longer reads it); in the Converge portal turn the hosted page's **CAPTCHA back
    on**, narrow `apiuser116349`'s user rights back to what the hosted page and `txnquery` need, and void
    the test sales (VT 10/02 14:53, Buy Button 15:34, our 16:05 approval 122262) before go-live.

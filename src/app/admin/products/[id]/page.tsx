@@ -6,7 +6,12 @@ import { AdminTopBar } from "@/features/admin/components/admin-top-bar";
 import { ProductForm } from "@/features/admin/components/product-form";
 import { ProductPhotos } from "@/features/admin/components/product-photos";
 import { ProductStatusButtons } from "@/features/admin/components/product-status-buttons";
-import { CATEGORY_LABEL, productFormValues, productSpecLine } from "@/features/admin/product-display";
+import {
+  CATEGORY_LABEL,
+  lowestVendorPrice,
+  productFormValues,
+  productSpecLine,
+} from "@/features/admin/product-display";
 import {
   adminGetProduct,
   adminListBrands,
@@ -77,7 +82,7 @@ export default async function EditProductPage({
         >
           Products
         </Link>
-        <p className="text-ink-muted mt-4 text-15 leading-body">{`${CATEGORY_LABEL[product.category]} · ${product.brand}`}</p>
+        <p className="text-ink-muted mt-4 text-15 leading-body">{`${CATEGORY_LABEL[product.category]} · ${product.brand ?? "No brand"}`}</p>
         <h1 className="display text-ink mt-1 text-display-40 sm:text-display-56">{product.name}</h1>
         {spec ? <p className="text-ink-muted mt-2 text-15 leading-body sm:text-16">{spec}</p> : null}
 
@@ -139,6 +144,7 @@ export default async function EditProductPage({
             category={product.category}
             productId={product.id}
             initialValues={productFormValues(product)}
+            lowestVendorPrice={lowestVendorPrice(product.sources)}
             brands={brands}
             vendors={vendors}
             csrfToken={csrfToken}

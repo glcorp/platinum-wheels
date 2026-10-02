@@ -11,7 +11,8 @@ import type { CartItem } from "@/lib/cart";
 export function cartItem(product: Product): CartItem {
   const { unit } = configFor(product);
   return {
-    brand: product.brand,
+    // `|| null` folds an empty brand into "no brand" (D125).
+    brand: product.brand || null,
     model: product.model,
     size: product.size,
     image: productImageSrc(product),

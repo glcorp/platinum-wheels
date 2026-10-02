@@ -31,6 +31,7 @@ import {
   type Product,
   type ProductCategory,
 } from "@/features/catalog/types";
+import { productName } from "@/lib/product-name";
 import { ROUTES, productRoute } from "@/lib/routes";
 import { CONTACTS, CONTACT_HOURS, SITE, SITE_URL } from "@/lib/site";
 
@@ -155,8 +156,11 @@ export function categoryBreadcrumb(category: ProductCategory): JsonLdNode {
 export interface ProductSeo {
   slug: string;
   category: ProductCategory;
-  brand: string;
-  /** Brand and model, as the page's heading reads: the breadcrumb's leaf. */
+  /** `null` on an unbranded accessory (D125): the markup then carries no
+   *  `brand` at all, never an empty or invented one. */
+  brand: string | null;
+  /** Brand and model, as the page's heading reads: the breadcrumb's leaf. An
+   *  unbranded accessory's is its name alone. */
   name: string;
   /**
    * `name` plus what tells this product from its siblings: a tire's or a
@@ -204,7 +208,7 @@ export function toProductSeo(
   { sizeCode, sizeLine }: { sizeCode: string; sizeLine: string },
 ): ProductSeo {
   const category = productCategory(product);
-  const name = `${product.brand} ${product.model}`;
+  const name = productName(product.brand, product.model);
   const typeLabel =
     product.accessoryType === undefined
       ? undefined
@@ -243,7 +247,7 @@ export function toProductSeo(
   return {
     slug: product.slug,
     category,
-    brand: product.brand,
+    brand: product.brand || null,
     name,
     title,
     size,
@@ -263,13 +267,16 @@ export function productBreadcrumb(product: ProductSeo): JsonLdNode {
   ]);
 }
 
-/** Name, brand, size, category and image. No offer, by ruling: see the header. */
+/** Name, brand, size, category and image. No offer, by ruling: see the header.
+ *  No `brand` on an unbranded accessory (D125). */
 export function productSchema(product: ProductSeo): JsonLdNode {
   return {
     "@context": CONTEXT,
     "@type": "Product",
     name: product.title,
-    brand: { "@type": "Brand", name: product.brand },
+    ...(product.brand === null
+      ? {}
+      : { brand: { "@type": "Brand", name: product.brand } }),
     ...(product.size === "" ? {} : { size: product.size }),
     category: CATEGORY_NAME[product.category],
     ...(product.image === null ? {} : { image: absoluteUrl(product.image) }),
