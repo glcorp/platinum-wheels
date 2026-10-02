@@ -246,12 +246,13 @@ in place.
   present on both pages pairs and flies at once — Home → `/tires` flew six photos (D92b).
 
 ## Open
-13. **The catalogue holds the STAND-IN load, not the approved data** (D113): 44,143 products from the
-    scraped vendor sheets, all `published`, no prices, no photos, duplicates across vendors not
-    merged. The co-founder's merged CSV now loads through the import (D125, checked on a throwaway
-    Postgres only), but migration `0003` refuses to run while old accessory types exist, so production
-    is emptied first, and nothing in the repo does that. Owner.
-14. **10,249 stand-in slugs carry a `-2`, `-3` …**, mostly PRO WHEELS wheels that share brand, model,
+13. **Production's catalogue is empty** (since 2026-10-03). The D113 stand-in load (44,143 products from
+    the scraped vendor sheets) was truncated on the owner's instruction (*"remove only data linked to
+    products don't touch anything related to payments"*): the six catalogue tables only, in one
+    transaction that checked the payment tables' counts were unchanged before committing. Migration
+    `0003`'s guard therefore passes, and the D125 branch can merge. Until the D125 CSV is loaded,
+    every listing reads `0 matches` and the home featured row does not render. Owner, to run the load.
+14. **Moot while the catalogue is empty (2026-10-03); recheck after the D125 load.** **10,249 stand-in slugs carried a `-2`, `-3` …**, mostly PRO WHEELS wheels that share brand, model,
     size, bolt pattern, offset and finish and differ only in something the slug does not read (centre
     bore, SKU). Those suffixes follow file order, so they move if the file's order does. Whether the
     wheel slug should carry more is the owner's call (D107b(1)).

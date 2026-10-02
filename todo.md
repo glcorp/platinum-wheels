@@ -75,7 +75,8 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
    sites. The fix is Resend Pro.
 9. **Reset the Neon database password.**
    - **Why:** the `neondb_owner` connection string was pasted into a chat on 2026-09-30 to run the
-     catalogue load (D113), so it is no longer a secret only Vercel holds.
+     catalogue load (D113), and again on 2026-10-03 to empty the catalogue, so it is no longer a secret
+     only Vercel holds.
    - **How:** in the Neon console, reset the password for role `neondb_owner`. The Vercel Neon
      integration owns `DATABASE_URL` and `DATABASE_URL_UNPOOLED`; check both changed there, then
      **redeploy**, because env changes only reach a new deployment.

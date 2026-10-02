@@ -72,8 +72,9 @@ Proposed rows are listed in `docs/payments.md` §9; IDs are assigned in root `ll
 
 1. Real per-user auth (D91 is a stub), so `created_by` / `cancelled_by` read `admin` for every row. Owner.
 2. Data retention for `payment_events` (PIPEDA): no policy set. Owner.
-3. The production catalogue holds a **stand-in load** from the scraped vendor sheets (D113), not the
-   client-approved data. Replacing it means emptying the catalogue tables first, which nothing in the
-   repo does yet. Owner.
-   **Since D125 this blocks a deploy:** `0003` refuses to run while any accessory holds a pre-D125 type
-   (its hand-added guard), so production must be emptied before the D125 branch merges. Owner.
+3. ~~The production catalogue holds a **stand-in load**~~ **Closed 2026-10-03:** the six catalogue
+   tables were truncated on production by a one-off script run from a laptop (owner: *"remove only data
+   linked to products don't touch anything related to payments"*). `payment_links`, `payment_attempts`
+   and `payment_events` were counted before and after, inside the same transaction, and were unchanged;
+   the append-only trigger was never touched. Nothing in the repo empties the catalogue, by design
+   (`scripts/llm.md` Don't). `0003`'s guard now passes. What remains is the D125 load. Owner.
