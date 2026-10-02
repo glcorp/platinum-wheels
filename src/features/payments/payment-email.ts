@@ -22,9 +22,11 @@ import type { PaymentAttempt, PaymentLink } from "@/db/schema";
 
 import { displayCents } from "./money";
 
-/** Repeated, not imported: `admin/` may import `payments/`, never the
- *  reverse (D106). `ADMIN_HOST` in `src/features/admin/host-routing.ts`. */
-const ADMIN_URL = "https://admin.platinumwheels.ca/";
+/** The admin's links list. Repeated, not imported: `admin/` may import
+ *  `payments/`, never the reverse (D106). `ADMIN_HOST` in
+ *  `src/features/admin/host-routing.ts` and `ADMIN_ROUTES.paymentLinks` in
+ *  `src/features/admin/types.ts` (the admin root is its home page, D118). */
+const ADMIN_URL = "https://admin.platinumwheels.ca/payment-links";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const RESEND_TIMEOUT_MS = 10_000;
