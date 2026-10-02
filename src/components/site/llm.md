@@ -30,6 +30,13 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 - [`site-footer.tsx`](site-footer.tsx) — Server Component, named export `SiteFooter`, no props.
   120px logo badge, Shop/Company/Legal link columns (`ROUTES`), a computed `Winter <year>` link
   and bottom-bar `© <year> {SITE.legalName} Inc.` (D32). Social row omitted per D34.
+- [`cart-link.tsx`](cart-link.tsx) — `"use client"`, named export `CartLink` (**D122**). The header's
+  cart: a 44×44 link to `/cart` in the menu trigger's box and stroke weight, after the phone CTA and
+  before the menu at every width (owner: "it doesn't need to be inside the hamburger"). An accent count
+  of units, only when the cart is not empty, that pops (`cart-pop`) on an add and never on a page load;
+  and a fixed `Added to cart` / `Cart updated` prompt with `View cart`, bottom of the screen on a phone
+  and bottom-right at the 420px measure from `sm:`, held while hovered or focused, 6 s otherwise. The
+  prompt sits in an always-mounted polite live region. Reads `src/lib/cart.ts` only.
 - [`site-nav-drawer.tsx`](site-nav-drawer.tsx) — `"use client"`, named export `SiteNavDrawer`. Props:
   `{ links: ReadonlyArray<{ label: string; href: string; active: boolean }>; phone: { display: string;
   tel: string } }`. 44×44 hamburger trigger + a native `<dialog showModal()>` full-screen drawer

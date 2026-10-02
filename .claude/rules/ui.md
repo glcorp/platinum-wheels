@@ -33,7 +33,8 @@ differing from the design.
 - **One accent per frame is NOT enforced** (owner decision — `docs/decisions.md` §1.1). The artboards
   break it everywhere: accent Winter badge + accent CTA in the same card, accent nav underline + accent
   phone CTA in the same header. Ship what is drawn; do not demote a second accent to "fix" it.
-- **Quote-first.** CTAs are "Request a quote" / "Inquire". Never cart, checkout or "Buy now".
+- **Quote-first.** No checkout, no "Buy now". Since D122 a product's CTA is "Add to cart" and the cart's
+  is "Request a quote"; the cart shows no price and takes no payment.
 - **Flush-left.** Headline, body, CTA, price and image share one left edge inside their column. Ragged
   right. Nothing centred that could be flush-left.
 - **No depth tricks.** No shadows, no blur, no `backdrop-filter`, no glass, no gradients other than the

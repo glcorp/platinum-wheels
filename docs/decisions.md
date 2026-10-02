@@ -116,9 +116,15 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
 
 ## 7. Business rules baked into the UI
 
-- **Quote-first.** CTAs are "Request a quote" / "Call us". Never cart, checkout or "Buy now".
-  Spec §9 now states this outright ("there is NO cart and NO checkout"), and the artboards agree
-  (30× "Request a quote", 0× "Add to cart"). Never show stock counts, shipping, ratings or invented specs.
+- **Quote-first.** No checkout and no "Buy now", ever: nothing is paid on the storefront. **Amended
+  2026-10-01 by D122:** a product's CTA is "Add to cart", which puts it in a browser-only cart, and the
+  cart's "Request a quote" sends one request for every product in it; "Call us" stays beside both. The
+  cart shows no price and takes no payment. (Spec §9 and the artboards said "there is NO cart"; the owner
+  and the client changed that after launch planning, `design/DEVIATIONS.md` #96.) Never show stock
+  counts, shipping, ratings or invented specs.
+- **Prices can be switched off** (D122): `NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED`, on only at exactly
+  `true`. Off, no price renders anywhere and nothing filters or sorts by one. The rules below apply
+  whenever prices show.
 - Price format: every price is prefixed `from`, the amount is Barlow 700 tabular in `--text`, never
   accent-coloured, with a full-size `$` and no cents, and **no currency code**. The **suffix is per
   context**, verbatim from the artboards: cards read `from $129 / tire`, the PDP buy panel reads

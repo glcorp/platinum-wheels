@@ -41,6 +41,7 @@ import {
   type ResultsQuery,
   type SortKey,
 } from "./types";
+import { PRICES_VISIBLE } from "@/lib/site";
 
 /* --- Reading raw params -------------------------------------------------- */
 
@@ -151,8 +152,10 @@ export function parseResultsQuery(
   /* Brands keep URL order: they come from the seed (D42), not a fixed list. */
   const brands = uniqueValues(params, RESULTS_PARAM.brand);
 
-  let priceMin = parsePrice(firstValue(params, RESULTS_PARAM.min));
-  let priceMax = parsePrice(firstValue(params, RESULTS_PARAM.max));
+  /* D122: with prices switched off a `min`/`max` in the URL is ignored, so a
+     hand-typed range cannot filter by a price nobody can see. */
+  let priceMin = PRICES_VISIBLE ? parsePrice(firstValue(params, RESULTS_PARAM.min)) : null;
+  let priceMax = PRICES_VISIBLE ? parsePrice(firstValue(params, RESULTS_PARAM.max)) : null;
   /* Two `<input type="range">` sliders can cross (`docs/decisions.md` §5);
      a crossed pair is a range, not an empty set. */
   if (priceMin !== null && priceMax !== null && priceMin > priceMax) {

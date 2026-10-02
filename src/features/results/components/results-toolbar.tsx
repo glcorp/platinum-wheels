@@ -5,6 +5,7 @@ import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import { SortSelect } from "@/features/results/components/sort-select";
 import {
   DEFAULT_SORT,
+  HAS_SORT_CHOICE,
   RESULTS_PARAM,
   type ResultsView,
 } from "@/features/results/types";
@@ -314,17 +315,20 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
         </div>
 
         {/* Sort cluster — D only (`results.md` §2.2 rows 7-9); on M the sort
-            control moves into the sticky bar. `gap:12px`. */}
-        <div className="hidden md:flex md:min-h-11 md:shrink-0 md:items-center md:gap-3">
-          <label
-            data-probe="sort-label"
-            htmlFor="results-sort"
-            className="label text-ink-dim text-11 tracking-12"
-          >
-            Sort
-          </label>
-          <SortSelect id="results-sort" variant="toolbar" query={view.query} />
-        </div>
+            control moves into the sticky bar. `gap:12px`. Not rendered while
+            prices are off: `Best match` alone is no choice (D122). */}
+        {HAS_SORT_CHOICE ? (
+          <div className="hidden md:flex md:min-h-11 md:shrink-0 md:items-center md:gap-3">
+            <label
+              data-probe="sort-label"
+              htmlFor="results-sort"
+              className="label text-ink-dim text-11 tracking-12"
+            >
+              Sort
+            </label>
+            <SortSelect id="results-sort" variant="toolbar" query={view.query} />
+          </div>
+        ) : null}
       </div>
     </div>
   );

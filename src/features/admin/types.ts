@@ -80,7 +80,7 @@ export interface AdminSession {
 /**
  * Sign-in result.
  *
- * Shaped like `QuoteFormState` (`src/features/product/types.ts`) so the one
+ * Shaped like `QuoteFormState` (`src/features/cart/types.ts` since D122) so the one
  * form idiom in this repo — `useActionState(action, INITIAL)` returning a
  * discriminated union — is the same idiom here.
  *

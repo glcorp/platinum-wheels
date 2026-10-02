@@ -100,6 +100,10 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `md:hidden`. `Not sure which one?` panel, `tel:` CTA from `PRIMARY_CONTACT` (D47(1)).
 
 ## Rules
+- **Prices can be switched off (D122, `DEVIATIONS.md` #97).** With `PRICES_VISIBLE` false: `query.ts`
+  ignores `min`/`max`, `SORT_OPTIONS` holds `Best match` alone and `HAS_SORT_CHOICE` is false, so neither
+  sort control renders and the mobile bar's `Filters` cell takes the whole row, and `filter-panel.tsx`
+  drops the price group. Cards pass the checked search vehicle to `Add to cart` (`results-grid.tsx`).
 - **State is the URL.** No component holds filter state; islands call `router.replace(resultsHref(q))`
   with `scroll: false`. The server is the only place results are computed (D44, `docs/decisions.md` §4).
 - **Counts are computed from the seed, never typed** (D42); no artboard number ships as a count.

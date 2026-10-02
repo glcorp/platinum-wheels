@@ -5,7 +5,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { SITE } from "@/lib/site";
+import { PRICES_VISIBLE, SITE } from "@/lib/site";
 import { ROUTES } from "@/lib/routes";
 import { shopYear } from "@/lib/time";
 
@@ -123,7 +123,10 @@ export function SiteFooter() {
               render (D32). */}
           © {year} {SITE.legalName} Inc.
         </span>
-        <span className="text-13 leading-relaxed text-ink-dim">{SITE.priceNote}</span>
+        {/* D122: the currency line only while prices show. */}
+        <span className="text-13 leading-relaxed text-ink-dim">
+          {PRICES_VISIBLE ? SITE.priceNote : SITE.placeNote}
+        </span>
       </div>
     </footer>
   );

@@ -23,6 +23,10 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   shape to `tires/page.tsx`, differing only in the `category` they pass and their title. They have
   **no artboards** and are not parity rows: they inherit `/tires`' parity by rendering the same
   component tree (`design/manifest.md` Routes).
+- [`cart/page.tsx`](cart/page.tsx) — route `/cart` (**D122**), static. Header (no nav item current), the
+  `Request a quote` eyebrow and `Your cart` `<h1>`, a `<noscript>` line with the phone (the cart needs the
+  browser), and `CartView` from `src/features/cart/`, handed the quote copy resolved on the server.
+  `robots: noindex, nofollow` in both flag states; not in any sitemap.
 - [`products/[slug]/page.tsx`](products/[slug]/page.tsx) — route `/products/[slug]`, **built**
   2026-09-21. `async`, takes `PageProps<"/products/[slug]">`, resolves the slug from the catalogue database since D108b (a real 404 if
   unknown or hidden since D91b, but a *discontinued* product still returns 200) and turns `productView(product, query)` into

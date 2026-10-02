@@ -112,8 +112,9 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
      Vercel's Firewall and item 7 depends on that.
    - **Leave alone:** MX and every TXT record.
 7. **Add one Vercel Firewall rate-limit rule** on the quote form's POST.
-   - **Suggested:** 5 requests per 10 minutes per IP on `/products/*`. This is a derived default and
-     the owner can veto it.
+   - **Suggested:** 5 POST requests per 10 minutes per IP on `/cart`, where the form has lived since
+     D122 (it was `/products/*` before). This is a derived default and the owner can veto it. The cart
+     page also POSTs once per visit to refresh the lines, so do not set it lower.
    - **Why:** this is the rate-limit half of the promised form protection (owner ruling 2026-09-23).
      The honeypot and timer live in the action.
    - **Depends on:** the Vercel plan. Hobby is non-commercial only, and only `glcorp`-authored merge
@@ -127,6 +128,20 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       is simply not shown. The admin lives on its own host, so the link cannot be relative.
     - **Check:** open a published product in the admin; **View on site** opens its storefront page.
 
+## Owner — cart and prices (D122)
+
+C1. **Prices stay off for launch; turning them on is one variable and a redeploy.**
+   - **State:** `NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED` is not set anywhere, which is "off": no price
+     on any card or product page, no price filter or sort, footer reads `Brampton, Ontario`. Client
+     ruling 2026-10-01: no prices at launch, because the vendor sheets mix retail, dealer and
+     with-shipping figures.
+   - **How, later:** set it to exactly `true` in Vercel (Production, and Preview if wanted) and
+     **redeploy**: it is baked in at build time. Do it only once every published product's price is a
+     customer price, or a dealer price goes public (catalogue import notes: PRO WHEELS' only price is
+     the dealer price).
+   - **Done when:** a card reads `from $NNN / tire` and the footer reads `Prices in CAD, before tax`.
+C2. **Have the privacy page's cart sentence reviewed** with the rest of the policy (D122 changed one
+   factual sentence: the cart is kept in the browser's local storage).
 
 ## Owner, at launch — search (D112)
 

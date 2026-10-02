@@ -1,6 +1,7 @@
 /* ---------------------------------------------------------------------------
-   QuoteErrorSummary — what the quote band shows when `submitQuote` returns
-   `{ status: "invalid" }` (D51, audit finding C2/C3, DEVIATIONS #46).
+   QuoteErrorSummary — what the quote form shows when `submitCartQuote`
+   returns `{ status: "invalid" }` (D51, audit finding C2/C3, DEVIATIONS #46;
+   in the cart's quote dialog since D122).
 
    NO ARTBOARD DRAWS THIS. Neither product export contains an error state at
    all — the exports carry no `:focus`, `:active` or `:disabled` rule either

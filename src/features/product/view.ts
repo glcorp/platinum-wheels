@@ -283,9 +283,9 @@ function parseVehicle(params: ProductSearchParams): Vehicle | null {
   const model = read(PRODUCT_PARAM.model);
 
   if (year === "" || make === "" || model === "") return null;
-  /* Only a vehicle the finder offers: this one is printed in the quote chip
-     and the fitment sentence, so an unchecked URL could write its own copy
-     onto the page (D91b). */
+  /* Only a vehicle the finder offers: it is saved on a cart line, shown on the
+     cart page and sent to the shop (D122), so an unchecked URL could write its
+     own copy into all three (D91b). */
   if (!isFinderVehicle(year, make, model)) return null;
   return { year, make, model };
 }
@@ -336,10 +336,6 @@ export function productView(
   const fullName = `${product.brand} ${product.model}`;
   const season = productSeason(product);
   const vehicle = parseVehicle(searchParams);
-  const inquiryContext =
-    vehicle === null
-      ? `${fullName} ${sizeCode}`
-      : `${fullName} ${sizeCode} · ${vehicle.year} ${vehicle.make} ${vehicle.model}`;
 
   return {
     product,
@@ -353,7 +349,6 @@ export function productView(
     quantity: parseQuantity(searchParams, config.category),
     vehicle,
     backHref: buildBackHref(searchParams, config.route),
-    inquiryContext,
     similar: rows.similar.map(toProduct),
     otherSizes: rows.otherSizes.map(toProduct),
   };

@@ -19,6 +19,7 @@
  */
 
 import type { Product, ProductCategory } from "@/features/catalog/types";
+import { PRICES_VISIBLE } from "@/lib/site";
 
 /* --- Sort --------------------------------------------------------------- */
 
@@ -26,11 +27,20 @@ export type SortKey = "best" | "price-asc" | "price-desc";
 
 /** Option labels are new copy (D47): short, declarative, `.claude/rules/ui.md`
  *  "Copy". `Best match` is artboard-verbatim (results-desktop.html:117). */
-export const SORT_OPTIONS: ReadonlyArray<{ value: SortKey; label: string }> = [
+const ALL_SORTS: ReadonlyArray<{ value: SortKey; label: string }> = [
   { value: "best", label: "Best match" },
   { value: "price-asc", label: "Price: low to high" },
   { value: "price-desc", label: "Price: high to low" },
 ];
+
+/** With prices switched off (D122) the two price sorts go: a hidden price
+ *  must not order the page either. `Best match` alone is no choice, so the
+ *  sort control is not rendered at all (`HAS_SORT_CHOICE`). */
+export const SORT_OPTIONS: ReadonlyArray<{ value: SortKey; label: string }> = PRICES_VISIBLE
+  ? ALL_SORTS
+  : ALL_SORTS.filter((option) => option.value === "best");
+
+export const HAS_SORT_CHOICE = SORT_OPTIONS.length > 1;
 
 export const DEFAULT_SORT: SortKey = "best";
 
