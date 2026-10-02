@@ -285,6 +285,7 @@ export async function startAttempt(
     console.error(JSON.stringify({ at: "payments.startAttempt", invoice: attempt.providerInvoiceNumber, detail: session.detail }));
     return { kind: "unavailable" };
   }
+  console.info(JSON.stringify({ at: "payments.startAttempt", invoice: attempt.providerInvoiceNumber, session: "issued" }));
   return { kind: "redirect", hostedPageUrl: session.hostedPageUrl, token: session.token };
 }
 
