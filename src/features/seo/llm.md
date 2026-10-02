@@ -62,6 +62,9 @@ and the `metadata` of `layout.tsx` and of each indexable page.
   only as `hoursAvailable` on the two contact points. **`areaServed` is Brampton only**, not the GTA.
 - **No price, offer, currency or availability in structured data** (owner, 2026-09-30), and no rating or
   review ever (`docs/decisions.md` §8). A `Product` carries name, brand, size, category, image and URL.
+  **An unbranded accessory (D125) carries no `brand` at all**, never an empty or stand-in one, and its
+  name, title and breadcrumb leaf are its own name alone (`productName()`, `src/lib/product-name.ts`).
+  A vendor's own price is staff only and never enters a schema (D125).
 - **Link previews** (owner, 2026-09-30): one branded dark card for the site; on a product page the
   product's own photo on the same dark ground, 1200x630, no text and no price; a product with no photo
   names the site card.
@@ -86,6 +89,7 @@ and the `metadata` of `layout.tsx` and of each indexable page.
 
 ## Connects to
 - Depends on: `src/lib/site.ts` (`SITE_URL`, `SITE`, `CONTACTS`, `CONTACT_HOURS`), `src/lib/routes.ts`,
+  `src/lib/product-name.ts`,
   `src/features/catalog/` (`queries.ts` `listProductUrls`, `types.ts`, `adapter.ts`), `next/og`, `sharp`,
   `public/images/logo/` and `public/images/products/`, `next.config.ts` (`outputFileTracingIncludes`
   puts the product images in the `og.jpg` route's bundle).

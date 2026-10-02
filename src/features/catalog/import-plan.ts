@@ -62,7 +62,7 @@ export interface PlanOptions {
   takenSlugs?: Iterable<string>;
 }
 
-type SourcePart = "vendor" | "sku" | "url";
+type SourcePart = "vendor" | "sku" | "url" | "price";
 
 interface Layout {
   /** Column index → product field. */
@@ -84,7 +84,7 @@ function readLayout(headers: readonly string[], mapping: ImportMapping): Layout 
   const photos = new Set(mapping.photos.map(key));
   const sourceParts = new Map<string, { part: SourcePart; n: number }>();
   for (let n = 1; n <= mapping.sources.max; n += 1) {
-    for (const part of ["vendor", "sku", "url"] as const) {
+    for (const part of ["vendor", "sku", "url", "price"] as const) {
       sourceParts.set(key(mapping.sources[part].replace("{n}", String(n))), {
         part,
         n,
@@ -144,7 +144,9 @@ function columnFor(
         ? "sku"
         : field === "sourceUrl"
           ? "url"
-          : null;
+          : field === "sourcePrice"
+            ? "price"
+            : null;
   if (part) return mapping.sources[part].replace("{n}", "1");
   return layout.headerOf.get(name) ?? name;
 }
@@ -167,10 +169,21 @@ export function planImport(
         const parts = layout.sources.get(n) ?? {};
         const cell = (index: number | undefined) =>
           index === undefined ? "" : (row.cells[index] ?? "").trim();
-        return { vendor: cell(parts.vendor), sku: cell(parts.sku), url: cell(parts.url) };
+        return {
+          vendor: cell(parts.vendor),
+          sku: cell(parts.sku),
+          url: cell(parts.url),
+          price: cell(parts.price),
+        };
       })
       // A blank numbered group is an unused slot, not a source.
-      .filter((source) => source.vendor !== "" || source.sku !== "" || source.url !== "");
+      .filter(
+        (source) =>
+          source.vendor !== "" ||
+          source.sku !== "" ||
+          source.url !== "" ||
+          source.price !== "",
+      );
   for (const row of rows) {
     for (const source of sourcesOf(row)) {
       if (source.vendor === "" || source.sku === "") continue;
@@ -194,7 +207,8 @@ export function planImport(
         field !== PRODUCT_FIELD.status &&
         field !== PRODUCT_FIELD.sourceVendor &&
         field !== PRODUCT_FIELD.sourceSku &&
-        field !== PRODUCT_FIELD.sourceUrl,
+        field !== PRODUCT_FIELD.sourceUrl &&
+        field !== PRODUCT_FIELD.sourcePrice,
     ),
     withPhoto: 0,
     slugClashes: 0,
@@ -213,6 +227,7 @@ export function planImport(
     record[PRODUCT_FIELD.sourceVendor] = sources.map((source) => source.vendor);
     record[PRODUCT_FIELD.sourceSku] = sources.map((source) => source.sku);
     record[PRODUCT_FIELD.sourceUrl] = sources.map((source) => source.url);
+    record[PRODUCT_FIELD.sourcePrice] = sources.map((source) => source.price);
 
     const reasons: { column: string; message: string }[] = [];
     // More cells than the header has columns means a cell has shifted (an

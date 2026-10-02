@@ -22,6 +22,12 @@
 
    Brand and vendor are dropdowns of what the catalogue already has (owner,
    2026-10-01: pick from existing only). The action enforces the same, D116.
+   An accessory may have no brand (D125): its brand list opens on `No brand`.
+
+   D125 also added, all optional: wheel finish family, colour and lug count;
+   accessory part type and weight; a vendor price on each source row (staff
+   only, cents kept, never shown on the storefront); and `Extra specs`, the
+   vendor facts with no column of their own, one `Label: value` per line.
    --------------------------------------------------------------------------- */
 
 import { useRouter } from "next/navigation";
@@ -56,6 +62,14 @@ import {
   type ProductFormState,
 } from "../product-types";
 import { ADMIN_CSRF_FIELD, adminProductRoute } from "../types";
+import {
+  LowestVendorPriceNote,
+  ProductSourceRow,
+  SOURCES_ERROR_ID,
+  sourcesError,
+  type LowestVendorPrice,
+  type SourceRowValues,
+} from "./product-source-row";
 
 type Values = Readonly<Record<string, readonly string[]>>;
 type Versioned = ProductFormState & { version: number };
@@ -85,27 +99,39 @@ const FIELD_ORDER: readonly ProductFieldKey[] = [
   "centerBoreMm",
   "backspacing",
   "wheelFinish",
+  "wheelFinishFamily",
+  "wheelColor",
+  "lugCount",
   "material",
   "wheelSeatType",
   "loadRatingLbs",
   "tpmsCompatible",
   "winterCompatible",
   "accessoryType",
+  "partType",
   "threadSize",
   "accessorySeatType",
   "accessoryFinish",
   "packQuantity",
   "outerDiameterMm",
   "innerDiameterMm",
+  "weightLb",
+  "extraSpecs",
   "sourceVendor",
   "sourceSku",
+  "sourcePrice",
   "sourceUrl",
 ];
 
 /** The id of the control a field's error should focus. Source errors belong
  *  to the whole group, so they focus its first row. */
 function controlId(key: ProductFieldKey): string {
-  if (key === "sourceVendor" || key === "sourceSku" || key === "sourceUrl") {
+  if (
+    key === "sourceVendor" ||
+    key === "sourceSku" ||
+    key === "sourcePrice" ||
+    key === "sourceUrl"
+  ) {
     return `product-${F[key]}-0`;
   }
   return `product-${F[key]}`;
@@ -267,23 +293,22 @@ function Pair({ children }: { children: ReactNode }) {
 
 /* --- Sources ------------------------------------------------------------- */
 
-interface SourceRow {
+interface SourceRow extends SourceRowValues {
   key: number;
-  vendor: string;
-  sku: string;
-  url: string;
 }
 
 function initialRows(values: Values): SourceRow[] {
   const vendors = values[F.sourceVendor] ?? [];
   const skus = values[F.sourceSku] ?? [];
   const urls = values[F.sourceUrl] ?? [];
-  const count = Math.max(vendors.length, skus.length, urls.length);
+  const prices = values[F.sourcePrice] ?? [];
+  const count = Math.max(vendors.length, skus.length, urls.length, prices.length);
   return Array.from({ length: count }, (_, index) => ({
     key: index,
     vendor: vendors[index] ?? "",
     sku: skus[index] ?? "",
     url: urls[index] ?? "",
+    price: prices[index] ?? "",
   }));
 }
 
@@ -291,95 +316,37 @@ function SourcesFields({
   values,
   errors,
   vendors,
+  lowestVendorPrice,
 }: {
   values: Values;
   errors: ProductFieldErrors;
   vendors: readonly string[];
+  lowestVendorPrice?: LowestVendorPrice | null;
 }) {
   const [rows, setRows] = useState<SourceRow[]>(() => initialRows(values));
   const nextKey = useRef(rows.length);
-  const groupError = errors.sourceVendor ?? errors.sourceSku ?? errors.sourceUrl;
+  const groupError = sourcesError(errors);
 
   return (
     <Section title="Where to order it">
       <p id="product-sources-hint" className="text-ink-muted -mt-2 text-14 leading-body sm:text-15">
         Staff only. Never shown on the storefront.
       </p>
+      {lowestVendorPrice ? <LowestVendorPriceNote lowest={lowestVendorPrice} /> : null}
       {rows.length === 0 ? (
         <p className="text-ink-dim text-14 leading-body">No vendor listed.</p>
       ) : null}
-      {rows.map((row, index) => {
-        // A vendor no longer in the catalogue (this row's own, on an edit)
-        // stays choosable, so opening the form never blanks it.
-        const options = vendors.includes(row.vendor) || row.vendor === "" ? vendors : [row.vendor, ...vendors];
-        return (
-          <div key={row.key} className="bg-surface border-border-strong flex flex-col gap-4 border p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="label text-ink-dim text-11 tracking-12">{`Source ${index + 1}`}</span>
-              <Button
-                type="button"
-                variant="tertiary"
-                size="compact"
-                onClick={() => setRows((current) => current.filter((item) => item.key !== row.key))}
-              >
-                Remove
-              </Button>
-            </div>
-            <div>
-              <FieldLabel htmlFor={`product-${F.sourceVendor}-${index}`} required>
-                Vendor
-              </FieldLabel>
-              <Select
-                id={`product-${F.sourceVendor}-${index}`}
-                name={F.sourceVendor}
-                defaultValue={row.vendor}
-                invalid={Boolean(errors.sourceVendor)}
-                aria-describedby={groupError ? "product-sources-error" : undefined}
-              >
-                <option value="">Choose a vendor</option>
-                {options.map((vendor) => (
-                  <option key={vendor} value={vendor}>
-                    {vendor}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <Pair>
-              <div>
-                <FieldLabel htmlFor={`product-${F.sourceSku}-${index}`} required>
-                  Vendor SKU
-                </FieldLabel>
-                <Input
-                  id={`product-${F.sourceSku}-${index}`}
-                  name={F.sourceSku}
-                  autoComplete="off"
-                  spellCheck={false}
-                  maxLength={PRODUCT_LIMITS.shortText}
-                  defaultValue={row.sku}
-                  invalid={Boolean(errors.sourceSku)}
-                  aria-describedby={groupError ? "product-sources-error" : undefined}
-                />
-              </div>
-              <div>
-                <FieldLabel htmlFor={`product-${F.sourceUrl}-${index}`} optional>
-                  Link
-                </FieldLabel>
-                <Input
-                  id={`product-${F.sourceUrl}-${index}`}
-                  name={F.sourceUrl}
-                  type="url"
-                  placeholder="https://"
-                  maxLength={PRODUCT_LIMITS.url}
-                  defaultValue={row.url}
-                  invalid={Boolean(errors.sourceUrl)}
-                  aria-describedby={groupError ? "product-sources-error" : undefined}
-                />
-              </div>
-            </Pair>
-          </div>
-        );
-      })}
-      {groupError ? <FieldError id="product-sources-error">{groupError}</FieldError> : null}
+      {rows.map((row, index) => (
+        <ProductSourceRow
+          key={row.key}
+          index={index}
+          row={row}
+          vendors={vendors}
+          errors={errors}
+          onRemove={() => setRows((current) => current.filter((item) => item.key !== row.key))}
+        />
+      ))}
+      {groupError ? <FieldError id={SOURCES_ERROR_ID}>{groupError}</FieldError> : null}
       {rows.length < PRODUCT_LIMITS.sources ? (
         <div>
           <Button
@@ -389,7 +356,7 @@ function SourcesFields({
             onClick={() => {
               const key = nextKey.current;
               nextKey.current += 1;
-              setRows((current) => [...current, { key, vendor: "", sku: "", url: "" }]);
+              setRows((current) => [...current, { key, vendor: "", sku: "", url: "", price: "" }]);
             }}
           >
             Add a source
@@ -445,6 +412,7 @@ function TireFields({ values, errors }: { values: Values; errors: ProductFieldEr
         <FlagField fieldKey="isXl" label="Extra load (XL)" values={values} />
         <FlagField fieldKey="runFlat" label="Run-flat" values={values} />
       </div>
+      <ExtraSpecsField {...common} />
     </Section>
   );
 }
@@ -475,6 +443,11 @@ function WheelFields({ values, errors }: { values: Values; errors: ProductFieldE
       </Pair>
       <TextField {...common} fieldKey="wheelFinish" label="Finish" placeholder="Gloss black machined" spellCheck />
       <Pair>
+        <TextField {...common} fieldKey="wheelFinishFamily" label="Finish family" placeholder="Gloss Black" spellCheck />
+        <TextField {...common} fieldKey="wheelColor" label="Colour" placeholder="Black" spellCheck />
+      </Pair>
+      <TextField {...common} fieldKey="lugCount" label="Lug count" inputMode="numeric" placeholder="5" />
+      <Pair>
         <TextField {...common} fieldKey="material" label="Material" placeholder="Alloy" spellCheck />
         <TextField {...common} fieldKey="wheelSeatType" label="Seat type" placeholder="Conical" spellCheck />
       </Pair>
@@ -482,6 +455,7 @@ function WheelFields({ values, errors }: { values: Values; errors: ProductFieldE
         <SelectField {...common} fieldKey="tpmsCompatible" label="TPMS compatible" placeholder="Not stated" options={triOptions} />
         <SelectField {...common} fieldKey="winterCompatible" label="Winter use" placeholder="Not stated" options={triOptions} />
       </Pair>
+      <ExtraSpecsField {...common} />
     </Section>
   );
 }
@@ -498,6 +472,14 @@ function AccessoryFields({ values, errors }: { values: Values; errors: ProductFi
         placeholder="Choose a type"
         options={ACCESSORY_KINDS.map((kind) => ({ value: kind, label: accessoryKindLabel(kind) }))}
       />
+      <TextField
+        {...common}
+        fieldKey="partType"
+        label="Part type"
+        placeholder="Center Cap"
+        hint="The vendor's narrower kind within the type."
+        spellCheck
+      />
       <Pair>
         <TextField {...common} fieldKey="threadSize" label="Thread size" placeholder="M12x1.5" />
         <TextField {...common} fieldKey="packQuantity" label="Pack quantity" inputMode="numeric" placeholder="20" />
@@ -510,7 +492,35 @@ function AccessoryFields({ values, errors }: { values: Values; errors: ProductFi
         <TextField {...common} fieldKey="outerDiameterMm" label="Outer diameter (mm)" inputMode="decimal" placeholder="73.1" />
         <TextField {...common} fieldKey="innerDiameterMm" label="Inner diameter (mm)" inputMode="decimal" placeholder="56.1" />
       </Pair>
+      <TextField {...common} fieldKey="weightLb" label="Weight (lb)" inputMode="decimal" placeholder="2.5" />
+      <ExtraSpecsField {...common} />
     </Section>
+  );
+}
+
+/** Vendor facts with no column of their own (D125), the last field of each
+ *  category's details. Shown on the product page after the specs above,
+ *  label and value as written here. */
+function ExtraSpecsField({ values, errors }: { values: Values; errors: ProductFieldErrors }) {
+  return (
+    <div>
+      <FieldLabel htmlFor={`product-${F.extraSpecs}`} optional>
+        Extra specs
+      </FieldLabel>
+      <Textarea
+        id={`product-${F.extraSpecs}`}
+        name={F.extraSpecs}
+        spellCheck={false}
+        placeholder={"Bolt circle: 114.3 mm\nCap height: 1.2 in"}
+        defaultValue={first(values, F.extraSpecs)}
+        invalid={Boolean(errors.extraSpecs)}
+        aria-describedby={describedBy("extraSpecs", errors, "hint")}
+      />
+      <Hint fieldKey="extraSpecs">
+        One per line, as Label: value. They show on the product page after the specs above, in this order.
+      </Hint>
+      <Problem fieldKey="extraSpecs" errors={errors} />
+    </div>
   );
 }
 
@@ -526,6 +536,9 @@ export interface ProductFormProps {
   brands: readonly string[];
   vendors: readonly string[];
   csrfToken: string;
+  /** Edit only: the cheapest vendor price as saved, shown above the sources
+   *  (D125). `null` or absent when no vendor gave one. */
+  lowestVendorPrice?: LowestVendorPrice | null;
 }
 
 export function ProductForm({
@@ -536,6 +549,7 @@ export function ProductForm({
   brands,
   vendors,
   csrfToken,
+  lowestVendorPrice = null,
 }: ProductFormProps) {
   const router = useRouter();
   const action = mode === "create" ? createProductAction : updateProductAction;
@@ -571,6 +585,7 @@ export function ProductForm({
   // A brand no longer in the catalogue (this product's own) stays choosable.
   const brandValue = first(values, F.brand);
   const brandOptions = brandValue === "" || brands.includes(brandValue) ? brands : [brandValue, ...brands];
+  const brandOptional = category === "accessories";
   const errorCount = Object.keys(errors).length;
 
   return (
@@ -592,15 +607,24 @@ export function ProductForm({
 
       <div key={state.version} className="flex flex-col gap-10 sm:gap-12">
         <Section title="Basics">
+          {/* An accessory may have no brand (D125): its empty choice reads
+              `No brand` and is a real answer, not a prompt. A tire or wheel
+              still needs one, which the validator holds as well. */}
           <SelectField
             fieldKey="brand"
             label="Brand"
-            required
+            required={!brandOptional}
             values={values}
             errors={errors}
-            placeholder="Choose a brand"
+            placeholder={brandOptional ? "No brand" : "Choose a brand"}
             options={brandOptions.map((brand) => ({ value: brand, label: brand }))}
-            hint={mode === "create" ? "Only brands already in the catalogue." : undefined}
+            hint={
+              brandOptional
+                ? "Leave as No brand when the vendor sells it unbranded."
+                : mode === "create"
+                  ? "Only brands already in the catalogue."
+                  : undefined
+            }
           />
           <TextField
             fieldKey="model"
@@ -660,7 +684,12 @@ export function ProductForm({
         {category === "wheels" ? <WheelFields values={values} errors={errors} /> : null}
         {category === "accessories" ? <AccessoryFields values={values} errors={errors} /> : null}
 
-        <SourcesFields values={values} errors={errors} vendors={vendors} />
+        <SourcesFields
+          values={values}
+          errors={errors}
+          vendors={vendors}
+          lowestVendorPrice={lowestVendorPrice}
+        />
       </div>
 
       <div className="border-border-strong flex flex-col gap-4 border-t pt-8 sm:pt-10">

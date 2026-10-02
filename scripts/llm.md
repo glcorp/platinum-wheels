@@ -34,6 +34,15 @@ from `design/assets/`, and parity becomes eyeballing — which
   valid rows into an **empty** catalogue, in batches over parallel connections. The database is
   `IMPORT_DATABASE_URL`. The thinking is in `src/features/catalog/import-plan.ts`, the column layout in
   `import-mapping.ts`, and the suggested file layout in `docs/catalogue-csv.md`.
+- [`catalog-csv-build.ts`](catalog-csv-build.ts) — `npm run catalog:build-csv -- --share <dir> --final
+  <dir> --out <dir>` (D125). Turns the co-founder's merged vendor workbooks (`share/`: one row per vendor
+  listing; `final/`: one sheet per vendor, read only for `vendor_price`) into the one `catalogue.csv`
+  that `catalog-import.ts` loads, plus `issues.csv`, `merge-report.csv`, `needs-review.csv` and
+  `summary.txt`. Joins each `-B1`/`-B2` wheel pair back into one listing, merges only across vendors
+  (priority Auto Country > Direct Auto Import > Vertex Tires > PRO WHEELS > Wheel Works) and never on
+  a blank key field, fills a winner's blank fields from the next vendor in priority, never a vendor's own
+  code such as a part number (logged in the merge report), applies the owner's wheel brand table, and runs every output row through `planImport()` before writing. Exits 1
+  if any final check fails. Reads `.xlsx` with `exceljs` (dev dependency).
 
 ## Rules
 - **`client-assets/` is where client material supplied AFTER the design export goes** (D63).
@@ -44,13 +53,20 @@ from `design/assets/`, and parity becomes eyeballing — which
   (D63). Chrome highlights are as bright as the background, so a global threshold punches holes through
   the product; the flood-fill only removes background connected to the image edge. The 215 threshold is
   measured, not guessed — see the block comment above `keyBackground()`.
-- **`catalog-import.ts` is the one TypeScript script** (D114). It must run the app's own validator
+- **`catalog-import.ts` is a TypeScript script** (D114). It must run the app's own validator
   and store, so `tsx` runs it and `npm run check` type-checks it. It is `.ts`, not `.mts`: the repo has
   no `"type": "module"`, and an ES-module script cannot see what `src/db/schema.ts` re-exports.
 - **The import never reads `DATABASE_URL`.** It takes `IMPORT_DATABASE_URL` only, so a load reaches a
   database somebody named on purpose, and it should be the direct Neon address, not the pooled one.
 - **Import reports go to `import-report/`, which is git-ignored.** They hold vendor data row by row.
-- **Plain Node, not application source** (all scripts but `catalog-import.ts`). `.mjs` and `.js` are outside tsc's scope — `tsconfig.json:25-32`
+- **`catalog-csv-build.ts` decides nothing the owner did not rule** (D125). The rulings of 2026-10-03
+  are its spec, under the owner's principle that the data is aligned *as the vendor has it*. A case they
+  do not settle is sent to `issues.csv` as `needs owner ruling: …`, never resolved in code. A blank is
+  "not known": no `0`, `N/A` or `-` is ever written, except `offset_mm`, where 0 is a real offset.
+- **It is the second TypeScript script, for the same reason as the import:** it runs the importer's own
+  `planImport()` and `IMPORT_MAPPING`, so the CSV it writes is one the import accepts by construction.
+  Its outputs hold vendor prices and go outside the repo (`--out`), never into it.
+- **Plain Node, not application source** (all scripts but `catalog-import.ts` and `catalog-csv-build.ts`). `.mjs` and `.js` are outside tsc's scope — `tsconfig.json:25-32`
   includes `**/*.ts`, `**/*.tsx` and `**/*.mts` only, so `npm run typecheck` never sees these files.
   `eslint .` (`package.json:10`) *does* lint them: `scripts/` is not in the ignore list
   (`eslint.config.mjs:9-19`).
@@ -75,6 +91,8 @@ from `design/assets/`, and parity becomes eyeballing — which
 - Depends on: `https://vpic.nhtsa.dot.gov/api/` (`vehicles-fetch.mjs` only, at run time),
   `design/assets/{products,photos,logo}/*.png` (inputs), `sharp` (`package.json:27`),
   `npm run design` serving `design/assets` on :4000 for the probe baseline (`package.json:12`).
+  `catalog-csv-build.ts`: the vendor workbooks named on its command line, `exceljs`, and
+  `src/features/catalog/{import-mapping,import-plan,product-input,size}.ts`.
 - Depended on by: `scripts/data/vehicles.csv` (output of `vehicles-fetch.mjs`), `public/images/` (the output), `design/reports/*.md` (every row is probe output),
   `design/reports/README.md` §"Running a measurement", `docs/decisions.md` §9.
 
@@ -92,6 +110,11 @@ from `design/assets/`, and parity becomes eyeballing — which
   only ever creates (D113). Don't add an "empty the catalogue" flag to it either: that was ruled a
   separate effort.
 - Don't point `catalog-import.ts --write` at any database without the owner's say-so.
+- Don't make `catalog-csv-build.ts` guess. Truncating an over-long value, rounding a real decimal,
+  filling a blank brand, or merging two SKUs of one vendor would each put a value on the site no vendor
+  gave (D125). Report it instead, and let the owner rule.
+- Don't hard-code the workbook folders in `catalog-csv-build.ts`: they are personal paths and come in
+  as `--share`, `--final` and `--out`.
 - Don't remove or relax the upscale guard to make two blurry cut-outs fill the canvas. The warning *is*
   the client blocker (`HANDOFF.md` §7).
 - Don't paste `probe()` output verbatim into a report — the report holds the diffed table and its

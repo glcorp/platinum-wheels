@@ -6,6 +6,7 @@ import { productImageSrc } from "@/features/catalog/types";
 
 import { Badge } from "@/components/ui/badge";
 import type { PdpBadge } from "@/features/product/types";
+import { productName } from "@/lib/product-name";
 
 /* ---------------------------------------------------------------------------
    PdpGallery — one image, no thumbs, no dots, no arrows, no zoom (D53(4);
@@ -55,7 +56,8 @@ import type { PdpBadge } from "@/features/product/types";
    --------------------------------------------------------------------------- */
 
 export interface PdpGalleryProps {
-  brand: string;
+  /** `null` on an unbranded accessory (D125). */
+  brand: string | null;
   model: string;
   /** Names the shared-element transition this box is one end of (D92b). */
   slug: string;
@@ -104,7 +106,7 @@ export function PdpGallery({
           ) : (
             <Image
               src={photo}
-              alt={`${brand} ${model}`}
+              alt={productName(brand, model)}
               width={1000}
               height={1000}
               /* The box is 704px only once the split activates at `md:` 1100

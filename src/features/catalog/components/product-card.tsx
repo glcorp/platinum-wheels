@@ -14,6 +14,7 @@ import {
   type ProductBadge,
 } from "@/features/catalog/types";
 import { cx } from "@/lib/cx";
+import { productName } from "@/lib/product-name";
 import { productRoute } from "@/lib/routes";
 import { PRICES_VISIBLE } from "@/lib/site";
 
@@ -208,6 +209,11 @@ export function ProductCard({
     available,
   } = product;
   const photoSrc = productImageSrc(product);
+  /* An unbranded accessory (D125) has no brand: no stamp, no brand line, and
+     its name stands alone wherever the two are joined. `|| null` also folds an
+     empty string into "no brand". */
+  const brandName = brand || null;
+  const fullName = productName(brandName, model);
 
   /* WINTER first, then the rest in the order the caller gave them, capped at
      two (`design/DESIGN.md:201`). On the unavailable card the dim badge takes
@@ -226,11 +232,11 @@ export function ProductCard({
      placeholder tile, never a guessed path (D108b). */
   const photo =
     photoSrc === null ? (
-      <ProductPhotoPlaceholder brand={brand} dimmed={!available} />
+      <ProductPhotoPlaceholder brand={brandName} dimmed={!available} />
     ) : (
       <Image
         src={photoSrc}
-        alt={`${brand} ${model}`}
+        alt={fullName}
         width={1000}
         height={1000}
         sizes={sizes}
@@ -431,13 +437,14 @@ export function ProductCard({
             absolute layer (see the photo box), `relative` for paint order,
             `min-w-0 break-words` so a long brand wraps inside the photo.
             Not drawn over the placeholder tile, which already is the brand
-            (D108b). */}
-        {photoSrc === null ? null : (
+            (D108b), and not drawn at all when there is no brand (D125): the
+            badge row keeps its place, so the box is unchanged. */}
+        {photoSrc === null || brandName === null ? null : (
           <span
             translate="no"
             className="display text-ink-muted leading-badge pointer-events-none relative ml-auto min-w-0 break-words text-11 tracking-8"
           >
-            {brand}
+            {brandName}
           </span>
         )}
       </div>
@@ -451,10 +458,16 @@ export function ProductCard({
         <div className="flex flex-col">
           {/* `font:700 15px/1.1 var(--font-body);color:var(--text)` —
               results-desktop.html:171; `700 12px/1.1` mobile —
-              results-mobile.html:121. */}
-          <span className="text-ink font-sans text-12 leading-snug font-bold sm:text-15">
-            {brand}
-          </span>
+              results-mobile.html:121.
+              D125: an unbranded accessory renders no line at all, not an empty
+              one. The card body is a column under an equal-height grid track
+              (`h-full`, CTA pinned by `mt-auto`), so the card keeps its row's
+              height and only the name block starts one line higher. */}
+          {brandName === null ? null : (
+            <span className="text-ink font-sans text-12 leading-snug font-bold sm:text-15">
+              {brandName}
+            </span>
+          )}
 
           {/* `font:700 calc(28px * var(--scale-h3))/0.92 var(--font-display);
               letter-spacing:-0.015em;text-transform:uppercase;
@@ -580,7 +593,7 @@ export function ProductCard({
             vehicle={vehicle}
             size="card"
             className="flex-1"
-            srContext={`${brand} ${model} ${size}`}
+            srContext={`${fullName} ${size}`}
           />
         </div>
       </div>

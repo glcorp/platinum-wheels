@@ -27,11 +27,14 @@
 
 import { useSyncExternalStore } from "react";
 
+import { productName } from "./product-name";
+
 export type CartCategory = "tires" | "wheels" | "accessories";
 
 /** What a line shows. Refreshed from the catalogue when the cart page opens. */
 export interface CartItem {
-  brand: string;
+  /** `null` on an unbranded accessory (D125). */
+  brand: string | null;
   /** Model, or the product name when it has no model (most accessories). */
   model: string;
   /** The card's size line, `215/55R16 · 97T XL`. */
@@ -98,7 +101,7 @@ function parseLine(raw: unknown): CartLine | null {
     line.quantity < 1 ||
     !isText(line.vehicle, 80) ||
     !item ||
-    !isText(item.brand, 200) ||
+    !(item.brand === null || isText(item.brand, 200)) ||
     !isText(item.model, 300) ||
     !isText(item.size, 300) ||
     !(item.image === null || isText(item.image, 2000)) ||
@@ -283,7 +286,7 @@ export function addToCart(input: {
   }
   save(next);
   const notice: CartAddedNotice = {
-    name: `${input.item.brand} ${input.item.model}`,
+    name: productName(input.item.brand, input.item.model),
     amount: amountLabel(quantity, input.item.unit),
     updated: Boolean(existing),
   };

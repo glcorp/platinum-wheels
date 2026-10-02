@@ -24,6 +24,7 @@ import {
   exists,
   ilike,
   inArray,
+  isNotNull,
   like,
   ne,
   or,
@@ -155,6 +156,7 @@ async function loadSources(
       vendor: productSources.vendor,
       vendorSku: productSources.vendorSku,
       vendorUrl: productSources.vendorUrl,
+      vendorPrice: productSources.vendorPrice,
     })
     .from(productSources)
     .where(eq(productSources.productId, productId))
@@ -185,13 +187,15 @@ export async function getProductById(id: string): Promise<AdminProduct | null> {
 }
 
 /** Every brand in the catalogue, A to Z: the suggestions under the brand
- *  field, so a new product reuses an existing spelling instead of a typo. */
+ *  field, so a new product reuses an existing spelling instead of a typo.
+ *  An unbranded accessory (D125) contributes nothing. */
 export async function listBrands(): Promise<string[]> {
   const rows = await getDb()
     .selectDistinct({ brand: products.brand })
     .from(products)
+    .where(isNotNull(products.brand))
     .orderBy(asc(products.brand));
-  return rows.map((row) => row.brand);
+  return rows.flatMap((row) => (row.brand === null ? [] : [row.brand]));
 }
 
 /* --- Writes -------------------------------------------------------------- */
@@ -360,6 +364,7 @@ export async function createProduct(
             price: input.price,
             status: input.status ?? "hidden",
             gtin: input.gtin,
+            extraSpecs: [...input.extraSpecs],
           })
           .returning({ id: products.id });
         if (!created) throw new Error("createProduct: insert returned no row.");
@@ -419,6 +424,7 @@ export async function createProductsBatch(
       price: input.price,
       status: input.status ?? "hidden",
       gtin: input.gtin,
+      extraSpecs: [...input.extraSpecs],
     })),
   );
 
@@ -485,6 +491,7 @@ export async function updateProduct(
           description: input.description,
           price: input.price,
           gtin: input.gtin,
+          extraSpecs: [...input.extraSpecs],
           ...(input.status === null ? {} : { status: input.status }),
         })
         .where(eq(products.id, id));

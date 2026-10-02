@@ -26,6 +26,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { amountLabel, CART_MAX_QUANTITY, type CartLine } from "@/lib/cart";
+import { productName } from "@/lib/product-name";
 import { productRoute } from "@/lib/routes";
 
 const WHOLE_NUMBER = /^\d+$/;
@@ -43,7 +44,7 @@ export interface CartLineRowProps {
 
 export function CartLineRow({ line, onQuantity, onRemove }: CartLineRowProps) {
   const { slug, quantity, vehicle, item } = line;
-  const name = `${item.brand} ${item.model}`;
+  const name = productName(item.brand, item.model);
   const [draft, setDraft] = useState<string | null>(null);
   const inert = !onQuantity;
 
@@ -89,9 +90,12 @@ export function CartLineRow({ line, onQuantity, onRemove }: CartLineRowProps) {
 
       <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <span translate="no" className="label text-ink-muted text-11 tracking-14 sm:text-12">
-            {item.brand}
-          </span>
+          {/* No brand line on an unbranded accessory (D125). */}
+          {item.brand ? (
+            <span translate="no" className="label text-ink-muted text-11 tracking-14 sm:text-12">
+              {item.brand}
+            </span>
+          ) : null}
           <Link
             href={productRoute(slug)}
             className="display text-ink text-display-24 tap-extend break-words active:opacity-70 sm:text-display-28"

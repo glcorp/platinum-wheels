@@ -21,6 +21,7 @@ import {
   PRODUCT_STATUSES,
   TIRE_SEASONS,
   type AccessorySpecsInput,
+  type ExtraSpec,
   type ProductCategory,
   type ProductInput,
   type ProductSource,
@@ -43,6 +44,9 @@ export const PRODUCT_FIELD = {
   price: "price",
   status: "status",
   gtin: "gtin",
+  /** `Label: value | Label: value`, one fact per pair (D125). The admin form
+   *  posts one per line; both separators are read. */
+  extraSpecs: "extra_specs",
 
   // Tires
   tireSize: "tire_size",
@@ -71,6 +75,9 @@ export const PRODUCT_FIELD = {
   loadRatingLbs: "load_rating_lbs",
   tpmsCompatible: "tpms_compatible",
   winterCompatible: "winter_compatible",
+  wheelFinishFamily: "wheel_finish_family",
+  wheelColor: "wheel_color",
+  lugCount: "lug_count",
 
   // Accessories
   accessoryType: "accessory_type",
@@ -80,11 +87,15 @@ export const PRODUCT_FIELD = {
   packQuantity: "pack_quantity",
   outerDiameterMm: "outer_diameter_mm",
   innerDiameterMm: "inner_diameter_mm",
+  partType: "part_type",
+  weightLb: "weight_lb",
 
   // Vendor sources: each name may repeat, one set per source, read by index.
   sourceVendor: "source_vendor",
   sourceSku: "source_sku",
   sourceUrl: "source_url",
+  /** The CSV's `source_price_{n}`; the admin form's per-source price. */
+  sourcePrice: "source_price",
 } as const;
 
 export type ProductFieldKey = keyof typeof PRODUCT_FIELD;
@@ -102,6 +113,9 @@ export const PRODUCT_LIMITS = {
   url: 500,
   price: 99_999_999.99,
   sources: 10,
+  extraSpecLabel: 60,
+  extraSpecValue: 2000,
+  extraSpecs: 40,
 } as const;
 
 export interface FieldReader {
@@ -259,33 +273,131 @@ class Fields {
 
 /* --- Sections ------------------------------------------------------------ */
 
+/** `$1,129.50` → 1129.5; `null` when it is not a price. `$` and spaces are
+ *  dropped; a comma is read as a thousands separator only where one belongs. */
+function readMoney(raw: string): number | null {
+  const cleaned = raw.replace(/[$\s]/g, "");
+  if (!PRICE.test(cleaned)) return null;
+  return Number(cleaned.replace(/,/g, ""));
+}
+
 function parsePrice(fields: Fields): number | null {
   const raw = fields.raw("price");
   if (raw === "") return null;
-  const cleaned = raw.replace(/[$\s]/g, "");
-  if (!PRICE.test(cleaned)) {
+  const price = readMoney(raw);
+  if (price === null) {
     fields.fail("price", "Enter a price like 129.99, or leave it blank.");
     return null;
   }
   // A price of zero is a vendor's blank, not a price: stored as "no price",
   // so the storefront reads `Inquire for price` instead of `from $0`.
-  const price = Number(cleaned.replace(/,/g, ""));
   return price === 0 ? null : price;
+}
+
+/**
+ * A vendor's own price for one source (D125). Unlike the display price, a 0
+ * is refused rather than quietly stored as blank: the file should leave the
+ * cell empty, and a silent 0 → blank would hide a vendor sheet's error.
+ */
+function parseSourcePrice(fields: Fields, raw: string): number | null {
+  if (raw === "") return null;
+  const price = readMoney(raw);
+  if (price === null) {
+    fields.fail(
+      "sourcePrice",
+      "Enter each vendor price like 129.99, or leave it blank.",
+    );
+    return null;
+  }
+  if (price === 0) {
+    fields.fail(
+      "sourcePrice",
+      "A vendor price of 0 is not a price. Leave it blank instead.",
+    );
+    return null;
+  }
+  return price;
+}
+
+/**
+ * `Label: value | Label: value`, or one pair per line (D125). A pair splits
+ * on its FIRST `: `, so a value may hold colons of its own
+ * (`Fitment: Audi:2025:A4`). Blank pairs are skipped; anything else that is
+ * not a pair refuses the field, because guessing which half is the label
+ * would put a wrong fact on the product page.
+ */
+function parseExtraSpecs(fields: Fields): ExtraSpec[] {
+  const raw = fields.raw("extraSpecs");
+  if (raw === "") return [];
+  const limits = PRODUCT_LIMITS;
+  const specs: ExtraSpec[] = [];
+  const seen = new Set<string>();
+  for (const part of raw.split(/\r?\n|\s+\|\s+/)) {
+    const pair = part.trim();
+    if (pair === "") continue;
+    const split = pair.indexOf(": ");
+    if (split <= 0) {
+      fields.fail(
+        "extraSpecs",
+        `Write each extra spec as Label: value. "${pair.slice(0, 40)}" is not.`,
+      );
+      return [];
+    }
+    const label = pair.slice(0, split).trim();
+    const value = pair.slice(split + 2).trim();
+    if (label === "" || value === "") {
+      fields.fail("extraSpecs", "Give each extra spec a label and a value.");
+      return [];
+    }
+    if (label.length > limits.extraSpecLabel) {
+      fields.fail(
+        "extraSpecs",
+        `Keep each extra spec label under ${limits.extraSpecLabel} characters.`,
+      );
+      return [];
+    }
+    if (value.length > limits.extraSpecValue) {
+      fields.fail(
+        "extraSpecs",
+        `Keep each extra spec value under ${limits.extraSpecValue} characters.`,
+      );
+      return [];
+    }
+    const id = label.toLowerCase();
+    if (seen.has(id)) {
+      fields.fail("extraSpecs", `The extra spec "${label}" is listed twice.`);
+      return [];
+    }
+    seen.add(id);
+    specs.push({ label, value });
+  }
+  if (specs.length > limits.extraSpecs) {
+    fields.fail(
+      "extraSpecs",
+      `List at most ${limits.extraSpecs} extra specs.`,
+    );
+    return [];
+  }
+  return specs;
 }
 
 function parseSources(fields: Fields): ProductSource[] {
   const vendors = fields.all("sourceVendor");
   const skus = fields.all("sourceSku");
   const urls = fields.all("sourceUrl");
-  const rows = Math.max(vendors.length, skus.length, urls.length);
+  const prices = fields.all("sourcePrice");
+  const rows = Math.max(vendors.length, skus.length, urls.length, prices.length);
 
   const sources: ProductSource[] = [];
   for (let index = 0; index < rows; index += 1) {
     const vendor = vendors[index] ?? "";
     const vendorSku = skus[index] ?? "";
     const url = urls[index] ?? "";
+    const price = prices[index] ?? "";
     // An untouched blank row in the form is not a source.
-    if (vendor === "" && vendorSku === "" && url === "") continue;
+    if (vendor === "" && vendorSku === "" && url === "" && price === "") {
+      continue;
+    }
 
     const short = PRODUCT_LIMITS.shortText;
     if (vendor === "") {
@@ -311,7 +423,12 @@ function parseSources(fields: Fields): ProductSource[] {
     ) {
       fields.fail("sourceSku", "The same vendor and SKU is listed twice.");
     }
-    sources.push({ vendor, vendorSku, vendorUrl: url === "" ? null : url });
+    sources.push({
+      vendor,
+      vendorSku,
+      vendorUrl: url === "" ? null : url,
+      vendorPrice: parseSourcePrice(fields, price),
+    });
   }
 
   if (sources.length > PRODUCT_LIMITS.sources) {
@@ -422,6 +539,9 @@ function parseWheelSpecs(fields: Fields): WheelSpecsInput | null {
     }),
     tpmsCompatible: fields.triState("tpmsCompatible", "TPMS"),
     winterCompatible: fields.triState("winterCompatible", "winter use"),
+    finishFamily: fields.text("wheelFinishFamily", "finish family", short),
+    color: fields.text("wheelColor", "colour", short),
+    lugCount: fields.integer("lugCount", "lug count", { min: 3, max: 12 }),
   };
   if (diameter === null || width === null || boltPatterns === null) return null;
 
@@ -433,7 +553,12 @@ function parseAccessorySpecs(fields: Fields): AccessorySpecsInput | null {
   const rawType = fields.raw("accessoryType");
   const accessoryType = isOneOf(ACCESSORY_KINDS, rawType) ? rawType : null;
   if (accessoryType === null) {
-    fields.fail("accessoryType", "Choose the accessory type.");
+    fields.fail(
+      "accessoryType",
+      rawType === ""
+        ? "Choose the accessory type."
+        : "Choose one of the fifteen accessory types.",
+    );
   }
 
   const threadSize = fields.text("threadSize", "thread size", short);
@@ -453,6 +578,12 @@ function parseAccessorySpecs(fields: Fields): AccessorySpecsInput | null {
     innerDiameterMm: fields.decimal("innerDiameterMm", "inner diameter", {
       min: 1,
       max: 1000,
+      scale: 2,
+    }),
+    partType: fields.text("partType", "part type", short),
+    weightLb: fields.decimal("weightLb", "weight in pounds", {
+      min: 0.01,
+      max: 9999,
       scale: 2,
     }),
   };
@@ -486,7 +617,12 @@ export function parseProductInput(reader: FieldReader): ParseProductResult {
   }
 
   const base = {
-    brand: fields.required("brand", "brand", PRODUCT_LIMITS.brand),
+    // A tire or wheel always has a brand; an accessory may be sold unbranded
+    // (D125), and `products_brand_required` holds the same line.
+    brand:
+      category === "accessories"
+        ? fields.text("brand", "brand", PRODUCT_LIMITS.brand)
+        : fields.required("brand", "brand", PRODUCT_LIMITS.brand),
     model: fields.text("model", "model", PRODUCT_LIMITS.model),
     name: fields.required("name", "product name", PRODUCT_LIMITS.name),
     description: fields.text(
@@ -496,6 +632,7 @@ export function parseProductInput(reader: FieldReader): ParseProductResult {
     ),
     price: parsePrice(fields),
     gtin: fields.text("gtin", "barcode", PRODUCT_LIMITS.shortText),
+    extraSpecs: parseExtraSpecs(fields),
     sources: parseSources(fields),
   };
 

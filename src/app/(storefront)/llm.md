@@ -77,7 +77,9 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   real `QuoteSuccess` component so it cannot drift (D51), the quote-form error summary (D57), the skip
   link (D57), and the **route error** and **loading** states (D62). The route error renders from
   `RouteErrorPanel` with `as="h2"` and no `retry` — this page is a Server Component and RSC refuses to
-  serialise a function across the client boundary, which the build catches outright.
+  serialise a function across the client boundary, which the build catches outright. The product-card
+  block also shows two unbranded accessories beside a branded one (D125): no stamp, no brand line,
+  an empty no-photo tile, same row height.
 
 ## Rules
 - **Every indexable page builds its metadata with `pageMetadata()`** (`src/features/seo/metadata.ts`,

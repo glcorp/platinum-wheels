@@ -22,8 +22,10 @@ URLs below are the admin host's.
   bulk status, pagination.
 - [`products/new/page.tsx`](products/new/page.tsx) — `/products/new`, category first, then the form.
 - [`products/[id]/page.tsx`](products/[id]/page.tsx) — `/products/<id>`: status, View on site, photos
-  (D117), the edit form.
-- [`styleguide/page.tsx`](styleguide/page.tsx) — `/styleguide`, the admin's authored states (D93).
+  (D117), the edit form, which shows the lowest saved vendor price above the sources (D125). An unbranded
+  accessory's header reads `Accessory · No brand`.
+- [`styleguide/page.tsx`](styleguide/page.tsx) — `/styleguide`, the admin's authored states (D93),
+  including an unbranded accessory's list card and a source row with a vendor price (D125).
 - [`[...missing]/page.tsx`](%5B...missing%5D/page.tsx) and [`not-found.tsx`](not-found.tsx) — the admin's
   own 404 for any path no page answers (D115), so the storefront's 404 never renders on the staff tool.
 

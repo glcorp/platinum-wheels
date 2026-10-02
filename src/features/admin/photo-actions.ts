@@ -39,6 +39,7 @@ import {
   type PhotoMove,
 } from "@/features/catalog/photos";
 import { getProductById } from "@/features/catalog/store";
+import { productName } from "@/lib/product-name";
 
 import {
   PHOTO_FIELD,
@@ -178,7 +179,8 @@ export async function addPhoto(formData: FormData): Promise<PhotoActionResult> {
 
   // Alt text is generated, never typed (owner, 2026-10-01): brand and name
   // say what the photo shows on every card and gallery it appears in.
-  const alt = `${product.brand} ${product.name}`.slice(0, 300);
+  // An unbranded accessory's (D125) is its name alone.
+  const alt = productName(product.brand, product.name).slice(0, 300);
   const result = await addProductPhoto(productId, stored.url, alt);
   if (!result.ok) {
     if (result.reason === "duplicate") {

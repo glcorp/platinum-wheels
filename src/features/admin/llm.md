@@ -48,12 +48,21 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   (row, then file), `movePhoto`. Each calls `requireAdminAction(formData)` first. The only file that
   writes to Blob.
 - [`product-display.ts`](product-display.ts) — pure: spec line, labels, `displayPrice`, and
-  `productFormValues()` (a saved product as form values). Client-safe.
+  `productFormValues()` (a saved product as form values, extra specs and vendor prices included).
+  Since D125 also `vendorPriceLabel()` (`$388.12`, cents always), `lowestVendorPrice()` and
+  `extraSpecsText()` (one `Label: value` per line). Client-safe.
 - [`storefront-link.ts`](storefront-link.ts) — the View on site URL from env `STOREFRONT_URL` (D116).
 - [`greeting.ts`](greeting.ts) — the home's rotating lines per Brampton-time band (D118). Copy the owner may
   rewrite.
 - [`components/product-form.tsx`](components/product-form.tsx) — client island, create and edit, all three
-  categories, brand and vendor dropdowns, source rows. Remounts its fields after every answer.
+  categories, brand and vendor dropdowns, source rows. Remounts its fields after every answer. D125: an
+  accessory's brand select opens on `No brand` (empty value) and is not required; wheels gain Finish
+  family / Colour / Lug count, accessories Part type / Weight (lb); every category ends with an `Extra
+  specs` textarea (`extra_specs`, one `Label: value` per line); the edit page passes the saved
+  `lowestVendorPrice` for the sources block.
+- [`components/product-source-row.tsx`](components/product-source-row.tsx) — one source row (vendor,
+  SKU, **vendor price**, link) and the `Lowest vendor price` line (D125). No hooks and no `"use client"`,
+  so `/styleguide` renders the real row inert (D93).
 - [`components/admin-product-card.tsx`](components/admin-product-card.tsx) — one list card; `inert` for the
   styleguide.
 - [`components/product-status-buttons.tsx`](components/product-status-buttons.tsx) — client island,
@@ -112,7 +121,11 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
 - The password is never echoed back to the client, in any state.
 - **Every date and time is Brampton's** (D118): format through `@/lib/time`, never with a zone typed here.
 - **Brands and vendors are picked from the catalogue's own** (D116): dropdowns on the form, and the create
-  and update actions refuse any other spelling. A new one arrives through the catalogue import.
+  and update actions refuse any other spelling. A new one arrives through the catalogue import. **An
+  accessory may have no brand** (D125); a tire or wheel may not, which the validator and the database
+  hold too.
+- **A vendor's price is staff only** (D125): typed and shown here, cents kept (`vendorPriceLabel`), never
+  with `Price`, and never passed to anything on the storefront.
 - **A photo is recorded only after Blob confirms it** (`head()`): in our store, under
   `products/<id>/`, an allowed type within 10 MB (D117).
 
@@ -141,6 +154,7 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 - **Depends on:** `src/components/ui/` (button, input, field-label), `src/lib/site.ts` (`SITE`),
   `next/headers`, `next/navigation`, `node:crypto`, and `@vercel/blob` for photos (D117).
 - **Depended on by:** `src/app/admin/` (layout and every admin route).
+- **Depends on (D125):** `src/lib/product-name.ts` (photo alt text).
 - **Depends on (D105b, D116, D117):** `src/features/catalog/` — `store.ts`, `lookups.ts`, `photos.ts`,
   `product-input.ts`, `catalog-types.ts`, `adapter.ts` (labels); `@vercel/blob` (D117); `src/lib/time.ts`.
   This is the D37 graph's existing direction (`features → catalog`), so no edge is reversed.

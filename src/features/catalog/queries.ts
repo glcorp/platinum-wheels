@@ -10,7 +10,9 @@
  *     `published` products only;
  *   - a product page loads `published` and `discontinued`;
  *   - `hidden` is never returned by anything in this file.
- * Vendor sources are staff-only and are not read here at all.
+ * Vendor sources are staff-only and are not read here at all: no query in
+ * this file may select `product_sources`, and above all never its
+ * `vendor_price`, which is what a vendor charges the shop (D125).
  */
 
 import {
@@ -24,6 +26,7 @@ import {
   gte,
   inArray,
   isNotNull,
+  isNull,
   lte,
   max,
   min,
@@ -159,14 +162,15 @@ function sizeParts(filters: ProductFilters) {
 }
 
 /**
- * True for a lug nut or wheel lock cut to a thread other than the vehicle's.
+ * True for a lug nut, lug bolt or wheel lock cut to a thread other than the
+ * vehicle's (lug bolts are their own type since D125).
  * Only a product that STATES a different thread contradicts: one with no
  * thread on record, and every other kind of accessory, never does. `coalesce`
  * keeps a product with no spec row on the "does not contradict" side, so it
  * lands in the matches rather than in neither list.
  */
 function contradictsThread(thread: string): SQL {
-  return sql`coalesce(${accessorySpecs.accessoryType} in ('lug_nuts', 'wheel_locks') and ${accessorySpecs.threadSize} is not null and ${accessorySpecs.threadSize} <> ${normalizeThreadSize(thread)}, false)`;
+  return sql`coalesce(${accessorySpecs.accessoryType} in ('lug_nuts', 'lug_bolts', 'wheel_locks') and ${accessorySpecs.threadSize} is not null and ${accessorySpecs.threadSize} <> ${normalizeThreadSize(thread)}, false)`;
 }
 
 function vehicleThread(filters: ProductFilters): string | null {
@@ -407,10 +411,15 @@ export async function getBrands(category: ProductCategory): Promise<string[]> {
     .selectDistinct({ value: products.brand })
     .from(products)
     .where(
-      and(eq(products.category, category), eq(products.status, "published")),
+      and(
+        eq(products.category, category),
+        eq(products.status, "published"),
+        // An unbranded accessory (D125) is no brand to filter on.
+        isNotNull(products.brand),
+      ),
     )
     .orderBy(asc(products.brand));
-  return rows.map((row) => row.value);
+  return rows.flatMap((row) => (row.value === null ? [] : [row.value]));
 }
 
 /**
@@ -441,11 +450,15 @@ export async function getFacets(
     .groupBy(products.brand)
     .orderBy(asc(products.brand));
 
-  const [[totals], brands, price] = await Promise.all([
+  const [[totals], brandRows, price] = await Promise.all([
     totalQuery,
     brandsQuery,
     getPriceBounds(category),
   ]);
+  // Unbranded accessories (D125) are counted in `total` but are no brand row.
+  const brands = brandRows.flatMap((row) =>
+    row.value === null ? [] : [{ value: row.value, count: row.count }],
+  );
 
   const facets: CatalogFacets = {
     category,
@@ -625,7 +638,9 @@ export async function getOtherSizes(
       and(
         eq(products.category, product.category),
         eq(products.status, "published"),
-        eq(products.brand, product.brand),
+        product.brand === null
+          ? isNull(products.brand)
+          : eq(products.brand, product.brand),
         eq(products.model, product.model),
         ne(products.id, product.id),
       ),
@@ -659,7 +674,9 @@ export async function getSimilarProducts(
   // they would appear in neither list.
   if (product.model !== null) {
     where.push(
-      sql`(${products.brand}, coalesce(${products.model}, '')) <> (${product.brand}, ${product.model})`,
+      // `coalesce` on the brand too: an unbranded accessory (D125) would
+      // otherwise compare as unknown and drop every row.
+      sql`(coalesce(${products.brand}, ''), coalesce(${products.model}, '')) <> (${product.brand ?? ""}, ${product.model})`,
     );
   }
   const order: SQL[] = [];

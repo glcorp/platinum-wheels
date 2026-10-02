@@ -1,5 +1,22 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-03 (the merged vendor CSV aligned with the database, D125, on branch
+`catalog-csv-alignment`).** `npm run catalog:build-csv -- --share <combined/share> --final <combined/final>
+--out <dir>` turns the co-founder's merged workbooks into one `catalogue.csv` the importer takes whole:
+42,165 products from 50,355 rows, each vendor a source with its own price (admin only), sparse vendor facts
+in `extra_specs`, the vendors' 15 accessory types. Outputs are in `~/Platinum Wheels Vendor Data/combined/share/output/`.
+- **Before this branch merges, production must be emptied**: migration `0003` refuses to run while an
+  accessory holds a pre-D125 type, and every deploy migrates. Then load with `npm run catalog:import --
+  catalogue.csv --write` (D113). Owner's call, in that order.
+- **Checked on PGlite:** all four migrations, the `0003` guard both ways, builder run twice byte-identical,
+  importer dry run (0 refused) and full load, `next build`, storefront pages (no vendor price or vendor name
+  in any page source, no sideways scroll at 375 on the longest spec), admin edit page (sources with prices,
+  lowest price, new fields). `tsc` and `eslint` clean.
+- **Not checked:** anything on Vercel or Neon; photo upload (still a separate job); screenshots (pane hidden).
+- **Left for a look:** `needs-review.csv` (787 rows: brand splits checked against the market, 16 Vertex
+  tires whose "All Season" may be all-weather); `src/features/catalog/llm.md` is 283 lines, over the ~120
+  budget.
+
 **Last updated 2026-10-02 (the five open PRs, #13 to #17, combined into one branch for a single `glcorp`
 merge, D124).** The branch brings **#13** SEO behind `SEARCH_INDEXING_ENABLED` and tires at `/tires` (D112),
 **#16** Converge's export-script webhook `/pay/notify`, the shop's payment email and the PIN guard

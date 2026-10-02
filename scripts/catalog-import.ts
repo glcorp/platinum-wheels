@@ -142,6 +142,10 @@ function summarise(plan: ImportPlan, total: number): string {
     }
   }
   const noSource = plan.products.filter((p) => p.input.sources.length === 0).length;
+  const sources = plan.products.flatMap((p) => p.input.sources);
+  const priced = sources.filter((source) => source.vendorPrice !== null).length;
+  const noBrand = plan.products.filter((p) => p.input.brand === null).length;
+  const withExtra = plan.products.filter((p) => p.input.extraSpecs.length > 0).length;
   const lines = [
     `File:              ${file}`,
     `Rows read:         ${total}`,
@@ -154,6 +158,9 @@ function summarise(plan: ImportPlan, total: number): string {
     `With a photo column filled: ${plan.withPhoto} of ${plan.products.length} (photos are not loaded)`,
     `Slugs that needed a -2, -3 …: ${plan.slugClashes}`,
     `Products with no vendor source: ${noSource}`,
+    `Vendor sources: ${sources.length}, ${priced} with a vendor price (staff only, never shown on the site)`,
+    `Accessories with no brand: ${noBrand}`,
+    `Products with extra specs: ${withExtra}`,
     `Columns ignored:   ${plan.ignoredColumns.join(", ") || "none"}`,
     `Fields with no column in this file: ${plan.missingFields.join(", ") || "none"}`,
   ];
@@ -184,17 +191,35 @@ function writeReport(
   }
   writeFileSync(join(dir, "rejected.csv"), rejected);
 
-  let created = csvLine(["row", "category", "brand", "name", "slug", "vendor", "sku"]);
+  // One line per product; its sources are joined, `vendor sku price` each,
+  // so a merged product's every vendor price can be checked before a load.
+  let created = csvLine([
+    "row",
+    "category",
+    "brand",
+    "name",
+    "slug",
+    "vendor",
+    "sku",
+    "sources",
+  ]);
   for (const { row, input, slug } of plan.products) {
     const source = input.sources[0];
     created += csvLine([
       row,
       input.category,
-      input.brand,
+      input.brand ?? "",
       input.name,
       slug,
       source?.vendor ?? "",
       source?.vendorSku ?? "",
+      input.sources
+        .map((s) =>
+          [s.vendor, s.vendorSku, s.vendorPrice === null ? "" : s.vendorPrice.toFixed(2)]
+            .filter(Boolean)
+            .join(" "),
+        )
+        .join(" | "),
     ]);
   }
   writeFileSync(join(dir, "products.csv"), created);

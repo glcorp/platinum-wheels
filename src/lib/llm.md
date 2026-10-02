@@ -51,7 +51,12 @@ the next session guesses which of the two phone numbers is real.
   (re-adding grows the quantity), `setCartQuantity`, `removeFromCart`, `clearCart`, `reconcileCart` (the
   catalogue's fresh facts; `null` removes a line), `onCartAdded` for the header prompt, and the invisible
   ceilings `CART_MAX_LINES` 200 / `CART_MAX_QUANTITY` 9,999 (D123). Imports no feature, which is why it
-  lives here: the header reads it.
+  lives here: the header reads it. `CartItem.brand` is `null` for an unbranded accessory (D125); a stored
+  line with either a string or `null` there is accepted.
+- [`product-name.ts`](product-name.ts) — `productName(brand, model)`: `Zeta Antarctica Sport`, or the bare
+  name when an accessory has no brand (**D125**), never a leading space or a stand-in brand. The one join
+  for card alt text, the PDP title, structured data, the cart, the owner alert and photo alt text. Zero
+  imports, so `cart.ts` can use it.
 - [`routes.ts`](routes.ts) — `ROUTES` (every internal href; `ROUTES.cart` since D122), `PRODUCT_PATH`, `productRoute()`. `quoteRoute()` and the PDP's `#quote` anchor went with D122. The
   one place a path literal lives (D39); components import from here, never write `/tires` themselves.
   **The tire category is `ROUTES.tires` = `/tires` since D112**; the old `ROUTES.results` key and the

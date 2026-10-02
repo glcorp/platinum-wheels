@@ -1,5 +1,6 @@
 /**
  * Product slugs: brand + model + size, e.g. `pirelli-p-zero-235-45r18-98y`.
+ * An accessory adds its name, and one with no brand (D125) has none to lead.
  * Pure. The store appends `-2`, `-3` … when two products would share one.
  *
  * A slug is written once, when the product is created, and never rewritten:
@@ -39,16 +40,19 @@ function sizePart(input: ProductInput): string {
 }
 
 export function buildProductSlug(input: ProductInput): string {
+  const brand = input.brand ?? "";
   const model = input.model ?? "";
   // An accessory's name usually IS the product ("Gloss Black Cap + Chrome GT
-  // Logo"); a tire's or wheel's name repeats brand, model and size.
+  // Logo"); a tire's or wheel's name repeats brand, model and size. An
+  // unbranded accessory (D125) simply starts at its model, or its name.
   const parts =
     input.category === "accessories"
-      ? [input.brand, model, input.name, sizePart(input)]
-      : [input.brand, model, sizePart(input)];
+      ? [brand, model, input.name, sizePart(input)]
+      : [brand, model, sizePart(input)];
   const slug = slugify(parts.join(" ")).slice(0, SLUG_MAX_LENGTH);
-  // The CHECK refuses a trailing hyphen, which a cut at the limit can leave.
-  return slug.replace(/-+$/g, "") || "product";
+  // The CHECK refuses a leading or trailing hyphen. `slugify` strips both,
+  // and a cut at the limit can leave a trailing one again.
+  return slug.replace(/^-+|-+$/g, "") || "product";
 }
 
 /**

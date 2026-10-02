@@ -119,9 +119,13 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
             text-transform:uppercase;color:var(--text-muted)` mobile,
             `13px` desktop (`product-mobile.html:94`,
             `product-desktop.html:109`). */}
-        <span translate="no" className="label text-ink-muted text-12 tracking-14 sm:text-13">
-          {product.brand}
-        </span>
+        {/* D125: an unbranded accessory has no brand line; the h1 moves up
+            into its place rather than sitting under an empty span. */}
+        {product.brand ? (
+          <span translate="no" className="label text-ink-muted text-12 tracking-14 sm:text-13">
+            {product.brand}
+          </span>
+        ) : null}
 
         {/* `<h1>` — the page's only h1. `700 calc(56px)/0.92` mobile →
             `700 calc(88px)/0.92` desktop (`product.md` §3.2). `text-ink`

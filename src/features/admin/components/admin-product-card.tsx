@@ -19,7 +19,8 @@ import { ProductStatusButtons } from "./product-status-buttons";
    links list's.
 
    The photo is shown whole inside its square (`object-contain`), the same
-   rule the storefront card follows; no photo shows the brand instead.
+   rule the storefront card follows; no photo shows the brand instead, and an
+   unbranded accessory with no photo an empty square (D125).
 
    `inert` renders the card for `/admin/styleguide`: no tick box, no status
    form, so the reference page posts nothing.
@@ -61,11 +62,11 @@ export function AdminProductCard({
               sizes="(min-width: 720px) 96px, 80px"
               className="object-contain"
             />
-          ) : (
+          ) : product.brand ? (
             <span className="display text-ink-dim absolute inset-0 flex items-center justify-center p-2 text-center text-display-20 leading-flat break-words">
               {product.brand}
             </span>
-          )}
+          ) : null}
         </Link>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -75,7 +76,11 @@ export function AdminProductCard({
               {PRODUCT_STATUS_LABEL[product.status]}
             </span>
           </div>
-          <p className="text-ink-muted text-13 leading-body">{product.brand}</p>
+          {/* An unbranded accessory (D125) says so, so staff can tell it from
+              a missing field. */}
+          <p className={product.brand ? "text-ink-muted text-13 leading-body" : "text-ink-dim text-13 leading-body"}>
+            {product.brand ?? "No brand"}
+          </p>
           <Link href={href} className="tap-extend text-ink text-16 leading-snug font-bold underline underline-offset-4">
             {product.name}
           </Link>

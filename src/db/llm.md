@@ -26,6 +26,9 @@ Since D105b it also holds the catalogue: products, their specs, images and vendo
   currency, tax or unit. Owner, 2026-09-30: *"lets not give the price column a meaning, price is just
   price"*. It is a display number, never an amount charged; a payment link's amount is typed by staff
   (D92) and never read from it.
+- **`products.brand` is empty only on an accessory** (D125), made true by `products_brand_required`.
+  **`products.extra_specs`** is a jsonb array of `{label, value}` pairs for vendor facts too sparse for
+  a column; a fact most rows carry gets a column instead (owner, 2026-10-03).
 - **A spec row's category is pinned by the database.** Each spec table carries a `category` column with a
   CHECK and a composite foreign key to `products (id, category)`. Don't drop either half.
 - **A uniqueness that a foreign key points at is a table `unique()`, not a `uniqueIndex()`.** drizzle-kit
@@ -61,8 +64,9 @@ Proposed rows are listed in `docs/payments.md` §9; IDs are assigned in root `ll
   the attempt flow needs.
 - Don't store card numbers, CVV, or anything but brand and last four.
 - Don't delete a `payment_links` row. Cancel it. The foreign keys will refuse anyway.
-- Don't add stock, vendor cost, MAP or MSRP columns to the catalogue, or a finish enum. All four were
-  ruled out (D105b).
+- Don't add stock, MAP or MSRP columns to the catalogue, or a finish enum (D105b). Vendor cost was
+  ruled out too, until **D125** put each vendor's own price on its `product_sources.vendor_price` row:
+  staff only, and no storefront query may select it (`src/features/catalog/queries.ts` header).
 
 ## Open
 
@@ -71,3 +75,5 @@ Proposed rows are listed in `docs/payments.md` §9; IDs are assigned in root `ll
 3. The production catalogue holds a **stand-in load** from the scraped vendor sheets (D113), not the
    client-approved data. Replacing it means emptying the catalogue tables first, which nothing in the
    repo does yet. Owner.
+   **Since D125 this blocks a deploy:** `0003` refuses to run while any accessory holds a pre-D125 type
+   (its hand-added guard), so production must be emptied before the D125 branch merges. Owner.

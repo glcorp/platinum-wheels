@@ -129,11 +129,15 @@ function fromWriteResult(
  * Brands and vendors are chosen from the catalogue's own, never typed new
  * (owner, 2026-10-01; D116). The dropdowns only offer existing spellings, and
  * this holds the same line for a hand-made POST. On an edit the product's own
- * brand is in the catalogue, so a product is never stuck on save.
+ * brand is in the catalogue, so a product is never stuck on save. An
+ * accessory may have no brand at all (D125).
  */
 async function unknownNames(input: ProductInput): Promise<ProductFieldErrors> {
   const errors: ProductFieldErrors = {};
-  if (!(await brandExists(input.brand))) {
+  // No brand is legal on an accessory only (D125), and the validator has
+  // already refused it on a tire or wheel, so a `null` here has nothing to look
+  // up.
+  if (input.brand !== null && !(await brandExists(input.brand))) {
     errors.brand = "Choose a brand from the list.";
   }
   const vendors = [...new Set(input.sources.map((source) => source.vendor))];

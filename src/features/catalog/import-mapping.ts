@@ -31,7 +31,14 @@ export interface ImportMapping {
    * Where a product can be ordered from. A row carries up to `max` sources in
    * numbered columns; `{n}` is 1, 2, 3 …
    */
-  sources: { vendor: string; sku: string; url: string; max: number };
+  sources: {
+    vendor: string;
+    sku: string;
+    url: string;
+    /** The vendor's own price (D125): staff only, never the display price. */
+    price: string;
+    max: number;
+  };
   /**
    * Photo columns. Counted in the report and never loaded: the files are not
    * on a server yet. Uploading them is its own job, matched by vendor + SKU.
@@ -45,6 +52,7 @@ const NOT_A_COLUMN: readonly string[] = [
   PRODUCT_FIELD.sourceVendor,
   PRODUCT_FIELD.sourceSku,
   PRODUCT_FIELD.sourceUrl,
+  PRODUCT_FIELD.sourcePrice,
 ];
 
 /** Every product field under its own name. */
@@ -59,6 +67,8 @@ export const IMPORT_MAPPING: ImportMapping = {
     ...OWN_NAMES,
     // A file that names a column differently gets a line here, for example:
     // "Manufacturer": PRODUCT_FIELD.brand,
+    // `row_id` and `merged_row_ids` are the merged sheet's own bookkeeping
+    // (D125): unlisted, so they are read by nothing and named as ignored.
   },
 
   values: {
@@ -73,16 +83,24 @@ export const IMPORT_MAPPING: ImportMapping = {
       "all weather": "all_weather",
       "all-weather": "all_weather",
     },
+    // The vendors' fifteen types, spelled as the merged sheet spells them
+    // (D125). Exact match only: a sixteenth label is refused, not guessed.
     [PRODUCT_FIELD.accessoryType]: {
-      "lug nuts": "lug_nuts",
-      "wheel locks": "wheel_locks",
-      "hub rings": "hub_rings",
-      "centre caps": "centre_caps",
-      "center caps": "centre_caps",
-      spacers: "spacers",
-      "wheel spacers": "spacers",
-      "wheel weights": "wheel_weights",
-      "hub caps": "hub_caps",
+      "Center Caps": "center_caps",
+      "Lug Nuts": "lug_nuts",
+      "Cap Logos, Inserts & Hardware": "cap_logos_inserts_hardware",
+      "Hub Rings": "hub_rings",
+      "Lug Bolts": "lug_bolts",
+      "Wheel Weights": "wheel_weights",
+      "Wheel Covers & Trim": "wheel_covers_trim",
+      "Wheel Spacers": "wheel_spacers",
+      "Wheel Locks": "wheel_locks",
+      "TPMS Sensors & Tools": "tpms_sensors_tools",
+      "Tools, Gauges & Organizers": "tools_gauges_organizers",
+      "Tire Studs": "tire_studs",
+      "Valves & Caps": "valves_caps",
+      Antennas: "antennas",
+      "Tire Bags & Storage": "tire_bags_storage",
     },
   },
 
@@ -90,6 +108,7 @@ export const IMPORT_MAPPING: ImportMapping = {
     vendor: "source_vendor_{n}",
     sku: "source_sku_{n}",
     url: "source_url_{n}",
+    price: "source_price_{n}",
     max: 10,
   },
 
