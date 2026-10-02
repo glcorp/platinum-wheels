@@ -73,6 +73,13 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
 5. **Watch the Resend free quota:** 100 emails a day and 3,000 a month, **shared by the goodwill site
    and the storefront**. Each quote sends 2 emails, so the ceiling is about 50 quotes a day across both
    sites. The fix is Resend Pro.
+9. **Reset the Neon database password.**
+   - **Why:** the `neondb_owner` connection string was pasted into a chat on 2026-09-30 to run the
+     catalogue load (D113), so it is no longer a secret only Vercel holds.
+   - **How:** in the Neon console, reset the password for role `neondb_owner`. The Vercel Neon
+     integration owns `DATABASE_URL` and `DATABASE_URL_UNPOOLED`; check both changed there, then
+     **redeploy**, because env changes only reach a new deployment.
+   - **Done when:** the old string is refused and the production storefront still lists products.
 
 ## Owner — payments (Converge demo; design in `docs/payments.md`)
 
