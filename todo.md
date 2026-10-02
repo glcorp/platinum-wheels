@@ -119,6 +119,15 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
    - **Depends on:** the Vercel plan. Hobby is non-commercial only, and only `glcorp`-authored merge
      commits deploy. See root `llm.md` §7.24.
 
+## Owner — admin products (D116, D117)
+
+10. **Set `STOREFRONT_URL` in Vercel (Production)** to `https://platinum-wheels-one.vercel.app`, and change it
+    to `https://platinumwheels.ca` at launch.
+    - **Why:** the product edit page's **View on site** link is built from it; while it is unset the link
+      is simply not shown. The admin lives on its own host, so the link cannot be relative.
+    - **Check:** open a published product in the admin; **View on site** opens its storefront page.
+
+
 ## Owner, at launch — search (D112)
 
 S1. **Turn search indexing on in the same deploy that goes onto the apex.**

@@ -135,6 +135,16 @@ export interface LinkSummary {
   duplicateAttempts: number;
 }
 
+/** Links a customer can still pay: `active` and not yet past their expiry.
+ *  The same rule as `linkState()`, as one count, for the admin home (D118). */
+export async function countOpenLinks(db: Database = getDb()): Promise<number> {
+  const [row] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(paymentLinks)
+    .where(and(eq(paymentLinks.status, "active"), sql`${paymentLinks.expiresAt} > now()`));
+  return row?.total ?? 0;
+}
+
 /** The admin list: newest first. */
 export async function listLinks(limit = 50, db: Database = getDb()): Promise<LinkSummary[]> {
   const links = await db.select().from(paymentLinks).orderBy(desc(paymentLinks.createdAt)).limit(limit);

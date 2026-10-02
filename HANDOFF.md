@@ -207,9 +207,12 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | Undrawn states | `error.tsx` at `(storefront)/` (D62) and `src/app/global-error.tsx` (D93b); `loading.tsx` was removed by D91b. Both boundaries render `src/components/site/route-error.tsx` and are the **only two** `"use client"` files under `src/app/` — a framework requirement, named as exceptions in `.claude/rules/ui.md` and `docs/decisions.md` §4. The 404 (`not-found.tsx`) carries the owner's line and a `Shop tires` + call pair (D93b). |
 | `design/reports/` | 11 files: `README.md` (protocol), three `<page>.md` parity baselines, `audit.md` + four `*-audit.md`, **`deviations-sweep.md`** (D64) and `llm.md`. |
 | `.claude/rules/ui.md` | Taste dials + JSX non-negotiables. **Auto-loads on every `src/**/*.tsx` edit.** Nothing imports it; it loads by glob, and its length is paid on every UI edit. |
-| `/admin` | Payment-link builder behind the stub gate: `AdminTopBar` + `PaymentLinkForm`. Amount + description only, no computation (D92). |
-| `/admin/login` | Flush-left 420px sign-in column, username + password (D91). Redirects to `/admin` if already signed in. |
-| `/admin/styleguide` | The admin's authored states (D93), gated. Renders the real components inert. |
+| Admin URLs | **Prefix-less on `admin.platinumwheels.ca` since D115**; the pages live in `src/app/admin/` and `/admin/...` is a 404 everywhere. Rows below name the admin-host URL. |
+| `/` (admin) | The admin home: rotating Brampton-time greeting, two tiles with live counts (D118). |
+| `/payment-links` | Payment-link builder and recent links: `AdminTopBar` + `PaymentLinkForm` + `PaymentLinkList`. Amount + description + expiry, no computation (D92, D103). Moved from the root by D118. |
+| `/products`, `/products/new`, `/products/<id>` | Product CRUD (D116) and Blob photo upload (D117). |
+| `/login` | Flush-left 420px sign-in column, username + password (D91). Redirects home if already signed in. |
+| `/styleguide` (admin) | The admin's authored states (D93), gated. Renders the real components inert. |
 | `src/features/admin/` | `types.ts` (contract), `session.ts` (one shared sign-in, hardened by D95: scrypt hash, signed `__Host-` cookie, CSRF + origin checks), two `"use server"` actions that call `requireAdminAction()` first, 6 components; islands `login-form`, `payment-link-form`, `copy-link-button`. `scripts/hash-admin-password.mjs` makes `ADMIN_PASSWORD_HASH`. |
 | SEO | `src/features/seo/` (D112): indexing flag `SEARCH_INDEXING_ENABLED` (off in Vercel until launch), `/robots.txt`, `/sitemap.xml` + `/sitemaps/*.xml`, `pageMetadata()` on every indexable page, JSON-LD (`OnlineStore`, `WebSite`, `Product` with no offer, `BreadcrumbList`), `/opengraph-image` and `/products/<slug>/og.jpg`. Verified by `tests/e2e/seo.spec.ts` in both flag states. |
 | Stubs left | `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). `/wheels` and `/accessories` left this list on 2026-09-21 (D58). |

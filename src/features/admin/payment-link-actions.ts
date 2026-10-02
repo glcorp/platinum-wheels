@@ -49,6 +49,9 @@ import {
 import { payLinkUrl, publicPayOrigin } from "@/features/payments/config";
 import { parseAmountToCents } from "@/features/payments/money";
 import { cancelLink, createLink } from "@/features/payments/service";
+import { SHOP_DATE_TIME } from "@/lib/time";
+
+import { adminFolderPath, storefrontHost } from "./host-routing";
 
 /**
  * Shape of a valid amount once `$`, spaces and thousands commas are stripped:
@@ -82,19 +85,24 @@ const ACTOR = "admin";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Shop time zone for every date staff read. */
-const EXPIRY_FORMAT = new Intl.DateTimeFormat("en-CA", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "America/Toronto",
-});
+/** Brampton time, like every date the application shows (`@/lib/time`). */
+const EXPIRY_FORMAT = SHOP_DATE_TIME;
+
+/** The builder page's own path for `revalidatePath`. Next wants the path a
+ *  rewrite lands on, not the URL in the address bar (its `revalidatePath`
+ *  docs, "with rewrites"), and the admin host's URLs are rewritten into the
+ *  admin folder (D115). Revalidating `ADMIN_ROUTES.home` (`/`) would purge
+ *  the storefront home instead. */
+const BUILDER_FOLDER_PATH = adminFolderPath(ADMIN_ROUTES.paymentLinks);
 
 /** Origin of the request the owner is using, e.g. a preview's own host, so a
  *  preview mints links that open on that preview. Production ignores it and
  *  uses the pay host (`publicPayOrigin`). */
 async function requestOrigin(): Promise<string> {
   const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  // Outside production `/pay` is served by the storefront host; an admin host
+  // serves only the admin (D115), so a link on it would be a 404.
+  const host = storefrontHost(h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000");
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   return `${proto}://${host}`;
 }
@@ -203,7 +211,7 @@ export async function createPaymentLink(
     return { status: "unavailable", values };
   }
 
-  revalidatePath(ADMIN_ROUTES.home);
+  revalidatePath(BUILDER_FOLDER_PATH);
   return {
     status: "success",
     url: payLinkUrl(publicPayOrigin(await requestOrigin()), link.publicToken),
@@ -232,7 +240,7 @@ export async function cancelPaymentLink(_prev: LinkActionState, formData: FormDa
   if (!id) return { status: "error", message: "That link could not be found." };
 
   const result = await cancelLink(id, ACTOR);
-  revalidatePath(ADMIN_ROUTES.home);
+  revalidatePath(BUILDER_FOLDER_PATH);
   if (result.ok) return { status: "done", message: "Link cancelled. The customer can no longer pay it." };
   return {
     status: "error",

@@ -3,6 +3,7 @@ import { LinkRowActions } from "@/features/admin/components/link-row-actions";
 import { payLinkUrl } from "@/features/payments/config";
 import { displayCents } from "@/features/payments/money";
 import type { LinkSummary } from "@/features/payments/service";
+import { SHOP_DATE_TIME } from "@/lib/time";
 
 /* ---------------------------------------------------------------------------
    PaymentLinkList — the latest links and whether each was paid (D106).
@@ -18,11 +19,8 @@ import type { LinkSummary } from "@/features/payments/service";
    and closed the tab before returning shows as "started, not confirmed".
    --------------------------------------------------------------------------- */
 
-const DATE = new Intl.DateTimeFormat("en-CA", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "America/Toronto",
-});
+/** Brampton time, like every date the application shows (`@/lib/time`). */
+const DATE = SHOP_DATE_TIME;
 
 const STATE_LABEL = {
   active: "Open",

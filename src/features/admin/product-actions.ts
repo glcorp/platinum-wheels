@@ -26,9 +26,11 @@ import {
   PRODUCT_CATEGORIES,
   PRODUCT_STATUSES,
   type AdminProductFilter,
+  type ProductInput,
   type ProductStatus,
   type WriteProductResult,
 } from "@/features/catalog/catalog-types";
+import { brandExists, vendorExists } from "@/features/catalog/lookups";
 import {
   PRODUCT_FIELD,
   parseProductInput,
@@ -123,6 +125,25 @@ function fromWriteResult(
   }
 }
 
+/**
+ * Brands and vendors are chosen from the catalogue's own, never typed new
+ * (owner, 2026-10-01; D116). The dropdowns only offer existing spellings, and
+ * this holds the same line for a hand-made POST. On an edit the product's own
+ * brand is in the catalogue, so a product is never stuck on save.
+ */
+async function unknownNames(input: ProductInput): Promise<ProductFieldErrors> {
+  const errors: ProductFieldErrors = {};
+  if (!(await brandExists(input.brand))) {
+    errors.brand = "Choose a brand from the list.";
+  }
+  const vendors = [...new Set(input.sources.map((source) => source.vendor))];
+  const known = await Promise.all(vendors.map((vendor) => vendorExists(vendor)));
+  if (known.includes(false)) {
+    errors.sourceVendor = "Choose each vendor from the list.";
+  }
+  return errors;
+}
+
 export async function createProductAction(
   _prevState: ProductFormState,
   formData: FormData,
@@ -131,6 +152,8 @@ export async function createProductAction(
 
   const parsed = parseProductInput(readerFromFormData(formData));
   if (!parsed.ok) return invalid(formData, parsed.errors);
+  const unknown = await unknownNames(parsed.input);
+  if (Object.keys(unknown).length > 0) return invalid(formData, unknown);
 
   // A product made here always starts hidden, whatever the form posted (D107b):
   // publishing is its own, deliberate step.
@@ -153,6 +176,8 @@ export async function updateProductAction(
 
   const parsed = parseProductInput(readerFromFormData(formData));
   if (!parsed.ok) return invalid(formData, parsed.errors);
+  const unknown = await unknownNames(parsed.input);
+  if (Object.keys(unknown).length > 0) return invalid(formData, unknown);
 
   return fromWriteResult(formData, await updateProduct(id, parsed.input));
 }

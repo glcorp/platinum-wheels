@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-/* Admin-only response headers (D95). Scoped to `/admin`, where every admin
-   page and Server Action lives; the storefront is untouched.
+/* Admin-only response headers (D95). Scoped to the admin host, where every
+   admin page and Server Action lives (D115); the storefront is untouched.
    - no framing: stops a hostile page overlaying the admin to steal clicks
    - no referrer: a page showing a generated payment link never leaks its URL
    - noindex on the response itself, backing up the layout's `robots` meta */
@@ -54,6 +54,19 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      /* Keyed on the admin HOST, not a path (D115): admin URLs carry no
+         `/admin` prefix, and these rules are matched against the URL as
+         requested, before `src/proxy.ts` serves it from the admin folder.
+         `host` matching drops the port and lowercases, so one pattern covers
+         `admin.localhost:3000` in development. Duplicates `ADMIN_HOST` and
+         `DEV_ADMIN_HOST` in `src/features/admin/host-routing.ts`. */
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "admin\\.(platinumwheels\\.ca|localhost)" }],
+        headers: ADMIN_SECURITY_HEADERS,
+      },
+      // The folder itself, which 404s on every host; kept so even that answer
+      // is never framed or indexed.
       { source: "/admin", headers: ADMIN_SECURITY_HEADERS },
       { source: "/admin/:path*", headers: ADMIN_SECURITY_HEADERS },
       { source: "/pay/:path*", headers: PAY_SECURITY_HEADERS },

@@ -4,18 +4,22 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { FieldError, FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
+import { AdminProductCard } from "@/features/admin/components/admin-product-card";
+import { AdminTopBar } from "@/features/admin/components/admin-top-bar";
 import { LoginErrorSummary } from "@/features/admin/components/login-error-summary";
 import { PaymentLinkSuccess } from "@/features/admin/components/payment-link-success";
+import { ProductPhotos } from "@/features/admin/components/product-photos";
 import { requireAdminSession } from "@/features/admin/session";
+import type { CatalogProduct } from "@/features/catalog/catalog-types";
 
 /* ---------------------------------------------------------------------------
-   /admin/styleguide — the admin's reference page (D93)
+   /styleguide (admin host) — the admin's reference page (D93)
 
    `.claude/rules/ui.md` "States the design doesn't show" requires every
    authored state to land on a reference page at the same level of finish as
    the happy path. The storefront's `/styleguide` is a public URL, and these
    are staff-facing states, so the owner ruled a second page rather than one
-   shared one (D93). This one sits behind the same gate as the rest of `/admin`.
+   shared one (D93). This one sits behind the same gate as the rest of the admin.
 
    **Every component here is the real one, rendered inert.** Nothing on this
    page is a copy — a copy drifts from the component it documents, which is the
@@ -43,6 +47,43 @@ export const metadata: Metadata = {
 const SAMPLE_URL = "https://pay.platinumwheels.ca/pay/q3Zk9mB2xV7tLpR4nW8sYA";
 const SAMPLE_AMOUNT = "452.60";
 const SAMPLE_DESCRIPTION = "4x Zeta Antarctica Sport 215/55R16 with install";
+
+/** A sample tire for the product card states (D116). Obviously a sample: the
+ *  ids are all zeros and nothing here is read from the database. */
+const SAMPLE_TIRE: CatalogProduct = {
+  id: "00000000-0000-4000-8000-000000000001",
+  slug: "sample-zeta-antarctica-sport-215-55r16",
+  brand: "Zeta",
+  model: "Antarctica Sport",
+  name: "Antarctica Sport 215/55R16 97H XL",
+  description: null,
+  price: 129.99,
+  status: "published",
+  gtin: null,
+  updatedAt: new Date("2026-10-01T14:30:00-04:00"),
+  image: null,
+  category: "tires",
+  specs: {
+    sizeFormat: "metric",
+    size: "215/55R16",
+    width: 215,
+    aspectRatio: 55,
+    rimDiameter: 16,
+    overallDiameter: null,
+    sectionWidth: null,
+    serviceType: null,
+    loadIndex: "97",
+    speedRating: "H",
+    loadRange: null,
+    plyRating: null,
+    isXl: true,
+    season: "winter",
+    winterApproved: true,
+    studdable: false,
+    runFlat: false,
+    utqg: null,
+  },
+};
 
 function Block({
   id,
@@ -76,127 +117,174 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export default async function AdminStyleguidePage() {
-  await requireAdminSession();
+  const { csrfToken } = await requireAdminSession();
 
   return (
-    <main
-      id="main"
-      tabIndex={-1}
-      className="w-full px-4 pt-10 pb-20 sm:px-8 sm:pt-14 sm:pb-30 md:px-12 lg:mx-auto lg:max-w-content"
-    >
-      <h1 className="display text-ink text-display-40 sm:text-display-56">
-        Admin styleguide
-      </h1>
-      <p className="text-ink-muted mt-3 max-w-measure text-15 leading-body sm:text-16">
-        Every state the admin can show that no design draws. Components are
-        rendered here exactly as they ship, with their live announcements
-        turned off.
-      </p>
+    <>
+      <AdminTopBar csrfToken={csrfToken} current={null} />
+      <main
+        id="main"
+        tabIndex={-1}
+        className="w-full px-4 pt-10 pb-20 sm:px-8 sm:pt-14 sm:pb-30 md:px-12 lg:mx-auto lg:max-w-content"
+      >
+        <h1 className="display text-ink text-display-40 sm:text-display-56">
+          Admin styleguide
+        </h1>
+        <p className="text-ink-muted mt-3 max-w-measure text-15 leading-body sm:text-16">
+          Every state the admin can show that no design draws. Components are
+          rendered here exactly as they ship, with their live announcements
+          turned off.
+        </p>
 
-      <div className="mt-12 flex flex-col gap-12 sm:mt-16 sm:gap-16">
-        <Block
-          id="sg-admin-signin"
-          title="Sign in"
-          note="Three failure modes. A wrong credential and a missing server configuration are form-level and go to the summary; an empty field is a field failure and goes under the box."
-        >
-          <Row label="Form error · wrong credential">
-            <LoginErrorSummary message="Wrong username or password. Check both and try again." />
-          </Row>
+        <div className="mt-12 flex flex-col gap-12 sm:mt-16 sm:gap-16">
+          <Block
+            id="sg-admin-signin"
+            title="Sign in"
+            note="Three failure modes. A wrong credential and a missing server configuration are form-level and go to the summary; an empty field is a field failure and goes under the box."
+          >
+            <Row label="Form error · wrong credential">
+              <LoginErrorSummary message="Wrong username or password. Check both and try again." />
+            </Row>
 
-          <Row label="Form error · not configured">
-            <LoginErrorSummary message="Sign in is not available yet. The admin credentials have not been configured for this deployment." />
-          </Row>
+            <Row label="Form error · not configured">
+              <LoginErrorSummary message="Sign in is not available yet. The admin credentials have not been configured for this deployment." />
+            </Row>
 
-          <Row label="Field error · empty field">
-            <div className="max-w-measure">
-              <FieldLabel htmlFor="sg-admin-username" required>
-                Username
-              </FieldLabel>
-              <Input
-                id="sg-admin-username"
-                name="sg-admin-username"
-                type="text"
-                invalid
-                aria-describedby="sg-admin-username-error"
-                readOnly
-              />
-              <FieldError id="sg-admin-username-error">Enter the username.</FieldError>
-            </div>
-          </Row>
-
-          <Row label="Submit · resting and pending">
-            <div className="flex max-w-measure flex-col gap-3">
-              <Button type="button" variant="primary" size="panel" fullWidth>
-                Sign in
-              </Button>
-              {/* The real pending state is `disabled` while the action runs. */}
-              <Button type="button" variant="primary" size="panel" fullWidth disabled>
-                Signing in…
-              </Button>
-            </div>
-          </Row>
-        </Block>
-
-        <Block
-          id="sg-admin-payment-link"
-          title="Payment link"
-          note="The success panel is the real component. Its test-mode notice shows while the gateway is the demo account, so a demo link is never mistaken for a live one."
-        >
-          <Row label="Success panel">
-            <div className="max-w-measure">
-              <PaymentLinkSuccess
-                url={SAMPLE_URL}
-                reference="PW-10001"
-                amount={SAMPLE_AMOUNT}
-                description={SAMPLE_DESCRIPTION}
-                expiresLabel="Oct 1, 2026, 2:30 p.m."
-                testMode
-              />
-            </div>
-          </Row>
-
-          <Row label="Amount field · error">
-            <div className="max-w-measure">
-              <FieldLabel htmlFor="sg-payment-amount" required>
-                Amount (CAD)
-              </FieldLabel>
-              {/* The `$` / `CAD` adornments are reproduced here rather than
-                  extracted, because they belong to that one field in
-                  `payment-link-form.tsx` and are not a shared component. If a
-                  second money field is ever added, extract them and render the
-                  real thing here instead. */}
-              <div className="relative">
-                <span
-                  aria-hidden="true"
-                  className="text-ink-dim font-sans text-16 leading-flat pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 font-bold sm:left-4 sm:text-17"
-                >
-                  $
-                </span>
+            <Row label="Field error · empty field">
+              <div className="max-w-measure">
+                <FieldLabel htmlFor="sg-admin-username" required>
+                  Username
+                </FieldLabel>
                 <Input
-                  id="sg-payment-amount"
-                  name="sg-payment-amount"
+                  id="sg-admin-username"
+                  name="sg-admin-username"
                   type="text"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  className="pr-14 pl-7 sm:pr-16 sm:pl-8"
                   invalid
-                  aria-describedby="sg-payment-amount-error"
+                  aria-describedby="sg-admin-username-error"
                   readOnly
                 />
-                <span
-                  aria-hidden="true"
-                  className="label text-ink-dim text-11 tracking-12 pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 sm:right-4"
-                >
-                  CAD
-                </span>
+                <FieldError id="sg-admin-username-error">Enter the username.</FieldError>
               </div>
-              <FieldError id="sg-payment-amount-error">
-                Use at most two decimal places.
-              </FieldError>
-            </div>
-          </Row>
-        </Block>
-      </div>
-    </main>
+            </Row>
+
+            <Row label="Submit · resting and pending">
+              <div className="flex max-w-measure flex-col gap-3">
+                <Button type="button" variant="primary" size="panel" fullWidth>
+                  Sign in
+                </Button>
+                {/* The real pending state is `disabled` while the action runs. */}
+                <Button type="button" variant="primary" size="panel" fullWidth disabled>
+                  Signing in…
+                </Button>
+              </div>
+            </Row>
+          </Block>
+
+          <Block
+            id="sg-admin-payment-link"
+            title="Payment link"
+            note="The success panel is the real component. Its test-mode notice shows while the gateway is the demo account, so a demo link is never mistaken for a live one."
+          >
+            <Row label="Success panel">
+              <div className="max-w-measure">
+                <PaymentLinkSuccess
+                  url={SAMPLE_URL}
+                  reference="PW-10001"
+                  amount={SAMPLE_AMOUNT}
+                  description={SAMPLE_DESCRIPTION}
+                  expiresLabel="Oct 1, 2026, 2:30 p.m."
+                  testMode
+                />
+              </div>
+            </Row>
+
+            <Row label="Amount field · error">
+              <div className="max-w-measure">
+                <FieldLabel htmlFor="sg-payment-amount" required>
+                  Amount (CAD)
+                </FieldLabel>
+                {/* The `$` / `CAD` adornments are reproduced here rather than
+                    extracted, because they belong to that one field in
+                    `payment-link-form.tsx` and are not a shared component. If a
+                    second money field is ever added, extract them and render the
+                    real thing here instead. */}
+                <div className="relative">
+                  <span
+                    aria-hidden="true"
+                    className="text-ink-dim font-sans text-16 leading-flat pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 font-bold sm:left-4 sm:text-17"
+                  >
+                    $
+                  </span>
+                  <Input
+                    id="sg-payment-amount"
+                    name="sg-payment-amount"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    className="pr-14 pl-7 sm:pr-16 sm:pl-8"
+                    invalid
+                    aria-describedby="sg-payment-amount-error"
+                    readOnly
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="label text-ink-dim text-11 tracking-12 pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 sm:right-4"
+                  >
+                    CAD
+                  </span>
+                </div>
+                <FieldError id="sg-payment-amount-error">
+                  Use at most two decimal places.
+                </FieldError>
+              </div>
+            </Row>
+          </Block>
+
+          <Block
+            id="sg-admin-products"
+            title="Products"
+            note="The list card in each status, rendered inert: no tick box, no status buttons. A product with no photo shows its brand in the square, as the storefront does."
+          >
+            <Row label="List card · published, priced">
+              <ul className="max-w-measure">
+                <AdminProductCard product={SAMPLE_TIRE} csrfToken={csrfToken} inert />
+              </ul>
+            </Row>
+            <Row label="List card · hidden, no price">
+              <ul className="max-w-measure">
+                <AdminProductCard product={{ ...SAMPLE_TIRE, status: "hidden", price: null }} csrfToken={csrfToken} inert />
+              </ul>
+            </Row>
+            <Row label="List card · discontinued">
+              <ul className="max-w-measure">
+                <AdminProductCard product={{ ...SAMPLE_TIRE, status: "discontinued" }} csrfToken={csrfToken} inert />
+              </ul>
+            </Row>
+            <Row label="Tire size field · not a size">
+              <div className="max-w-measure">
+                <FieldLabel htmlFor="sg-product-size" required>
+                  Size
+                </FieldLabel>
+                <Input
+                  id="sg-product-size"
+                  name="sg-product-size"
+                  type="text"
+                  invalid
+                  aria-describedby="sg-product-size-error"
+                  defaultValue="225/45-17"
+                  readOnly
+                />
+                <FieldError id="sg-product-size-error">Enter a size like 225/45R17 or 35x12.50R20.</FieldError>
+              </div>
+            </Row>
+            <Row label="Photos · none yet">
+              <div className="max-w-measure">
+                <ProductPhotos productId={SAMPLE_TIRE.id} csrfToken={csrfToken} photos={[]} inert />
+              </div>
+            </Row>
+          </Block>
+        </div>
+      </main>
+    </>
   );
 }

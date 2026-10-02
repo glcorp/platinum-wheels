@@ -2,17 +2,30 @@
 
 ## Purpose
 
-The admin route segment: three thin routes plus a layout, serving the staff tool at `/admin`. It exists
-so the storefront's quote-first flow has somewhere to terminate — the owner raises a payment link here
-and emails it to the customer. Delete this folder and `src/features/admin/` has no entry point.
+The admin route segment: thin routes plus a layout, serving the staff tool on `admin.platinumwheels.ca`.
+**The folder name is internal** (D115): `src/proxy.ts` serves the admin host's prefix-less URLs from it
+(`/products` from `admin/products/page.tsx`), and `/admin/...` itself is a 404 on every host. It exists so
+the storefront's quote-first flow has somewhere to terminate (the owner raises a payment link here) and
+so staff can keep the catalogue (D116). Delete this folder and `src/features/admin/` has no entry point.
 
 ## Owns
 
 - [`layout.tsx`](layout.tsx) — admin metadata and `robots: noindex`. Renders **no chrome** (see Rules).
-- [`login/page.tsx`](login/page.tsx) — `/admin/login`. Redirects to `/admin` if a session already exists.
-- [`page.tsx`](page.tsx) — `/admin`, the payment-link builder and the recent-links list (D106). Calls
-  `requireAdminSession()` first, mints the form's idempotency key, and renders if the links list fails.
-- [`styleguide/page.tsx`](styleguide/page.tsx) — `/admin/styleguide`, the admin's authored states (D93).
+URLs below are the admin host's.
+
+- [`page.tsx`](page.tsx) — `/`, the admin home: greeting, date, two tiles with live counts (D118).
+- [`login/page.tsx`](login/page.tsx) — `/login`. Redirects home if a session already exists.
+- [`payment-links/page.tsx`](payment-links/page.tsx) — `/payment-links`, the payment-link builder and the
+  recent-links list (D106), moved unchanged from the root by D118. Mints the form's idempotency key, and
+  renders if the links list fails.
+- [`products/page.tsx`](products/page.tsx) — `/products`, the product list (D116): filters in the URL,
+  bulk status, pagination.
+- [`products/new/page.tsx`](products/new/page.tsx) — `/products/new`, category first, then the form.
+- [`products/[id]/page.tsx`](products/[id]/page.tsx) — `/products/<id>`: status, View on site, photos
+  (D117), the edit form.
+- [`styleguide/page.tsx`](styleguide/page.tsx) — `/styleguide`, the admin's authored states (D93).
+- [`[...missing]/page.tsx`](%5B...missing%5D/page.tsx) and [`not-found.tsx`](not-found.tsx) — the admin's
+  own 404 for any path no page answers (D115), so the storefront's 404 never renders on the staff tool.
 
 ## Rules
 
@@ -28,7 +41,10 @@ and emails it to the customer. Delete this folder and `src/features/admin/` has 
   may serve these routes but is not a gate, so there is still no single choke point; a page that forgets
   it is simply unprotected. Response headers for every `/admin` path are set
   in `next.config.ts` (D95), not here.
-- **`/admin/login` is deliberately not gated** and deliberately renders no `AdminTopBar` — there is no
+- **No link or redirect names the folder.** Every href and `redirect()` uses `ADMIN_ROUTES`
+  (`src/features/admin/types.ts`), which is prefix-less (D115). `/admin/...` in a URL is a 404.
+- Every gated page renders `AdminTopBar` with its `current` section (`home`, `paymentLinks`, `products`).
+- **`/login` is deliberately not gated** and deliberately renders no `AdminTopBar` — there is no
   session to sign out of, so the bar would offer a control that cannot work.
 - One `<h1>` per page. `<main id="main" tabIndex={-1}>` on every route, so the root layout's skip link
   lands focus (D57/C1).
@@ -41,7 +57,10 @@ and emails it to the customer. Delete this folder and `src/features/admin/` has 
 |---|---|---|---|---|
 | D90 | 2026-09-21 | **Superseded by D97 (2026-09-23).** Routes ship at `/admin/*`; the `admin.platinumwheels.ca` rewrite is deferred | A preview deployment resolves one `*.vercel.app` host, so a host-keyed `proxy.ts` rule never fires and cannot be verified there | Owner |
 | D97 | 2026-09-23 | `src/proxy.ts`: admin host serves only `/admin/**` (other paths 307 there); every other host 404s `/admin/**`; production only | `admin.platinumwheels.ca` is wired (D96), so the rule is finally testable | Owner |
-| D93 | 2026-09-21 | `/admin/styleguide` is separate from the storefront `/styleguide` | Staff-facing states do not belong on a public storefront reference page, and this one sits behind the same gate | Owner |
+| D115 | 2026-10-01 | Prefix-less URLs on the admin host; this folder is the proxy's internal target; `/admin/**` 404s everywhere; previews have no admin; stray paths get the admin's 404. Supersedes D97's prefix and D90 | Owner: *"we should not build admin routes as /admin"* | Owner |
+| D116 | 2026-10-01 | `products/`, `products/new`, `products/[id]` | The P2 product CRUD screens | Owner |
+| D118 | 2026-10-01 | The root is the admin home; the builder moved to `payment-links/` | Owner: *"root is admin home like welcome {back}"* | Owner |
+| D93 | 2026-09-21 | `/styleguide` (admin host) is separate from the storefront `/styleguide` | Staff-facing states do not belong on a public storefront reference page, and this one sits behind the same gate | Owner |
 | — | 2026-09-21 | `src/app/admin/`, not `src/app/(admin)/` | A route group adds no segment and would collide with `/` | Coordinator, *derived* — forced by Next's routing, not a preference |
 | — | 2026-09-21 | `children` typed as `ReactNode`, not the generated `LayoutProps<"/admin">` | `next typegen` has never seen this route and `node_modules` is absent, so the generated helper may not resolve. Vetoable once the route has shipped | Coordinator, *derived* |
 
@@ -56,6 +75,7 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b.
 
 ## Don't
 
+- **Don't write `/admin` in an href, a `redirect()` or a test URL.** The folder is not a URL (D115).
 - **Don't add the admin to `src/lib/routes.ts`.** That map is the storefront's, and every href in it is
   rendered in public nav, tiles or the footer. A link to the staff tool has no business on the shopfront.
 - **Don't hoist `AdminTopBar` into `layout.tsx`.** The sign-in page must not show it. This mirrors D38's
@@ -73,9 +93,14 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b.
    the admin host's 307s and the vercel.app host's 404 behave as specified (`HANDOFF.md` §5).
 2. **What D95 declined** (per-user accounts, a second factor, a login limit). See
    `src/features/admin/llm.md` Open #1 and #6.
-3. **No `loading.tsx` or `error.tsx` for `/admin`.** An error here falls through to Next's default
-   boundary. Adding one means a staff-facing copy of the route-error state, and an `error.tsx` must
+3. **No `loading.tsx` or `error.tsx` for the admin** (a staff 404 exists since D115). An error here falls
+   through to Next's default boundary. Adding one means a staff-facing copy of the route-error state, and an `error.tsx` must
    carry `"use client"` itself — the one exception `.claude/rules/ui.md` and `docs/decisions.md` §4
    grant today names only the storefront file (D62), so it would need extending. Owner.
-4. **Where product CRUD lands** — a new segment under `/admin`, and what that does to `AdminTopBar`.
-   Blocked on the vendor catalogue and the schema. Client, via owner.
+4. ~~**Where product CRUD lands**~~ **Closed by D116 and D118:** `products/` beside `payment-links/`, and
+   `AdminTopBar` gained two section links.
+5. **Paths with a dot skip the proxy on the admin host.** The matcher leaves out anything with a `.` so
+   public files (the logo) load, which also means `admin.platinumwheels.ca/robots.txt` or any dotted
+   storefront path is served by the storefront rather than a 404 (the admin headers still apply). Older
+   than D115; harmless while nothing dotted is sensitive. Tighten the matcher to `/images/` and named
+   files if that changes. Owner.

@@ -38,6 +38,9 @@ the next session guesses which of the two phone numbers is real.
     `Goodyear`, `Hankook`, `Toyo`) — the order in `design/DESIGN.md` "Contact block" and in the artboard
     brand strip (`design/inventory/home.md:728`).
 
+- [`time.ts`](time.ts) — `SHOP_TIME_ZONE` (`America/Toronto`), `SHOP_DATE_TIME`, `SHOP_WEEKDAY_DATE` and
+  `shopHour()`. Every date and time the application shows or reasons about is Brampton time (D118); format
+  through these, never with a zone typed at the call site. Zero imports.
 - [`routes.ts`](routes.ts) — `ROUTES` (every internal href), `PRODUCT_PATH`, `productRoute()`, `quoteRoute()`. The
   one place a path literal lives (D39); components import from here, never write `/tires` themselves.
   **The tire category is `ROUTES.tires` = `/tires` since D112**; the old `ROUTES.results` key and the

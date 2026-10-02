@@ -19,6 +19,7 @@ links point at nothing.
   file that speaks Elavon's wire format.
 - [`money.ts`](money.ts) — integer cents ⇄ `"452.60"` without floats.
 - [`service.ts`](service.ts) — every state change: `createLink` (idempotent), `cancelLink`, `listLinks`,
+  `countOpenLinks` (the admin home's tile, D118),
   `getPayPage`, `startAttempt` (row lock, then network), `handleReturn`, `handleNotify` (D119). The money rules are listed at
   the top of the file.
 - [`payment-email.ts`](payment-email.ts) — the shop's "Payment received" / "Refund needed" email via

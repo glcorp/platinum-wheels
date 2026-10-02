@@ -81,6 +81,12 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `-2`, `-3` rule a single create and a bulk load share. Pure.
   - [`rows.ts`](rows.ts) — the product + specs join and the row mapper, shared by `queries.ts` and
     `store.ts`.
+  - [`lookups.ts`](lookups.ts) — small staff reads beside `store.ts` (D116): `listVendors`, `brandExists`,
+    `vendorExists` (the pick-from-existing dropdowns and their server-side check) and
+    `countProductsByStatus`. Not gated.
+  - [`photos.ts`](photos.ts) — `product_images` reads and writes for the admin (D117): list, add (locks the
+    product row; at most `MAX_PHOTOS_PER_PRODUCT`, 8), remove, move. Keeps each product's photos numbered
+    0..n-1 and bumps `products.updated_at`. Talks to Postgres only; Blob is `src/features/admin/`'s job.
 - **The catalogue import (D113, D114).** Run by `scripts/catalog-import.ts`.
   - [`import-mapping.ts`](import-mapping.ts) — `IMPORT_MAPPING`: CSV header → product field, the exact
     value renames, the numbered source columns and the photo columns. **The one file to edit when the
@@ -95,7 +101,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 - **Listings show `published` only; a product page loads `published` and `discontinued`; `hidden` is a
   404.** There is no in-stock flag (D105b).
 - **A slug is written once, at create, and never rewritten** (D107b).
-- **`queries.ts`, `store.ts` and `rows.ts` are server only.** They open database connections. A
+- **`queries.ts`, `store.ts`, `rows.ts`, `lookups.ts` and `photos.ts` are server only.** They open database connections. A
   `"use client"` file may import `catalog-types.ts`, `product-input.ts`, `size.ts` and `slug.ts`.
 - **The import reports; it does not repair** (D113). A row is valid as the file gives it, after the
   mapping's exact renames, or it is refused and listed. No cleanup, no de-duplication, no guessing in
