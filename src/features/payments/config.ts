@@ -29,6 +29,11 @@ export interface ConvergeConfig {
   /** `http://fixie:<secret>@<host>:80`, or undefined to call Converge
    *  directly (only works from an IP on the account's allowed list). */
   proxyUrl: string | undefined;
+  /** Diagnostic switch, 2026-10-03: `CONVERGE_SEND_INVOICE=false` creates
+   *  sessions without `ssl_invoice_number`, like Converge's own Buy Button,
+   *  which approved while our sessions failed with errorType SYSTEM. Without
+   *  an invoice an approved return cannot be matched to its link: test only. */
+  sendInvoice: boolean;
 }
 
 /** Thrown when the gateway is not configured. Distinct from a gateway error:
@@ -69,6 +74,7 @@ export function getConvergeConfig(): ConvergeConfig {
     userId: env.CONVERGE_USER_ID!.trim(),
     pin: env.CONVERGE_PIN!.trim(),
     proxyUrl: env.FIXIE_URL?.trim() || undefined,
+    sendInvoice: env.CONVERGE_SEND_INVOICE?.trim().toLowerCase() !== "false",
   };
 }
 
