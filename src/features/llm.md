@@ -13,7 +13,7 @@ composition only, `docs/decisions.md:62`); this is where the actual page content
 - [`finder/`](finder/llm.md) — **built** at `page home`, 2026-09-20 (`finder/llm.md:10`). The
   Year/Make/Model vehicle finder, its own feature rather than part of `home/` (D33); seed fitment in
   `finder/data.ts`, flagged sample (D27); ships unselected (D28). `variant="inline"` serves the
-  `/results` `Change vehicle` disclosure (D45). One client island since **D70**,
+  `/tires` `Change vehicle` disclosure (D45). One client island since **D70**,
   `finder/components/finder-model-sync.tsx`, which renders nothing and narrows `Model` to the chosen
   `Make`; the form itself stays a Server Component and a plain GET.
 - [`home/`](home/llm.md) — **built** at `page home`, 2026-09-20 (`design/reports/home.md`). Home-only
@@ -36,6 +36,9 @@ composition only, `docs/decisions.md:62`); this is where the actual page content
   builder, links list (D106).
 - [`payments/`](payments/llm.md) — **built** 2026-09-24. Converge adapter, link and attempt service, the Pay
   island (D99–D107). The only code that names the gateway.
+- [`seo/`](seo/llm.md) — **built** 2026-09-30 (D112). The indexing flag, `pageMetadata()`, the sitemap, the
+  structured data and the two link-preview cards. No UI of its own beyond `JsonLd`; the routes that
+  serve it are in `src/app/`.
 
 ## Rules
 - **Feature shape:** `components/` always; `types.ts` and `data.ts` only when the feature has them
@@ -44,7 +47,8 @@ composition only, `docs/decisions.md:62`); this is where the actual page content
   and `src/lib/`; none of those may import a feature (`docs/decisions.md:65`, "primitives only — no
   business logic"). **Cross-feature imports go through `catalog/` only** — it is the shared product
   domain and the others consume it (D37). **One further edge: `admin/` imports `payments/`** (`service`,
-  `config`, `money`; D106). `payments/` imports no feature.
+  `config`, `money`; D106). `payments/` imports no feature. `seo/` imports `catalog/` and nothing else
+  (D112); the pages in `src/app/` hand it what it needs from `product/`.
 - **Seed data is flagged as sample.** `finder/data.ts` (D27) is a stand-in until real data exists; the
   catalogue seed `catalog/data.ts` (D29) was deleted by D108b and every page reads the database. The
   wheel CSV supplies nothing (D9).
@@ -72,7 +76,7 @@ nothing).
 - **Depends on:** `src/components/ui/`, `src/components/site/`, `src/lib/{site,routes}.ts`,
   `src/app/globals.css` tokens, `next/image`, `next/link`, `next/navigation` (the three client islands).
 - **Depended on by:** `src/app/(storefront)/page.tsx` (home sections + finder),
-  `src/app/(storefront)/results/page.tsx:5-10` (five results sections + `searchResults`), and
+  `src/app/(storefront)/tires/page.tsx:5-10` (five results sections + `searchResults`), and
   `src/app/(storefront)/styleguide/page.tsx` (`ProductCard`, `Product`, `ResultsEmpty`, `QuoteSuccess`),
   and `src/app/(storefront)/products/[slug]/page.tsx` (six PDP sections + `productView`).
 

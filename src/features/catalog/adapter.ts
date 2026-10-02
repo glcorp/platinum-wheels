@@ -20,7 +20,7 @@ import type { AccessoryType, Product, ProductBadge } from "./types";
 /* --- Enum spelling ---------------------------------------------------------
    The database spells enum values with underscores (`all_season`); the URL
    and the UI have always used hyphens (`all-season`), and every measured
-   `/results` URL carries that spelling. The two differ by that one character
+   `/tires` URL carries that spelling. The two differ by that one character
    and nothing else, so the conversion is mechanical. */
 
 export function seasonParam(season: TireSeason): ProductBadge {

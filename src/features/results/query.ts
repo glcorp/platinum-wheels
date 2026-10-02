@@ -8,11 +8,11 @@
  * rather than to an error page.
  *
  * **Category is an argument, not a param (D58).** The category IS the route —
- * `/results` is tires, `/wheels` is wheels, `/accessories` is accessories —
+ * `/tires` is tires, `/wheels` is wheels, `/accessories` is accessories —
  * so `parseResultsQuery` takes it from the caller (the page, which knows its
  * own route) rather than reading it off the query string, and `resultsHref`
  * serialises against `CATEGORY_CONFIG[query.category].route` instead of a
- * hard-coded `/results`. Everything category-specific — which size fields
+ * hard-coded `/tires`. Everything category-specific — which size fields
  * exist, their param names and `strip` regexes, the chip group's param and
  * option order — comes from `@/features/catalog/categories`, which (like this
  * file) imports no seed data and stays safe for `filter-panel.tsx`, a
@@ -23,7 +23,7 @@
  * **Tires are unchanged.** The tires row of `CATEGORY_CONFIG` reproduces the
  * measured param names (`width` / `profile` / `rim` / `season`) and the
  * measured serialisation order, so every URL, probe and parity row on the
- * built `/results` still holds byte-for-byte.
+ * built `/tires` still holds byte-for-byte.
  */
 
 import {

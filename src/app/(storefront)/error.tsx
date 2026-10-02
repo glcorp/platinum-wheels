@@ -2,7 +2,7 @@
 
 /* ---------------------------------------------------------------------------
    `/(storefront)` route error boundary — one of the two states no artboard
-   draws (D62). It wraps every storefront page: `/`, `/results`, `/wheels`,
+   draws (D62). It wraps every storefront page: `/`, `/tires`, `/wheels`,
    `/accessories`, `/products/[slug]`, `/styleguide` and the stubs.
 
    **This is one of two `"use client"` directives under `src/app/` (the other

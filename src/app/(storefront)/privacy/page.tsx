@@ -6,6 +6,8 @@ import {
   ProsePage,
   ProseSection,
 } from "@/components/site/prose-page";
+import { pageMetadata } from "@/features/seo/metadata";
+import { ROUTES } from "@/lib/routes";
 import { SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
@@ -47,10 +49,11 @@ import { SITE } from "@/lib/site";
    commit that last touched this file.
    --------------------------------------------------------------------------- */
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Privacy",
   description: `How ${SITE.legalName} handles the information you send with a quote request.`,
-};
+  path: ROUTES.privacy,
+});
 
 /* One list of sections, mapped straight into `ProseSection`s below. */
 const SECTIONS: ReadonlyArray<{

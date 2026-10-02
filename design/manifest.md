@@ -11,14 +11,14 @@ parity baseline — every number in a `design/reports/*.md` table traces to one 
 | Artboards | Route | File |
 |---|---|---|
 | `home-desktop.html` · `home-mobile.html` | `/` | `src/app/(storefront)/page.tsx` |
-| `results-desktop.html` · `results-mobile.html` · `results-mobile-filters.html` | `/results` | `src/app/(storefront)/results/page.tsx` |
+| `results-desktop.html` · `results-mobile.html` · `results-mobile-filters.html` | `/tires` (was `/results` until D112) | `src/app/(storefront)/tires/page.tsx` |
 | `product-desktop.html` · `product-mobile.html` | `/products/[slug]` | `src/app/(storefront)/products/[slug]/page.tsx` |
 | — (not designed) | `/wheels` | `src/app/(storefront)/wheels/page.tsx` — the `/results` artboards, category `wheels` (D58) |
 | — (not designed) | `/accessories` | `src/app/(storefront)/accessories/page.tsx` — the `/results` artboards, category `accessories` (D58) |
 | — (not designed) | `/styleguide` | `src/app/(storefront)/styleguide/page.tsx`, `noindex`, excluded from the sitemap |
 
-Breadcrumb on the PDP reads `Home / Results / <product name>`, so `Results` links back to `/results`
-carrying the active query. On a wheel or accessory the middle crumb reads `Wheels` / `Accessories` and
+Breadcrumb on the PDP is drawn `Home / Results / <product name>`; it ships as `Home / Tires / <product
+name>` since D112 (`DEVIATIONS.md` #95), and `Tires` links back to `/tires` carrying the active query. On a wheel or accessory the middle crumb reads `Wheels` / `Accessories` and
 links to that route instead (D58).
 
 **`/wheels` and `/accessories` have no artboards of their own** and are not parity rows. The owner put

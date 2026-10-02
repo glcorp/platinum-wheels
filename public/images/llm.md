@@ -22,7 +22,9 @@ renders empty until the pipeline is re-run.
   in `design/assets/photos/` (frozen) and are overwritten in the output by the replacements. The filename
   `winter-tacoma` is kept because two components import it; it no longer shows a Tacoma.
 - `logo/platinum-wheels-logo-transparent.webp` — **the working file**, used everywhere in the UI.
-- `logo/platinum-wheels-logo.webp` — the white-plate original; **print/invoice only**
+- `logo/platinum-wheels-logo.webp` — the white-plate original; **print/invoice only** in the UI, and
+  since D112 the `logo` the organisation's structured data names, because a search result shows a logo on
+  white
   (`design/ASSET-CREDITS.md:38`, DESIGN.md §0). 512px cap covers the 64px nav and 120px footer at 4×
   (`scripts/prepare-assets.mjs:35-36`).
 

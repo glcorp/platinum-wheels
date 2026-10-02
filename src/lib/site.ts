@@ -7,6 +7,15 @@
  * not a placeholder and a typo.
  */
 
+/**
+ * The one canonical origin: apex, https, no `www`, no trailing slash (owner,
+ * 2026-09-30, D112). `metadataBase`, every canonical URL, the sitemap and the
+ * structured data are built from it and from nothing else. It is a constant
+ * and not an env var on purpose: a preview or the `*.vercel.app` alias must
+ * still name the real site as canonical, never itself.
+ */
+export const SITE_URL = "https://platinumwheels.ca";
+
 export const SITE = {
   name: "Platinum Wheels",
   legalName: "Platinum Wheels and Tire Solutions",
@@ -24,6 +33,26 @@ export const SITE = {
    * (`docs/decisions.md` §7).
    */
   priceNote: "Brampton, Ontario · Prices in CAD, before tax",
+} as const;
+
+/**
+ * `SITE.hours` as data, for structured data only (D112). These are the hours
+ * the owners answer the phone, **not opening hours**: there is no shop to walk
+ * into (owner, 2026-09-30), so nothing may publish them as `openingHours`.
+ * `SITE.hours` stays the string people read; change both together.
+ */
+export const CONTACT_HOURS = {
+  days: [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ],
+  opens: "09:00",
+  closes: "20:00",
 } as const;
 
 /**

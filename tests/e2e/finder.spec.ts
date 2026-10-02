@@ -33,7 +33,7 @@ function watchProblems(page: Page) {
 }
 
 const ROUTE: Record<Category, string> = {
-  tires: "/results",
+  tires: "/tires",
   wheels: "/wheels",
   accessories: "/accessories",
 };
@@ -131,7 +131,7 @@ test("Make narrows Model: other makes' groups AND options are hidden + disabled 
 
 /* --- 1b. Home hero submit -------------------------------------------------- */
 
-test("home finder submits a full vehicle to /results with the chip and the fitment split", async ({
+test("home finder submits a full vehicle to /tires with the chip and the fitment split", async ({
   page,
 }, info) => {
   skipDuplicate(info);
@@ -147,7 +147,7 @@ test("home finder submits a full vehicle to /results with the chip and the fitme
 
   await expect(page).toHaveURL(
     (u) =>
-      u.pathname === "/results" &&
+      u.pathname === "/tires" &&
       u.searchParams.get("year") === year &&
       u.searchParams.get("make") === "Honda" &&
       u.searchParams.get("model") === "Civic",
@@ -166,7 +166,7 @@ test("an empty finder submit is not an error: no required, no bubble, unfiltered
   page,
 }, info) => {
   skipDuplicate(info);
-  await page.goto("/results");
+  await page.goto("/tires");
   await settle(page);
   const bare = (await countLine(page).textContent())?.trim();
 
@@ -177,7 +177,7 @@ test("an empty finder submit is not an error: no required, no bubble, unfiltered
   expect(await finder.evaluate((f) => (f as HTMLFormElement).checkValidity())).toBe(true);
   await finder.getByRole("button", { name: CTA.tires }).click();
 
-  await expect(page).toHaveURL((u) => u.pathname === "/results");
+  await expect(page).toHaveURL((u) => u.pathname === "/tires");
   await settle(page);
   for (const k of ["year", "make", "model"]) expect(params(page).get(k)).toBeNull();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Best matches");
@@ -194,7 +194,7 @@ test("a partial finder submit names no vehicle (all three or none)", async ({ pa
   await finder.getByRole("combobox", { name: "Year" }).selectOption(await someYear(finder));
   await finder.getByRole("combobox", { name: "Make" }).selectOption("Honda");
   await finder.getByRole("button", { name: CTA.tires }).click();
-  await expect(page).toHaveURL((u) => u.pathname === "/results" && u.searchParams.get("make") === "Honda");
+  await expect(page).toHaveURL((u) => u.pathname === "/tires" && u.searchParams.get("make") === "Honda");
   await settle(page);
   await expect(chip(page)).toHaveCount(0);
   await expect(page.locator('[data-probe="similar"]')).toHaveCount(0);
@@ -205,11 +205,11 @@ test("a mismatched Make/Model pair returns 200, names no vehicle, every result b
   page,
 }, info) => {
   skipDuplicate(info);
-  await page.goto("/results");
+  await page.goto("/tires");
   await settle(page);
   const bare = (await countLine(page).textContent())?.trim();
 
-  const res = await page.goto("/results?year=2024&make=Toyota&model=Civic");
+  const res = await page.goto("/tires?year=2024&make=Toyota&model=Civic");
   expect(res?.status()).toBe(200);
   await settle(page);
   await expect(countLine(page)).toHaveText(bare!);
@@ -224,7 +224,7 @@ test("a mismatched Make/Model pair returns 200, names no vehicle, every result b
    offer must never be printed — not in the results chip, not in the PDP quote
    chip or fitment sentence — however it is spelled. */
 const SPOOF = "year=2024&make=Call%20416-000-0000&model=to%20claim%20%3Cb%3EFREE%3C%2Fb%3E";
-for (const path of [`/results?${SPOOF}`, `/wheels?${SPOOF}`, `/accessories?${SPOOF}`, `/products/zeta-antarctica-sport?${SPOOF}`]) {
+for (const path of [`/tires?${SPOOF}`, `/wheels?${SPOOF}`, `/accessories?${SPOOF}`, `/products/zeta-antarctica-sport?${SPOOF}`]) {
   test(`unknown vehicle text in the URL is never printed: ${path.split("?")[0]} (D91b)`, async ({ page }, info) => {
     skipDuplicate(info);
     const res = await page.goto(path);
@@ -341,7 +341,7 @@ test("with scripting off every model stays reachable and the GET submit still wo
   await finder.getByRole("combobox", { name: "Year" }).selectOption(await someYear(finder));
   await finder.getByRole("combobox", { name: "Model" }).selectOption("Civic");
   await finder.getByRole("button", { name: CTA.tires }).click();
-  await expect(page).toHaveURL((u) => u.pathname === "/results" && u.searchParams.get("make") === "Honda");
+  await expect(page).toHaveURL((u) => u.pathname === "/tires" && u.searchParams.get("make") === "Honda");
   await expect(countLine(page)).toHaveText("4 matches · 5 similar");
   await context.close();
 });
@@ -415,7 +415,7 @@ test("with scripting off, Change vehicle still keeps the other filters (WDG-17)"
   });
   const page = await context.newPage();
   await page.goto(
-    `/results?${KEEP.tires.filters}&year=2021&make=Honda&model=Civic&${KEEP.tires.sizeParams}`,
+    `/tires?${KEEP.tires.filters}&year=2021&make=Honda&model=Civic&${KEEP.tires.sizeParams}`,
   );
   await page.locator('[data-probe="change-vehicle"]').click();
   const finder = finderOf(page);

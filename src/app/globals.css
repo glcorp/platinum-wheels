@@ -676,7 +676,7 @@
   /* Landscape phones (D91b, NJR-3): at 375px tall the 144px offset left the
      scrolling body 60px — one 44px control at a time. On a short viewport the
      sheet takes the whole height instead. The artboard's 844px portrait value
-     (700px) is untouched, so /results parity holds. */
+     (700px) is untouched, so /tires parity holds. */
   @media (max-height: 500px) {
     height: 100dvh;
   }
@@ -694,7 +694,7 @@
      `--duration-exit` out on `--ease-leave` (below), because the exit should
      get out of the way faster than the entry arrived. Translate only:
      compositor-friendly, and it moves nothing in the closed state, so
-     `/results` parity holds by construction. */
+     `/tires` parity holds by construction. */
   translate: 0 0;
   transition:
     translate var(--duration-overlay) var(--ease-arrive),
@@ -877,7 +877,7 @@
      cards below jumped with nothing connecting the tap to the shove. Opacity
      only, on the open edge: animating height would drive layout, and the
      `interpolate-size` route is Chrome-only. The closed state is untouched, so
-     `/results` parity holds by construction. D67. */
+     `/tires` parity holds by construction. D67. */
   /* D92b adds the close edge: where `::details-content` exists the panel fades
      out as well as in, holding its box for the fade via `content-visibility`
      allow-discrete. Still opacity only. Browsers without it keep D67's

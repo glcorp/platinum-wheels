@@ -1,7 +1,7 @@
 # src/features/results
 
 ## Purpose
-The results engine and its sections — serving **three** routes since **D58**: `/results` (tires),
+The results engine and its sections — serving **three** routes since **D58**: `/tires` (tires),
 `/wheels` and `/accessories`. One composition, one set of components, one query/search pair; only the
 filter groups, the finder CTA and the seed differ, all read from `src/features/catalog/categories.ts`.
 The owner's instruction was *"keep them same as tires. only filters and skus change but everything else
@@ -181,7 +181,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 3. Parity: `design/reports/results.md` (its five rail and three sheet `Category` rows are annotated as
    superseded). Deviations: #25–#35, #49–#53 (#52 superseded by D67), #60, #61–#63 (D72 toolbar), #68, #71.
 4. **`/wheels` and `/accessories` have no parity report and are not parity rows** (#49) — they inherit
-   `/results`' parity by rendering the same tree, which stops the moment either diverges visually.
+   `/tires`' parity by rendering the same tree, which stops the moment either diverges visually.
 5. Every wheel and accessory SKU, brand, finish and price is **placeholder data** (D58 under D48), and
    five client photos cover the nine accessory SKUs (#51). Client, via owner.
 6. ~~`wheel-size-grid`/`wheel-size-grid-sheet`~~ (closed, #67; dead code owed for removal, D25). Owner.

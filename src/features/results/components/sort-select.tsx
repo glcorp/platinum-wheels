@@ -1,7 +1,7 @@
 "use client";
 
 /* ---------------------------------------------------------------------------
-   SortSelect — the `/results` sort control, drawn twice
+   SortSelect — the `/tires` sort control, drawn twice
 
    One native `<select>` in two boxes: the desktop toolbar's 200px field
    (`results-desktop.html:117`) and the mobile sticky bar's bordered half-cell

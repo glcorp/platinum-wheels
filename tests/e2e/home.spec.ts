@@ -180,7 +180,7 @@ test.describe("nav drawer (below 1100)", () => {
       els.map((el) => [el.textContent?.trim() ?? "", el.getAttribute("href") ?? ""]),
     );
     expect(hrefs.slice(0, 4)).toEqual([
-      ["Tires", "/results"],
+      ["Tires", "/tires"],
       ["Wheels", "/wheels"],
       ["Accessories", "/accessories"],
       ["Contact", "/#contact"],
@@ -238,12 +238,12 @@ test.describe("nav drawer (below 1100)", () => {
 test.describe("desktop header nav (1100 and up)", () => {
   test("four links resolve to their routes and navigate", async ({ page }, info) => {
     test.skip(viewportWidth(info) < DRAWER_MAX, "header link row is hidden below 1100");
-    await page.goto("/results");
+    await page.goto("/tires");
     await settle(page);
     const nav = page.getByRole("banner").getByRole("navigation", { name: "Primary" });
     await expect(menuButton(page)).toBeHidden();
     const expected: Array<[string, string, RegExp]> = [
-      ["Tires", "/results", /\/results$/],
+      ["Tires", "/tires", /\/tires$/],
       ["Wheels", "/wheels", /\/wheels$/],
       ["Accessories", "/accessories", /\/accessories$/],
     ];
@@ -521,7 +521,7 @@ for (const id of ["contact", "how-it-works"] as const) {
  */
 test("header Contact from another page lands on #contact", async ({ page }, info) => {
   for (let attempt = 1; attempt <= 3; attempt++) {
-    await page.goto("/results");
+    await page.goto("/tires");
     await settle(page);
     if (viewportWidth(info) < DRAWER_MAX) {
       await openDrawer(page);
@@ -596,7 +596,7 @@ test("category tiles link to the three routes and the tile hit-tests to its link
   await page.goto("/");
   await settle(page);
   const tiles: Array<[string, string]> = [
-    ["tile-tires", "/results"],
+    ["tile-tires", "/tires"],
     ["tile-wheels", "/wheels"],
     ["tile-accessories", "/accessories"],
   ];
@@ -697,11 +697,11 @@ test.describe("product card image link (D86)", () => {
     await expectLandedOn(page, "quote", 6_000);
   });
 
-  /* Same arrival, from /results: Next's own fragment scroll glides under
+  /* Same arrival, from /tires: Next's own fragment scroll glides under
      `scroll-behavior: smooth` and can stop short (D91b), so HashScroll lands
      the section instantly on every committed route change. */
-  test("Request a quote on a /results card lands on the PDP #quote band", async ({ page }) => {
-    await page.goto("/results");
+  test("Request a quote on a /tires card lands on the PDP #quote band", async ({ page }) => {
+    await page.goto("/tires");
     await settle(page);
     const cta = page
       .locator("article")
@@ -844,7 +844,7 @@ test.describe("translate=no on brand names (WDG-15)", () => {
     expect(flags).toEqual(Array(n).fill("no"));
   });
 
-  for (const path of ["/", "/results"]) {
+  for (const path of ["/", "/tires"]) {
     test(`card brand stamp on ${path}`, async ({ page }) => {
       await page.goto(path);
       await settle(page);

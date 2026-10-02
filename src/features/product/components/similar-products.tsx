@@ -14,7 +14,7 @@ import { cx } from "@/lib/cx";
             `design/assets/product-mobile.html:124-277`.
 
    `ProductCard` is rendered unchanged — the same shell as home and
-   `/results` — and its own header comment records that all three contexts
+   `/tires` — and its own header comment records that all three contexts
    measure byte-identically, so there is no PDP delta to report.
    --------------------------------------------------------------------------- */
 
@@ -109,7 +109,7 @@ export function SimilarProducts({
         {products.map((product) => (
           /* `morph={false}` (D92b, coordinator ruling): this row is the one
              surface where a card never morphs. On a `product-open`
-             navigation from `/results`, a results card and a similar-row card
+             navigation from `/tires`, a results card and a similar-row card
              with the same slug would otherwise pair and fly alongside the
              real card→gallery morph. The cost is deliberate: PDP → PDP
              through this row slides the page but does not morph the photo. */

@@ -291,7 +291,7 @@ function parseVehicle(params: ProductSearchParams): Vehicle | null {
 }
 
 /* --- Back link ----------------------------------------------------------
-   The product's own category route (D58: `config.route` — `/results`,
+   The product's own category route (D58: `config.route` — `/tires`,
    `/wheels` or `/accessories`) plus every inbound param except `qty`
    (`types.ts` `backHref` doc). Params are re-emitted in the order the page's
    own `searchParams` object enumerates them — the order the incoming URL's

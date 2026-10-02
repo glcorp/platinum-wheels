@@ -11,8 +11,10 @@ entire site loses its type or its palette at once.
 - [`globals.css`](globals.css) (~1,230 ln) — the token system. See Rules. Cite it by utility or token
   **name**, not line: every insertion shifts the numbers (`HANDOFF.md` §8.21), and several `:NNN` citations
   below predate the D92b motion block and are approximate.
-- [`layout.tsx`](layout.tsx) (30 ln) — root layout. Metadata `title.default` + `template: "%s · Platinum
-  Wheels"` and the site description (`:5-12`); `viewport` `themeColor: "#0B0B0D"`, `colorScheme: "dark"`
+- [`layout.tsx`](layout.tsx) — root layout. Metadata (D112): `metadataBase` (`SITE_URL`), `title.default` +
+  `template: "%s · Platinum Wheels"`, the site description, `robots` from the indexing flag
+  (`siteRobots()`) and the site card as the default preview. **No `alternates.canonical` here**: every
+  page would inherit `/`. `viewport` `themeColor: "#0B0B0D"`, `colorScheme: "dark"`
   (`:14-17`); font variables + `h-full antialiased` on `<html>` (`:21-24`); `<body>` carries
   `bg-bg text-ink-muted flex min-h-full flex-col font-sans` (`:25`). **D92b:** the first child of `<body>`
   is a `next/script` `beforeInteractive` inline bootstrap (`MOTION_BOOT`) that marks images
@@ -20,7 +22,7 @@ entire site loses its type or its palette at once.
   needs before it applies `:active`. Not a client component; no hydration. **Next 16 runs it at
   hydration, not before the first `<img>` parses** (it is served as a `self.__next_s` push), so it also
   marks every image already `complete` — without that, images loaded first stayed at opacity 0 for good
-  (D91b, measured: the second card row on `/results` @1440 painted blank). After `HashScroll`, the
+  (D91b, measured: the second card row on `/tires` @1440 painted blank). After `HashScroll`, the
   layout mounts `NavProgress`, the centred loader (D92b addendum) — here because the root layout
   persists across navigations and the bar must outlive the page that started it.
 - [`fonts.ts`](fonts.ts) (29 ln) — Barlow Condensed 600/700 and Barlow 400/500/700, self-hosted via
@@ -33,6 +35,14 @@ entire site loses its type or its palette at once.
   (framework-required; the second of the two allowed under `src/app/`), owns `<html lang="en">`/`<body>` with
   the layout's font variables and classes, renders `RouteError`. Catches only a throw in `layout.tsx`. With
   JS off Next serves an empty `__next_error__` shell for that case — a framework limit, not fixable here.
+- [`robots.ts`](robots.ts) — `/robots.txt` (D112). Disallows everything unless the indexing flag is
+  exactly `true` and the request came in on `platinumwheels.ca`; reads `headers()`, so it answers per
+  request. Rules: `src/features/seo/indexing.ts`.
+- [`sitemap.xml/route.ts`](sitemap.xml/route.ts) and [`sitemaps/[section]/route.ts`](sitemaps/%5Bsection%5D/route.ts)
+  — the sitemap index and its four files, `pages`, `tires`, `wheels`, `accessories` (D112). Same gate; a
+  404 otherwise. Route Handlers, not Next's `sitemap.ts`: see `src/features/seo/llm.md` Decisions.
+- [`opengraph-image.tsx`](opengraph-image.tsx) — `/opengraph-image`, the site's link-preview card, drawn
+  once at build time (D112).
 - [`(storefront)/`](<(storefront)/llm.md>) — the storefront route group. Has its own `llm.md`.
 - [`admin/`](admin/llm.md) — the staff tool segment (D89). Has its own `llm.md`.
 - [`pay/`](pay/llm.md) — the customer payment routes on `pay.platinumwheels.ca` (D105). Has its own `llm.md`.
@@ -65,7 +75,7 @@ entire site loses its type or its palette at once.
   `:focus-visible` does not match programmatically moved focus (#44).
   Home layout and scrims: `hero-scrim[-desktop]` (`:421`, `:430`), `tile-scrim[-tall]` (`:442`, `:450`),
   `promo-wash[-desktop]` (`:461`, `:468`), `fade-right` (`:477`), `photo-caption-scrim` (`:482`),
-  `finder-grid` (`:493`), `contact-grid` (`:501`), `category-grid` (`:508`). `/results` (D44):
+  `finder-grid` (`:493`), `contact-grid` (`:501`), `category-grid` (`:508`). `/tires` (D44):
   - `results-grid` (`:523`) — the drawn two-column page grid, `280px minmax(0,1fr)` with a 48px column
     gap and `align-items:start` (`results-desktop.html:119`).
   - `range-input` (`:536`) — a native `<input type="range">` wearing the artboard's price-slider handle;
@@ -144,5 +154,5 @@ entire site loses its type or its palette at once.
    DESIGN.md §2 gives them a role; `globals.css:47-51` says to delete them if no screen ever uses one.
    Today only the throwaway smoke test touches `text-winter` (`(storefront)/page.tsx:14`).
    **Owner/designer** decides at `page results` / `page product`.
-2. No `robots.ts` or `sitemap.ts` exists, yet `/styleguide` is specified as "excluded from the sitemap
-   when one exists" (`design/manifest.md:16`). Who owns the SEO route files — **owner**.
+2. ~~No `robots.ts` or `sitemap.ts` exists.~~ **Closed 2026-09-30 by D112:** `robots.ts` and the two
+   sitemap handlers exist, `src/features/seo/` owns their rules, and `/styleguide` is in neither.

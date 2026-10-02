@@ -119,7 +119,7 @@ export interface ProductCardProps {
    * Marks this card's photo as an above-the-fold LCP candidate: it is
    * preloaded from `<head>` instead of lazy-loaded.
    *
-   * `/results` has no hero, so its first row of cards plays that role — the
+   * `/tires` has no hero, so its first row of cards plays that role — the
    * Lighthouse mobile run of 2026-09-21 (`design/reports/results.md`) measured
    * LCP 3.4s against the 2.5s gate with the first card image at
    * `loading="lazy"` and 523ms of resource load delay. `docs/decisions.md` §4
@@ -338,13 +338,13 @@ export function ProductCard({
             may pair a card with the gallery. Every card on a page holds a
             `product-photo-<slug>` name, so an untyped pairing would also fly
             every card that exists on both pages — six featured cards into the
-            `/results` grid on a Tires-tile click, results cards into the PDP's
+            `/tires` grid on a Tires-tile click, results cards into the PDP's
             similar row. A tile, nav or crumb navigation to a category carries
             neither type, so those card↔card pairs resolve to `none` and stay
             put. Browser Back/Forward run no view transition at all (Next
             restores a traversal outside a React transition — measured, zero
             frames), so there is no reverse morph there; the breadcrumb's
-            `Results` crumb carries `product-back` and does morph (measured,
+            `Tires` crumb carries `product-back` and does morph (measured,
             702 → 326px). `default="none"` keeps the photo out of
             every unrelated transition (filter, sort, `Load more`), where the
             card's list-identity VT in `results-grid.tsx` animates the whole

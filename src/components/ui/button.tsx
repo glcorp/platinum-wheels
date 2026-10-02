@@ -72,7 +72,7 @@ type ButtonSize = "panel" | "card" | "compact" | "promo" | "load";
    mobile on the buy-panel `Call us` (product.md §3.5), `12px` on the finder
    CTA at both widths (home.md:161), `10px` on the 44px header phone CTA at
    both widths (home.md:140). */
-/* `load`  the `/results` `Load more` link: 52px mobile -> 56px desktop, 14px
+/* `load`  the `/tires` `Load more` link: 52px mobile -> 56px desktop, 14px
  *         type at +0.08em uppercase, and — the reason it is its own size —
  *         NO horizontal padding below `md:`, because the mobile artboard
  *         stretches it edge to edge (`design/inventory/results.md` §2.6:

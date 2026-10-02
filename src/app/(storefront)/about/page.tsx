@@ -6,6 +6,8 @@ import {
   ProsePage,
   ProseSection,
 } from "@/components/site/prose-page";
+import { pageMetadata } from "@/features/seo/metadata";
+import { ROUTES } from "@/lib/routes";
 import { BRANDS, CONTACTS, SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
@@ -33,10 +35,11 @@ import { BRANDS, CONTACTS, SITE } from "@/lib/site";
    use, so neither asserts anything new.
    --------------------------------------------------------------------------- */
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About",
-  description: `${SITE.legalName} in ${SITE.city}, ${SITE.province}. Tires, wheels and accessories, quoted by people who confirm the fitment first.`,
-};
+  description: `${SITE.legalName} is an online store based in ${SITE.city}, ${SITE.province}. Tires, wheels and accessories, quoted by people who confirm the fitment first.`,
+  path: ROUTES.about,
+});
 
 export default function AboutPage() {
   return (

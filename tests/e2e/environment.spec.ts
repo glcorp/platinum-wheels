@@ -41,7 +41,7 @@ test.beforeEach(async ({ page }) => {
 
 const PAGES = [
   { name: "home", path: "/" },
-  { name: "results", path: "/results" },
+  { name: "results", path: "/tires" },
   { name: "pdp", path: `/products/${SLUG.tire}?${VEHICLE}&qty=4` },
   { name: "about", path: "/about" },
 ] as const;
@@ -286,7 +286,7 @@ for (const nav of NAV_KINDS) {
   }
 }
 
-test("1 offline: a filter chip on /results never hangs; back online it works", async ({
+test("1 offline: a filter chip on /tires never hangs; back online it works", async ({
   page,
   context,
   browserName,
@@ -299,7 +299,7 @@ test("1 offline: a filter chip on /results never hangs; back online it works", a
   test.setTimeout(100_000);
   const watch = watchProblems(page);
   const dialogs = attachDialogLog(page);
-  await page.goto("/results");
+  await page.goto("/tires");
   await settle(page);
   await hydrated(page.locator("main#main"));
   await filterScope(page, info); // on a phone this opens the sheet (local state)
@@ -318,7 +318,7 @@ test("1 offline: a filter chip on /results never hangs; back online it works", a
   }
 
   await context.setOffline(false);
-  if (!(await appAlive(page))) await page.goto("/results");
+  if (!(await appAlive(page))) await page.goto("/tires");
   await settle(page);
   await hydrated(page.locator("main#main"));
   await toggleChip(page, info, "Summer");
@@ -471,8 +471,8 @@ test("2 blocked storage: every island still works", async ({ page }, info) => {
     await expect(drawer(page)).toBeHidden();
   }
 
-  // Sort and filter on /results.
-  await page.goto("/results");
+  // Sort and filter on /tires.
+  await page.goto("/tires");
   await settle(page);
   await hydrated(sortSelect(page));
   await sortSelect(page).selectOption("price-asc");
@@ -733,7 +733,7 @@ test.describe("4 CPU throttle x6 (chromium)", () => {
 
   test("rapid sort changes settle on the last choice", async ({ page }) => {
     test.setTimeout(90_000);
-    await page.goto("/results");
+    await page.goto("/tires");
     await settle(page);
     await hydrated(sortSelect(page));
     const reset = await throttle(page, 6);
@@ -769,7 +769,7 @@ test.describe("4 CPU throttle x6 (chromium)", () => {
     page,
   }, info) => {
     test.setTimeout(90_000);
-    await page.goto("/results");
+    await page.goto("/tires");
     await settle(page);
     await hydrated(page.locator("main#main"));
     await page.evaluate(() => {
@@ -817,7 +817,7 @@ test.describe("4 CPU throttle x6 (chromium)", () => {
     await settle(page);
     await hydrated(page.locator("main#main"));
     await clickNav(page, "Tires");
-    await expect(page).toHaveURL(/\/results$/);
+    await expect(page).toHaveURL(/\/tires$/);
     await settle(page);
     const watch = watchProblems(page);
     const scope = await filterScope(page, info);
@@ -894,7 +894,7 @@ test.describe("5 rotation (phones)", () => {
     test.setTimeout(60_000);
     const portrait = page.viewportSize()!;
     const landscape = { width: portrait.height, height: portrait.width };
-    await page.goto("/results");
+    await page.goto("/tires");
     await settle(page);
     await hydrated(filtersTrigger(page));
     await filtersTrigger(page).click();
@@ -1175,7 +1175,7 @@ const sharedState = (page: Page) =>
 test("8 two tabs: filters in one tab do not bleed into the other", async ({ context, page: tabA }, info) => {
   test.setTimeout(90_000);
   await instrumentSharedState(context);
-  await tabA.goto("/results");
+  await tabA.goto("/tires");
   await settle(tabA);
   await toggleChip(tabA, info, "Winter");
   await expect.poll(() => seasonParams(tabA)).toEqual(["winter"]);
@@ -1191,7 +1191,7 @@ test("8 two tabs: filters in one tab do not bleed into the other", async ({ cont
 
   const tabB = await context.newPage();
   const watchB = watchProblems(tabB);
-  await tabB.goto("/results");
+  await tabB.goto("/tires");
   await settle(tabB);
   // B must start unfiltered: A's filter is not shared through storage.
   expect(new URL(tabB.url()).search).toBe("");

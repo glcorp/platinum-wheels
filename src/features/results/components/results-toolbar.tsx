@@ -96,8 +96,9 @@ function CarIcon() {
 
 export function ResultsToolbar({ view }: ResultsToolbarProps) {
   const { vehicle, category } = view.query;
-  /* `Results` on tires, artboard-verbatim and unchanged; `Wheels` /
-     `Accessories` are new copy (D58, `categories.ts` "crumb"). */
+  /* `Tires` on tires since D112 (the artboard draws `Results`,
+     `design/DEVIATIONS.md` #95); `Wheels` / `Accessories` are new copy (D58,
+     `categories.ts` "crumb"). */
   const config = CATEGORY_CONFIG[category];
   const crumb = config.crumb;
   /* Non-null on all three categories since D67 (owner, 2026-09-22, vetoing
@@ -152,8 +153,9 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
               the artboard writes `Home <span style="margin:0 6px">/</span>
               <span>Results</span>` (results-desktop.html:112) with a space
               text node either side of the separator — ~3.6px each at 12px, so
-              the whole breadcrumb measures 118.6px, not 111.4px on `/results`
-              (`Results`; `Wheels` / `Accessories` on the other two routes,
+              the whole breadcrumb measured 118.6px, not 111.4px, with the
+              drawn `Results` (now `Tires`, #95, so narrower; `Wheels` /
+              `Accessories` on the other two routes,
               D58 — `CATEGORY_CONFIG[category].crumb`). A flex container
               discards whitespace-only text nodes, so the span has to stay an
               inline formatting context at every width and the flexing moves
@@ -290,7 +292,7 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
             </summary>
             {/* The open panel: in flow, full width of the disclosure (D45).
                 It submits to THIS category's route, not the hard-coded
-                `/results` — otherwise `Change vehicle` on `/wheels` would
+                `/tires` — otherwise `Change vehicle` on `/wheels` would
                 land the visitor back in tires (D58). Tires keep the drawn
                 target and the drawn `Find my tires` CTA, unchanged. */}
             <VehicleFinder

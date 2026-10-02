@@ -36,6 +36,14 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
     ],
   },
+  /* The product link-preview route reads a photo stored as a site-root path
+     (`/images/products/x.webp`) from `public/` on disk, and Vercel serves
+     `public/` from its CDN, not from the function. This puts the product
+     images in that one route's bundle (D112, `src/features/seo/preview-cards.tsx`).
+     The logo the site card needs is read at build time and needs no entry. */
+  outputFileTracingIncludes: {
+    "/products/*/og.jpg": ["./public/images/products/**/*"],
+  },
   turbopack: {
     rules: {
       "*.css": {

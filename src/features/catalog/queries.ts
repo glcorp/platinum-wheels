@@ -327,7 +327,7 @@ function clampOffset(offset: number | undefined): number {
 
 /**
  * One page of a category's published products, and how many match in all.
- * Backs `/results`, `/wheels` and `/accessories`. Call it once with
+ * Backs `/tires`, `/wheels` and `/accessories`. Call it once with
  * `sizeMatch: "exact"` for the matches and once with `"near"` for the
  * "similar options" row beneath them.
  */

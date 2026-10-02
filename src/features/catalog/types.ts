@@ -197,7 +197,7 @@ export interface Product {
    *
    * Deliberately NOT a `ProductBadge`: `studdable` is a member of that union,
    * but pushing it into `badges` would give the card a second badge and move a
-   * measured `/results` parity row. A spec-table fact belongs outside the slot
+   * measured `/tires` parity row. A spec-table fact belongs outside the slot
    * the cards compete for (D53(2)).
    */
   studdable?: boolean;

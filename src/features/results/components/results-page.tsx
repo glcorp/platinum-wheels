@@ -17,14 +17,14 @@ import type { RawSearchParams } from "@/features/results/types";
    D58. The owner's instruction was "keep them same as tires … only filters and
    skus change but everything else remains as it is", so there is exactly one
    arrangement and the three routes differ only in the `category` they pass:
-   `/results` (tires), `/wheels`, `/accessories`. Three copies of this JSX would
+   `/tires` (tires), `/wheels`, `/accessories`. Three copies of this JSX would
    be three things to keep in parity with one artboard; one component is one.
 
    `docs/decisions.md` §3 keeps routes thin, and they stay thin — each
    `page.tsx` is an export, a `metadata` object and a single call to this.
 
-   Everything below is the measured `/results` composition, moved verbatim from
-   `src/app/(storefront)/results/page.tsx` and unchanged. Section order is
+   Everything below is the measured `/tires` composition, moved verbatim from
+   `src/app/(storefront)/tires/page.tsx` and unchanged. Section order is
    `design/inventory/results.md` §1, artboard order.
 
    The page is URL-driven (D44): `searchParams` in, one `ResultsView` out, and

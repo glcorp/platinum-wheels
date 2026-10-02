@@ -65,7 +65,7 @@ const categoryOf = (slug: string): Category | undefined =>
 const ALLOWED_TEL = ["tel:+14378825000", "tel:+13659980990"];
 
 const PDPS: Array<{ category: Category; slug: string; crumb: string; route: string; defaultQty: string; unitMany: string }> = [
-  { category: "tires", slug: SLUG.tire, crumb: "Results", route: "/results", defaultQty: "4", unitMany: "tires" },
+  { category: "tires", slug: SLUG.tire, crumb: "Tires", route: "/tires", defaultQty: "4", unitMany: "tires" },
   { category: "wheels", slug: SLUG.wheel, crumb: "Wheels", route: "/wheels", defaultQty: "4", unitMany: "wheels" },
   {
     category: "accessories",
@@ -222,7 +222,7 @@ test.describe("quantity cells (D50, D84)", () => {
 
   /*
    * WDG-05 (D91b): a same-route `?qty=` Link without `scroll={false}` is the
-   * mechanism D68 measured throwing `/results` to the top. On a phone the
+   * mechanism D68 measured throwing `/tires` to the top. On a phone the
    * cells sit below the fold, so a tap must hold the reader where they are.
    */
   test("a numeric cell tap holds the scroll position on a phone (D68, WDG-05)", async ({
@@ -568,13 +568,13 @@ test.describe("breadcrumb back-link (D53(6))", () => {
     await openPdp(page, `/products/${SLUG.tire}?${inbound}`);
     const crumbNav = page.getByRole("navigation", { name: "Breadcrumb" });
     await expect(crumbNav).toHaveCount(1);
-    const back = crumbNav.getByRole("link", { name: "Results", exact: true });
+    const back = crumbNav.getByRole("link", { name: "Tires", exact: true });
 
     const expected = paramBag(inbound).filter((p) => !p.startsWith("qty="));
     const check = async () => {
       const href = (await back.getAttribute("href")) ?? "";
       const url = new URL(href, "http://x");
-      expect(url.pathname).toBe("/results");
+      expect(url.pathname).toBe("/tires");
       expect(paramBag(url.search)).toEqual(expected);
     };
     await check();
@@ -583,7 +583,7 @@ test.describe("breadcrumb back-link (D53(6))", () => {
     await check();
 
     await back.click();
-    await expect(page).toHaveURL(/\/results\?/);
+    await expect(page).toHaveURL(/\/tires\?/);
     expect(paramBag(new URL(page.url()).search)).toEqual(expected);
   });
 

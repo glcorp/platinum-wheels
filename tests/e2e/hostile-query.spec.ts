@@ -30,7 +30,7 @@ import {
 type Category = "tires" | "wheels" | "accessories";
 
 const ROUTE: Record<Category, string> = {
-  tires: "/results",
+  tires: "/tires",
   wheels: "/wheels",
   accessories: "/accessories",
 };

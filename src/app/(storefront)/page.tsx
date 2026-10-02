@@ -12,6 +12,10 @@ import { FeaturedTires } from "@/features/home/components/featured-tires";
 import { Hero } from "@/features/home/components/hero";
 import { HowItWorks } from "@/features/home/components/how-it-works";
 import { WinterPromo } from "@/features/home/components/winter-promo";
+import { JsonLd } from "@/features/seo/json-ld";
+import { pageMetadata } from "@/features/seo/metadata";
+import { organizationSchema, websiteSchema } from "@/features/seo/schema";
+import { ROUTES } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
    `/` — composition only (docs/decisions.md §3: routes are thin).
@@ -40,11 +44,15 @@ import { WinterPromo } from "@/features/home/components/winter-promo";
    timed one makes Next send `stale-while-revalidate` on `/`, which D93b
    reverted (WDG-09; owner, 2026-09-30, D111). */
 
-export const metadata: Metadata = {
-  /* The root template appends "· Platinum Wheels"; the home page carries the
-     full name once, so opt out of the template. */
-  title: { absolute: "Platinum Wheels and Tire Solutions — Brampton, Ontario" },
-};
+export const metadata: Metadata = pageMetadata({
+  /* The root template appends "· Platinum Wheels"; the home title already
+     carries the name once, so it opts out of the template. */
+  title: "Tires, Wheels and Accessories in Brampton · Platinum Wheels",
+  absoluteTitle: true,
+  description:
+    "Brampton-based online store for tires, wheels and accessories. Search by your vehicle. We confirm the fitment and send you a quote.",
+  path: ROUTES.home,
+});
 
 export default function HomePage() {
   return (
@@ -66,6 +74,8 @@ export default function HomePage() {
         </div>
       </PageTransition>
       <ScrollReveal />
+      {/* Who the business is, once, on the front door (D112). */}
+      <JsonLd data={[organizationSchema(), websiteSchema()]} />
     </>
   );
 }
