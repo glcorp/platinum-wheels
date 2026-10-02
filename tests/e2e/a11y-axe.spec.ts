@@ -47,7 +47,7 @@ const usesDrawer = (info: TestInfo) => viewportWidth(info) < 1100;
 
 /** The results routes: three categories share one composition (D58). */
 const RESULTS_ROUTES = [
-  { name: "results", path: "/results" },
+  { name: "results", path: "/tires" },
   { name: "wheels", path: "/wheels" },
   { name: "accessories", path: "/accessories" },
 ] as const;
@@ -55,7 +55,7 @@ const RESULTS_ROUTES = [
 /** D69: the two native range inputs are 20px tall; known, not attempted. */
 const PRICE_RANGE = /#(rail|sheet)-price-(min|max)\b/;
 
-const EMPTY_RESULTS = "/results?brand=nonexistent";
+const EMPTY_RESULTS = "/tires?brand=nonexistent";
 
 // ---------------------------------------------------------------------------
 // Local helpers
@@ -120,7 +120,7 @@ async function expectAxeClean(page: Page, info: TestInfo, label: string) {
 
 /** `settle()` plus a guard that no tree sits in a hidden streaming container.
  *  Under D62's `loading.tsx` the real tree sat beside the skeleton (both carry
- *  the site header, so ids and landmarks doubled) — measured on `/results`,
+ *  the site header, so ids and landmarks doubled) — measured on `/tires`,
  *  the PDPs and `/styleguide` as `#site-nav-drawer ×2` and zero exposed
  *  `<main>`. That file is gone (D91b); the guard stays as a regression check. */
 async function open(page: Page, path: string) {
@@ -344,7 +344,7 @@ test.describe("structure", () => {
       expect.soft(t.title, `${t.name} title is not a framework default`).not.toMatch(/Create Next App/i);
     }
     // Two routes on the same pathname are the same page in another state
-    // (`/results` with and without a vehicle), so they may share a title.
+    // (`/tires` with and without a vehicle), so they may share a title.
     const byTitle = new Map<string, Set<string>>();
     for (const t of titles) byTitle.set(t.title, (byTitle.get(t.title) ?? new Set()).add(t.path));
     const clashes = [...byTitle].filter(([, paths]) => paths.size > 1).map(([title, p]) => `${title}: ${[...p]}`);
@@ -361,7 +361,7 @@ test.describe("live regions", () => {
     page,
   }, info) => {
     test.skip(!onAxeProject(info), SKIP_REASON);
-    await open(page, "/results");
+    await open(page, "/tires");
     const count = countOf(page);
     await expect(count).toHaveCount(1);
     await expect(count).toHaveAttribute("aria-live", "polite");
@@ -609,7 +609,7 @@ async function focusStep(page: Page, key: string): Promise<FocusStep | null> {
       const label = `${el.tagName.toLowerCase()}[data-probe=${el.dataset.probe ?? ""}] ${Math.round(s.top)}–${Math.round(s.bottom)}`;
       // "Fully" allows a sub-2px sliver: a 0.2px strip of a 52px button above
       // a 92%-opaque bar is not a visible focused element (measured on
-      // `/results`, where the rounding differs from `/results?vehicle`).
+      // `/tires`, where the rounding differs from `/tires?vehicle`).
       if (r.width * r.height > 0 && ix * iy >= r.width * (r.height - 2)) hiddenBy = label;
       else if (ix * iy > 0) partlyBy = label;
     }
@@ -625,7 +625,7 @@ async function focusStep(page: Page, key: string): Promise<FocusStep | null> {
 }
 
 test.describe("focus not obscured (2.4.11)", () => {
-  for (const route of [...RESULTS_ROUTES, { name: "results-vehicle", path: `/results?${VEHICLE}` }]) {
+  for (const route of [...RESULTS_ROUTES, { name: "results-vehicle", path: `/tires?${VEHICLE}` }]) {
     test(`focus never fully hidden under the sticky bar: ${route.name}`, async ({ page, browserName }, info) => {
       test.skip(!onAxeProject(info), SKIP_REASON);
       test.skip(!isPhone(info) && viewportWidth(info) >= 1100, "the sticky bar exists below md: 1100 only");

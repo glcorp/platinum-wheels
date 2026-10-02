@@ -20,7 +20,7 @@ import { PRIMARY_CONTACT } from "@/lib/site";
    D  the results column is `display:flex;flex-direction:column;gap:80px`
       (results-desktop.html:151) and each section `gap:32px` (:152); the
       sections carry NO padding of their own — the grid shell in
-      `src/app/(storefront)/results/page.tsx` provides `40px 48px 0`.
+      `src/app/(storefront)/tires/page.tsx` provides `40px 48px 0`.
    M  each section carries its own padding: best `40px 16px 0` with `gap:20px`
       (results-mobile.html:102), similar `56px 16px 0` (:220).
    Tablet 720-1099 keeps the mobile arrangement (D46) and steps the page
@@ -135,9 +135,12 @@ function CardGrid({
   products,
   probe,
   priorityCount = 0,
+  vehicle,
 }: {
   products: readonly Product[];
   probe: string;
+  /** The checked search vehicle, saved on a cart line by `Add to cart`. */
+  vehicle: string;
   /** How many leading cards preload their photo instead of lazy-loading it. */
   priorityCount?: number;
 }) {
@@ -174,6 +177,7 @@ function CardGrid({
             product={product}
             priority={index < priorityCount}
             sizes={CARD_SIZES}
+            vehicle={vehicle}
           />
         </ViewTransition>
       ))}
@@ -243,6 +247,12 @@ export function ResultsGrid({ view }: ResultsGridProps) {
      best matches remain and the window is below its ceiling, or, on the first
      press, while the similar row is still at three of more. */
   const { best, similar } = view;
+  /* D122: the search vehicle rides on every card's `Add to cart`. `query.ts`
+     has already dropped any vehicle the finder does not offer (D91b). */
+  const vehicle =
+    view.query.vehicle === null
+      ? ""
+      : `${view.query.vehicle.year} ${view.query.vehicle.make} ${view.query.vehicle.model}`;
   const bestHidden = view.bestTotal - best.length;
   const similarHidden = view.similarTotal - similar.length;
   const atCeiling = view.query.show >= RESULTS_WINDOW.max;
@@ -301,7 +311,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
           </p>
           {empty ? <p className={SUPPORT}>{copy.empty}</p> : null}
         </div>
-        {/* The first row preloads: `/results` has no hero, so a best-matches
+        {/* The first row preloads: `/tires` has no hero, so a best-matches
             card is the LCP element. Lighthouse mobile, 2026-09-21, measured
             LCP 3.4s against the 2.5s gate with the first card image
             lazy-loaded and 523ms of resource load delay
@@ -329,7 +339,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
               : `No exact ${copy.nearMiss} match for your ${view.query.vehicle.year} ${view.query.vehicle.make} ${view.query.vehicle.model} yet. Similar ${copy.nearMiss}s are below.`}
           </p>
         ) : (
-          <CardGrid products={best} probe="best-grid" priorityCount={3} />
+          <CardGrid products={best} probe="best-grid" priorityCount={3} vehicle={vehicle} />
         )}
       </section>
 
@@ -348,7 +358,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
               Similar matches
             </h2>
           </div>
-          <CardGrid products={similar} probe="similar-grid" />
+          <CardGrid products={similar} probe="similar-grid" vehicle={vehicle} />
         </section>
       )}
 

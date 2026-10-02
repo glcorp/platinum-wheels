@@ -372,7 +372,8 @@ export async function hasAdminSession(): Promise<boolean> {
  * The gate every admin page calls first. Returns the CSRF token the page's
  * forms must carry in `ADMIN_CSRF_FIELD`.
  *
- * There is no single choke point (`proxy.ts` is deferred, D90), so this must
+ * There is no single choke point (`proxy.ts` routes by host, D115, and is not
+ * a gate), so this must
  * be the first statement of every protected page's component body. A page
  * that forgets it is simply unprotected.
  */

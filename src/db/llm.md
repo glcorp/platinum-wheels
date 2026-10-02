@@ -68,5 +68,6 @@ Proposed rows are listed in `docs/payments.md` §9; IDs are assigned in root `ll
 
 1. Real per-user auth (D91 is a stub), so `created_by` / `cancelled_by` read `admin` for every row. Owner.
 2. Data retention for `payment_events` (PIPEDA): no policy set. Owner.
-3. The catalogue tables are empty in every environment. Loading the client-approved CSV is its own
-   session (D105b). Owner.
+3. The production catalogue holds a **stand-in load** from the scraped vendor sheets (D113), not the
+   client-approved data. Replacing it means emptying the catalogue tables first, which nothing in the
+   repo does yet. Owner.

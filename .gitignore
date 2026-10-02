@@ -50,3 +50,6 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# catalogue import reports: they hold the vendor data, row by row
+/import-report/

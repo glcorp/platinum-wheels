@@ -7,20 +7,30 @@ import { SiteHeader } from "@/components/site/site-header";
 import { BuyPanel } from "@/features/product/components/buy-panel";
 import { PdpBreadcrumb } from "@/features/product/components/pdp-breadcrumb";
 import { PdpGallery } from "@/features/product/components/pdp-gallery";
-import { QuoteBand } from "@/features/product/components/quote-band";
 import { SimilarProducts } from "@/features/product/components/similar-products";
 import { Specifications } from "@/features/product/components/specifications";
 import { loadProduct, loadProductRows } from "@/features/product/load";
 import { productView } from "@/features/product/view";
+import { vehicleLabel } from "@/features/product/types";
+import { JsonLd } from "@/features/seo/json-ld";
+import { pageMetadata } from "@/features/seo/metadata";
+import {
+  productBreadcrumb,
+  productSchema,
+  toProductSeo,
+} from "@/features/seo/schema";
+import { productRoute } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
    `/products/[slug]` — composition only (`docs/decisions.md` §3: routes are
    thin). Section order is `design/inventory/product.md` §1, artboard order.
 
-   One `ProductView` in, every section renders from it (the `/results` pattern,
+   One `ProductView` in, every section renders from it (the `/tires` pattern,
    D44). The quantity selection is a query param (D50), so every state of this
-   page is server rendered and survives a reload; the only client component on
-   the route is the quote form island (D51).
+   page is server rendered and survives a reload. The client islands are the
+   `Add to cart` buttons (D122); the quote band and its form, drawn between the
+   specifications and the similar row, moved to the cart in D122
+   (`design/DEVIATIONS.md` #96).
 
    Chrome is composed per page, not hoisted into a group layout (D38): `solid`
    header here, as the artboards draw it. The active nav item follows the
@@ -35,7 +45,7 @@ import { productView } from "@/features/product/view";
    DESIGN.md §5 asks for — the artboard wins (`design/DEVIATIONS.md`).
 
    The split waits for 1100 rather than DESIGN.md §8's 720 for the same reason
-   `/results` moved its rail (D46): at 720 the 45% column measures 266px, which
+   `/tires` moved its rail (D46): at 720 the 45% column measures 266px, which
    cannot hold an 88px display title. Type still crosses at `sm:` 720, which is
    where the ratified `Price context="pdp"` already crosses.
 
@@ -58,6 +68,13 @@ import { productView } from "@/features/product/view";
    (measured) since D91b removed the group's `loading.tsx`: until then
    `notFound()` ran after a 200 shell had already streamed — a soft 404. */
 
+/* Title and description name the size and the load and speed index as well as
+   the model, so two sizes of one tire, or one size at two load indexes, are
+   distinct results. The description's second sentence is the product's own
+   kind (`Winter tire`, `Wheel, Gloss Black`), not a fixed phrase. The canonical is the bare product path:
+   `?qty=` and a carried vehicle never make a second address (D112). The preview
+   image is the product's own photo on the dark card, or the site card when it
+   has no photo (owner, 2026-09-30). */
 export async function generateMetadata({
   params,
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
@@ -65,14 +82,18 @@ export async function generateMetadata({
   const detail = await loadProduct(slug);
   if (!detail) return { title: "Product" };
 
-  const { fullName, sizeLine } = productView(detail, {}, {
-    similar: [],
-    otherSizes: [],
+  const view = productView(detail, {}, { similar: [], otherSizes: [] });
+  const seo = toProductSeo(view.product, view);
+  const path = productRoute(seo.slug);
+  return pageMetadata({
+    title: seo.title,
+    description: `${seo.title}. ${seo.kind}. Request a quote from Platinum Wheels, a Brampton-based online store for tires, wheels and accessories.`,
+    path,
+    image:
+      seo.image === null
+        ? undefined
+        : { url: `${path}/og.jpg`, alt: seo.title, type: "image/jpeg" },
   });
-  return {
-    title: fullName,
-    description: `${fullName} ${sizeLine}. Request a quote from Platinum Wheels in Brampton, Ontario.`,
-  };
 }
 
 export default async function ProductPage({
@@ -94,6 +115,7 @@ export default async function ProductPage({
   const view = productView(detail, query, await loadProductRows(detail));
   const { product } = view;
   const breadcrumb = <PdpBreadcrumb view={view} />;
+  const seo = toProductSeo(product, view);
 
   return (
     <>
@@ -141,7 +163,6 @@ export default async function ProductPage({
             </div>
           </div>
 
-          <QuoteBand view={view} />
           {/* Undrawn (D108b): the same row as `Similar products`, above it, for
               this model's other sizes. Each renders only when it has cards. */}
           <SimilarProducts
@@ -149,11 +170,15 @@ export default async function ProductPage({
             probe="other-sizes"
             products={view.otherSizes}
             leads={view.similar.length > 0}
+            vehicle={vehicleLabel(view)}
           />
-          <SimilarProducts products={view.similar} />
+          <SimilarProducts products={view.similar} vehicle={vehicleLabel(view)} />
         </main>
         <SiteFooter />
       </PageTransition>
+      {/* Name, brand, size, category and image; no price and no offer, by the
+          owner's ruling (D112, `src/features/seo/schema.ts`). */}
+      <JsonLd data={[productSchema(seo), productBreadcrumb(seo)]} />
     </>
   );
 }

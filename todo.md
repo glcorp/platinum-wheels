@@ -73,39 +73,29 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
 5. **Watch the Resend free quota:** 100 emails a day and 3,000 a month, **shared by the goodwill site
    and the storefront**. Each quote sends 2 emails, so the ceiling is about 50 quotes a day across both
    sites. The fix is Resend Pro.
+9. **Reset the Neon database password.**
+   - **Why:** the `neondb_owner` connection string was pasted into a chat on 2026-09-30 to run the
+     catalogue load (D113), so it is no longer a secret only Vercel holds.
+   - **How:** in the Neon console, reset the password for role `neondb_owner`. The Vercel Neon
+     integration owns `DATABASE_URL` and `DATABASE_URL_UNPOOLED`; check both changed there, then
+     **redeploy**, because env changes only reach a new deployment.
+   - **Done when:** the old string is refused and the production storefront still lists products.
 
 ## Owner — payments (Converge demo; design in `docs/payments.md`)
 
-P1. **Rotate the Converge demo PIN.**
-   - **Why:** it was pasted into a chat on 2026-09-23 (`docs/payments.md` §8.1).
-   - **How:** Converge portal → Employees → the API user → generate a new PIN. Put it in Vercel and
-     `.env.local`, never in a chat. **Five wrong PINs block the calling IP**, so copy it carefully.
-P2. **Fixie (free) and the Elavon allowed list.** Nothing works until this is done.
-   - **How:** sign up at usefixie.com, create an app, and note its **Proxy URL** and its **two outbound
-     IPs**. Email `sedevportalsupport@elavon.com` and ask them to add both IPs to the demo account's
-     Online Security Allowed List. The portal's Allowed List Manager only displays the list.
-   - **Done when:** the IPs appear under Settings → Online Security Allowed List Manager → Valid IP
-     Addresses.
-   - **In the same email, ask for an export script** (D108 follow-up; Elavon quotes up to 12 business
-     days). Destination: `https://pay.platinumwheels.ca/pay/notify`. Ask two things: does the POST
-     include `ssl_invoice_number`, and can the demo account use it. **The route is not built yet**; it
-     gets built once Elavon confirms. Until then a payment costs 2 Fixie requests instead of 1.
-P3. **Converge portal → Settings → Hosted Payments.**
-   - Response Page → **Redirect URL**, the Decline button link, and Payment Page → **Cancel Link**:
-     `https://pay.platinumwheels.ca/pay/return`. While testing on a preview or locally, use that host's
-     `/pay/return` instead.
-   - Leave address fields optional: if they are required, token requests fail with `ssl_avs_address
-     required`.
-P4. **`pay.platinumwheels.ca`** (D105).
-   - Vercel → project `platinum-wheels` → Domains → add `pay.platinumwheels.ca`, and copy the per-project
-     CNAME it shows (for `admin` it was `b3b61a760d17a44c.vercel-dns-017.com`; HANDOFF §8.31).
-   - Cloudflare DNS: `CNAME pay → <that value>`, **DNS only (grey cloud)**, exactly like `admin` (D96:
-     proxying it breaks the certificate with a 525).
-   - **Done when:** `https://pay.platinumwheels.ca/pay/done` loads.
-P5. **Vercel env vars** (Production and Preview): `CONVERGE_ENV=demo`, `CONVERGE_ACCOUNT_ID`,
-   `CONVERGE_USER_ID`, and as **Sensitive** `CONVERGE_PIN` and `FIXIE_URL`. The same values go in
-   `.env.local` for local testing, with a Neon **dev** branch URL.
-P6. **Demo expires 2026-10-18.** Ask `#SEDevPortalSupport@elavon.com` for an extension by **2026-10-13**.
+**Done 2026-10-01/02 (D121):** Fixie via the Vercel integration (outbound IPs `52.87.82.133`,
+`52.5.155.132`); Elavon allowlisted them on the demo account; `pay.platinumwheels.ca` on Vercel with its
+certificate, plus the Cloudflare CNAME (DNS only); `CONVERGE_ENV=demo`, `CONVERGE_ACCOUNT_ID=0023020`,
+`CONVERGE_USER_ID=apiuser116349` and the rotated `CONVERGE_PIN` in Vercel. Converge portal → Hosted
+Payments (2026-10-02): Cancel Link, Approval and Decline button links (with transaction data) and the
+Response Page Redirect URL all point at `https://pay.platinumwheels.ca/pay/return`; billing address fields
+are optional; CAPTCHA was already on and is left on. **No demo extension** (owner
+ruling 2026-10-01): demo testing wraps up by 2026-10-04.
+
+P8. **Export script (D119), self-serve in the portal.** Point it at `https://pay.platinumwheels.ca/pay/notify`
+   with a username and password, then put them in Vercel as `CONVERGE_NOTIFY_USER` (plain) and
+   `CONVERGE_NOTIFY_PASSWORD` (Sensitive), Production only, and redeploy. Until then the route is off.
+P9. **Rotate the PIN after demo testing.** The current one was pasted into a chat on 2026-10-02.
 
 ## Client — payments go-live
 
@@ -120,12 +110,91 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
      Vercel's Firewall and item 7 depends on that.
    - **Leave alone:** MX and every TXT record.
 7. **Add one Vercel Firewall rate-limit rule** on the quote form's POST.
-   - **Suggested:** 5 requests per 10 minutes per IP on `/products/*`. This is a derived default and
-     the owner can veto it.
+   - **Suggested:** 5 POST requests per 10 minutes per IP on `/cart`, where the form has lived since
+     D122 (it was `/products/*` before). This is a derived default and the owner can veto it. The cart
+     page also POSTs once per visit to refresh the lines, so do not set it lower.
    - **Why:** this is the rate-limit half of the promised form protection (owner ruling 2026-09-23).
      The honeypot and timer live in the action.
    - **Depends on:** the Vercel plan. Hobby is non-commercial only, and only `glcorp`-authored merge
      commits deploy. See root `llm.md` §7.24.
+
+## Owner — admin products (D116, D117)
+
+10. **`STOREFRONT_URL` is set in Vercel (Production)** to `https://platinum-wheels-one.vercel.app` (2026-10-01).
+    It reaches the site with the deploy the canonical merge (D124) triggers. Change it to
+    `https://platinumwheels.ca` at launch.
+    - **Why:** the product edit page's **View on site** link is built from it; while it is unset the link
+      is simply not shown. The admin lives on its own host, so the link cannot be relative.
+    - **Check:** open a published product in the admin; **View on site** opens its storefront page.
+
+## Owner — cart and prices (D122)
+
+C1. **Prices stay off for launch; turning them on is one variable and a redeploy.**
+   - **State:** `NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED` is not set anywhere, which is "off": no price
+     on any card or product page, no price filter or sort, footer reads `Brampton, Ontario`. Client
+     ruling 2026-10-01: no prices at launch, because the vendor sheets mix retail, dealer and
+     with-shipping figures.
+   - **How, later:** set it to exactly `true` in Vercel (Production, and Preview if wanted) and
+     **redeploy**: it is baked in at build time. Do it only once every published product's price is a
+     customer price, or a dealer price goes public (catalogue import notes: PRO WHEELS' only price is
+     the dealer price).
+   - **Done when:** a card reads `from $NNN / tire` and the footer reads `Prices in CAD, before tax`.
+C2. **Have the privacy page's cart sentence reviewed** with the rest of the policy (D122 changed one
+   factual sentence: the cart is kept in the browser's local storage).
+
+## Owner, at launch — search (D112)
+
+S1. **Turn search indexing on in the same deploy that goes onto the apex.**
+   - **Why:** the storefront ships with search engines blocked (`SEARCH_INDEXING_ENABLED` unset or
+     `false`). The page-level `noindex` is fixed when the site is built, so a build made with the flag
+     off stays `noindex` wherever it is served. **`platinumwheels.ca` ranks today with the goodwill
+     site.** Pointing it at a flag-off build tells Google to drop it.
+   - **How:** in Vercel, set `SEARCH_INDEXING_ENABLED` to exactly `true` for **Production only**
+     (lower case, no spaces; anything else is off) and **redeploy**. Only then move the apex (item 6).
+   - **Google keeps a copy of `robots.txt` for up to a day.** After the switch, ask for a fresh read in
+     Search Console (Settings, robots.txt, "Request a recrawl"), and repeat the checks below daily for
+     the first week: the classic failure is a site that launched still saying `noindex`.
+   - **Done when:** `curl https://platinumwheels.ca/robots.txt` shows `Allow: /` and the `Sitemap:` line;
+     the home page's source has `<meta name="robots" content="index, follow, …">`;
+     `https://platinumwheels.ca/sitemap.xml` lists four files; and `robots.txt` on
+     `admin.platinumwheels.ca`, `pay.platinumwheels.ca` and the `*.vercel.app` URL still says
+     `Disallow: /`.
+S2. **Redirect `www.platinumwheels.ca` to the apex** in Vercel (Domains, add `www`, "Redirect to
+   `platinumwheels.ca`").
+   - **Why:** `www` answers 200 with the same pages today (measured 2026-09-30), a duplicate of every
+     URL. The storefront names the apex as canonical and refuses to list itself on `www`.
+   - **Done when:** `curl -I https://www.platinumwheels.ca/` answers 308 to `https://platinumwheels.ca/`.
+S3. **Verify the domain in Google Search Console and submit the sitemap.**
+   - **How:** add a **Domain** property for `platinumwheels.ca`, publish the TXT record it gives in
+     Cloudflare (TXT records are never proxied), then submit `https://platinumwheels.ca/sitemap.xml`.
+   - **Why:** with no third-party scripts on the site (`docs/decisions.md` §6), Search Console is the
+     only place search data shows up.
+   - **Done when:** the sitemap reads "Success" and the four child sitemaps are listed.
+   - **Bing too:** add the site in Bing Webmaster Tools (it can import from Search Console) and submit
+     the same sitemap. Copilot answers from Bing's index, and ChatGPT search uses Bing among its sources.
+S3b. **Check that nothing blocks AI search crawlers**, unless the owner wants them blocked.
+   - **Why:** `robots.txt` admits every crawler once indexing is on, which is what lets ChatGPT search,
+     Perplexity, Claude and Copilot cite the site. A dashboard toggle can still block them.
+   - **How:** in Vercel, Firewall, confirm the **AI Bots** managed ruleset and **Bot Protection** are
+     off (both are off by default). In Cloudflare, item 6 already makes the website records DNS only,
+     which takes Cloudflare's AI-bot blocking out of the path.
+
+## Client, via the owner — search (D112)
+
+S4. **Decide how customers receive their goods.**
+   - **Why:** the site describes an online store based in Brampton because this is undecided. A
+     **Google Business Profile is only allowed if the owners meet customers in person** (delivery or
+     installation); an online-only business is not eligible.
+   - **Then:** if they do, create the profile as a service-area business with the **address hidden** and
+     Brampton as the area, and the site links to it. If they do not, create none.
+S5. **Confirm the legal name.** The storefront says `Platinum Wheels and Tire Solutions`; the goodwill
+   site's markup says `… Inc.`. The value is `SITE.legalName` in `src/lib/site.ts`.
+
+## Later — search (D112)
+
+S6. **Add prices to the product structured data** once the owner settles the pricing rule and confirms
+   prices are shown publicly. Until then a product's markup has no offer, by ruling, and so does not
+   qualify for Google's product rich result. `src/features/seo/schema.ts`.
 
 ## Client, via the owner
 

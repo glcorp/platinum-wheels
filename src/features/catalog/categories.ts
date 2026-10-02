@@ -1,5 +1,5 @@
 /**
- * Per-category configuration — the one table that makes `/results`, `/wheels`
+ * Per-category configuration — the one table that makes `/tires`, `/wheels`
  * and `/accessories` the same page (D58).
  *
  * Owner, 2026-09-21: *"also add wheels and accessories to scope. keep them
@@ -83,12 +83,13 @@ export interface ChipGroupConfig {
 
 export interface CategoryConfig {
   category: ProductCategory;
-  /** This category's results route. Tires keep `/results` (D39), so every
-   *  measured URL on the built page is untouched. */
+  /** This category's results route. Tires is `/tires` (D112; it was
+   *  `/results`, D39). */
   route: string;
   /**
-   * Breadcrumb leaf and `<title>`. Tires keep the artboard's `Results`
-   * verbatim (`results-desktop.html:112`); the other two are new copy.
+   * Breadcrumb leaf. Tires read `Tires` since D112 (owner, 2026-09-30,
+   * `design/DEVIATIONS.md` #95); the artboard draws `Results`
+   * (`results-desktop.html:112`). The other two are new copy.
    *
    * There is no `label` field. It existed only for the rail's `Category` group
    * row (`Tires` / `Wheels` / `Accessories`, `results-desktop.html:125`), and
@@ -152,6 +153,12 @@ export interface CategoryConfig {
     one: string;
     many: string;
   };
+  /** How many one press of a card's `Add to cart` puts in the cart (D122):
+   *  a set of four tires or wheels, one accessory. The PDP's `How many?`
+   *  cells open on the same number (`product/types.ts`
+   *  `DEFAULT_QUANTITY_BY_CATEGORY`, D65), so a card and its product page
+   *  agree. */
+  addQuantity: 1 | 4;
   copy: {
     /** `ResultsEmpty` body — undrawn, new copy under `.claude/rules/ui.md`.
      *  **All three values are deliberately identical.** The clause that used to
@@ -238,8 +245,8 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
   {
     tires: {
       category: "tires",
-      route: ROUTES.results,
-      crumb: "Results",
+      route: ROUTES.tires,
+      crumb: "Tires",
       nav: "tires",
       size: { label: "Tire size", fields: TIRE_SIZE_FIELDS },
       chips: TIRE_SEASONS,
@@ -251,6 +258,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         one: "1 tire",
         many: "tires",
       },
+      addQuantity: 4,
       copy: {
         empty: "Nothing fits those filters yet. Clear them, or call us.",
         nearMiss: "size",
@@ -276,6 +284,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         one: "1 wheel",
         many: "wheels",
       },
+      addQuantity: 4,
       copy: {
         empty: "Nothing fits those filters yet. Clear them, or call us.",
         nearMiss: "fitment",
@@ -303,6 +312,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         one: "1 item",
         many: "items",
       },
+      addQuantity: 1,
       copy: {
         empty: "Nothing fits those filters yet. Clear them, or call us.",
         /* An accessory derives no SIZE from a vehicle, but since D67 it does

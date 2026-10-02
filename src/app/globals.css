@@ -230,6 +230,10 @@
   --container-*: initial;
   --container-content: 1344px;
   --container-measure: 420px;
+  /* D122: the quote dialog's width from `md:` 1100. Undrawn. The form used to
+     sit in the quote band's 7fr column, about 747px at the 1440 artboard
+     (7/12 of 1344 less the 64px gap); 720px keeps it close to that width. */
+  --container-dialog: 720px;
   /* `--container-rail: 280px` was here and had ZERO references (audit S5,
      `design/reports/audit.md` §4). The 280px filter rail is the first track of
      the `results-grid` utility below, which is where the artboard declares it
@@ -676,7 +680,7 @@
   /* Landscape phones (D91b, NJR-3): at 375px tall the 144px offset left the
      scrolling body 60px — one 44px control at a time. On a short viewport the
      sheet takes the whole height instead. The artboard's 844px portrait value
-     (700px) is untouched, so /results parity holds. */
+     (700px) is untouched, so /tires parity holds. */
   @media (max-height: 500px) {
     height: 100dvh;
   }
@@ -694,7 +698,7 @@
      `--duration-exit` out on `--ease-leave` (below), because the exit should
      get out of the way faster than the entry arrived. Translate only:
      compositor-friendly, and it moves nothing in the closed state, so
-     `/results` parity holds by construction. */
+     `/tires` parity holds by construction. */
   translate: 0 0;
   transition:
     translate var(--duration-overlay) var(--ease-arrive),
@@ -774,6 +778,16 @@
 @utility quote-grid {
   display: grid;
   grid-template-columns: 5fr 7fr;
+  column-gap: 64px;
+  align-items: start;
+}
+
+/* D122, the cart page: the lines on the left, the quote panel on the right.
+   The quote band's own split (above) flipped back, since the list is what the
+   page is about; the same 64px gap, from `md:` 1100 like the PDP split. */
+@utility cart-grid {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
   column-gap: 64px;
   align-items: start;
 }
@@ -877,7 +891,7 @@
      cards below jumped with nothing connecting the tap to the shove. Opacity
      only, on the open edge: animating height would drive layout, and the
      `interpolate-size` route is Chrome-only. The closed state is untouched, so
-     `/results` parity holds by construction. D67. */
+     `/tires` parity holds by construction. D67. */
   /* D92b adds the close edge: where `::details-content` exists the panel fades
      out as well as in, holding its box for the fade via `content-visibility`
      allow-discrete. Still opacity only. Browsers without it keep D67's
@@ -1014,6 +1028,27 @@
     opacity: 0;
     translate: 0 var(--motion-nudge);
   }
+}
+
+/* D122: the header cart count after an add. It swells and settles once, on
+   `--ease-arrive` over `--duration-reveal`, so the eye finds where the product
+   went. `scale` only (compositor). It plays only on an add, never on a page
+   load: `cart-link.tsx` applies the class to a count it re-mounts per add. The
+   reduced-motion block below cuts it to nothing. */
+@keyframes cart-pop {
+  0% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.35;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+@utility cart-pop {
+  animation: cart-pop var(--duration-reveal) var(--ease-arrive);
 }
 
 /* Inactive primary-nav hover: a 2px `--border-strong` rule draws in from the

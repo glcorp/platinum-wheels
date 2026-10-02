@@ -1,185 +1,99 @@
 # src/features/product
 
 ## Purpose
-The `/products/[slug]` page: gallery, buy panel, spec table, quote band and the similar-products row.
-Since **D58** (2026-09-21) it serves **all three catalogue categories** from one route — a tire, a wheel
-and an accessory are the same page, and everything that differs (spec rows, price unit, quantity
-wording, breadcrumb crumb and back link, similar list) is derived from the product's own
-`CategoryConfig`, never branched in a component. It is the only page in the build where a visitor
-converts — every `Request a quote` CTA on `/` and `/results` lands on the `#quote` anchor here
-(`src/lib/routes.ts` `quoteRoute()`), so this folder owns the storefront's one form, and the
-quote-first premise (`docs/decisions.md:105-107`) has nowhere else to land.
+The `/products/[slug]` page: gallery, buy panel, spec table and the two product rows (`Other sizes`,
+`Similar products`). Since **D58** it serves **all three catalogue categories** from one route; everything
+that differs (spec rows, price unit, quantity wording, breadcrumb crumb and back link, similar list) is
+derived from the product's own `CategoryConfig`, never branched in a component. **Since D122 the page has
+no quote band and no form**: its primary CTA is `Add to cart`, which puts what the `How many?` cells say in
+the browser cart, and the quote is requested from `/cart` (`src/features/cart/`). The form, its Server
+Action, its emails and its two authored states moved there.
 
 ## Owns
 - [`types.ts`](types.ts) — the contract, written before any component (D25). `ProductView` is what the
   page hands every section; `QuantityKey` / `QUANTITY_OPTIONS` are the buy panel's four cells (D50);
-  `QuoteFormState` / `QUOTE_FIELD` / `CONTACT_METHODS` are the form half (D51); `PdpBadge` and
-  `ProductSpecRow` are derived from `Product` (D53). **D58** added `ProductView.config` and replaced
-  `QUANTITY_OPTIONS[].quoteLabel` with `quantityQuoteLabel(value, unit)` — the cells are
-  category-independent, the wording is not. **D65** added `DEFAULT_QUANTITY_BY_CATEGORY`, read by
-  `view.ts`'s `parseQuantity(params, category)`: accessories open on `1`, tires and wheels on `4`.
-  `QUOTE_FIELD.customQuantity` and `CUSTOM_QUANTITY_MIN`/`MAX` (2026-09-22, `DEVIATIONS.md` #70) back
-  the `Custom` cell's free-text field.
-- `view.ts` — `productView(detail, searchParams, rows)`, pure. The only place any PDP value is
-  computed. Since D108b it takes the database's own shape (`CatalogProductDetail`) plus the two rows the
-  page read, and makes the card-shaped `Product` itself with `toProduct()`. Per category (D58): a
-  **tire** reads `sizeCode` + `loadSpeed` off its own columns and builds the six drawn spec rows first,
-  then Load range / Ply rating / Run-flat / UTQG when the vendor gave them; a **wheel** builds Brand /
-  Model / Size / Bolt pattern / Offset / Finish (the vendor's wording, D105b) and then Centre bore,
-  Backspacing, Material, Seat type, Load rating, TPMS compatible, Winter use; an **accessory** builds
-  Brand / Model / Type and then Thread size, Seat type, Finish, Pack quantity and the two diameters. **A
-  row with no value is dropped** (D53(1)). Wheels and accessories carry **no badges** (D59(4)); a
-  discontinued product of any category carries the one `Currently unavailable` badge. `backHref` points
-  at the product's own category route.
-- `load.ts` — server only (D108b). `loadProduct(slug)`, wrapped in React `cache()` so `generateMetadata`
-  and the page share one query, and `loadProductRows(detail)`: `getSimilarProducts` and `getOtherSizes`,
-  four cards each.
-- `actions.ts` — `submitQuote`, the `"use server"` action (D51). Spam checks first (honeypot
-  `website`, 3 s timer from the hidden `renderedAt`; a bot gets a normal `success`), then validation,
-  then `deliverQuote()` (D104). A failed owner alert returns `status: "failed"` with the typed values.
-  Looks `slug` up in the catalogue (`getProductBySlug`, D108b; a failed lookup costs the email its
-  product name, never the lead) so an
-  unrecognised `quantity` falls back to the product's own category default, not a flat `4` (2026-09-22
-  fix, was category-blind); bounds a non-blank `customQuantity` to 1–99, blank legal (`DEVIATIONS.md` #70).
-- `quote-email.ts` — `deliverQuote()` (D104): the owner alert and the fixed auto-reply, plain text,
-  through Resend's REST API with `fetch`. **Sends only when `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` is exactly
-  `true`**; needs `RESEND_API_KEY` and `LEAD_CAPTURE_EMAIL` (the shop address: sender and alert inbox). Never logs personal data. Not a `"use server"` file: only
-  `actions.ts` imports it.
-- `components/pdp-breadcrumb.tsx` · `pdp-gallery.tsx` · `buy-panel.tsx` · `quantity-control.tsx` —
-  the split column. `product-desktop.html:101-125`, `product-mobile.html:90-100`.
+  `PdpBadge` and `ProductSpecRow` are derived from `Product` (D53). `DEFAULT_QUANTITY_BY_CATEGORY` (D65)
+  is read by `view.ts`'s `parseQuantity` and, since D122, derived from `CategoryConfig.addQuantity`, the
+  number a card's `Add to cart` adds, so a card and its PDP agree. `vehicleLabel(view)` is the checked
+  vehicle string `Add to cart` saves on a cart line (D122).
+- `view.ts` — `productView(detail, searchParams, rows)`, pure. The only place any PDP value is computed.
+  Since D108b it takes `CatalogProductDetail` plus the two rows and makes the card-shaped `Product` with
+  `toProduct()`. Per category (D58): a **tire** builds the six drawn spec rows first, then Load range /
+  Ply rating / Run-flat / UTQG when given; a **wheel** Brand / Model / Size / Bolt pattern / Offset /
+  Finish, then Centre bore, Backspacing, Material, Seat type, Load rating, TPMS, Winter use; an
+  **accessory** Brand / Model / Type, then Thread size, Seat type, Finish, Pack quantity and diameters.
+  **A row with no value is dropped** (D53(1)). The vehicle is accepted only via `isFinderVehicle` (D91b).
+- `load.ts` — server only (D108b). `loadProduct(slug)` in React `cache()`, and `loadProductRows(detail)`.
+- `components/pdp-breadcrumb.tsx` · `pdp-gallery.tsx` · `buy-panel.tsx` · `quantity-control.tsx` — the
+  split column. `product-desktop.html:101-125`, `product-mobile.html:90-100`.
+- `components/add-to-cart-panel.tsx` — the buy panel's primary CTA (D122), a client island. Adds the
+  selected cell's count through the catalogue's `AddToCartButton`; while `Custom` is selected it shows
+  `How many tires?` (the field that used to sit in the quote form's Optional group, `DEVIATIONS.md` #70)
+  and adds what is typed, a whole number, no visible ceiling (owner: "lets not put restrictions of cart").
 - `components/specifications.tsx` · `similar-products.tsx` — `:126-131` / `:159-315`.
-- `components/quote-band.tsx` · `quote-form.tsx` — `:132-157`. `quote-form.tsx` is the folder's only
-  client island (`useActionState`); its Quantity select is controlled (2026-09-22 fix, see Rules) so it
-  and `Custom` stay correct across a `?qty=` nav, which doesn't remount the island.
-- `components/quote-success.tsx` — `QuoteSuccess`, the authored post-submit panel (D51), its own module
-  so `/styleguide` renders the real component, not a drifting copy (`ResultsEmpty` precedent). `role`/
-  `tabIndex` are props: the live form passes and focuses them; the styleguide renders it inert.
-- `components/quote-error-summary.tsx` — `QuoteErrorSummary`, the authored **failed**-submit
-  announcement (D57, audit C2/C3, `DEVIATIONS.md` #46), same module shape and props as above.
-  `sendFailed` (D104) swaps the count sentence for the could-not-send one with the fallback phone.
-  `role="alert"` is implicitly assertive/atomic, so **mounting the node is the announcement**; it renders
-  `null` at a count of 0. **Reachable only because the form is `noValidate`** (D65 — see Rules).
 
 ## Rules
-- **Measured baseline is `design/inventory/product.md`** (696 lines). Every number in a component
-  carries a `file:line` comment pointing at it or at the artboard, exactly as `src/components/ui/`
-  does — "a new variant without one does not ship" (`src/components/ui/llm.md`).
-- **The split is 55/45, not 60/40.** `grid-template-columns:55fr 45fr; gap:64px` inside 1344px →
-  gallery 704, panel 576 (`product.md` §1.3). DESIGN.md §5's 60/40 is superseded here
-  (`DEVIATIONS.md:16`). The quote band is `5fr 7fr` — a *different* split, deliberately flipped.
-- **Nothing here branches on the category.** Components read `view.config` (the unit copy, the crumb,
-  the route) and `view.specs` (already shaped per category by `view.ts`); the one place that knows a
-  wheel from a tire is `view.ts`, and the copy it reads lives in `catalog/categories.ts` (D58). A
-  `if (category === …)` in a component is the thing this rule exists to prevent.
-- **A tire PDP is parity-measured and byte-identical.** The tire branch of every D58 change is the
-  original code path: the six drawn spec rows, `per tire · before tax`, `1 tire` / `4 tires`, the
-  `Results` crumb, and both artboard-verbatim quote-form strings. Verified in the browser 2026-09-21.
+- **Measured baseline is `design/inventory/product.md`.** Every number in a component carries a
+  `file:line` comment pointing at it or at the artboard (`src/components/ui/llm.md`).
+- **The split is 55/45, not 60/40.** `55fr 45fr; gap:64px` inside 1344px → gallery 704, panel 576
+  (`product.md` §1.3, `DEVIATIONS.md:16`).
+- **Nothing here branches on the category.** Components read `view.config` and `view.specs`; the one place
+  that knows a wheel from a tire is `view.ts`, reading copy from `catalog/categories.ts` (D58).
+- **A tire PDP is parity-measured.** The tire branch of every D58 change is the original code path. **D122
+  moved two drawn things off the page**: the quote band (`product-desktop.html:132-157`) and the CTA copy
+  `Request a quote` / `Inquire about restock`, now `Add to cart` in the same box and variants
+  (`DEVIATIONS.md` #96). With prices switched off the price row is absent (`DEVIATIONS.md` #97).
 - **Buy panel is `position:sticky; top:96px` on desktop only** (`product.md` §3). Never on mobile.
-- **No sticky mobile buy bar** — D6, confirmed by measurement: zero `position:fixed`/`sticky` in
-  `product-mobile.html` (`product.md` §1.3). The footer's 120px bottom reserve is not an invitation.
-- **No fitment or install trust line in the buy panel** — D47(2), and `product.md` §3.6 is explicit:
-  "Do not synthesise a trust line into the panel." The page's one fitment sentence lives in the quote
-  band and is **desktop-only**, as drawn.
-- **Quantity is a URL param** (D50). The cells are links that set `?qty=`; the panel stays a Server
-  Component. `qty` never reaches the breadcrumb's `backHref`. The *selected* cell defaults per category
-  (D65) — only the default, never the four cells or their labels, which stay as drawn (D63).
-  `role="group" aria-labelledby="qty-label"` on the cell grid (**D66**). `custom`'s link also carries
-  `#quote`: the quote form's Quantity select server-renders a bounded `Input` in the Optional group on
-  reading it (`DEVIATIONS.md` #70, closing Open #6). A `?qty=` click doesn't remount `quote-form.tsx`
-  (same-route search-param nav), so the select is controlled and resynced during render, not via
-  `defaultValue` (2026-09-22 fix, wiring only, no `DEVIATIONS.md` row).
-- **`noValidate` on the quote form is load-bearing** (D65): native validation fired the browser's bubble
-  before the Server Action ran, so both D57 fixes (`role="alert"` summary, focus-first-invalid) were dead
-  on that path. `required` stays for semantics; `actions.ts` is the real validator.
-- **A `beforeunload` guard protects typed input** (D65): the `?qty=` cells are real navigations that
-  emptied fields already typed; `onInput` arms it, `success` disarms it.
-- **`quote-h2` steps 48 → 56 → 88 at `sm`/`lg`, not 48 → 88 at `sm`** (2026-09-22, no `DEVIATIONS.md`
-  row). Both artboards wrap the line to two at their own width — drawn, and DESIGN.md §3's own ceiling
-  at the 88 role — so 390 and 1440 are untouched. But 88 at `sm` (720) wrapped it to two lines while
-  still single-column, and to **three** at `md` (1100–1319, measured) — past that ceiling, no artboard to
-  license it. `56` is the token `winter-promo.tsx` already uses for this gap (D41 "promo h2 56"); it
-  holds through 720–1319 (one line to 1099, a clean two after), 88 resuming only at `lg` (1320).
-- **Spec table is derived, never typed** (D53) — the same principle as D42 on `/results`. Six rows from
-  `Product` + `studdable`; if a value cannot be derived the row is dropped, not invented.
-- **The gallery is one image, no thumbnails** (D53). The desktop column's inert `gap:12px` is the slot a
-  thumb strip *would* take; the export has no thumbs, dots, arrows or zoom (`product.md` §4). D7.
-- **`ProductCard` renders the similar row unchanged.** It is the same card as home and `/results`
-  (`src/features/catalog/llm.md`); no PDP variant.
-- **CASL renders unticked** (`docs/decisions.md:118`) — `Checkbox variant="consent"` refuses `checked`.
-- **Sample form data does not ship** (`Priya Sandhu` etc., `design/DEVIATIONS.md` "Sample data") — fields render empty, real placeholders only.
-- Server Components by default; one `"use client"` leaf (`quote-form.tsx`). Named exports, no barrel.
-  Tokens only, no arbitrary values (`.claude/rules/ui.md`).
+- **No sticky mobile buy bar** — D6. **No fitment or install trust line in the buy panel** — D47(2).
+- **Quantity is a URL param** (D50). The cells are links that set `?qty=` and keep every other param;
+  the panel stays a Server Component apart from the add island. `qty` never reaches `backHref`. The
+  *selected* cell defaults per category (D65); the four cells and their labels stay as drawn (D63).
+  `role="group" aria-labelledby="qty-label"` (D66). Every cell is `scroll={false}`; `Custom` no longer
+  carries `#quote` (D122), its field sits right under the cells.
+- **The searched vehicle reaches the cart only after the server checked it** (`view.ts`, D91b), passed as
+  a prop to every `Add to cart` on the page, including both product rows. Never read from the URL in the
+  browser: an unchecked URL could write its own text into the cart and the owner alert.
+- **Spec table is derived, never typed** (D53). **The gallery is one image, no thumbnails** (D53).
+- **`ProductCard` renders the product rows unchanged** (`src/features/catalog/llm.md`); no PDP variant.
+- Server Components by default; one `"use client"` leaf here (`add-to-cart-panel.tsx`). Named exports, no
+  barrel. Tokens only (`.claude/rules/ui.md`).
 - **Motion (D92b).** `pdp-gallery.tsx` wraps its image in the `product-photo-<slug>` view transition with
-  `share="morph"` — a plain string, because the gallery is the fixed end of every pair; the card side is
-  type-keyed (`catalog/llm.md`). The breadcrumb's `Results` crumb carries `["nav-back", "product-back"]`
-  and `prefetch={true}` so the reverse morph can form; `Home` carries `["nav-back"]`. `SimilarProducts`
-  renders `morph={false}`, so PDP → PDP slides but does not morph. Quantity cells press
-  (`active:translate-y-px`) and stay untyped `?qty=` links (D50). The error summary, success panel and
-  `Custom quantity` field arrive with `enter-rise`.
+  `share="morph"`. The breadcrumb's `Tires` crumb carries `["nav-back", "product-back"]` and
+  `prefetch={true}`; `Home` carries `["nav-back"]`. `SimilarProducts` renders `morph={false}`. Cells press
+  (`active:translate-y-px`). The `Custom` field and the `Added` label arrive with `enter-rise`.
 
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
-| D93b | 2026-09-30 | The client `sendQuote` in `quote-form.tsx` wraps `submitQuote` in a catch: an offline send returns `status: "invalid"`, empty `errors`, every value echoed and a `notice` ("We couldn't send that. Check your connection and try again."), shown by `QuoteErrorSummary`'s new `message` prop, instead of throwing to the route boundary. The consent tick is echoed via `Checkbox` `restoreChecked`. Caps name 100 / email 254 / phone 32 / message 1000 are mirrored between `actions.ts` and `maxLength`, `\p{Cf}` stripped. Copy: email "Enter an email like name@example.com.", message "Keep your message to 1,000 characters or fewer.", summary "N fields need a fix before we can send your inquiry.". Qty cells gain hover; the brand label is `translate="no"`. | A dropped connection crashed the form to the error page (ENV-1); a failed submit wiped the tick (WDG-10); hostile lengths and invisible characters (WDG-12); WDG-13. | QA pass ENV-1, WDG-10/12/13; DEVIATIONS #84, #86; D93b |
-| D91b | 2026-09-29 | (1) `view.ts` accepts a vehicle only via `isFinderVehicle` — the one cross-feature import outside `catalog/`, on `results/search.ts`'s precedent; (2) after an invalid submit the quantity select still follows `?qty=` (resync from the prop only; D84 had regressed); (3) the `beforeunload` guard ignores `tel:`/`mailto:` clicks; (4) `Custom quantity` is `type="text" inputMode="numeric"` and the action accepts only `/^\d{1,2}$/` then 1–99, reusing the D75 message; (5) cells 1/2/4 are `scroll={false}` (a phone tap threw the page to the top, measured 515 → 0) and every cell carries `data-qty-cell`; (6) the h1 is `text-ink` and `wrap-anywhere`, the size numeral `leading-flat`, the mobile price row loses a stray `pt-2`, the breadcrumb row is its drawn height — all restoring measured values. | QA pass WDG-03/04/05/11, HPD-2/3, VPE-2/3/4/5, NJR-8 (`design/reports/qa.md`). | D91b |
-| — | — | None folder-scoped. | Every PDP ruling is global. | root `llm.md` §5b |
+| D91b | 2026-09-29 | (1) `view.ts` accepts a vehicle only via `isFinderVehicle`, the one cross-feature import outside `catalog/`, on `results/search.ts`'s precedent; (5) cells 1/2/4 are `scroll={false}` and every cell carries `data-qty-cell`; (6) the h1 is `text-ink` and `wrap-anywhere`, the size numeral `leading-flat`, the mobile price row loses a stray `pt-2`. Items (2)–(4), about the quote form, moved with it to `src/features/cart/` (D122). | QA pass (`design/reports/qa.md`). | D91b |
+| — | — | None other folder-scoped. | Every PDP ruling is global. | root `llm.md` §5b |
 
-Referenced: **D50** (quantity is `?qty=`), **D51** (Server Action + success state), **D52** (similar =
-same season, self excluded), **D53** (derived rulings), **D6** (no sticky buy bar), **D21** (`Price
-context="pdp"`), **D37** (imports go through `catalog/`), **D47(2)** (no trust line), **D32** (year).
+Referenced: **D50** (quantity is `?qty=`), **D52** (similar = same season, self excluded), **D53** (derived
+rulings), **D6** (no sticky buy bar), **D21** (`Price context="pdp"`), **D37** (imports go through
+`catalog/`), **D47(2)** (no trust line), **D122** (the cart; this page adds, the cart asks).
 
 ## Connects to
-- **Depends on:** `src/features/catalog/` — `Product`, `queries.ts` (`getProductBySlug`,
-  `getSimilarProducts`, `getOtherSizes`), `adapter.ts` (`toProduct`), `ProductCard`,
-  `configFor` / `CategoryConfig`, `productImageSrc` (D37); `src/components/ui/` — `Badge`, `Button`,
-  `Price`, `Input`, `Textarea`, `Select`, `FieldLabel`, `FieldError`, `Checkbox`;
-  `src/components/site/` — `SiteHeader`, `SiteFooter`; `src/lib/{site,routes}.ts`;
-  `src/app/globals.css` for `pdp-split`, `quote-grid`, `qty-grid`, `similar-track`,
-  `photo-inset-gallery`, `photo-vignette-gallery`, `display`, `label`, `numeral`.
-- **Depended on by:** `src/app/(storefront)/products/[slug]/page.tsx` (six sections + `productView`),
-  and `src/app/(storefront)/styleguide/page.tsx` §11, which renders `QuoteSuccess`.
+- **Depends on:** `src/features/catalog/` — `Product`, `queries.ts`, `adapter.ts`, `ProductCard`,
+  `AddToCartButton`, `cartItem()`, `configFor` / `categoryConfig`, `productImageSrc` (D37);
+  `src/components/ui/` — `Badge`, `Button`, `Price`, `Input`, `FieldLabel`, `FieldError`;
+  `src/components/site/` — `SiteHeader`, `SiteFooter`; `src/lib/{site,routes,cart}.ts`
+  (`PRICES_VISIBLE`, `CartItem`); `src/app/globals.css` for `pdp-split`, `qty-grid`, `similar-track`.
+- **Depended on by:** `src/app/(storefront)/products/[slug]/page.tsx` (five sections + `productView`).
 
 ## Don't
-- **Don't add a cart, a stepper, a `+/−` control or a numeric quantity input.** The artboard draws four
-  cells and no stepper (`product.md` §3.4); there is no cart anywhere in this build
-  (`docs/decisions.md:105`).
-- **Don't reproduce the desktop `Send inquiry` button's drawn state.** It ships pre-hovered
-  (`--accent-hover` + `translateY(1px)`) — a state demo, not rest (`product.md` §2.6).
-- **Don't copy the segmented control's drawn double right edge.** Every segment carries
-  `border-right`, including the last (`product.md` §2.6); that is an export artefact.
-- **Don't let `Similar products` return the current product.** The artboard's third card is the PDP
-  subject in another size; `product.md` §7.6 flags it as something a real feed should not do. D52.
-- **Don't add `Michroma` or `Manrope`.** Both are in the export's font link and referenced by nothing
-  (`product.md` §5.2); D20 self-hosts Barlow + Barlow Condensed only.
-- **Don't import `CATEGORY_CONFIG` into `quote-form.tsx`.** It is this folder's one client island; the
-  unit pair and the two copy strings arrive as plain props from `quote-band.tsx` so the category table
-  never reaches the browser bundle (D58).
-- **Don't let a wheel or accessory PDP recommend a tire.** `buildSimilar` stays inside the product's own
-  category (D59(6)).
-- **Don't widen `Product` to carry spec strings.** Derive them (D53); the catalog type stays the list
-  of things *cards* vary on (`src/features/catalog/llm.md`).
+- **Don't bring a form back onto this page.** The quote is the cart's (D122); a second way to ask from
+  here splits the lead into two shapes.
+- **Don't let `Similar products` return the current product** (D52), and **don't let a wheel or accessory
+  PDP recommend a tire** (D59(6)).
+- **Don't add `Michroma` or `Manrope`** (`product.md` §5.2; D20).
+- **Don't widen `Product` to carry spec strings.** Derive them (D53).
 
 ## Open
-1. ~~**Where a submitted quote goes.**~~ **Closed 2026-09-24 by D104** (email via Resend, behind
-   `AUTO_EMAIL_LEAD_CAPTURE_ENABLED`). All three env vars are in Vercel with the flag `false`; turning it on is `todo.md` item 2.
-2. **`Vehicle` is declared three times** — here, `results/types.ts`, and implied by `finder/`. A third
-   consumer means it belongs in `src/lib/`. Coordinator or **owner** (root `llm.md` §7).
-3. **`M+S` is derived from the winter badge**, not a fact `Product` carries (`types.ts` `PdpBadge`).
-   Real sidewall markings come with real catalogue data (D48). **Client.**
-4. **One photo per SKU.** The gallery shows the card's cut-out; four cover nine tire SKUs (D43), three
-   cover nine wheel SKUs, and **one lifestyle photograph covers all nine accessory SKUs** via
-   `productImageSrc()` (D58, `DEVIATIONS.md` #51). Per-SKU photography — `HANDOFF.md` §7. **Client.**
-5. **`How many?` reads oddly on an accessory** whose `size` already says `Set of 20`, so the cells offer
-   one, two or four *sets*. **Half-closed 2026-09-22 by D65:** accessories now open on `1`. The cells
-   and their **labels** are untouched (D50, D63). Still **owner's**, if the wording should change.
-6. ~~**`Custom` collects no number.**~~ **Closed 2026-09-22** — see Rules ("Quantity is a URL param") and
-   `DEVIATIONS.md` #70: a bounded free-text field renders in the Optional group whenever the selection is
-   `custom`. No new island, no drawn pixel moved.
-- **The unavailable PDP (D108b, undrawn).** A `discontinued` product loads, per D105b. It borrows the
-  card's drawn treatment: the `Currently unavailable` badge, the price in `--text-dim`, and the primary
-  CTA as the ghost `Inquire about restock`. This closes the parked `HANDOFF.md` §7.16. The photo is not
-  dimmed. Owner, if it should be.
-- ~~**An unknown or hidden product answers 200, not 404 (D108b).**~~ **Closed at the merge (D111).** D91b
-  had removed the `(storefront)` `loading.tsx` this item blamed, so nothing streams before the lookup
-  answers: an unknown or hidden product is a real 404 with `noindex`, and a discontinued one a 200
-  (measured on the merged build against a Postgres fixture).
+1. **`Vehicle` is declared three times** — here, `results/types.ts`, and implied by `finder/`. A third
+   consumer means it belongs in `src/lib/`. **Owner** (root `llm.md` §7).
+2. **`M+S` is derived from the winter badge**, not a fact `Product` carries (D48). **Client.**
+3. **One photo per SKU** until the admin's photo uploads reach the gallery (`HANDOFF.md` §7). **Client.**
+4. **`How many?` reads oddly on an accessory** whose size says `Set of 20`; accessories open on `1` (D65).
+   **Owner's**, if the wording should change.
+5. **The unavailable PDP (D108b, undrawn)** borrows the card's treatment: the badge, the ghost CTA, the
+   price dimmed when prices show. The photo is not dimmed. **Owner**, if it should be.

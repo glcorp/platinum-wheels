@@ -22,19 +22,25 @@
 /**
  * Admin route map, mirroring `src/lib/routes.ts` for the storefront.
  *
- * These are the paths the build ships and the paths a Vercel preview serves.
- * The `admin.platinumwheels.ca` subdomain rewrite is **deferred** (D90): a
- * preview deployment resolves a single `*.vercel.app` hostname, so a
- * host-keyed rule in `proxy.ts` can never fire there and cannot be verified
- * until the real domain is wired. When it lands it rewrites the subdomain onto
- * these same paths and blocks them on the apex — no route below changes.
+ * These are the URLs on the admin host (`admin.platinumwheels.ca`), and they
+ * carry no `/admin` prefix (D115, owner 2026-10-01). Each is served from the
+ * matching page under `src/app/admin/` by `src/proxy.ts`; that folder name is
+ * internal and must never appear in a link or a redirect.
  */
 export const ADMIN_ROUTES = {
-  /** The payment-link builder. The gate's redirect target (D91). */
-  home: "/admin",
-  login: "/admin/login",
-  styleguide: "/admin/styleguide",
+  /** The admin home: greeting and the two tiles. The gate's landing page. */
+  home: "/",
+  login: "/login",
+  styleguide: "/styleguide",
+  paymentLinks: "/payment-links",
+  products: "/products",
+  newProduct: "/products/new",
 } as const;
+
+/** `/products/<id>`, the product edit page. */
+export function adminProductRoute(id: string): string {
+  return `${ADMIN_ROUTES.products}/${encodeURIComponent(id)}`;
+}
 
 /* ===========================================================================
    Sign in
@@ -74,7 +80,7 @@ export interface AdminSession {
 /**
  * Sign-in result.
  *
- * Shaped like `QuoteFormState` (`src/features/product/types.ts`) so the one
+ * Shaped like `QuoteFormState` (`src/features/cart/types.ts` since D122) so the one
  * form idiom in this repo — `useActionState(action, INITIAL)` returning a
  * discriminated union — is the same idiom here.
  *

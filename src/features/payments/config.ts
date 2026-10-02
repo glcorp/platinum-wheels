@@ -37,11 +37,21 @@ export class PaymentsNotConfiguredError extends Error {
   }
 }
 
+/** The value Vercel holds until the owner pastes the real PIN. It must never
+ *  reach Converge: five wrong PINs put the calling IP — the shared Fixie IPs —
+ *  on Elavon's fraud list (`llm.md` Rules). So it counts as missing. */
+const PLACEHOLDER = "REPLACE_ME";
+
+function isSet(value: string | undefined): boolean {
+  const trimmed = value?.trim() ?? "";
+  return trimmed !== "" && trimmed !== PLACEHOLDER;
+}
+
 export function getConvergeConfig(): ConvergeConfig {
   const env = process.env;
   const missing = (
     ["CONVERGE_ENV", "CONVERGE_ACCOUNT_ID", "CONVERGE_USER_ID", "CONVERGE_PIN"] as const
-  ).filter((name) => !env[name]?.trim());
+  ).filter((name) => !isSet(env[name]));
   if (missing.length > 0) throw new PaymentsNotConfiguredError(missing);
 
   const environment = env.CONVERGE_ENV!.trim();
@@ -56,6 +66,20 @@ export function getConvergeConfig(): ConvergeConfig {
     pin: env.CONVERGE_PIN!.trim(),
     proxyUrl: env.FIXIE_URL?.trim() || undefined,
   };
+}
+
+/** The username and password Elavon's export script presents on
+ *  `/pay/notify` (D119). Both unset, or either a placeholder: the route is off
+ *  and answers 404, so nothing can post to it before Elavon has registered it. */
+export interface NotifyCredentials {
+  username: string;
+  password: string;
+}
+
+export function getNotifyCredentials(): NotifyCredentials | null {
+  const { CONVERGE_NOTIFY_USER: username, CONVERGE_NOTIFY_PASSWORD: password } = process.env;
+  if (!isSet(username) || !isSet(password)) return null;
+  return { username: username!.trim(), password: password!.trim() };
 }
 
 /**

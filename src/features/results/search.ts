@@ -3,7 +3,7 @@
  * matches, the similar sizes beneath them, and the facets beside them. Reads
  * the database, so it is never imported from a `"use client"` file.
  *
- * Serves three routes — `/results` (tires), `/wheels`, `/accessories` (D58) —
+ * Serves three routes — `/tires` (tires), `/wheels`, `/accessories` (D58) —
  * off one function, `searchResults(category, params)`. Everything
  * category-specific comes from `CATEGORY_CONFIG`
  * (`@/features/catalog/categories`); filtering, counting and sorting are SQL

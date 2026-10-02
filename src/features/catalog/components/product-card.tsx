@@ -3,9 +3,10 @@ import Link from "next/link";
 import { ViewTransition } from "react";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
+import { cartItem } from "@/features/catalog/cart-item";
 import { configFor } from "@/features/catalog/categories";
+import { AddToCartButton } from "@/features/catalog/components/add-to-cart-button";
 import { ProductPhotoPlaceholder } from "@/features/catalog/components/product-photo-placeholder";
 import {
   productImageSrc,
@@ -13,7 +14,8 @@ import {
   type ProductBadge,
 } from "@/features/catalog/types";
 import { cx } from "@/lib/cx";
-import { productRoute, quoteRoute } from "@/lib/routes";
+import { productRoute } from "@/lib/routes";
+import { PRICES_VISIBLE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
    ProductCard — the storefront's most reused component.
@@ -42,8 +44,8 @@ import { productRoute, quoteRoute } from "@/lib/routes";
 /* --- Routing ---------------------------------------------------------------
    No route is drawn anywhere: every `href` in all seven exports is `"#"`
    (`design/inventory/results.md:716`). The shape lives in one place,
-   `src/lib/routes.ts` (D18, D39); the card imports `productRoute` and
-   `quoteRoute` from there rather than owning a path literal. */
+   `src/lib/routes.ts` (D18, D39); the card imports `productRoute` from there
+   rather than owning a path literal. */
 
 /* --- Badges ----------------------------------------------------------------
    Copy ships in the artboards' source case; `text-transform:uppercase` on the
@@ -119,7 +121,7 @@ export interface ProductCardProps {
    * Marks this card's photo as an above-the-fold LCP candidate: it is
    * preloaded from `<head>` instead of lazy-loaded.
    *
-   * `/results` has no hero, so its first row of cards plays that role — the
+   * `/tires` has no hero, so its first row of cards plays that role — the
    * Lighthouse mobile run of 2026-09-21 (`design/reports/results.md`) measured
    * LCP 3.4s against the 2.5s gate with the first card image at
    * `loading="lazy"` and 523ms of resource load delay. `docs/decisions.md` §4
@@ -179,6 +181,13 @@ export interface ProductCardProps {
    * caller that passes nothing is unchanged.
    */
   sizes?: string;
+  /**
+   * The vehicle the visitor searched, `2021 Honda Civic`, already checked
+   * against the finder's list by the page (D91b), or `""`. `Add to cart` saves
+   * it on the cart line so the shop knows what the part was for (D122). The
+   * results grid and the PDP rows pass it; the home row has none.
+   */
+  vehicle?: string;
 }
 
 export function ProductCard({
@@ -186,6 +195,7 @@ export function ProductCard({
   priority = false,
   morph = true,
   sizes = IMAGE_SIZES,
+  vehicle = "",
 }: ProductCardProps) {
   const {
     slug,
@@ -338,13 +348,13 @@ export function ProductCard({
             may pair a card with the gallery. Every card on a page holds a
             `product-photo-<slug>` name, so an untyped pairing would also fly
             every card that exists on both pages — six featured cards into the
-            `/results` grid on a Tires-tile click, results cards into the PDP's
+            `/tires` grid on a Tires-tile click, results cards into the PDP's
             similar row. A tile, nav or crumb navigation to a category carries
             neither type, so those card↔card pairs resolve to `none` and stay
             put. Browser Back/Forward run no view transition at all (Next
             restores a traversal outside a React transition — measured, zero
             frames), so there is no reverse morph there; the breadcrumb's
-            `Results` crumb carries `product-back` and does morph (measured,
+            `Tires` crumb carries `product-back` and does morph (measured,
             702 → 326px). `default="none"` keeps the photo out of
             every unrelated transition (filter, sort, `Load more`), where the
             card's list-identity VT in `results-grid.tsx` animates the whole
@@ -532,48 +542,46 @@ export function ProductCard({
             explicit per-span colours resolve to. Renders
             `from` · `$129` · `/ tire` (`docs/decisions.md` §7; the drawn
             ` CAD` is dropped site-wide by D77). */}
-        <Price
-          amount={price}
-          context="card"
-          unavailable={!available}
-          unit={configFor(product).unit.card}
-          className="mt-1"
-        />
+        {/* D122: no price row at all while prices are switched off, not even
+            `Inquire for price`; the CTA keeps its bottom pin (`mt-auto`). */}
+        {PRICES_VISIBLE ? (
+          <Price
+            amount={price}
+            context="card"
+            unavailable={!available}
+            unit={configFor(product).unit.card}
+            className="mt-1"
+          />
+        ) : null}
 
         {/* `display:flex;flex-direction:row;gap:8px;margin-top:auto;
             padding-top:8px` — results-desktop.html:185. `margin-top:auto` is
             what pins the CTA to the bottom of an equal-height card. */}
         <div className="mt-auto flex flex-row gap-2 pt-2">
-          {/* Primary `background:var(--accent);color:var(--on-accent)`, copy
-              `Request a quote` — results-desktop.html:188. Ghost
-              `border:1px solid var(--text);color:var(--text);
-              background:transparent`, copy `Inquire about restock` —
-              results-desktop.html:453. Both `height:48px` / 44px mobile,
-              `padding:0 20px`, `flex:1`, `min-width:0`, `text-align:center`,
-              `border-radius:var(--radius-ctl)`, `+0.04em` — the Button
-              primitive's `card` size. Quote-first: there is no cart
-              (`docs/decisions.md:105`).
+          {/* Primary `background:var(--accent);color:var(--on-accent)` —
+              results-desktop.html:188. Ghost `border:1px solid var(--text);
+              color:var(--text);background:transparent` — results-desktop.html:453.
+              Both `height:48px` / 44px mobile, `padding:0 20px`, `flex:1`,
+              `min-width:0`, `text-align:center`, `border-radius:var(--radius-ctl)`,
+              `+0.04em` — the Button primitive's `card` size.
 
-              The sr-only tail names the product so 30 identical
-              `Request a quote` links on one page do not read identically out of
-              context; the visible label stays the link's leading text, so the
-              accessible name still contains it.
-
-              Deliberately NOT given `transitionTypes` (D92b): `quoteRoute()`
-              ends in a `#quote` fragment, and a typed slide combined with a
-              hash-fragment scroll jumps mid-flight (the view-transitions
-              skill's warning). It navigates untyped: no directional slide,
-              and the photo morph forms only if the PDP happens to be
-              prefetched already. */}
-          <Button
-            href={quoteRoute(slug)}
-            variant={available ? "primary" : "secondary"}
+              D122 (owner, 2026-10-01): the drawn `Request a quote` and
+              `Inquire about restock` are now one `Add to cart`, which puts the
+              category's set (`addQuantity`: four tires or wheels, one
+              accessory) in the browser cart. A discontinued product keeps the
+              drawn ghost variant and can still be added; the cart marks it.
+              `design/DEVIATIONS.md` #96. The sr-only tail names the product, so
+              thirty identical buttons on one page do not read identically out
+              of context. */}
+          <AddToCartButton
+            slug={slug}
+            item={cartItem(product)}
+            quantity={configFor(product).addQuantity}
+            vehicle={vehicle}
             size="card"
             className="flex-1"
-          >
-            {available ? "Request a quote" : "Inquire about restock"}
-            <span className="sr-only">{` ${brand} ${model} ${size}`}</span>
-          </Button>
+            srContext={`${brand} ${model} ${size}`}
+          />
         </div>
       </div>
     </article>

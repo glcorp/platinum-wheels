@@ -10,7 +10,8 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
 ## Owns
 - [`page.tsx`](page.tsx) — route `/`. Composition only: `SiteHeader variant="over-hero"`, the eight home
   sections in manifest order, `SiteFooter`. Parity: `design/reports/home.md`.
-- [`results/page.tsx`](results/page.tsx) — route `/results`, **built** 2026-09-21. Since **D58** it is
+- [`tires/page.tsx`](tires/page.tsx) — route `/tires`, **built** 2026-09-21 as `/results` and moved
+  here by **D112** (2026-09-30); `/results` is a 404 with no redirect. Since **D58** it is
   three lines long: it names the category (`tires`) and the title, and hands `await searchParams` to
   `ResultsPage` (`src/features/results/components/results-page.tsx`), which holds the whole measured
   composition — `SiteHeader variant="solid"` (D38), `ResultsToolbar`, `FilterSortBar`, the
@@ -19,9 +20,13 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   one level so three routes can share it. Parity: `design/reports/results.md`.
 - [`wheels/page.tsx`](wheels/page.tsx) and [`accessories/page.tsx`](accessories/page.tsx) — routes
   `/wheels` and `/accessories`, **built** 2026-09-21 (**D58**), previously `PageStub`s. Identical in
-  shape to `results/page.tsx`, differing only in the `category` they pass and their title. They have
-  **no artboards** and are not parity rows: they inherit `/results`' parity by rendering the same
+  shape to `tires/page.tsx`, differing only in the `category` they pass and their title. They have
+  **no artboards** and are not parity rows: they inherit `/tires`' parity by rendering the same
   component tree (`design/manifest.md` Routes).
+- [`cart/page.tsx`](cart/page.tsx) — route `/cart` (**D122**), static. Header (no nav item current), the
+  `Request a quote` eyebrow and `Your cart` `<h1>`, a `<noscript>` line with the phone (the cart needs the
+  browser), and `CartView` from `src/features/cart/`, handed the quote copy resolved on the server.
+  `robots: noindex, nofollow` in both flag states; not in any sitemap.
 - [`products/[slug]/page.tsx`](products/[slug]/page.tsx) — route `/products/[slug]`, **built**
   2026-09-21. `async`, takes `PageProps<"/products/[slug]">`, resolves the slug from the catalogue database since D108b (a real 404 if
   unknown or hidden since D91b, but a *discontinued* product still returns 200) and turns `productView(product, query)` into
@@ -36,6 +41,9 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   looked right), an unknown product slug returned 200 and a render error returned 200. Measured on a
   build without it: 404 and 500. Nothing replaced it: the results and product routes wait on the
   database since D108b, with no Suspense boundary, which is what keeps the 404 real (D111).
+- [`products/[slug]/og.jpg/route.ts`](products/[slug]/og.jpg/route.ts) — `/products/<slug>/og.jpg`, the
+  product's link-preview card (D112): its photo on the dark ground, 1200x630. A 404 for an unknown or
+  hidden slug; a redirect to the site card when the photo cannot be read.
 - [`qa-error/page.tsx`](qa-error/page.tsx) — **a test fixture, not a page** (D91b). Throws only when the
   server was started with `QA_ERROR_ROUTE=1` (the Playwright config sets it); otherwise `notFound()`. It
   exists so `tests/e2e/error-boundary.spec.ts` can prove the boundary end to end (a real 500).
@@ -62,7 +70,7 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   `metadata.robots: { index: false, follow: false }` (`:18-21`). Eleven blocks covering every primitive,
   variant and state, with computed contrast ratios shown on the page rather than buried in markdown
   (`:23-44`), and seed products transcribed from `design/inventory/results.md` §7 (`:46-48`). It now
-  also carries `Button size="load"`, the `/results` `Load more` size (`:229`). The final section,
+  also carries `Button size="load"`, the `/tires` `Load more` size (`:229`). The final section,
   *"States the design never drew"*, holds the undrawn states — **complete since D62**: the 404, the
   `ResultsEmpty` empty-results state (`:445`) and the `Change vehicle` disclosure open, which the
   artboards draw only closed (`:449-461`, D45) and the PDP quote-form success panel, rendered from the
@@ -72,6 +80,10 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   serialise a function across the client boundary, which the build catches outright.
 
 ## Rules
+- **Every indexable page builds its metadata with `pageMetadata()`** (`src/features/seo/metadata.ts`,
+  D112): title, description, the clean canonical path, Open Graph and Twitter in one call. `/`, the three
+  category pages and the product page also render `JsonLd`, outside `PageTransition`. `/styleguide` and
+  `/qa-error` keep their own `robots: noindex` and are in no sitemap.
 - Thin pages: metadata, landmarks, composition (`docs/decisions.md:62`). One `<h1>` per page;
   `header`/`nav`/`main`/`footer` landmarks present (`docs/decisions.md:79`).
 - **No `"use client"` in this tree, with exactly one named exception** — `error.tsx` (**D62**), which
@@ -80,9 +92,9 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   **D31** drawer, **D62** error boundary) live under `src/features/` and `src/components/site/`.
 - `next/link` for every internal link; links may point at routes that do not exist yet, and stub routes
   may be created so nothing 404s (**D26**).
-- Routes are **D18**, extended by **D58**: `/`, `/results`, `/wheels`, `/accessories`,
+- Routes are **D18**, extended by **D58**: `/`, `/tires`, `/wheels`, `/accessories`,
   `/products/[slug]`, `/styleguide`. The file for each is named in
-  the `design/manifest.md` Routes table (`:11-16`) — `results/page.tsx` and
+  the `design/manifest.md` Routes table (`:11-16`) — `tires/page.tsx` and
   `products/[slug]/page.tsx` are the planned paths, plus minimal stubs for the undesigned pages
   (About, Privacy, Terms, Wheels, Accessories) under **D26**.
 - Per-section build loop for any new page (`HANDOFF.md` §6): read both artboards → build mobile-first
@@ -129,5 +141,5 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
 1. ~~Shared chrome placement~~ — settled: composed per page (D38).
 2. **Stub route content.** **D26** authorises stubs for About, Privacy, Terms, Wheels and Accessories;
    what those pages say is unspecified and undesigned. **Owner**.
-3. `/styleguide` is specified as excluded from the sitemap (`design/manifest.md:16`), but no sitemap
-   route exists. See `src/app/llm.md` Open #2.
+3. ~~`/styleguide` is specified as excluded from the sitemap, but no sitemap route exists.~~ **Closed
+   2026-09-30 by D112.**

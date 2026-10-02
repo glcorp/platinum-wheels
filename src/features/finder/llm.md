@@ -5,24 +5,24 @@ The vehicle finder: Year / Make / Model as native `<select>`s plus the `Find my 
 `Find my wheels` / `Find my accessories`, D58, D67). It is the
 site's front door (`design/DESIGN.md` §5 "Finder … nothing else competes above the fold") and a hard
 HLD rule makes the controls native (`docs/decisions.md` §5). Its own feature per `docs/decisions.md` §3,
-because `/results` reuses it as "Change vehicle" (`design/manifest.md` §2 row 2) — and since D58/D67
+because `/tires` reuses it as "Change vehicle" (`design/manifest.md` §2 row 2) — and since D58/D67
 `/wheels` and `/accessories` do too, each with its own submit target.
 
 ## Owns
 Built at `page home`, 2026-09-20.
 - [`components/vehicle-finder.tsx`](components/vehicle-finder.tsx) — `VehicleFinder`, a Server
-  Component. A `<form method="get" action={ROUTES.results}>` with three native `Select`s
+  Component. A `<form method="get" action={ROUTES.tires}>` with three native `Select`s
   (`year` / `make` / `model`, none `required` — D79, root `llm.md` §5b — each with a disabled
   placeholder option) and a submit `Button`. Ships unselected (D28). Measured: `design/inventory/home.md`
   §2.3 lines 152-165.
-  Three props. `action?` and `cta?` (**D58**) default to `ROUTES.results` and `Find my tires`, the drawn
-  target and the artboard-verbatim copy, so the home hero and `/results` are unchanged; `/wheels` passes
+  Three props. `action?` and `cta?` (**D58**) default to `ROUTES.tires` and `Find my tires`, the drawn
+  target and the artboard-verbatim copy, so the home hero and `/tires` are unchanged; `/wheels` passes
   its own route and `Find my wheels` so `Change vehicle` there cannot throw a wheel shopper back into
   tires. `/accessories` passes `/accessories` and `Find my accessories` (**D67**, owner 2026-09-22,
   vetoing D59(2)). All three targets come from `CATEGORY_CONFIG`; this component only takes props.
   `variant?: "hero" | "inline"`: `hero` is the default and is the
   home panel unchanged — the −72px mobile / −120px desktop hero overlap, side margins and container cap
-  (`:34-38`); `inline` (D45) drops all three so the finder sits in flow inside the `/results` toolbar's
+  (`:34-38`); `inline` (D45) drops all three so the finder sits in flow inside the `/tires` toolbar's
   `Change vehicle` disclosure (`:39-41`).
 - [`components/finder-model-sync.tsx`](components/finder-model-sync.tsx) — `FinderModelSync`, the
   folder's **only** `"use client"` file (**D70**, owner 2026-09-22: *"model should only show for those
@@ -44,7 +44,7 @@ Built at `page home`, 2026-09-20.
   Also `FitmentSize`, `FITMENT` (`"<Make>|<Model>"` → one tire size **and one bolt pattern**, all 60 seed
   pairs, year ignored) and `findFitment(make, model)`: the **placeholder** vehicle → fitment map (D48(4)),
   flagged sample in its header. The `bolt` field is **D58** and `thread` / `tpms` are **D67**:
-  `/results` reads the tire size off an entry, `/wheels` reads only `bolt`, `/accessories` reads
+  `/tires` reads the tire size off an entry, `/wheels` reads only `bolt`, `/accessories` reads
   `thread` (lug-nut pitch, ASCII `12x1.5`) and `tpms` (`315` / `433`). Volkswagen is mapped to `5x112`,
   deliberately a pattern no seed wheel carries, so a VW submit exercises the no-exact-fit path. 38 of 60 pairs use one of the five sizes the catalog seed stocks so the best/similar
   split is demonstrable; 22 carry sizes the seed does not, so the empty `Best matches` state is reachable.
@@ -65,7 +65,7 @@ Built at `page home`, 2026-09-20.
   the same harmless way through `findFitment()`'s exact-string lookup returning `null` on no match
   (`data.ts`). No `FieldError`, no error summary and no new `"use client"` island were added for this —
   there is no invalid state to report.
-- No JavaScript required to submit: plain GET form to `ROUTES.results` with `year`, `make`, `model`
+- No JavaScript required to submit: plain GET form to `ROUTES.tires` with `year`, `make`, `model`
   query params. **Enhancement never gates a field.** `FinderModelSync` (D70) is the one script here and
   it may only narrow what is already rendered; the server must keep rendering every make's models, so
   a scripting-off visitor can still reach every one of them.
@@ -106,7 +106,7 @@ None folder-scoped. Governing: **D27, D28, D33, D39, D79**.
 - Don't derive makes, models, years, bolt patterns, thread pitches or TPMS frequencies from the wheel
   CSV (D9) — the D58 `bolt` and D67 `thread` / `tpms` values are authored placeholders like the rest of
   the map.
-- Don't hard-code `ROUTES.results` back into the form. The default prop already spells it, and the
+- Don't hard-code `ROUTES.tires` back into the form. The default prop already spells it, and the
   override is what keeps `/wheels` from bouncing to tires (D58).
 - Don't pre-select a vehicle (D28).
 - Don't make the finder a client component to "improve" it; the OS picker is the point.
@@ -134,7 +134,7 @@ options). Same streaming mechanism as **D80**, seen from the other side. Verify 
   D27 seed and the D48(4) placeholder map. Since D67 a vehicle resolves to four facts, not two, and
   thread pitch is the one a wrong value damages a wheel over; the sheet keeps it optional for that
   reason.
-- ~~Whether `/results` reads the three params or ignores them.~~ Answered: it parses `year`/`make`/`model`
+- ~~Whether `/tires` reads the three params or ignores them.~~ Answered: it parses `year`/`make`/`model`
   (all three or none) into `ResultsQuery.vehicle` (`src/features/results/query.ts:82-84,113`) and uses it
   only for the toolbar chip and the disclosure copy; it filters nothing, because no fitment data exists —
   `src/features/results/llm.md` Open #1, root `llm.md` §7.13. Owner / client for the real data.

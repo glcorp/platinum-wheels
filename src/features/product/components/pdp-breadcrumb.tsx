@@ -5,7 +5,7 @@ import { cx } from "@/lib/cx";
 import { ROUTES } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
-   PdpBreadcrumb — Home / Results / <leaf>
+   PdpBreadcrumb — Home / Tires / <leaf>  (drawn as Home / Results / <leaf>)
 
    Desktop lives inside the buy panel (`product-desktop.html:107`); mobile is
    hoisted above the gallery (`product-mobile.html:90`) — the page decides
@@ -24,7 +24,8 @@ import { ROUTES } from "@/lib/routes";
    (`product.md` §2.2).
 
    The middle crumb's label and target are per-category (D58): `view.config.crumb`
-   is `Results` on a tire — artboard-verbatim, unchanged — `Wheels` on a wheel,
+   is `Tires` on a tire since D112 (the artboards draw `Results`, quoted above
+   as drawn; `design/DEVIATIONS.md` #95), `Wheels` on a wheel,
    `Accessories` on an accessory; `view.backHref` (`view.config.route` plus the
    inbound query) already routes correctly for all three.
 

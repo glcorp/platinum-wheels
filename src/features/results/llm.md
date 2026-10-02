@@ -1,7 +1,7 @@
 # src/features/results
 
 ## Purpose
-The results engine and its sections — serving **three** routes since **D58**: `/results` (tires),
+The results engine and its sections — serving **three** routes since **D58**: `/tires` (tires),
 `/wheels` and `/accessories`. One composition, one set of components, one query/search pair; only the
 filter groups, the finder CTA and the seed differ, all read from `src/features/catalog/categories.ts`.
 The owner's instruction was *"keep them same as tires. only filters and skus change but everything else
@@ -100,6 +100,12 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `md:hidden`. `Not sure which one?` panel, `tel:` CTA from `PRIMARY_CONTACT` (D47(1)).
 
 ## Rules
+- **Prices can be switched off (D122, `DEVIATIONS.md` #97).** With `PRICES_VISIBLE` false: `query.ts`
+  ignores `min`/`max`, `SORT_OPTIONS` holds `Best match` alone and `HAS_SORT_CHOICE` is false, so neither
+  sort control renders and the mobile bar's `Filters` cell takes the whole row, and `filter-panel.tsx`
+  drops the price group. Cards pass the checked search vehicle to `Add to cart` (`results-grid.tsx`).
+  Beneath that, `src/features/catalog/queries.ts` sends no price and ranks by none (D124), so a hidden
+  price is neither in the page data nor in the order of `Best match`.
 - **State is the URL.** No component holds filter state; islands call `router.replace(resultsHref(q))`
   with `scroll: false`. The server is the only place results are computed (D44, `docs/decisions.md` §4).
 - **Counts are computed from the seed, never typed** (D42); no artboard number ships as a count.
@@ -181,7 +187,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 3. Parity: `design/reports/results.md` (its five rail and three sheet `Category` rows are annotated as
    superseded). Deviations: #25–#35, #49–#53 (#52 superseded by D67), #60, #61–#63 (D72 toolbar), #68, #71.
 4. **`/wheels` and `/accessories` have no parity report and are not parity rows** (#49) — they inherit
-   `/results`' parity by rendering the same tree, which stops the moment either diverges visually.
+   `/tires`' parity by rendering the same tree, which stops the moment either diverges visually.
 5. Every wheel and accessory SKU, brand, finish and price is **placeholder data** (D58 under D48), and
    five client photos cover the nine accessory SKUs (#51). Client, via owner.
 6. ~~`wheel-size-grid`/`wheel-size-grid-sheet`~~ (closed, #67; dead code owed for removal, D25). Owner.

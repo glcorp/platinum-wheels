@@ -8,8 +8,8 @@ them the first thing to build before `page home`: every route composes them, so 
 would mean fixing parity twice.
 
 **Built** at `page home`, 2026-09-20: `site-header.tsx`, `site-footer.tsx`, `site-nav-drawer.tsx` and
-`page-stub.tsx` all exist. `SiteHeader` and `SiteFooter` are composed by `/` and `/results`
-(`src/app/(storefront)/page.tsx:3-4`, `results/page.tsx:3-4`); `PageStub` stands behind every
+`page-stub.tsx` all exist. `SiteHeader` and `SiteFooter` are composed by `/` and `/tires`
+(`src/app/(storefront)/page.tsx:3-4`, `tires/page.tsx:3-4`); `PageStub` stands behind every
 undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 
 ## Owns
@@ -25,11 +25,18 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   `nav-rule` hover (DEVIATIONS #76); the active item paints its lime underline as a `nav-indicator` span
   inside `<ViewTransition name="nav-indicator">` so it travels on a category change; the three nav links
   are `prefetch={true}` because the indicator only travels if the destination renders in the same
-  transition; the logo is typed `nav-back`. Shared by `/`, `/results` and `/products/[slug]`
+  transition; the logo is typed `nav-back`. Shared by `/`, `/tires` and `/products/[slug]`
   (unbuilt routes may still import it per D26/D39). 88px bar from `sm:` / 68px below.
 - [`site-footer.tsx`](site-footer.tsx) — Server Component, named export `SiteFooter`, no props.
   120px logo badge, Shop/Company/Legal link columns (`ROUTES`), a computed `Winter <year>` link
   and bottom-bar `© <year> {SITE.legalName} Inc.` (D32). Social row omitted per D34.
+- [`cart-link.tsx`](cart-link.tsx) — `"use client"`, named export `CartLink` (**D122**). The header's
+  cart: a 44×44 link to `/cart` in the menu trigger's box and stroke weight, after the phone CTA and
+  before the menu at every width (owner: "it doesn't need to be inside the hamburger"). An accent count
+  of units, only when the cart is not empty, that pops (`cart-pop`) on an add and never on a page load;
+  and a fixed `Added to cart` / `Cart updated` prompt with `View cart`, bottom of the screen on a phone
+  and bottom-right at the 420px measure from `sm:`, held while hovered or focused, 6 s otherwise. The
+  prompt sits in an always-mounted polite live region. Reads `src/lib/cart.ts` only.
 - [`site-nav-drawer.tsx`](site-nav-drawer.tsx) — `"use client"`, named export `SiteNavDrawer`. Props:
   `{ links: ReadonlyArray<{ label: string; href: string; active: boolean }>; phone: { display: string;
   tel: string } }`. 44×44 hamburger trigger + a native `<dialog showModal()>` full-screen drawer
@@ -133,7 +140,7 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   omitted until URLs exist. Precedent D7: no dead links.
 - **The year is computed at render**, never hard-coded — D32. `© <year>` here, `Winter <year>` in the
   home promo. The artboards' `2026` is sample data (`design/DEVIATIONS.md`, "Sample data").
-- **Links point at planned routes** — D26. `/results`, `/products/<slug>` and the stub routes are
+- **Links point at planned routes** — D26. `/tires`, `/products/<slug>` and the stub routes are
   linkable before they exist; every `href` in the exports is `"#"` (`design/inventory/home.md:731`).
 - **Header and footer stay Server Components.** Only leaf islands take `"use client"` (the drawer, and
   since D80/D92b `hash-scroll` and `scroll-reveal`, which render nothing)
@@ -173,7 +180,7 @@ all widths, hide rather than remove).
 - **Depends on:** `src/lib/site.ts` (`SITE`, `CONTACTS`, `PRIMARY_CONTACT`) and `src/lib/routes.ts`;
   `src/components/ui/button.tsx` for the header CTA; `src/app/globals.css` tokens; `next/image`,
   `next/link`; `public/images/` for the badge PNG.
-- **Depended on by:** `src/app/(storefront)/page.tsx:3-4` and `results/page.tsx:3-4`
+- **Depended on by:** `src/app/(storefront)/page.tsx:3-4` and `tires/page.tsx:3-4`
   (`SiteHeader` + `SiteFooter`); `products/[slug]/`, `wheels/`, `accessories/`;
   `about/`, `privacy/`, `terms/` (`ProsePage`) and `src/app/not-found.tsx:2` (`PageStub`). Nothing
   under `src/features/` imports it — the boundary runs one way (`docs/decisions.md:65`).

@@ -6,6 +6,8 @@ import {
   ProsePage,
   ProseSection,
 } from "@/components/site/prose-page";
+import { pageMetadata } from "@/features/seo/metadata";
+import { ROUTES } from "@/lib/routes";
 import { SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
@@ -26,18 +28,22 @@ import { SITE } from "@/lib/site";
    and this page has no honest source for one).
 
    Each clause describes something the build actually does:
-     - quote-first, no cart, no checkout (`docs/decisions.md` §7);
-     - prices are per item, CAD, before tax and install (D21, `Price`);
+     - quote-first, no checkout: since D122 a browser-only cart gathers the
+       products and sends one quote request, and takes no payment;
+     - prices are per item, CAD, before tax and install (D21, `Price`), and
+       since D122 a switch can hide every price, so the Pricing clause reads
+       "Where a price is shown" (a qualifier, no new commitment);
      - fitment is confirmed by the shop, which is the whole premise of the
-       finder and the quote band;
+       finder and the quote request;
      - availability is a boolean on `Product` and is not a stock count
        (`docs/decisions.md` §7 forbids displaying counts).
    --------------------------------------------------------------------------- */
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Terms",
   description: `The terms that apply to quotes and pricing from ${SITE.legalName}.`,
-};
+  path: ROUTES.terms,
+});
 
 /* One list of sections, mapped straight into `ProseSection`s below. */
 const SECTIONS: ReadonlyArray<{
@@ -62,9 +68,9 @@ const SECTIONS: ReadonlyArray<{
     body: (
       <>
         <p>
-          Prices are shown per item, in Canadian dollars, before tax and before
-          installation. They can change, and a quote we send you holds for the
-          period stated in it.
+          Where a price is shown, it is per item, in Canadian dollars, before
+          tax and before installation. Prices can change, and a quote we send
+          you holds for the period stated in it.
         </p>
         <p>
           We do not take payment on this site. Payment is arranged with us

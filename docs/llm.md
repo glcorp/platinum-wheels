@@ -21,6 +21,9 @@ question; the design alone cannot, because it never speaks to implementation.
   - §8 content and legal: hero replacement, no invented social proof, text wordmarks, contact constants in `src/lib/site.ts`, sample data must not ship.
   - §9 quality gates per page: `npm run check`, a measured parity report, zero design-guideline findings, Lighthouse floors, keyboard walk-through, reduced motion.
   - §10 explicitly out of scope: visual-regression tests, axe in CI, and git history.
+- [`catalogue-csv.md`](catalogue-csv.md) — the suggested layout of the catalogue file the import
+  reads: one row per product, the columns per category, and what the import does with a bad row
+  (D113). A suggestion for whoever prepares the data, not authority level 1.
 - [`payments.md`](payments.md) — the payments design: Converge via Costco/Elavon, our own link + hosted
   payment page, data model and state machines, static-IP proxy limits, env vars, proposed decision rows.
 

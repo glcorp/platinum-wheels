@@ -5,9 +5,9 @@ The product domain: what a product *is* in this build, and the card that renders
 (2026-09-21) that means three categories, not one — tires, wheels and accessories — and this folder also
 owns the table that tells the rest of the build how they differ. `ProductCard` is "the
 storefront's most reused component" (`product-card.tsx:10`) — one shell with three homes, the home
-`featured-tires` row, the `/results` grid and the PDP `similar-products` row, all three of which measure
+`featured-tires` row, the `/tires` grid and the PDP `similar-products` row, all three of which measure
 byte-identically, so there is one component and no per-context variant (`product-card.tsx:12-18`).
-Delete this folder and every route loses its product surface, and `/results`, `/wheels` and
+Delete this folder and every route loses its product surface, and `/tires`, `/wheels` and
 `/accessories` lose the config that distinguishes them.
 
 ## Owns
@@ -23,7 +23,7 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   card instances, and four cut-outs cover the nine SKUs (D43). A per-SKU photo set removes every `image`
   and leaves `slug` doing the work again. Optional `studdable?: boolean` is the PDP spec table's
   `Winter (studdable)` row (D53(2)); it is deliberately **not** pushed into `badges`, which would give
-  that card a second badge and move a measured `/results` parity row. Carried by
+  that card a second badge and move a measured `/tires` parity row. Carried by
   `zeta-antarctica-sport` and its 235/40R18 sibling — the drawn PDP subject.
   **D58 added** `ProductCategory`, `AccessoryType`, `WheelSpec` (`WheelFinish` went with the finish filter, D105b), the optional
   `category` / `wheel` / `accessoryType` fields, `productCategory()` (absent `category` = tires) and
@@ -39,8 +39,16 @@ Delete this folder and every route loses its product surface, and `/results`, `/
   and D37 routes every cross-feature import through `catalog/`. It imports **no seed data**, so
   `filter-panel.tsx` (a `"use client"` island) can import it. **No `label` field since D71**: it fed only
   the rail's `Category` group, now unbuilt (#60).
+- [`components/add-to-cart-button.tsx`](components/add-to-cart-button.tsx) — `AddToCartButton`
+  (**D122**), the card's and the PDP's one CTA, a client island: the drawn CTA's `Button` box, primary or
+  (discontinued) ghost, writes the browser cart (`src/lib/cart.ts`) and reads `Added ✓` / `Updated ✓` for
+  1.8 s. Takes the quantity and the server-checked vehicle as props.
+- [`cart-item.ts`](cart-item.ts) — `cartItem(product)`, the one description of a product a cart line
+  shows (no price), shared by the card, the PDP and the cart's refresh (D122).
 - [`components/product-card.tsx`](components/product-card.tsx) — `ProductCard`, props
-  `{ product: Product }`. A Server Component: hover is pure CSS (`product-card.tsx:29-30`). Composes
+  `{ product: Product }`. A Server Component: hover is pure CSS (`product-card.tsx:29-30`). Since D122 its
+  CTA is `AddToCartButton` (category `addQuantity`, optional `vehicle` prop) and its `Price` renders only
+  while `PRICES_VISIBLE` (`DEVIATIONS.md` #96, #97). Composes
   `Badge`, `Button` and `Price` (`:4-6`). The photo src is `/images/products/` + `product.image ?? slug`
   + `.webp` (`product-card.tsx:160`). The photo is wrapped in a second `<Link>` to the same
   `productRoute(slug)` the model link uses, `tabIndex={-1} aria-hidden="true"` so it adds a pointer
@@ -66,33 +74,60 @@ Delete this folder and every route loses its product surface, and `/results`, `/
     `CatalogFacets`, `ProductInput`, `AdminProduct`, plus the four enum value lists. No database code,
     client-safe.
   - [`queries.ts`](queries.ts) — storefront reads: `listProducts`, `getFacets`, `getProductBySlug`,
-    `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs`, `getPriceBounds`, `getBrands` (every
+    `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs` (`includeDiscontinued` for the cart,
+    D122), `getPriceBounds`, `getBrands` (every
     brand a category carries, whatever is filtered; D111), `listProductUrls`.
     The only place visibility is decided.
   - [`store.ts`](store.ts) — staff reads and every write: `listAllProducts`, `getProductById`,
-    `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`.
+    `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`, and
+    `createProductsBatch` (D114), the bulk form of `createProduct` for a catalogue load: one INSERT
+    per table for a whole batch, inside the caller's transaction, with nothing looked up.
     **Not gated**; `src/features/admin/` is the gate.
   - [`product-input.ts`](product-input.ts) — `PRODUCT_FIELD` and `parseProductInput()`, the one
     validator every writer goes through. Pure.
   - [`size.ts`](size.ts) — `parseTireSizeSpec()` (metric and flotation) and the bolt-pattern
-    normalisers. Pure. [`slug.ts`](slug.ts) — `buildProductSlug()`. Pure.
+    normalisers. Pure. [`slug.ts`](slug.ts) — `buildProductSlug()`, and `nextFreeSlug()`, the one
+    `-2`, `-3` rule a single create and a bulk load share. Pure.
   - [`rows.ts`](rows.ts) — the product + specs join and the row mapper, shared by `queries.ts` and
     `store.ts`.
+  - [`lookups.ts`](lookups.ts) — small staff reads beside `store.ts` (D116): `listVendors`, `brandExists`,
+    `vendorExists` (the pick-from-existing dropdowns and their server-side check) and
+    `countProductsByStatus`. Not gated.
+  - [`photos.ts`](photos.ts) — `product_images` reads and writes for the admin (D117): list, add (locks the
+    product row; at most `MAX_PHOTOS_PER_PRODUCT`, 8), remove, move. Keeps each product's photos numbered
+    0..n-1 and bumps `products.updated_at`. Talks to Postgres only; Blob is `src/features/admin/`'s job.
+- **The catalogue import (D113, D114).** Run by `scripts/catalog-import.ts`.
+  - [`import-mapping.ts`](import-mapping.ts) — `IMPORT_MAPPING`: CSV header → product field, the exact
+    value renames, the numbered source columns and the photo columns. **The one file to edit when the
+    catalogue file's layout changes.** Pure.
+  - [`import-plan.ts`](import-plan.ts) — `planImport()`: rows in; what would be created (each with its
+    slug) and what is refused, with the reason and the column, out. Drives the dry run and the real
+    load alike. Pure.
 
 ## Rules
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
   `hidden` product or a vendor source; `store.ts` returns both (D105b).
+- **With prices off, `queries.ts` returns no price and orders by none (D124).** While `PRICES_VISIBLE` is
+  false every product it returns has `price: null`, `getPriceBounds` is `null`/`null`, `min`/`max` are
+  ignored, the price sorts read as `best`, and `best` and the similar row drop their price tie-break.
+  Hiding prices only in components still shipped them in the page data. The admin reads prices through
+  `store.ts` and is unaffected.
 - **Listings show `published` only; a product page loads `published` and `discontinued`; `hidden` is a
   404.** There is no in-stock flag (D105b).
 - **A slug is written once, at create, and never rewritten** (D107b).
-- **`queries.ts`, `store.ts` and `rows.ts` are server only.** They open database connections. A
+- **`queries.ts`, `store.ts`, `rows.ts`, `lookups.ts` and `photos.ts` are server only.** They open database connections. A
   `"use client"` file may import `catalog-types.ts`, `product-input.ts`, `size.ts` and `slug.ts`.
+- **The import reports; it does not repair** (D113). A row is valid as the file gives it, after the
+  mapping's exact renames, or it is refused and listed. No cleanup, no de-duplication, no guessing in
+  `import-plan.ts` or `import-mapping.ts`. Two rows with one vendor + SKU are both refused.
+- **`createProductsBatch` must write exactly what `createProduct` writes.** Change one, change the
+  other, and compare them on a real Postgres (checked row for row on 2,345 products, D114).
 - **Nothing enters `Product` that the cards do not vary on.** The field list traces to
   `design/inventory/results.md:363`; adding a field means measuring it first.
 - **Deliberately absent, and must stay absent:** stock counts, shipping, ratings, invented specs
-  (`docs/decisions.md:107`), and — because there is no cart — quantity, availability counts and any
-  add-to-cart affordance (`docs/decisions.md:105`, `types.ts:10-13`).
-- **Route shape comes from `src/lib/routes.ts`** (`productRoute()`, `quoteRoute()`, D39); the card owns no
+  (`docs/decisions.md:107`), and quantity or availability counts: since D122 the card adds to a cart, but
+  the cart (`src/lib/cart.ts`) keeps the quantities and the product carries none.
+- **Route shape comes from `src/lib/routes.ts`** (`productRoute()`, D39; `quoteRoute()` went with D122); the card owns no
   path literal — D18.
   Every `href` in all seven exports is `"#"` (`design/inventory/results.md:716`), so the shape is ours.
 - **Badges: WINTER first, at most two** (`design/DESIGN.md:201`, implemented `product-card.tsx:121-131`).
@@ -165,6 +200,12 @@ in place.
 - **Depends on (D105b):** `src/db/` (`getDb()`, the catalogue tables).
 - **Depended on by (D105b):** `src/features/admin/` — `product-queries.ts` and `product-actions.ts` call
   `store.ts` and `product-input.ts`.
+- **Depended on by (D113):** `scripts/catalog-import.ts` — `import-plan.ts`, `import-mapping.ts` and
+  `store.ts` `createProductsBatch`.
+- **Depends on (D122):** `src/lib/cart.ts` (`addToCart`, `CartItem`), `src/lib/site.ts`
+  (`PRICES_VISIBLE`).
+- **Depended on by (D122):** `src/features/cart/` (`getProductsBySlugs`, `toProduct`, `cartItem`,
+  `CATEGORY_CONFIG`) and `src/features/product/` (`AddToCartButton`, `cartItem`).
 - **Depended on by:** `src/app/(storefront)/styleguide/page.tsx`; `src/features/home/` (featured row,
   D29); `src/features/results/` — `search.ts` asks `queries.ts` for the lists and facets and is the
   only place results are computed (D44), `query.ts` and `filter-panel.tsx` read `CATEGORY_CONFIG`, and
@@ -179,21 +220,29 @@ in place.
   (`docs/decisions.md:105-107`).
 - **Don't upscale a product cut-out to fix the two low-res SKUs.** `scripts/prepare-assets.mjs` refuses
   by design; it is a client blocker (D19, `HANDOFF.md` §7).
-- **Don't change the CTA copy.** `Request a quote` / `Inquire about restock` are artboard-verbatim
-  (`product-card.tsx:330`, `docs/decisions.md:105`).
+- **Don't change the CTA copy.** `Add to cart` is the owner's and the client's wording (D122,
+  `DEVIATIONS.md` #96); the drawn `Request a quote` now belongs to the cart page alone.
 - **Don't list `transform` in the hover transition** to match the artboard string — it would be inert
   (DEVIATIONS #15).
 - **Don't make the card photo's `share` a plain string** to "fix" a missing morph. Untyped, every slug
-  present on both pages pairs and flies at once — Home → `/results` flew six photos (D92b).
+  present on both pages pairs and flies at once — Home → `/tires` flew six photos (D92b).
 
 ## Open
+13. **The catalogue holds the STAND-IN load, not the approved data** (D113): 44,143 products from the
+    scraped vendor sheets, all `published`, no prices, no photos, duplicates across vendors not
+    merged. When the co-founder's cleaned CSV arrives the catalogue is emptied and loaded fresh, and
+    emptying it is its own effort: nothing in the repo does it. Owner.
+14. **10,249 stand-in slugs carry a `-2`, `-3` …**, mostly PRO WHEELS wheels that share brand, model,
+    size, bolt pattern, offset and finish and differ only in something the slug does not read (centre
+    bore, SKU). Those suffixes follow file order, so they move if the file's order does. Whether the
+    wheel slug should carry more is the owner's call (D107b(1)).
 7. ~~**Wire the pages to `queries.ts`**~~ **Done by D108b**, with the four UI changes D105b listed.
 8. **Only the home row is cached** (`home/featured.ts`, D109; by tag with no timer since D111). The results and product pages read Postgres
    on every request: measured at 6 to 97 ms with all ~46k vendor rows, and their filter combinations
    are unbounded, so a cache there would grow without limit for little gain. Revisit if a page is slow
    in production. Owner.
-11. **No sitemap yet.** `listProductUrls()` is ready for one, but the site has no canonical URL in code
-    and the public domain still serves the goodwill site (D96). It belongs with the SEO work. Owner.
+11. ~~**No sitemap yet.**~~ **Closed 2026-09-30 by D112:** `src/features/seo/sitemap.ts` calls
+    `listProductUrls()` once per category, behind the indexing flag.
 12. **`public/images/products/*.webp` is now used by `/styleguide` only.** The seed cut-outs stay until
     real product photos are uploaded. Owner.
 9. **Tire sizes the parser refuses**, all real but none in the vendor sheets: commercial `11R22.5` and

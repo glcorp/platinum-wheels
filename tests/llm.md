@@ -28,6 +28,12 @@ database** (Open, below), and the rules in this file apply again from that day.
   `e2e/environment.spec.ts` (offline, blocked storage, failed images/fonts, CPU races, rotation, zoom, print,
   two tabs). `PW_ROOT_ERROR=1` enables the root-layout-error tests in `error-boundary.spec.ts` and needs a
   scratch server whose root layout throws.
+- `e2e/seo.spec.ts` (D112) — the search-facing contract, network only (no browser, one project):
+  `robots.txt` and the sitemaps by flag and by host, the robots meta, canonical and preview tags of every
+  indexable page, the never-indexed pages, and the structured data, which fails on any address, opening
+  hours, price, offer, rating or review. **One run sees one flag state**: run it once as is and once with
+  `SEARCH_INDEXING_ENABLED=true` against a build made with the same value. Its product test skips
+  until the fixture database exists (D111); everything else needs no database rows.
 - `e2e/**/__screenshots__/` — `toHaveScreenshot` baselines (macOS, Chromium only). Committed.
 
 ## Rules
@@ -78,6 +84,10 @@ database** (Open, below), and the rules in this file apply again from that day.
 - Don't run the suite against :3000. A dev server passes tests production fails, and vice versa (D88).
 
 ## Open
+- **The quote band moved to the cart (D122).** Every spec that fills the PDP quote form, clicks a card's
+  `Request a quote` or follows `#quote` (the specs that mention it: `a11y-axe.spec.ts`, `a11y-interaction.spec.ts`, `engines.spec.ts`, `environment.spec.ts`, `home.spec.ts`, `finder.spec.ts`, `nojs.spec.ts`, `hostile-query.spec.ts`, `parity.spec.ts`, `responsive.spec.ts`, `product.spec.ts`;
+  and the PDP visual baselines) asserts a page that no longer exists. Kept as written while the suite is parked (D111, D123(8)); rewrite them against `/cart` and its
+  dialog with the fixture database. Coordinator.
 - **The fixture database (D111). Blocks every run.** What it takes: a Postgres the suite starts itself
   (the merge check used PGlite behind `@electric-sql/pglite-socket`, which `pg` and
   `scripts/db-migrate.mjs` both accept); the old seed's 27 products loaded through `catalog/store.ts`

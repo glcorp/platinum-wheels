@@ -162,7 +162,7 @@ export function Chip({
 /* ---------------------------------------------------------------------------
    ChipCheckbox — the same chip box as a real `<input type="checkbox">`
 
-   The `/results` Season group has to submit without JS (D44), so each chip is a
+   The `/tires` Season group has to submit without JS (D44), so each chip is a
    native checkbox in the filter `<form method="get">` rather than a `<button>`.
    The box, type and both state recipes are the ones above — `chipBox`,
    `chipRestClass`, `chipSelectedClass` — reused, not re-measured. The selected

@@ -276,7 +276,7 @@ test.describe("landscape phones", () => {
       test.skip(browserName === "firefox", "no isMobile in Firefox");
       const { context, page } = await phoneContext(browser, vp);
       try {
-        await page.goto(`/results?${VEHICLE}`);
+        await page.goto(`/tires?${VEHICLE}`);
         await settle(page);
         await expectNoHorizontalOverflow(page);
         const header = await rectOf(page, "header");
@@ -378,7 +378,7 @@ test.describe("landscape phones", () => {
     const vp = LANDSCAPE[0];
     const { context, page } = await phoneContext(browser, vp);
     try {
-      await page.goto("/results");
+      await page.goto("/tires");
       await settle(page);
       // Walk forward into the grid with the real keyboard, then back out.
       await page.locator("body").press("Tab");
@@ -430,7 +430,7 @@ test.describe("dvh: overlays track the viewport height", () => {
     const short = { width: 390, height: 750 };
     const { context, page } = await phoneContext(browser, tall);
     try {
-      await page.goto("/results");
+      await page.goto("/tires");
       await settle(page);
       await page.locator('[data-probe="filters-trigger"]').click();
       const sheet = page.getByRole("dialog", { name: "Filters" });
@@ -487,7 +487,7 @@ test.describe("dvh: overlays track the viewport height", () => {
     // with `env(safe-area-inset-bottom)` (docs/decisions.md §5, D66). WebKit
     // reports every safe-area inset as 0 unless the page declares
     // `viewport-fit=cover`, so without it that term is inert on every iPhone.
-    await page.goto("/results");
+    await page.goto("/tires");
     const meta = await page
       .locator('meta[name="viewport"]')
       .getAttribute("content");
@@ -628,7 +628,7 @@ const overlaps = (a: Rect, b: Rect) =>
 
 test.describe("long content", () => {
   test("product card: 60-char brand, 120-char model", async ({ page }) => {
-    await page.goto("/results");
+    await page.goto("/tires");
     await settle(page);
     const g = await injectIntoCard(page, "best-grid", LONG_BRAND, LONG_MODEL);
     await expectNoHorizontalOverflow(page);
@@ -642,7 +642,7 @@ test.describe("long content", () => {
   test("product card photo: a 60-char brand stamp stays inside the photo and off the badges", async ({
     page,
   }) => {
-    await page.goto("/results");
+    await page.goto("/tires");
     await settle(page);
     const g = await injectIntoCard(page, "best-grid", LONG_BRAND, LONG_MODEL);
     expect(
@@ -665,7 +665,7 @@ test.describe("real seed card geometry", () => {
     // 1100-1180 is the narrowest card (3-up beside the rail, D46), an undrawn band.
     const hits: string[] = [];
     for (const route of [
-      "/results?show=all",
+      "/tires?show=all",
       "/wheels?show=all",
       "/accessories?show=all",
     ]) {
@@ -760,7 +760,7 @@ test.describe("long content, continued", () => {
       ["Volkswagen", "Tiguan"],
     ] as const) {
       await page.goto(
-        `/results?year=2024&make=${make}&model=${encodeURIComponent(model)}`,
+        `/tires?year=2024&make=${make}&model=${encodeURIComponent(model)}`,
       );
       await settle(page);
       const m = await page
@@ -788,7 +788,7 @@ test.describe("long content, continued", () => {
     }
   });
 
-  for (const route of ["/results", "/wheels", "/accessories"] as const) {
+  for (const route of ["/tires", "/wheels", "/accessories"] as const) {
     test(`vehicle chip on ${route}: 120-char model from the URL is never printed`, async ({
       page,
     }) => {
@@ -831,9 +831,9 @@ test.describe("long content, continued", () => {
 
 test.describe("result-set sizes", () => {
   const cases = [
-    { name: "empty", url: "/results?brand=Zeta&season=all-season", cards: 0 },
+    { name: "empty", url: "/tires?brand=Zeta&season=all-season", cards: 0 },
     { name: "one", url: "/wheels?finish=bronze&brand=Touren", cards: 1 },
-    { name: "many", url: "/results?show=all", cards: 9 },
+    { name: "many", url: "/tires?show=all", cards: 9 },
   ] as const;
   for (const c of cases) {
     test(`${c.name}: ${c.url}`, async ({ page }) => {
@@ -886,7 +886,7 @@ test.describe("result-set sizes", () => {
     const context = await browser.newContext(info.project.use);
     try {
       const measure = async (page: Page) => {
-        await page.goto("/results");
+        await page.goto("/tires");
         await settle(page);
         return page
           .locator('[data-probe="best-grid"] article')

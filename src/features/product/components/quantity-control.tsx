@@ -85,12 +85,10 @@ function ChevronIcon({ size }: { size: number }) {
 /** `?qty=<value>` with every other current param preserved, verbatim order
  *  (`view.ts` uses the same `URLSearchParams` approach for `backHref`).
  *
- *  `custom` alone carries a `#quote` fragment: it is the one cell with
- *  nowhere on-screen to record a number until the quote form's Optional
- *  group renders the field for it (D50 Open #6), a viewport and a half
- *  below on mobile — so its own link takes the visitor to where the choice
- *  is actually expressed. `1`/`2`/`4` need no anchor; the panel already
- *  shows their result in place. */
+ *  `custom` used to carry a `#quote` fragment, to reach the quote form's
+ *  number field a viewport below. Since D122 that field sits in the buy panel
+ *  itself, right under these cells (`add-to-cart-panel.tsx`), so no cell
+ *  carries a fragment and none scrolls. */
 function hrefFor(
   value: QuantityKey,
   searchParams: Record<string, string | string[] | undefined>,
@@ -105,8 +103,7 @@ function hrefFor(
     }
   }
   search.set(PRODUCT_PARAM.qty, value);
-  const query = `?${search.toString()}`;
-  return value === "custom" ? `${query}#quote` : query;
+  return `?${search.toString()}`;
 }
 
 export function QuantityControl({
@@ -137,6 +134,9 @@ export function QuantityControl({
               <Link
                 key={option.value}
                 href={hrefFor(option.value, searchParams)}
+                /* D122: no `#quote` to scroll to any more; stays put like the
+                   number cells (D91b, WDG-05). */
+                scroll={false}
                 aria-current={selected ? "true" : undefined}
                 data-qty-cell=""
                 className={
@@ -163,8 +163,7 @@ export function QuantityControl({
               /* Same-route `?qty=` nav: without this Next scrolls to the top
                  once the page's first element is off-screen, so on a phone a
                  tap threw the reader away from the cells (D91b, WDG-05; the
-                 D68 `Load more` mechanism). `Custom` keeps the default — its
-                 `#quote` fragment is the scroll it wants. */
+                 D68 `Load more` mechanism). */
               scroll={false}
               aria-current={selected ? "true" : undefined}
               data-qty-cell=""

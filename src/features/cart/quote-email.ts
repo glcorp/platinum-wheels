@@ -1,16 +1,19 @@
 /* ---------------------------------------------------------------------------
    Quote delivery by email (D104, unparking root `llm.md` §7.15)
 
-   Two plain-text emails per accepted inquiry, sent through Resend's REST API
-   with `fetch` (no SDK dependency):
+   Two plain-text emails per accepted request, sent through Resend's REST API
+   with `fetch` (no SDK dependency). Since D122 a request is a whole cart, so
+   each email lists every line; still one alert and one reply per request,
+   never one per product (owner ruling, "One email, all items"):
    1. **Owner alert** to `LEAD_CAPTURE_EMAIL`, which is also the sender. Carries everything the visitor typed,
       plus the CASL consent record: yes/no, the exact checkbox wording, the
       time and the page URL. Owner ruling 2026-09-23: the alert IS the consent
       record, there is no database row.
    2. **Auto-reply** to the visitor. A fixed body that never repeats what the
       visitor typed, so the form cannot be used to relay spam to a third
-      party's inbox. The only variable is the product name, looked up from the
-      catalogue by slug.
+      party's inbox. The only variables are the product names, looked up from
+      the catalogue by slug, and the quantities, which the action parsed as
+      whole numbers.
 
    **Env:** `AUTO_EMAIL_LEAD_CAPTURE_ENABLED`, `RESEND_API_KEY`,
    `LEAD_CAPTURE_EMAIL`. With the flag on, a missing key or address is a
@@ -27,8 +30,8 @@
    Plain text only: no HTML body means nothing typed by a visitor can ever be
    rendered as markup in the owner's mail client.
 
-   Never logs a name, email, phone or message. Log lines carry the slug and an
-   outcome only, in the admin's one-JSON-line style (`admin/session.ts`).
+   Never logs a name, email, phone or message. Log lines carry a line count and
+   an outcome only, in the admin's one-JSON-line style (`admin/session.ts`).
    --------------------------------------------------------------------------- */
 
 import { SITE, PRIMARY_CONTACT } from "@/lib/site";
@@ -56,18 +59,28 @@ function leadCaptureEmail(): string | null {
   return EMAIL_PATTERN.test(address) ? address : null;
 }
 
-/** Everything the owner alert needs. Built by `submitQuote` after validation. */
-export interface QuoteInquiry {
+/** One cart line as the emails print it. Built by `submitCartQuote`. */
+export interface QuoteLine {
   slug: string;
-  /** Catalogue name, e.g. `Zeta Antarctica Sport 215/55R17`. `null` when the
-   *  slug matches no product (stale page or tampered field). */
+  /** Catalogue name, `Zeta Antarctica Sport, 215/55R17 · 94H`. `null` when
+   *  the catalogue no longer has the slug or could not be read. */
   productName: string | null;
-  pageUrl: string;
-  /** `4 tires`, `Custom: 6 wheels`, `Custom (no number given)`. */
+  /** `4 tires`, `1 item`. */
   quantity: string;
-  contact: string;
-  /** From the page URL, so unverified. Empty when none was searched. */
+  /** `false` = discontinued: the shop checks restock. */
+  available: boolean;
+  /** The searched vehicle saved on this line, unverified. Empty when none. */
   vehicle: string;
+  pageUrl: string;
+}
+
+/** Everything the owner alert needs. Built by `submitCartQuote` after
+ *  validation. */
+export interface QuoteInquiry {
+  lines: QuoteLine[];
+  /** The page the request was sent from, for the consent record. */
+  cartUrl: string;
+  contact: string;
   name: string;
   email: string;
   phone: string;
@@ -89,18 +102,18 @@ export type QuoteEmailOutcome =
  *  otherwise ignored, because the shop already has the lead. */
 export async function deliverQuote(inquiry: QuoteInquiry): Promise<QuoteEmailOutcome> {
   if (!autoEmailEnabled()) {
-    log("info", "quote.email.disabled", inquiry.slug);
+    log("info", "quote.email.disabled", inquiry.lines.length);
     return { status: "disabled" };
   }
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    log("error", "quote.email.misconfigured", inquiry.slug, "RESEND_API_KEY is not set");
+    log("error", "quote.email.misconfigured", inquiry.lines.length, "RESEND_API_KEY is not set");
     return { status: "failed", reason: "missing-key" };
   }
   const shopAddress = leadCaptureEmail();
   if (!shopAddress) {
-    log("error", "quote.email.misconfigured", inquiry.slug, "LEAD_CAPTURE_EMAIL is missing or invalid");
+    log("error", "quote.email.misconfigured", inquiry.lines.length, "LEAD_CAPTURE_EMAIL is missing or invalid");
     return { status: "failed", reason: "missing-address" };
   }
   const from = `${SITE.name} <${shopAddress}>`;
@@ -109,11 +122,11 @@ export async function deliverQuote(inquiry: QuoteInquiry): Promise<QuoteEmailOut
     from,
     to: [shopAddress],
     reply_to: inquiry.email,
-    subject: oneLine(`Quote request: ${inquiry.productName ?? inquiry.slug} (${inquiry.name})`),
+    subject: oneLine(`Quote request: ${subjectItems(inquiry.lines)} (${inquiry.name})`),
     text: ownerAlertText(inquiry),
   });
   if (!alert.ok) {
-    log("error", "quote.email.alert_failed", inquiry.slug, alert.reason);
+    log("error", "quote.email.alert_failed", inquiry.lines.length, alert.reason);
     return { status: "failed", reason: alert.reason };
   }
 
@@ -122,26 +135,44 @@ export async function deliverQuote(inquiry: QuoteInquiry): Promise<QuoteEmailOut
     to: [inquiry.email],
     reply_to: shopAddress,
     subject: `We got your quote request | ${SITE.name}`,
-    text: autoReplyText(inquiry.productName, shopAddress),
+    text: autoReplyText(inquiry.lines, shopAddress),
   });
   if (!reply.ok) {
-    log("warn", "quote.email.autoreply_failed", inquiry.slug, reply.reason);
+    log("warn", "quote.email.autoreply_failed", inquiry.lines.length, reply.reason);
   }
 
-  log("info", "quote.email.sent", inquiry.slug);
+  log("info", "quote.email.sent", inquiry.lines.length);
   return { status: "sent" };
 }
 
 /* --- Bodies --------------------------------------------------------------- */
 
+/** `Zeta Antarctica Sport` for one line, `3 products` for more. */
+function subjectItems(lines: QuoteLine[]): string {
+  if (lines.length === 1) {
+    const [line] = lines;
+    return line.productName ?? line.slug;
+  }
+  return `${lines.length} products`;
+}
+
+function lineName(line: QuoteLine): string {
+  return line.productName ?? `Unknown product (slug "${line.slug}")`;
+}
+
 function ownerAlertText(q: QuoteInquiry): string {
+  const items = q.lines.flatMap((line, index) => [
+    `${index + 1}. ${lineName(line)}`,
+    `   Quantity: ${line.quantity}`,
+    ...(line.available ? [] : ["   Currently unavailable: check restock before quoting."]),
+    `   Vehicle searched: ${line.vehicle || "none"}`,
+    `   ${line.pageUrl}`,
+  ]);
   const lines = [
     "New quote request from the website.",
     "",
-    `Product: ${q.productName ?? `Unknown product (slug "${q.slug}")`}`,
-    `Page: ${q.pageUrl}`,
-    `Quantity: ${q.quantity}`,
-    `Vehicle searched: ${q.vehicle || "none"}`,
+    `Products (${q.lines.length}):`,
+    ...items,
     "",
     `Name: ${q.name}`,
     `Email: ${q.email}`,
@@ -156,20 +187,25 @@ function ownerAlertText(q: QuoteInquiry): string {
     `Consented: ${q.consent ? "YES" : "NO"}`,
     `Checkbox wording: "${q.consentWording}"`,
     `Submitted: ${q.submittedAt.toISOString()}`,
-    `Page URL: ${q.pageUrl}`,
+    `Page URL: ${q.cartUrl}`,
     "",
     "Reply to this email to answer the customer directly.",
   ];
   return lines.join("\n");
 }
 
-/** Fixed copy. Must never include anything the visitor typed. */
-function autoReplyText(productName: string | null, shopAddress: string): string {
-  const about = productName ? ` for the ${productName}` : "";
+/** Fixed copy plus the catalogue's product names and the parsed quantities.
+ *  Must never include anything the visitor typed. */
+function autoReplyText(lines: QuoteLine[], shopAddress: string): string {
+  const items = lines.map(
+    (line) => `- ${line.productName ?? "A product from our catalogue"} (${line.quantity})`,
+  );
   return [
     "Hi,",
     "",
-    `Thanks for your quote request${about}.`,
+    "Thanks for your quote request. You asked about:",
+    ...items,
+    "",
     // Same promise as the on-page success panel (`quote-success.tsx`).
     "We check fitment and stock, then reply by your preferred contact method within one business day.",
     `Need it sooner? Call us at ${PRIMARY_CONTACT.display}.`,
@@ -230,9 +266,9 @@ function oneLine(value: string): string {
 function log(
   level: "info" | "warn" | "error",
   event: string,
-  slug: string,
+  lineCount: number,
   detail?: string,
 ): void {
-  const line = JSON.stringify({ event, slug, ...(detail ? { detail } : {}) });
+  const line = JSON.stringify({ event, lines: lineCount, ...(detail ? { detail } : {}) });
   console[level](line);
 }

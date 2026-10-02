@@ -253,6 +253,55 @@ async function query(config: ConvergeConfig, search: Record<string, string>): Pr
 }
 
 /* ===========================================================================
+   Export script (D119) — Converge's server-to-server POST after a transaction
+   ===========================================================================
+
+   Form-encoded, ISO-8859-1, **not signed** (`docs/payments.md` §10). It is
+   trusted only because it arrives from Elavon's published ranges *and*
+   carries the username and password agreed with Elavon; `/pay/notify` checks
+   both before calling `parseExportScript`. Elavon's sample payload carries no
+   `ssl_invoice_number`; without one the POST cannot be matched and the
+   return redirect's query settles the attempt as before. */
+
+/** Elavon's export-script source ranges, read 2026-10-01 from
+ *  developer.elavon.com/products/hosted-payment-page/v1/export-scripts. */
+const EXPORT_SOURCE_RANGES: readonly (readonly [string, number])[] = [
+  ["62.17.112.80", 28],
+  ["62.134.193.208", 28],
+  ["65.201.175.80", 28],
+  ["204.137.47.32", 28],
+  ["204.137.43.32", 28],
+];
+
+function ipv4ToInt(ip: string): number | null {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return null;
+  let value = 0;
+  for (const part of parts) {
+    if (!/^\d{1,3}$/.test(part) || Number(part) > 255) return null;
+    value = value * 256 + Number(part);
+  }
+  return value;
+}
+
+/** True when `ip` (IPv4, or IPv4-mapped IPv6) is inside an Elavon range. */
+export function isExportScriptSource(ip: string): boolean {
+  const address = ipv4ToInt(ip.replace(/^::ffff:/i, "").trim());
+  if (address === null) return false;
+  return EXPORT_SOURCE_RANGES.some(([base, bits]) => {
+    const size = 2 ** (32 - bits);
+    const start = ipv4ToInt(base)!;
+    return address >= start && address < start + size;
+  });
+}
+
+/** The posted fields as a transaction, or null when it names none. The same
+ *  reading as a `txnquery` result, so approval means the same thing on both. */
+export function parseExportScript(fields: Record<string, string>): GatewayTransaction | null {
+  return fields.ssl_txn_id ? toGatewayTransaction(fields) : null;
+}
+
+/* ===========================================================================
    The Gateway
    =========================================================================== */
 

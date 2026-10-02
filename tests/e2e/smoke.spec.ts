@@ -15,7 +15,7 @@ for (const route of ROUTES) {
 
 /* A soft 404 (the right page on a 200) was the default for unknown product
    slugs until D91b; these must be real 404s. */
-for (const path of ["/products/not-a-slug", "/wheels/anything", "/results/extra"]) {
+for (const path of ["/products/not-a-slug", "/wheels/anything", "/tires/extra"]) {
   test(`${path}: a real 404`, async ({ page }) => {
     const res = await page.goto(path);
     expect(res?.status()).toBe(404);
@@ -26,7 +26,7 @@ for (const path of ["/products/not-a-slug", "/wheels/anything", "/results/extra"
 /* Every loaded image paints (D91b). The D92b image fade holds a lazy image at
    opacity 0 until the motion bootstrap marks it `data-loaded`; Next 16 runs
    that bootstrap at hydration, so an image that loaded first was never marked
-   and stayed invisible — measured: the second row of cards on /results @1440
+   and stayed invisible — measured: the second row of cards on /tires @1440
    painted blank. Scrolled top to bottom so every lazy image is pulled in. */
 for (const route of ROUTES.filter((r) => r.name !== "not-found")) {
   test(`${route.name}: every loaded image paints (no stuck fade)`, async ({ page }) => {

@@ -56,7 +56,7 @@ go to `src/features/home/`, not here), **D34** (no social links in the footer).
 ## Open
 1. **What is the "mobile call bar"?** `docs/decisions.md:64` assigns one to `site/`, but D6 killed the
    sticky mobile PDP buy bar and the only drawn mobile-only call element is `call-cta-panel` on
-   `/results` (`design/manifest.md` §2 row 9), which reads as a results-page section rather than site
+   `/tires` (`design/manifest.md` §2 row 9), which reads as a results-page section rather than site
    chrome. Whether it becomes `site/mobile-call-bar.tsx` or a `features/results/` section needs the
    owner's call before `page results`.
 2. **Nested `CLAUDE.md` shims.** Root `llm.md` §7 #4 — unresolved for every folder, this one included.

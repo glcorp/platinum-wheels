@@ -2,8 +2,8 @@
 
 ## Purpose
 
-The staff-facing half of the product: a sign-in gate and a payment-link builder, served at `/admin`
-and destined for `admin.platinumwheels.ca`. It exists because the shop's selling flow ends off-platform
+The staff-facing half of the product: a sign-in gate, a payment-link builder and the product catalogue,
+served on `admin.platinumwheels.ca` with prefix-less URLs (D115). It exists because the shop's selling flow ends off-platform
 — inquiry, phone call, human quote — and the one step that has to come back on-platform is taking the
 money. Delete this folder and the owner has no way to raise a payment link, and the storefront's
 quote-first model terminates in a phone call with nothing to send.
@@ -12,14 +12,15 @@ Since D99–D108 it is backed by real payments: the builder writes a `payment_li
 `src/features/payments/` and hands back the customer's `pay.platinumwheels.ca/pay/<token>` URL, and the
 links list shows which links were paid (D106). Sign-in is still one shared account, hardened by D95
 rather than replaced by an auth system. Since D105b the folder also holds the product admin's server side
-(gated reads and Server Actions); its screens are not built.
+(gated reads and Server Actions), and since D116–D118 its screens, Blob photo upload and the admin home.
 
 ## Owns
 
-- [`host-routing.ts`](host-routing.ts) — which host may serve `/admin` (D97) and `/pay` (D105). A pure
-  function with no imports, so it is testable without Next; `src/proxy.ts` is its only caller.
-  `ADMIN_HOST` and `PAY_HOST` are duplicated as literals in the proxy's `matcher` (and `PAY_HOST` in
-  `src/features/payments/config.ts`). Change them together.
+- [`host-routing.ts`](host-routing.ts) — which host serves the admin and at what paths (D115), and `/pay`
+  (D105). A pure function with no imports, so it is testable without Next; `src/proxy.ts` is its only
+  caller. On an admin host every path is rewritten into `src/app/admin/`; `/admin/**` is a 404 everywhere.
+  `ADMIN_HOST`, `DEV_ADMIN_HOST` and `PAY_HOST` are duplicated as literals in the proxy's `matcher` and
+  `next.config.ts` (and `PAY_HOST` in `src/features/payments/config.ts`). Change them together.
 - [`types.ts`](types.ts) — the contract. Route map, field names, form-state unions, validation ceilings.
   Written by the coordinator before any implementation file (D25). Both actions and both forms code
   against it; nothing here invents a field name.
@@ -42,12 +43,32 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   `updateProductAction`, `setProductStatusAction`, `bulkSetProductStatusAction`. Each calls
   `requireAdminAction(formData)` first and then `catalog/store.ts`; the create and update actions
   validate with `parseProductInput()` in between.
+- [`photo-actions.ts`](photo-actions.ts) — `"use server"`, D117. `requestPhotoUpload` (mints a one-file Blob
+  client token), `addPhoto` (verifies the upload with Blob's `head()` before recording it), `removePhoto`
+  (row, then file), `movePhoto`. Each calls `requireAdminAction(formData)` first. The only file that
+  writes to Blob.
+- [`product-display.ts`](product-display.ts) — pure: spec line, labels, `displayPrice`, and
+  `productFormValues()` (a saved product as form values). Client-safe.
+- [`storefront-link.ts`](storefront-link.ts) — the View on site URL from env `STOREFRONT_URL` (D116).
+- [`greeting.ts`](greeting.ts) — the home's rotating lines per Brampton-time band (D118). Copy the owner may
+  rewrite.
+- [`components/product-form.tsx`](components/product-form.tsx) — client island, create and edit, all three
+  categories, brand and vendor dropdowns, source rows. Remounts its fields after every answer.
+- [`components/admin-product-card.tsx`](components/admin-product-card.tsx) — one list card; `inert` for the
+  styleguide.
+- [`components/product-status-buttons.tsx`](components/product-status-buttons.tsx) — client island,
+  Publish / Hide / Discontinue for one product.
+- [`components/bulk-status-bar.tsx`](components/bulk-status-bar.tsx) — client island, ticked rows or all
+  matching; builds the "all matching" post itself so ticked ids never ride along.
+- [`components/product-filters.tsx`](components/product-filters.tsx) — the list's GET form (`next/form`).
+- [`components/product-photos.tsx`](components/product-photos.tsx) — client island, upload (browser →
+  Blob), order, remove.
 - [`components/login-form.tsx`](components/login-form.tsx) — client island. `useActionState` + focus
   management, the `quote-form.tsx` idiom.
 - [`components/login-error-summary.tsx`](components/login-error-summary.tsx) — authored error state,
   its own module so `/admin/styleguide` renders the real component.
-- [`components/admin-top-bar.tsx`](components/admin-top-bar.tsx) — logo, `Admin` label, sign out. The
-  seed of a shell, not a shell.
+- [`components/admin-top-bar.tsx`](components/admin-top-bar.tsx) — logo (links home), `Admin` label, the
+  two section links (D118), sign out.
 - [`components/payment-link-form.tsx`](components/payment-link-form.tsx) — client island. Amount,
   description, expiry (D103), plus the hidden idempotency key.
 - [`components/payment-link-success.tsx`](components/payment-link-success.tsx) — authored success state:
@@ -89,6 +110,11 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
 - Credentials live only in Vercel env vars: `ADMIN_USERNAME`, `ADMIN_SESSION_SECRET` (32+ characters),
   `ADMIN_PASSWORD_HASH` from `npm run admin:hash-password` (or `ADMIN_PASSWORD` until that is set).
 - The password is never echoed back to the client, in any state.
+- **Every date and time is Brampton's** (D118): format through `@/lib/time`, never with a zone typed here.
+- **Brands and vendors are picked from the catalogue's own** (D116): dropdowns on the form, and the create
+  and update actions refuse any other spelling. A new one arrives through the catalogue import.
+- **A photo is recorded only after Blob confirms it** (`head()`): in our store, under
+  `products/<id>/`, an allowed type within 10 MB (D117).
 
 ## Decisions
 
@@ -102,16 +128,21 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
 | D94 | 2026-09-21 | ~~The generated link is a realistic placeholder, visibly labelled as not connected~~ **Retired by D107** | It must demo convincingly without anyone mistaking it for live | Owner |
 | D95 | 2026-09-23 | One shared sign-in, hardened: scrypt hash, signed `__Host-` cookie, CSRF token + origin check on every action, admin security headers, audit log. No login limit, no per-user accounts, no 2FA | Owner: *"only one login account password works"*, *"lets not build limit failed login"* | Owner |
 | D96 | 2026-09-23 | `admin.platinumwheels.ca` wired: a DNS-only Cloudflare CNAME to Vercel; the apex stays on the goodwill site | Owner chose the admin subdomain only; must never proxy the record or move the nameservers (email) | Owner |
-| D97 | 2026-09-23 | `src/proxy.ts`: on the admin host non-`/admin` paths 307 to `/admin`; elsewhere `/admin` is a 404; production only | The subdomain became real, so the D90 deferral no longer applied | Owner |
+| D97 | 2026-09-23 | `src/proxy.ts`: on the admin host non-`/admin` paths 307 to `/admin`; elsewhere `/admin` is a 404; production only. **Prefix and preview rule superseded by D115** | The subdomain became real, so the D90 deferral no longer applied | Owner |
+| D115 | 2026-10-01 | Prefix-less admin URLs on admin hosts only; `/admin/**` 404s everywhere | Owner: *"we should not build admin routes as /admin"* | Owner |
+| D116 | 2026-10-01 | Product screens: cards, per-card status, bulk ticked or all matching, "Display price", pick-from-existing brand and vendor, `STOREFRONT_URL` | P2 scope, rulings asked one at a time | Owner |
+| D117 | 2026-10-01 | Photos: browser → Blob with a one-file token, verified by `head()`; 8 × 10 MB; contain; delete removes the file | Owner chose each limit | Owner |
+| D118 | 2026-10-01 | Admin home greeting + tiles; builder at `/payment-links`; top bar nav; Brampton time everywhere | Owner: *"all times used in application need to be brampton time zone"* | Owner |
 
 Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced by ID, never restated.
 
 ## Connects to
 
 - **Depends on:** `src/components/ui/` (button, input, field-label), `src/lib/site.ts` (`SITE`),
-  `next/headers`, `next/navigation`, `node:crypto`. Nothing else — no new dependency.
-- **Depended on by:** `src/app/admin/` (layout, three routes).
-- **Depends on (D105b):** `src/features/catalog/` — `store.ts`, `product-input.ts`, `catalog-types.ts`.
+  `next/headers`, `next/navigation`, `node:crypto`, and `@vercel/blob` for photos (D117).
+- **Depended on by:** `src/app/admin/` (layout and every admin route).
+- **Depends on (D105b, D116, D117):** `src/features/catalog/` — `store.ts`, `lookups.ts`, `photos.ts`,
+  `product-input.ts`, `catalog-types.ts`, `adapter.ts` (labels); `@vercel/blob` (D117); `src/lib/time.ts`.
   This is the D37 graph's existing direction (`features → catalog`), so no edge is reversed.
 - **Deliberately does not touch:** `src/features/finder|home|product|results/`. The admin shares the
   primitives and the tokens, and nothing else.
@@ -138,8 +169,12 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 - **Don't let a bulk status change run with no ticked rows and no filter.** `bulkSetProductStatus`
   refuses it; an empty submit must never mean the whole catalogue (D107b).
 - **Don't put a product read in a `"use server"` file.** Every export there is a public POST endpoint.
-- **Don't build the admin shell here yet.** `AdminTopBar` is intentionally minimal; product CRUD will
-  reshape navigation, and a full shell built now is thrown away.
+- **Don't import a value from a `"use client"` module into a server component.** It arrives as a client
+  reference, not the value; that is why `BULK_FORM_ID` lives in `product-types.ts`.
+- **Don't post a ticked-rows change and an all-matching change in one request.** Ticked ids win and the
+  filter is ignored (D107b); `bulk-status-bar.tsx` builds each separately.
+- **Don't route a photo's bytes through a Server Action.** A function request body tops out at 4.5 MB;
+  the browser uploads to Blob directly (D117).
 
 ## Open
 
@@ -149,11 +184,12 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 2. ~~**PSP selection.**~~ **Closed by D99 and D107:** the PSP is Converge and the builder creates real
    links. What is left is proving it against the gateway, which waits on the owner actions in `todo.md`
    "Owner — payments".
-3. **Product CRUD screens.** The server side exists (D105b); the list, the create/edit form and their
-   `/admin/styleguide` states are not built, and `ADMIN_ROUTES` has no product routes yet. Image upload
-   (Vercel Blob) is its own session; `product_images` is ready for it. Since D109 every
-   successful write calls `updateTag(CATALOGUE_TAG)`, which expires the cached home row and has Next
-   re-render the route the form was posted from. Owner.
+3. ~~**Product CRUD screens.**~~ **Built by D116 and D117.** Still open: **the storefront product page shows
+   only the main photo** (`src/features/product/components/pdp-gallery.tsx` takes one image), so photos 2–8
+   are stored and ordered but not displayed; a gallery is storefront work for the owner to schedule. The
+   greeting lines (`greeting.ts`) await the owner's read. Every successful product or photo write calls
+   `updateTag(CATALOGUE_TAG)` (D109), which expires the cached home row and has Next re-render the route
+   it was posted from. Owner.
 4. **Switch production to `ADMIN_PASSWORD_HASH`.** `ADMIN_USERNAME`, `ADMIN_PASSWORD` and
    `ADMIN_SESSION_SECRET` are set in the Vercel project (Production + Preview). Until the hash replaces
    `ADMIN_PASSWORD`, every instance logs `admin.config.plaintext_password`. **Deferred by the owner,

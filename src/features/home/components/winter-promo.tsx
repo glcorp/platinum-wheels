@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/routes";
+import { shopYear } from "@/lib/time";
 
 /* ---------------------------------------------------------------------------
    WinterPromo — "Winter <year>"
@@ -58,13 +59,13 @@ import { ROUTES } from "@/lib/routes";
 
    Motion (D92b): the section carries `data-reveal` for the below-the-fold
    reveal (armed only if it starts below the viewport; never hidden without
-   JS or with reduced motion). The CTA leads into `/results?season=winter`,
+   JS or with reduced motion). The CTA leads into `/tires?season=winter`,
    down the hierarchy, so it is typed `nav-forward`; its press comes from the
    `Button` primitive.
    --------------------------------------------------------------------------- */
 
 export function WinterPromo() {
-  const year = new Date().getFullYear();
+  const year = shopYear();
 
   return (
     <section

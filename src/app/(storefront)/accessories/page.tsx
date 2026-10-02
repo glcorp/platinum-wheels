@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
 import { ResultsPage } from "@/features/results/components/results-page";
+import { JsonLd } from "@/features/seo/json-ld";
+import { pageMetadata } from "@/features/seo/metadata";
+import { categoryBreadcrumb } from "@/features/seo/schema";
+import { ROUTES } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
    `/accessories` — the ACCESSORIES results route (D58). Was a `PageStub` until
@@ -14,10 +18,22 @@ import { ResultsPage } from "@/features/results/components/results-page";
    already stack, so nothing else moves; logged in `design/DEVIATIONS.md`.
    --------------------------------------------------------------------------- */
 
-export const metadata: Metadata = { title: "Accessories" };
+/* The canonical is the bare path whatever the URL carries, so every search,
+   filter and sort of this page points at one address (D112). */
+export const metadata: Metadata = pageMetadata({
+  title: "Wheel Accessories in Brampton, ON",
+  description:
+    "Lug nuts, wheel locks, TPMS sensors, centre caps and more from a Brampton-based online store. Request a quote on any item.",
+  path: ROUTES.accessories,
+});
 
 export default async function Accessories({
   searchParams,
 }: PageProps<"/accessories">) {
-  return <ResultsPage category="accessories" searchParams={await searchParams} />;
+  return (
+    <>
+      <ResultsPage category="accessories" searchParams={await searchParams} />
+      <JsonLd data={categoryBreadcrumb("accessories")} />
+    </>
+  );
 }

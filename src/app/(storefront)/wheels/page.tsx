@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 
 import { ResultsPage } from "@/features/results/components/results-page";
+import { JsonLd } from "@/features/seo/json-ld";
+import { pageMetadata } from "@/features/seo/metadata";
+import { categoryBreadcrumb } from "@/features/seo/schema";
+import { ROUTES } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
    `/wheels` — the WHEELS results route (D58). Was a `PageStub` until
@@ -16,8 +20,20 @@ import { ResultsPage } from "@/features/results/components/results-page";
    measured value is duplicated or forked.
    --------------------------------------------------------------------------- */
 
-export const metadata: Metadata = { title: "Wheels" };
+/* The canonical is the bare path whatever the URL carries, so every search,
+   filter and sort of this page points at one address (D112). */
+export const metadata: Metadata = pageMetadata({
+  title: "Wheels in Brampton, ON",
+  description:
+    "Wheels by diameter, width and bolt pattern from a Brampton-based online store. Search by vehicle, then request a quote.",
+  path: ROUTES.wheels,
+});
 
 export default async function Wheels({ searchParams }: PageProps<"/wheels">) {
-  return <ResultsPage category="wheels" searchParams={await searchParams} />;
+  return (
+    <>
+      <ResultsPage category="wheels" searchParams={await searchParams} />
+      <JsonLd data={categoryBreadcrumb("wheels")} />
+    </>
+  );
 }

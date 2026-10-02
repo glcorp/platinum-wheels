@@ -12,11 +12,14 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import { ResultsEmpty } from "@/features/results/components/results-grid";
-import { QuoteErrorSummary } from "@/features/product/components/quote-error-summary";
+import { QuoteErrorSummary } from "@/features/cart/components/quote-error-summary";
 import { PageTransition } from "@/components/site/page-transition";
 import { LoaderMark } from "@/components/site/nav-progress";
 import { RouteErrorPanel } from "@/components/site/route-error";
-import { QuoteSuccess } from "@/features/product/components/quote-success";
+import { QuoteSuccess } from "@/features/cart/components/quote-success";
+import { CartLineRow } from "@/features/cart/components/cart-line";
+import { CartEmpty, CartRemovedNote, CartSummary } from "@/features/cart/components/cart-view";
+import type { CartLine } from "@/lib/cart";
 import type { Product } from "@/features/catalog/types";
 import { Select } from "@/components/ui/select";
 import { StripeDivider } from "@/components/ui/stripe-divider";
@@ -207,6 +210,39 @@ function Block({ id, index, eyebrow, title, children }: {
   );
 }
 
+/** Two hand-built cart lines for the D122 cart states below. Sample copy,
+ *  never shown outside this page. */
+const CART_SAMPLES: CartLine[] = [
+  {
+    slug: "styleguide-sample-tire",
+    quantity: 4,
+    vehicle: "2021 Honda Civic",
+    item: {
+      brand: "Zeta",
+      model: "Antarctica Sport",
+      size: "215/55R16 · 97T XL",
+      image: null,
+      category: "tires",
+      available: true,
+      unit: { one: "1 tire", many: "tires" },
+    },
+  },
+  {
+    slug: "styleguide-sample-wheel",
+    quantity: 1,
+    vehicle: "",
+    item: {
+      brand: "Spec-1",
+      model: "SP-51",
+      size: "18×8.5 · 5×114.3",
+      image: null,
+      category: "wheels",
+      available: false,
+      unit: { one: "1 wheel", many: "wheels" },
+    },
+  },
+];
+
 export default function StyleguidePage() {
   return (
     <PageTransition>
@@ -303,7 +339,7 @@ export default function StyleguidePage() {
             <Button variant="secondary" size="panel">Call us</Button>
             <Button variant="secondary" size="card">Inquire about restock</Button>
             <Button variant="secondary" size="compact">Load more</Button>
-            {/* `load` — the /results `Load more`: 52 -> 56px, no padding and
+            {/* `load` — the /tires `Load more`: 52 -> 56px, no padding and
                 full width below `md:`, `px-10` from `md:` (results.md §2.6). */}
             <Button variant="accent" size="load" className="md:w-auto">Load more</Button>
             {/* `accent` — the header phone CTA, D40. */}
@@ -318,7 +354,7 @@ export default function StyleguidePage() {
             <Button variant="tertiary" disabled>Change vehicle</Button>
           </Row>
           <Row label="As a link (next/link)">
-            <Button href="/results">Find my tires</Button>
+            <Button href="/tires">Find my tires</Button>
           </Row>
           <Row label="Full width (mobile panels)">
             <div className="w-full sm:w-80">
@@ -532,17 +568,17 @@ export default function StyleguidePage() {
             turned 404s and 500s into 200s.
           </p>
 
-          {/* Empty results — `/results` with a filter set that matches nothing.
+          {/* Empty results — `/tires` with a filter set that matches nothing.
               Rendered from the real component so it cannot drift; `as="h2"`
               because this page already owns an `<h1>` (D47(6)). */}
           <div className="mt-10">
             <p className="numeral text-12 text-ink-dim mb-4">
               Empty results · src/features/results/components/results-grid.tsx
             </p>
-            {/* The section zeroes its own padding from `md:` — on `/results`
+            {/* The section zeroes its own padding from `md:` — on `/tires`
                 the grid shell supplies it — so the demo box adds it back. */}
             <div className="border-border-strong border md:p-6">
-              <ResultsEmpty clearHref={ROUTES.results} as="h2" />
+              <ResultsEmpty clearHref={ROUTES.tires} as="h2" />
             </div>
           </div>
 
@@ -573,7 +609,7 @@ export default function StyleguidePage() {
               not announce itself on load. */}
           <div className="mt-10">
             <p className="numeral text-12 text-ink-dim mb-4">
-              Quote form success · src/features/product/components/quote-success.tsx
+              Quote form success · src/features/cart/components/quote-success.tsx
             </p>
             <div className="border-border-strong border p-4">
               <QuoteSuccess />
@@ -588,7 +624,7 @@ export default function StyleguidePage() {
               at 0 and switches to "1 field needs a fix" at 1. */}
           <div className="mt-10">
             <p className="numeral text-12 text-ink-dim mb-4">
-              Quote form error · src/features/product/components/quote-error-summary.tsx
+              Quote form error · src/features/cart/components/quote-error-summary.tsx
             </p>
             <div className="border-border-strong border p-4">
               <QuoteErrorSummary count={2} />
@@ -606,10 +642,45 @@ export default function StyleguidePage() {
             not be sent. Same component, same type role, fallback phone. */}
         <div className="mt-10">
           <p className="numeral text-12 text-ink-dim mb-4">
-            Quote form send failed · src/features/product/components/quote-error-summary.tsx
+            Quote form send failed · src/features/cart/components/quote-error-summary.tsx
           </p>
           <div className="border-border-strong border p-4">
             <QuoteErrorSummary count={0} sendFailed />
+          </div>
+        </div>
+
+        {/* The cart (D122). No artboard draws a cart, so every state is
+            authored and recorded here from the real components, inert: no
+            handlers, so nothing changes the visitor's own cart. The header's
+            count and its `View cart` prompt read the live cart and are not
+            reproduced; `src/components/site/cart-link.tsx` describes both. */}
+        <div className="mt-10">
+          <p className="numeral text-12 text-ink-dim mb-4">
+            Cart line, with a vehicle and discontinued · src/features/cart/components/cart-line.tsx
+          </p>
+          <ul className="border-border-strong flex flex-col border px-4">
+            {CART_SAMPLES.map((line) => (
+              <CartLineRow key={line.slug} line={line} />
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-10">
+          <p className="numeral text-12 text-ink-dim mb-4">
+            Cart request panel · src/features/cart/components/cart-view.tsx
+          </p>
+          <div className="max-w-measure">
+            <CartSummary products={2} />
+          </div>
+        </div>
+
+        <div className="mt-10">
+          <p className="numeral text-12 text-ink-dim mb-4">
+            Cart empty, after a product was removed · src/features/cart/components/cart-view.tsx
+          </p>
+          <div className="border-border-strong flex flex-col gap-6 border p-4">
+            <CartRemovedNote count={1} />
+            <CartEmpty />
           </div>
         </div>
 
@@ -757,7 +828,7 @@ export default function StyleguidePage() {
               lime underline travels. New result cards fade up 30ms apart, 150ms at
               most. None of it runs with reduced motion on.
             </p>
-            <Button href={ROUTES.results} variant="accent" size="compact" transitionTypes={["nav-forward"]}>
+            <Button href={ROUTES.tires} variant="accent" size="compact" transitionTypes={["nav-forward"]}>
               Try it on results
             </Button>
           </Row>

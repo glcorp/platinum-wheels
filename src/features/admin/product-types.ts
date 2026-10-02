@@ -89,3 +89,70 @@ export const PRODUCT_LIST_PAGE_SIZE = 50;
 /** Ceiling on ticked rows in one bulk submit. Anything larger should use the
  *  filter form instead, which has no ceiling. */
 export const BULK_IDS_MAX = 500;
+
+/** The list page's query-string keys. One place, because the filter form, the
+ *  pagination links and the "change all matching" form all build them. */
+export const PRODUCT_LIST_PARAM = {
+  search: "q",
+  category: "category",
+  status: "status",
+  brand: "brand",
+  page: "page",
+} as const;
+
+/** The bulk status form's id. Each list card's tick box carries
+ *  `form={BULK_FORM_ID}` so it belongs to that form wherever it sits. Lives
+ *  here, not in the client island, because a server component that imports
+ *  a value from a `"use client"` module gets a client reference, not the
+ *  string. */
+export const BULK_FORM_ID = "product-bulk";
+
+/** Staff-facing words for each status. The enum values stay the database's. */
+export const PRODUCT_STATUS_LABEL = {
+  hidden: "Hidden",
+  published: "Published",
+  discontinued: "Discontinued",
+} as const satisfies Record<ProductStatus, string>;
+
+/** The verb on the button that moves a product INTO each status. */
+export const PRODUCT_STATUS_VERB = {
+  hidden: "Hide",
+  published: "Publish",
+  discontinued: "Discontinue",
+} as const satisfies Record<ProductStatus, string>;
+
+/* --- Photos (D117) ------------------------------------------------------- */
+
+/** Field names the photo actions read, beside `PRODUCT_ID_FIELD` and the
+ *  CSRF field. */
+export const PHOTO_FIELD = {
+  photoId: "photo_id",
+  move: "move",
+  url: "url",
+  fileName: "file_name",
+  contentType: "content_type",
+  size: "size",
+} as const;
+
+/** What a photo may be (owner, 2026-10-01): 8 per product, 10 MB each, JPEG,
+ *  PNG or WebP. The count is enforced beside the writes, in
+ *  `@/features/catalog/photos` (`MAX_PHOTOS_PER_PRODUCT`), and repeated here
+ *  only so a client island can state it without importing that module. */
+export const PHOTO_LIMITS = {
+  perProduct: 8,
+  maxBytes: 10 * 1024 * 1024,
+  contentTypes: ["image/jpeg", "image/png", "image/webp"],
+} as const;
+
+/** `accept` for the file input: the three types, by MIME and extension. An
+ *  iPhone converts a HEIC photo to JPEG when the input does not accept HEIC. */
+export const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp";
+
+/** The upload handshake's answer: where to put the file and the short-lived
+ *  token that allows exactly that. */
+export type PhotoUploadTicket =
+  | { ok: true; pathname: string; token: string }
+  | { ok: false; message: string };
+
+/** Result of add / remove / move. */
+export type PhotoActionResult = { ok: true } | { ok: false; message: string };

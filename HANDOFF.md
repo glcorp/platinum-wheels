@@ -1,6 +1,81 @@
 # Platinum Wheels — session handoff
 
-**Last updated 2026-09-30 (all four open PRs combined into one branch for a single `glcorp` merge, D111).**
+**Last updated 2026-10-02 (the five open PRs, #13 to #17, combined into one branch for a single `glcorp`
+merge, D124).** The branch brings **#13** SEO behind `SEARCH_INDEXING_ENABLED` and tires at `/tires` (D112),
+**#16** Converge's export-script webhook `/pay/notify`, the shop's payment email and the PIN guard
+(D119 to D121), **#14** the catalogue import (D113, D114), **#15** the admin, prefix-less on
+`admin.platinumwheels.ca`, with product screens, Blob photos and a home page (D115 to D118), and **#17** the
+browser cart with prices switched off (D122, D123). The paragraphs below are each PR's own record.
+- **What production shows after the merge:** the stand-in catalogue (44,143 products, no prices, no photos)
+  on `/tires`, `/wheels` and `/accessories`; `Add to cart` on every card and product page and one quote
+  request from `/cart`; no price anywhere; every page `noindex` and `robots.txt` `Disallow: /`. The admin
+  is at `https://admin.platinumwheels.ca/` with no `/admin` in any URL; old `/admin/...` URLs are 404. No
+  migration runs.
+- **The owner ruled one thing at the merge** (D124): with prices off, `src/features/catalog/queries.ts`
+  sends no price and orders by none. Fixed as *derived*: #13's SEO spec now checks the admin on its host;
+  #16's payment email links the admin's `/payment-links`. No numbering clashed.
+- **Checked on the combined tree:** clean `npm ci`, `next typegen`, `npm run check`, `db:check`,
+  `drizzle-kit generate` (no schema changes) and `next build`; the three migrations twice on PGlite (the
+  second a no-op); host probes with and without production host rules (D105, D115, D119); #13's
+  `seo.spec.ts` 32/32 in each flag state; in the browser against a PGlite fixture loaded by #14's importer:
+  admin sign-in and sign-out, home tiles, product list, Hide (the product leaves the storefront), a payment
+  link (opens on the pay host, 404 elsewhere), cart add and re-add, `/cart`, a quote request; builds with
+  prices off (no price in any page source) and on (prices render as before).
+- **Not checked:** anything on Vercel (`garvbareja` deploys are blocked); a Blob photo upload (no Blob token
+  locally); a real Resend send; a real Converge call or `/pay/notify` with credentials; the rest of the
+  parked e2e suite (D111); Safari, Firefox, Lighthouse.
+- **Owed next, in order:** after the deploy, sign in on the admin host once (`src/app/admin/llm.md` Open #6)
+  and probe the hosts; the export-script credentials (`todo.md` P8); reset the Neon password (item 9); the
+  cleaned catalogue load and real `FEATURED_SLUGS`; at launch `todo.md` S1, and C1 only once every price is
+  a customer price.
+
+**Last updated 2026-10-01 (the cart, D122 and D123, on branch `quote-cart`, stacked on `seo` / #13).**
+A customer now adds products to a **browser-only cart** and sends **one** quote request from `/cart`; the
+product page has no quote band. `Add to cart` replaces `Request a quote` on every card and the PDP; the
+header carries a cart link with a count after the phone at every width; the D51 form, unchanged but for
+its quantity fields, opens in a dialog on `/cart`; one request sends one owner alert and one auto-reply
+listing every line (D104). **Every storefront price is off for launch** behind
+`NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED` (`todo.md` C1). Rules: `src/features/cart/llm.md`,
+`src/lib/llm.md`; deviations #96, #97.
+- **Checked:** `npm run check`, `next build`; on a local production build against a PGlite fixture
+  (six products, one discontinued): add from a card and the PDP (`Added ✓`, count pop, `View cart`
+  prompt), `Custom` quantity with its blank-field error, re-add growing the quantity, the vehicle carried
+  from a checked PDP URL, `/cart` at 375, 800 and 1440, stepper and `Remove`, a product hidden in the
+  database removed with the note, the dialog's empty submit (three field errors, focus on name), a valid
+  send (cart emptied, success panel, `quote.email.disabled` with the line count), and both email bodies
+  rendered against a stubbed Resend.
+- **Not checked:** a real Resend send; the parked e2e suite (`tests/llm.md` Open, it still asserts the
+  quote band); Safari and Firefox; prices switched on (built and typechecked, not looked at).
+- **Merge order:** after #13, which this branch is cut from.
+
+**Last updated 2026-09-30 (the catalogue import, and a stand-in catalogue loaded into production, D113 and D114).**
+- **Production now lists 44,143 products**: 9,785 tires, 33,901 wheels, 457 accessories, from the
+  scraped vendor sheets. All `published`, **no prices** (every card reads `Inquire for price`), **no
+  photos** (every card is the placeholder tile), duplicates across vendors not merged. It is a stand-in
+  until the co-founder's cleaned CSV arrives.
+- **The import is `npm run catalog:import -- <file.csv>`** (`scripts/catalog-import.ts`): a dry run
+  unless `--write`, create-only, into an empty catalogue only. The column layout is one file,
+  `src/features/catalog/import-mapping.ts`; the suggested file layout is `docs/catalogue-csv.md`.
+- **1,583 of the 45,726 scraped rows were refused** and listed for the co-founder: 1,446 with no brand,
+  94 sharing a vendor SKU, and the rest a bad size, bolt pattern, backspacing or an over-long name.
+- **Checked:** the full load on a throwaway Postgres; the batch writer against `createProduct` row for
+  row on 2,345 products; a batch that breaks a unique index leaves nothing behind; a second run is
+  refused; the production tables against the rehearsal tables by checksum; and the deployed `/results`,
+  `/wheels`, `/accessories` and a product page. **No test file is committed.**
+- **Not checked:** the home featured row, which shows a bulk load only after a deploy (D111).
+- **Owed next:** reset the Neon password (`todo.md` item 9); a deploy, for the home row; the cleaned
+  CSV, then empty the catalogue and load it fresh (emptying is not built); photos (Vercel Blob).
+
+**Last updated 2026-09-30 (SEO groundwork, D112, on branch `seo`, off `main` once #12 had merged).**
+Search engines stay blocked until launch behind `SEARCH_INDEXING_ENABLED` (on only at exactly `true`; off
+in Vercel). Built behind it: `/robots.txt`, a sitemap index with four files, canonical URLs and
+Open Graph and Twitter tags on every indexable page, structured data (an online store with no street
+address and no opening hours, products with no price) and two link-preview cards. **The tire category
+moved from `/results` to `/tires`**: `/results` in any older note below means today's `/tires`. Rules:
+`src/features/seo/llm.md`. Owner and client actions: `todo.md` S1 to S6, and **S1's order matters**: turn
+the flag on in the deploy that reaches the apex. Verified in both flag states by `tests/e2e/seo.spec.ts`.
+
+**Before that, 2026-09-30 (all four open PRs combined into one branch for a single `glcorp` merge, D111).**
 The branch brings **#11** the vehicle list snapshot (D110), **#8** Converge payments (D105–D108), **#9** the
 catalogue database with its server code (D105b–D107b, migration `0002`) and **#10** the page wiring
 (D108b, D109): every storefront page reads the database and the seed is deleted.
@@ -167,11 +242,12 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 |---|---|
 | Library | 26 `llm.md` files. Root = register (D1–D57) + template + folder map + 20 open items. |
 | `/` | `SiteHeader over-hero`, 8 home sections, `SiteFooter` (D38). Parity `design/reports/home.md`. |
-| `/results` · `/wheels` · `/accessories` | **One** composition, `results/components/results-page.tsx`, called by three thin `page.tsx` with a `category` (D58). URL-driven search over that category's seed (D44): `ResultsToolbar`, `FilterSortBar`, `md:results-grid` (rail + grid), `CallCtaPanel`. Parity `design/reports/results.md` covers `/results`; the other two are **not parity rows** and inherit it by rendering the same tree (`DEVIATIONS.md` #49). |
-| `/products/[slug]` | `productView(product, searchParams)` → one `ProductView`; breadcrumb, `pdp-split` gallery + sticky buy panel, specs, quote band, similar row. Parity `design/reports/product.md`. |
-| `src/features/product/` | `types.ts`, `view.ts` (all derivation), `actions.ts` (`"use server"`), **10** components; one island `quote-form.tsx`. Two authored states in their own modules so `/styleguide` renders the real thing: `quote-success.tsx` (D51) and `quote-error-summary.tsx` (D57). |
+| `/tires` (was `/results` until D112) · `/wheels` · `/accessories` | **One** composition, `results/components/results-page.tsx`, called by three thin `page.tsx` with a `category` (D58). URL-driven search over that category's seed (D44): `ResultsToolbar`, `FilterSortBar`, `md:results-grid` (rail + grid), `CallCtaPanel`. Parity `design/reports/results.md` covers `/results`; the other two are **not parity rows** and inherit it by rendering the same tree (`DEVIATIONS.md` #49). |
+| `/products/[slug]` | `productView(product, searchParams)` → one `ProductView`; breadcrumb, `pdp-split` gallery + sticky buy panel with `Add to cart` (D122; the quote band is gone), specs, similar row. Parity `design/reports/product.md`. |
+| `src/features/product/` | `types.ts`, `view.ts` (all derivation), `load.ts`, 7 components; one island `add-to-cart-panel.tsx` (D122). The quote form, its action and its two authored states moved to `src/features/cart/` (D122). |
+| `/cart` | `src/features/cart/` (D122): browser-only lines (`src/lib/cart.ts`), one quote request through the D51 form in a dialog; islands `cart-view`, `cart-line`, `quote-form`. `noindex`, in no sitemap. |
 | `src/features/results/` | `types.ts`, `query.ts`, `search.ts`, 9 components (D58 added `results-page.tsx`); islands `sort-select`, `filter-panel`, `filter-sheet`. D42–D49, D58, D59. **Nothing here branches on the category** — components read `view.facets`, and what differs is data in `catalog/categories.ts`. |
-| Finder | `src/features/finder/` — native selects, GET to `ROUTES.results` by default with `action`/`cta` overrides (D27/D28/D58); `variant="inline"` for `Change vehicle` (D45); **placeholder `FITMENT` map** now carrying a **bolt pattern** as well as a tire size (D48, D58). `/wheels` submits to `/wheels`; `/accessories` renders no finder at all (D59(2)). |
+| Finder | `src/features/finder/` — native selects, GET to `ROUTES.tires` by default with `action`/`cta` overrides (D27/D28/D58); `variant="inline"` for `Change vehicle` (D45); **placeholder `FITMENT` map** now carrying a **bolt pattern** as well as a tire size (D48, D58). `/wheels` submits to `/wheels`; `/accessories` renders no finder at all (D59(2)). |
 | Catalog | **The seed named in this row was deleted by D108b; every page reads the database (`src/features/catalog/llm.md`). The component notes still hold.** `FEATURED_PRODUCTS` (4), `PRODUCTS` (9 tires), **`WHEELS` (9)** and **`ACCESSORIES` (9)**, one unavailable each, plus `ALL_PRODUCTS` / `productsIn()` (D43, D58). `Product` gained optional `category` (**absent = tires**, which is what keeps every measured tire row byte-identical), `wheel`, `accessoryType`; plus `productCategory()` and `productImageSrc()`. **`categories.ts` is the per-category table** (`CATEGORY_CONFIG`) read by `results/`, `product/` and `ProductCard` — it lives in `catalog/` because D37 routes cross-feature imports through there, and it imports no seed so a client island can use it. `ProductCard` is the most reused component in the build and is unchanged on all three categories. |
 | Chrome | `site-header`, `site-nav-drawer`, `site-footer` (no social row, D34), `page-stub`. Skip link in `layout.tsx` (D57). |
 | Primitives | **Ten**, hand-built and token-only in `src/components/ui/`. Every variant and state is on `/styleguide`. Neither the PDP, nor D57, nor D58 needed a new primitive — D58 added exactly one optional prop, `Price.unit`, defaulting to the drawn tire string. |
@@ -180,10 +256,14 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | Undrawn states | `error.tsx` at `(storefront)/` (D62) and `src/app/global-error.tsx` (D93b); `loading.tsx` was removed by D91b. Both boundaries render `src/components/site/route-error.tsx` and are the **only two** `"use client"` files under `src/app/` — a framework requirement, named as exceptions in `.claude/rules/ui.md` and `docs/decisions.md` §4. The 404 (`not-found.tsx`) carries the owner's line and a `Shop tires` + call pair (D93b). |
 | `design/reports/` | 11 files: `README.md` (protocol), three `<page>.md` parity baselines, `audit.md` + four `*-audit.md`, **`deviations-sweep.md`** (D64) and `llm.md`. |
 | `.claude/rules/ui.md` | Taste dials + JSX non-negotiables. **Auto-loads on every `src/**/*.tsx` edit.** Nothing imports it; it loads by glob, and its length is paid on every UI edit. |
-| `/admin` | Payment-link builder behind the stub gate: `AdminTopBar` + `PaymentLinkForm`. Amount + description only, no computation (D92). |
-| `/admin/login` | Flush-left 420px sign-in column, username + password (D91). Redirects to `/admin` if already signed in. |
-| `/admin/styleguide` | The admin's authored states (D93), gated. Renders the real components inert. |
+| Admin URLs | **Prefix-less on `admin.platinumwheels.ca` since D115**; the pages live in `src/app/admin/` and `/admin/...` is a 404 everywhere. Rows below name the admin-host URL. |
+| `/` (admin) | The admin home: rotating Brampton-time greeting, two tiles with live counts (D118). |
+| `/payment-links` | Payment-link builder and recent links: `AdminTopBar` + `PaymentLinkForm` + `PaymentLinkList`. Amount + description + expiry, no computation (D92, D103). Moved from the root by D118. |
+| `/products`, `/products/new`, `/products/<id>` | Product CRUD (D116) and Blob photo upload (D117). |
+| `/login` | Flush-left 420px sign-in column, username + password (D91). Redirects home if already signed in. |
+| `/styleguide` (admin) | The admin's authored states (D93), gated. Renders the real components inert. |
 | `src/features/admin/` | `types.ts` (contract), `session.ts` (one shared sign-in, hardened by D95: scrypt hash, signed `__Host-` cookie, CSRF + origin checks), two `"use server"` actions that call `requireAdminAction()` first, 6 components; islands `login-form`, `payment-link-form`, `copy-link-button`. `scripts/hash-admin-password.mjs` makes `ADMIN_PASSWORD_HASH`. |
+| SEO | `src/features/seo/` (D112): indexing flag `SEARCH_INDEXING_ENABLED` (off in Vercel until launch), `/robots.txt`, `/sitemap.xml` + `/sitemaps/*.xml`, `pageMetadata()` on every indexable page, JSON-LD (`OnlineStore`, `WebSite`, `Product` with no offer, `BreadcrumbList`), `/opengraph-image` and `/products/<slug>/og.jpg`. Verified by `tests/e2e/seo.spec.ts` in both flag states. |
 | Stubs left | `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). `/wheels` and `/accessories` left this list on 2026-09-21 (D58). |
 
 ---
@@ -436,6 +516,16 @@ parked row.
   expiry, append-only events with no PIN, and XML parsing. The harness is not in the repo (no test
   runner is configured). **That run was on 2026-09-24, before D108.** The reconcile code it covered is
   gone; after the removal only `tsc`, `eslint` and `next build` were re-run.
+- **2026-10-01, branch `payments-closure` (D119–D121):** `/pay/notify` for Converge's export script
+  (off until `CONVERGE_NOTIFY_*` exist; Elavon range + Basic auth; `/pay/return` skips its query when
+  notify settled first, so 1 Fixie request per payment); the shop's "Payment received" / "Refund needed"
+  email (D120, no flag); the `REPLACE_ME` PIN placeholder counts as unset. Vercel now has
+  `pay.platinumwheels.ca`, `CONVERGE_ENV=demo`, `CONVERGE_USER_ID=apiuser116349`, the PIN placeholder.
+  Verified: `tsc`, `eslint`, `next build`, and the IP-range boundaries by hand. **No service tests this
+  round** (owner: *"no tests needed"*). Elavon's sample export POST has no `ssl_invoice_number`, so
+  notify may match nothing until proven otherwise (`src/features/payments/llm.md` Open #2).
+- **The Cloudflare `pay` CNAME exists since 2026-10-02** and `pay.platinumwheels.ca` has its certificate
+  (`todo.md`, payments; D124 amends D121).
 - **Not verified yet: a real Converge call.** Blocked on Elavon allowlisting the Fixie IPs. The
   walkthrough once unblocked: create a `$1.00` link → pay with Visa `4000000000000002` → paid; `$1.88` →
   declined, then retry. The UNCONFIRMED wire details are listed in `docs/payments.md` §10.
@@ -445,7 +535,7 @@ parked row.
 
 **Quote delivery by email — built 2026-09-24 on branch `quote-email-delivery` (D104), behind a flag:**
 
-- The code is `src/features/product/quote-email.ts`, called from `actions.ts`. It sends **only when
+- The code is `src/features/cart/quote-email.ts` (moved from `product/` by D122), called from `src/features/cart/actions.ts`. It sends **only when
   `AUTO_EMAIL_LEAD_CAPTURE_ENABLED=true`**; any other value validates, logs `quote.email.disabled` and
   shows success, so the live form can be tested without sending mail. **Vercel has the flag set to
   `false`** and `LEAD_CAPTURE_EMAIL=sales@platinumwheels.ca` (the sender and the alert inbox, one address;

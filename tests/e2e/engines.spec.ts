@@ -120,7 +120,7 @@ test.describe("engine-sensitive features", () => {
 
   test("range thumbs paint, and keyboard + pointer both move the price", async ({ page }, info) => {
     const watch = watchProblems(page);
-    await page.goto("/results");
+    await page.goto("/tires");
     await ready(page);
     const scope = usesSheet(info) ? await openSheet(page) : page.locator('[data-probe="rail"]');
     const track = scope.locator('[data-probe="price-track"]');
@@ -176,7 +176,7 @@ test.describe("engine-sensitive features", () => {
   test("filter sheet <dialog>: modal, ::backdrop scrim, Esc and backdrop press close it", async ({ page }, info) => {
     const watch = watchProblems(page);
     await atSheetWidth(page, info);
-    await page.goto("/results");
+    await page.goto("/tires");
     await ready(page);
     const trigger = page.getByRole("button", { name: /^Filters/ });
     const sheet = await openSheet(page);
@@ -247,7 +247,7 @@ test.describe("engine-sensitive features", () => {
     page,
   }, info) => {
     await atSheetWidth(page, info);
-    await page.goto("/results");
+    await page.goto("/tires");
     await ready(page);
     const support = await page.evaluate(() => {
       // No CSS.supports() form exists for an at-rule; probe it: a rule inside
@@ -293,7 +293,7 @@ test.describe("engine-sensitive features", () => {
 
   test(":has() styling: selected chip fills, segmented radio fills, keyboard ring on the label", async ({ page }, info) => {
     note(info, ":has() supported", await page.evaluate(() => CSS.supports("selector(:has(a))")));
-    await page.goto("/results?season=winter");
+    await page.goto("/tires?season=winter");
     await ready(page);
     const scope = usesSheet(info) ? await openSheet(page) : page.locator('[data-probe="rail"]');
     const winter = scope.locator('[data-probe="chip-winter"]');
@@ -358,10 +358,10 @@ test.describe("engine-sensitive features", () => {
     note(info, "document.startViewTransition", await page.evaluate(() => "startViewTransition" in document));
     await page
       .getByRole("navigation", { name: "Breadcrumb" })
-      .getByRole("link", { name: "Results", exact: true })
+      .getByRole("link", { name: "Tires", exact: true })
       .filter({ visible: true })
       .click();
-    await expect(page).toHaveURL(/\/results$/);
+    await expect(page).toHaveURL(/\/tires$/);
     await ready(page);
     await expect(page.getByRole("heading", { level: 1, name: "Best matches" })).toBeVisible();
     watch.expectClean();
@@ -369,7 +369,7 @@ test.describe("engine-sensitive features", () => {
 
   test("dvh sizing: sheet panel = 100dvh − 144, desktop rail cap = 100dvh − 96", async ({ page }, info) => {
     note(info, "dvh supported", await page.evaluate(() => CSS.supports("height", "100dvh")));
-    await page.goto("/results");
+    await page.goto("/tires");
     await ready(page);
     if (!usesSheet(info)) {
       const rail = await page.locator('[data-probe="rail"]').evaluate((n) => ({
@@ -390,7 +390,7 @@ test.describe("engine-sensitive features", () => {
 
   test("overscroll-behavior: contain on the sheet, its scroller, the drawer and the rail", async ({ page }, info) => {
     note(info, "overscroll-behavior supported", await page.evaluate(() => CSS.supports("overscroll-behavior", "contain")));
-    await page.goto("/results");
+    await page.goto("/tires");
     await ready(page);
     if (!usesSheet(info)) {
       expect(await page.locator('[data-probe="rail"]').evaluate((n) => getComputedStyle(n).overscrollBehaviorY)).toBe("contain");

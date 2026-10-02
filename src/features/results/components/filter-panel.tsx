@@ -1,7 +1,7 @@
 "use client";
 
 /* ---------------------------------------------------------------------------
-   FilterPanel — the one `/results` filter form, drawn twice
+   FilterPanel — the one `/tires` filter form, drawn twice
 
    The desktop rail (`results-desktop.html:121-147`) and the mobile sheet body
    (`results-mobile-filters.html:76-82`) are the same groups with different
@@ -18,7 +18,7 @@
    header nav and the footer's first column.
 
    **State is the URL (D44).** The panel stores nothing a query string does not.
-   It is one `<form method="get" action="/results">` whose control `name`s are
+   It is one `<form method="get" action="/tires">` whose control `name`s are
    `RESULTS_PARAM`, so:
      - with JS, the form's native `change` event rebuilds the query from its own
        `FormData` and `router.replace`s it, `scroll:false`, inside a transition —
@@ -74,6 +74,7 @@ import {
   type SizeOption,
 } from "@/features/results/types";
 import { cx } from "@/lib/cx";
+import { PRICES_VISIBLE } from "@/lib/site";
 
 /* --- Shared bits ---------------------------------------------------------- */
 
@@ -599,7 +600,7 @@ export function FilterPanel({
       /* This category's own route (D58) — `CATEGORY_CONFIG[query.category].route`,
          not `resultsHref(clearFilters(query))`, so a no-JS submit posts to the
          plain route even mid-edit, before the rest of the query is known to be
-         valid. Tires' route is still the measured `/results` (D39). */
+         valid. Tires' route is still the measured `/tires` (D39). */
       action={CATEGORY_CONFIG[query.category].route}
       onSubmit={(event) => {
         event.preventDefault();
@@ -646,7 +647,7 @@ export function FilterPanel({
           {/* A `<p>`, not an `<h2>`: `results-page.tsx` renders the rail before
               the grid, so an `<h2>` here opened the document outline at level 2
               and pushed the page `<h1>Best matches>` (results-grid.tsx) into
-              second place on /results, /wheels and /accessories at >=1100px.
+              second place on /tires, /wheels and /accessories at >=1100px.
               `<aside aria-label="Filters">` (filter-rail.tsx) already names the
               region, so nothing is lost. `<p>` and `<h2>` are both block and
               preflight zeroes both margins, so no pixel moves. Craft audit
@@ -813,24 +814,28 @@ export function FilterPanel({
       </div>
 
       {/* 4 — Price per tire / wheel / item -------------------------------- */}
-      <div
-        data-probe="group-price"
-        role="group"
-        aria-labelledby={`${idPrefix}-price-label`}
-        className={shellPrice}
-      >
-        <GroupLabel id={`${idPrefix}-price-label`} mark={rail}>
-          {facets.priceLabel}
-        </GroupLabel>
-        <PriceGroup
-          idPrefix={idPrefix}
-          rail={rail}
-          min={facets.price.min}
-          max={facets.price.max}
-          selectedMin={facets.price.selectedMin}
-          selectedMax={facets.price.selectedMax}
-        />
-      </div>
+      {/* D122: not rendered while prices are switched off; `query.ts` ignores
+          a `min`/`max` in the URL then too. */}
+      {PRICES_VISIBLE ? (
+        <div
+          data-probe="group-price"
+          role="group"
+          aria-labelledby={`${idPrefix}-price-label`}
+          className={shellPrice}
+        >
+          <GroupLabel id={`${idPrefix}-price-label`} mark={rail}>
+            {facets.priceLabel}
+          </GroupLabel>
+          <PriceGroup
+            idPrefix={idPrefix}
+            rail={rail}
+            min={facets.price.min}
+            max={facets.price.max}
+            selectedMin={facets.price.selectedMin}
+            selectedMax={facets.price.selectedMax}
+          />
+        </div>
+      ) : null}
 
       {/* The rail's only submit, and only for a visitor with scripting off.
           `Apply` was removed on owner instruction (DEVIATIONS.md #71, D82) —

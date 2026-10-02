@@ -4,15 +4,16 @@ import type { NextRequest } from "next/server";
 import { decideHostRouting } from "@/features/admin/host-routing";
 
 /* ---------------------------------------------------------------------------
-   Request proxy — host routing for the admin (D97)
+   Request proxy — host routing for the admin (D97, D115) and payments (D105)
 
    `proxy.ts`, not `middleware.ts`: Next 16 renamed the convention and
    `docs/decisions.md` §2 fixed this file name before it existed. It lives in
    `src/` because the app does; Next looks for it beside `app/`.
 
-   It does one thing — decide which hostname may serve `/admin` and `/pay` — and every
-   rule lives in `src/features/admin/host-routing.ts` as a pure function. This
-   file only adapts a request to that function and its answer to a response.
+   It decides which hostname serves the admin and `/pay`, and serves the
+   admin's prefix-less URLs from the `src/app/admin/` folder (D115). Every rule
+   lives in `src/features/admin/host-routing.ts` as a pure function; this file
+   only adapts a request to that function and its answer to a response.
    Nothing about sign-in happens here: the gate is `requireAdminSession()` in
    each page and every Server Action (D95), and it must stay there. Next's own
    docs warn that a matcher change can silently drop proxy coverage, so proxy
@@ -21,8 +22,13 @@ import { decideHostRouting } from "@/features/admin/host-routing";
    **Why the matcher is narrow.** Without a matcher, proxy runs before every
    request on the site — every storefront page, the ones whose mobile LCP is
    already the one red gate (root `llm.md` §7.12). With this matcher it runs on
-   `/admin` paths on any host, and on every non-asset path on the admin host,
-   and never on ordinary storefront traffic.
+   `/admin` and `/pay` paths on any host, and on every non-asset path on the
+   admin and pay hosts, and never on ordinary storefront traffic.
+
+   Server Actions are POSTs to the page's own URL, so an admin form posted to
+   `/products` is rewritten to `/admin/products` like the page itself was
+   (Next's proxy docs: "Server Functions … are handled as POST requests to the
+   route where they are used").
    --------------------------------------------------------------------------- */
 
 /** A path no route answers. Folders starting with `_` are private in the App
@@ -36,16 +42,18 @@ export function proxy(request: NextRequest) {
     host: request.headers.get("host"),
     pathname: request.nextUrl.pathname,
     // Vercel sets `VERCEL_ENV` to `production`, `preview` or `development`;
-    // outside Vercel (`next dev`, `next start`) it is unset. Only production
-    // enforces host rules — see `host-routing.ts`.
+    // outside Vercel (`next dev`, `next start`) it is unset. See
+    // `host-routing.ts` for what production changes.
     isProduction: process.env.VERCEL_ENV === "production",
   });
 
   switch (decision.kind) {
-    case "redirect":
-      // 307, Next's default: temporary, so a browser does not cache it while
-      // the subdomain's shape can still change.
-      return NextResponse.redirect(new URL(decision.pathname, request.url));
+    case "rewrite": {
+      // Clone so the query string (`?page=2`, the list filters) is kept.
+      const url = request.nextUrl.clone();
+      url.pathname = decision.pathname;
+      return NextResponse.rewrite(url);
+    }
     case "not-found":
       return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url));
     case "pass":
@@ -56,22 +64,27 @@ export function proxy(request: NextRequest) {
 export const config = {
   /* Literal values only: Next analyses `config` statically at build time and
      ignores anything computed, so `ADMIN_HOST` cannot be imported here. The
-     host below duplicates `ADMIN_HOST` in `host-routing.ts` — change both. */
+     hosts below duplicate `ADMIN_HOST`, `DEV_ADMIN_HOST` and `PAY_HOST` in
+     `host-routing.ts` — change both. A `has` value is a regular expression
+     matched against the whole header, so the dots are escaped. */
   matcher: [
-    // Any host: the admin itself, so production can 404 it off the admin host.
+    // Any host: the admin folder, so it can 404 everywhere it is asked for by
+    // name.
     "/admin",
     "/admin/:path*",
-    // The admin host only: every path except build output (`_next/`) and
-    // public files (anything with a dot — `.webp`, `favicon.ico`), so a stray
-    // path there can be sent to `/admin`. `has` compares the `Host` header as
-    // a pattern, hence the escaped dots.
+    // The admin hosts: every path except build output (`_next/`) and public
+    // files (anything with a dot — `.webp`, `favicon.ico`), so each can be
+    // served from the admin folder. The dev host carries a port.
     {
       source: "/((?!_next/|.*\\..*).*)",
       has: [{ type: "header", key: "host", value: "admin\\.platinumwheels\\.ca" }],
     },
+    {
+      source: "/((?!_next/|.*\\..*).*)",
+      has: [{ type: "header", key: "host", value: "admin\\.localhost(:\\d+)?" }],
+    },
     // Payments (D105): `/pay` on any host, so production can 404 it off the
-    // pay host, and every non-asset path on the pay host. `PAY_HOST` in
-    // `host-routing.ts` — change both.
+    // pay host, and every non-asset path on the pay host.
     "/pay",
     "/pay/:path*",
     {

@@ -242,6 +242,12 @@ export type ProductInput = {
   | { category: "accessories"; specs: AccessorySpecsInput }
 );
 
+/** One product of a bulk load: validated, with the slug its loader chose. */
+export interface NewProduct {
+  input: ProductInput;
+  slug: string;
+}
+
 export type WriteProductResult =
   | { ok: true; id: string; slug: string }
   /** Another product already carries this vendor + SKU. */

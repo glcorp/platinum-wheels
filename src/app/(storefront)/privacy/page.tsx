@@ -6,6 +6,8 @@ import {
   ProsePage,
   ProseSection,
 } from "@/components/site/prose-page";
+import { pageMetadata } from "@/features/seo/metadata";
+import { ROUTES } from "@/lib/routes";
 import { SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
@@ -27,13 +29,15 @@ import { SITE } from "@/lib/site";
 
    Every claim below was verified against the code, not assumed:
      - the collected fields are exactly `QUOTE_FIELD` in
-       `src/features/product/types.ts`, plus the vehicle trio the finder puts
-       in the URL;
+       `src/features/cart/types.ts` (since D122), plus the cart's products,
+       quantities and searched vehicles;
      - the consent checkbox renders unticked always and never accepts a
        `defaultChecked` from its call site (`docs/decisions.md` §7);
-     - **no analytics, no cookies, no localStorage, no sessionStorage** —
-       grepped across `src/`, zero hits. If any of that is ever added, this
-       page changes in the same commit.
+     - **no analytics, no cookies, no sessionStorage**, and one `localStorage`
+       entry: the cart (`src/lib/cart.ts`, D122), described in "Cookies and
+       tracking" in the same commit that added it. That paragraph is the one
+       factual change since D63, made because the old sentence ("stores
+       nothing in your browser") became false; it adds no commitment.
      - nothing is sent anywhere yet: `actions.ts` validates and discards, with
        delivery a marked TODO (D54, parked). The wording below describes the
        intended behaviour once it is wired, which is what a visitor needs to
@@ -47,10 +51,11 @@ import { SITE } from "@/lib/site";
    commit that last touched this file.
    --------------------------------------------------------------------------- */
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Privacy",
   description: `How ${SITE.legalName} handles the information you send with a quote request.`,
-};
+  path: ROUTES.privacy,
+});
 
 /* One list of sections, mapped straight into `ProseSection`s below. */
 const SECTIONS: ReadonlyArray<{
@@ -103,8 +108,13 @@ const SECTIONS: ReadonlyArray<{
     title: "Cookies and tracking",
     body: (
       <p>
-        This site sets no cookies, runs no analytics, and stores nothing in your
-        browser. There is no advertising or third-party tracking on any page.
+        This site sets no cookies and runs no analytics. The one thing it keeps
+        in your browser is your cart: the products and quantities you add, in
+        this browser&apos;s local storage, so they are still there when you come
+        back. It stays in your browser until you send a quote request. You can
+        empty it by removing the products, or by clearing this site&apos;s data
+        in your browser. There is no advertising or third-party tracking on any
+        page.
       </p>
     ),
   },

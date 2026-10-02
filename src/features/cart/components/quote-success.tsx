@@ -1,8 +1,9 @@
 import { PRIMARY_CONTACT } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
-   QuoteSuccess — what the quote band shows once `submitQuote` returns
-   `{ status: "success" }` (D51).
+   QuoteSuccess — what the cart page shows once `submitCartQuote` returns
+   `{ status: "success" }` (D51; on the cart since D122, which also empties
+   the cart).
 
    NO ARTBOARD DRAWS THIS. Neither product export contains a submitted state —
    the only form state they draw is the staged, partly-typed one
@@ -17,7 +18,7 @@ import { PRIMARY_CONTACT } from "@/lib/site";
    (`src/app/(storefront)/llm.md`, and the `ResultsEmpty` precedent), and a
    Server Component keeps it out of the client bundle on that page.
 
-   The caller owns focus: `QuoteForm` moves focus here on success so a screen
+   The caller owns focus: `CartView` moves focus here on success so a screen
    reader and a keyboard user both land on the thing that changed. `role`
    and `tabIndex` are props so the styleguide can render it inert — a live
    `role="status"` on a reference page would announce itself on load.
@@ -48,11 +49,11 @@ export function QuoteSuccess({ role, tabIndex, ref }: QuoteSuccessProps) {
       data-probe="quote-success"
       className="bg-surface border-border-strong flex flex-col items-start gap-3 border p-5 sm:gap-4 sm:p-8 enter-rise"
     >
-      {/* `h3`: the band's own `h2` is `Tell us where to send it.`, and this
-          replaces the form beneath it rather than the heading. */}
-      <h3 className="display text-ink text-display-28 sm:text-display-40">
+      {/* `h2` under the cart page's `Your cart` (D122). It used to be an
+          `h3` under the quote band's own `h2`. */}
+      <h2 className="display text-ink text-display-28 sm:text-display-40">
         Quote request sent.
-      </h3>
+      </h2>
       {/* New copy. Says what happens next and by when, and gives the phone as
           the faster path — the quote-first fallback the whole build leans on
           (`docs/decisions.md` §7). No em dash (`.claude/rules/ui.md` "Copy"

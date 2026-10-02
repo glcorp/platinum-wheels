@@ -16,7 +16,7 @@ One line each; measurements and per-variant tables live in each file's header co
   `ButtonProps` adds `variant?: "primary" | "secondary" | "tertiary" | "accent"` (`accent` = the header
   phone CTA, D40), `size?: "panel" | "card" | "compact" | "promo" | "load"` (`:36`; named by role, because
   every height is a responsive pair; `promo` = the home 52→56 CTAs), `fullWidth?: boolean`. Icon gap is
-  per size, not in the base. `load` is the `/results` `Load more`, `h-13 sm:h-14 text-14 tracking-8
+  per size, not in the base. `load` is the `/tires` `Load more`, `h-13 sm:h-14 text-14 tracking-8
   gap-2.5` (`:87`) with `sizePad.load = "md:px-10"` (`:95`): it is its own size because the mobile
   artboard stretches the link edge to edge with no horizontal padding (`design/inventory/results.md`
   §2.6), which `promo`'s `px-6 sm:px-7` cannot be overridden into (`:69-85`, `HANDOFF.md` §8.4).
@@ -25,7 +25,7 @@ One line each; measurements and per-variant tables live in each file's header co
   the ROW box; every other prop lands on the input, `:48-52`) and `variant?: "consent" | "facet"`
   (`:41`, default `consent`). `consent` is byte-identical to the original CASL row — 20px box, its own
   13/14px muted copy, 44px min row — and never sets `checked`/`defaultChecked`, so CASL renders unticked
-  (`docs/decisions.md:118`). `facet` is the `/results` filter row: an 18px box
+  (`docs/decisions.md:118`). `facet` is the `/tires` filter row: an 18px box
   (`results-desktop.html:141` / `results-mobile-filters.html:80`) with the copy passed through untouched
   (`:138-140`), because a facet row is two spans with two type recipes and the row height and gap differ
   between rail and sheet — they arrive on `labelClassName` (`:31-39`). Hover is
@@ -81,7 +81,7 @@ One line each; measurements and per-variant tables live in each file's header co
   panel hairlines keep `--border-strong`.
 - **Hover is written as Tailwind `hover:`**, which v4 compiles to `@media (hover: hover) { &:hover }` —
   D17. Never hand-write a bare `:hover`; it sticks after a tap.
-- **`ChipCheckbox` exists so a chip can submit in a no-JS GET form** — the `/results` Season group is
+- **`ChipCheckbox` exists so a chip can submit in a no-JS GET form** — the `/tires` Season group is
   part of `<form method="get">` and must work without JavaScript (D44), which a `<button>` cannot do.
   `Chip` itself is unchanged and is still a `<button>` (`chip.tsx:82`). The two share one measured
   recipe; never re-measure the second.

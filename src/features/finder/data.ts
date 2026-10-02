@@ -20,6 +20,8 @@
  *   the "models" are its cab/payload series: 1500, 2500, 3500.
  */
 
+import { shopYear } from "@/lib/time";
+
 /**
  * Current year down to eleven years back — **computed at render** (D32), which
  * is why this is a function and not a constant.
@@ -33,7 +35,7 @@
  * (D66, 2026-09-22.)
  */
 export function finderYears(): readonly number[] {
-  const currentYear = new Date().getFullYear();
+  const currentYear = shopYear();
   return Array.from({ length: 12 }, (_, index) => currentYear - index);
 }
 

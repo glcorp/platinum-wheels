@@ -9,8 +9,9 @@
  *
  * Deliberately absent, per `docs/decisions.md:107`: stock counts, shipping,
  * ratings and invented specs are never rendered, so a card never receives them.
- * There is no cart, so there is no quantity, SKU-availability count or
- * add-to-cart affordance either (`docs/decisions.md:105`).
+ * No quantity and no availability count either: since D122 the card has an
+ * `Add to cart` button, but the cart (`src/lib/cart.ts`) keeps its own
+ * quantities and the product carries none.
  */
 
 /**
@@ -197,7 +198,7 @@ export interface Product {
    *
    * Deliberately NOT a `ProductBadge`: `studdable` is a member of that union,
    * but pushing it into `badges` would give the card a second badge and move a
-   * measured `/results` parity row. A spec-table fact belongs outside the slot
+   * measured `/tires` parity row. A spec-table fact belongs outside the slot
    * the cards compete for (D53(2)).
    */
   studdable?: boolean;
