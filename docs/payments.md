@@ -133,7 +133,9 @@ calls** through **Fixie** (HTTPS `CONNECT` tunnel — TLS is end-to-end, the pro
 | `CONVERGE_NOTIFY_PASSWORD` | Vercel | **yes** | its password. Never in a chat |
 
 **Set on 2026-10-01 (D121):** `CONVERGE_ENV=demo`, `CONVERGE_USER_ID=apiuser116349`, `CONVERGE_PIN` =
-`REPLACE_ME` (a placeholder the code treats as unset). **Still owed:** the real PIN and `CONVERGE_ACCOUNT_ID`.
+`REPLACE_ME` (a placeholder the code treats as unset). **2026-10-02:** `CONVERGE_ACCOUNT_ID=0023020` and the
+owner's rotated PIN; the Fixie IPs are on the demo allowed list; `pay.` has DNS and a certificate (Vercel
+did not issue it on its own: it was requested by hand).
 
 Local development uses a **Neon `dev` branch** URL in `.env.local` (gitignored), never production.
 
