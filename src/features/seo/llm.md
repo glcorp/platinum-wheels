@@ -53,7 +53,8 @@ and the `metadata` of `layout.tsx` and of each indexable page.
   The filter space is unbounded and every answer is a database read; Google's faceted-navigation
   guidance is to block such URLs in `robots.txt` rather than lean on the canonical. A product's `?qty=`
   stays crawlable and canonicalises.
-- **Never indexed, never in a sitemap:** `/styleguide`, `/qa-error`, `/admin/**`, `/pay/**`. Each sets
+- **Never indexed, never in a sitemap:** `/styleguide`, `/qa-error`, `/cart` (D122), every admin page
+  (on its own host since D115), `/pay/**`. Each sets
   its own `robots`, which wins in both flag states. The sitemap lists are allow-lists.
 - **No street address, no postal code, no `geo`, no map and no opening hours, anywhere.** There is no
   shop (owner, 2026-09-30). The business is an `OnlineStore` based in Brampton. Its `address` is **city,

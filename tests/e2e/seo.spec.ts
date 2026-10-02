@@ -255,9 +255,11 @@ test("/styleguide is noindex whatever the flag says, and has no canonical", asyn
   expect(canonical(html)).toEqual([]);
 });
 
-test("/admin/login is noindex in the page and in the response header", async ({ request }) => {
-  // No host rules outside production, so the admin answers on this host here.
-  const res = await get(request, "/admin/login");
+test("the admin sign-in is noindex in the page and in the response header", async ({ request }) => {
+  // The admin answers only on its host, with no `/admin` prefix (D115);
+  // outside production that host is `admin.localhost`.
+  const res = await get(request, "/login", "admin.localhost");
+  expect(res.status()).toBe(200);
   expect(res.headers()["x-robots-tag"]).toContain("noindex");
   expect(meta(await res.text(), "robots").join(" ")).toContain("noindex");
 });

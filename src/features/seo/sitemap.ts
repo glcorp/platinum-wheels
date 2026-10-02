@@ -15,7 +15,7 @@
    or the host is not the canonical one (`indexing.ts`).
 
    **Never in a sitemap:** any URL with a query string (searches, filters,
-   `?qty=`), `/styleguide`, `/qa-error`, `/admin/**`, `/pay/**`, and a product
+   `?qty=`), `/styleguide`, `/qa-error`, `/cart`, the admin, `/pay/**`, and a product
    that is hidden or discontinued. The lists below are allow-lists, so a new
    route is left out until someone adds it here.
 

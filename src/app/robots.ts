@@ -26,7 +26,7 @@ import { SITE_URL } from "@/lib/site";
    `?qty=` stays crawlable and canonicalises.
 
    The pages that must stay out of search (`/styleguide`, `/qa-error`,
-   `/admin/**`, `/pay/**`) are **not** disallowed: they carry `noindex`
+   `/cart`, `/pay/**`) are **not** disallowed: they carry `noindex`
    themselves, and a crawler has to be allowed to fetch a page to read that.
 
    Reading `headers()` makes this a request-time handler rather than a cached

@@ -61,7 +61,7 @@ export function mayIndexHost(host: string | null): boolean {
 
 /**
  * The site-wide `robots` meta, set once in the root layout and inherited. A
- * page that must never be indexed (`/styleguide`, `/qa-error`, `/admin/**`)
+ * page that must never be indexed (`/styleguide`, `/qa-error`, `/cart`, the admin)
  * sets its own `robots` and wins in both states, because metadata merges
  * shallowly and the deepest segment replaces the field.
  */
