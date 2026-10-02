@@ -15,6 +15,10 @@ export const PAY_HOST = "pay.platinumwheels.ca";
 /** Path prefix of every customer payment page: `/pay/<token>`. */
 export const PAY_PATH_PREFIX = "/pay";
 
+/** Cookie naming the link this browser last pressed Pay on, read by
+ *  `/pay/return` when Converge comes back with an empty POST. */
+export const PAY_RETURN_COOKIE = "pw_pay";
+
 export type ConvergeEnvironment = "demo" | "production";
 
 export interface ConvergeConfig {

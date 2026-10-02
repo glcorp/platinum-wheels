@@ -259,7 +259,6 @@ export async function startAttempt(
   const session = await gateway.createSession({
     amountCents: attempt.amountCents,
     invoiceNumber: attempt.providerInvoiceNumber,
-    description: link.description,
   });
 
   await db.transaction(async (tx) => {
@@ -414,10 +413,14 @@ export async function handleReturn(
   fields: { txnId: string | null; invoiceNumber: string | null },
   gateway: Gateway,
   db: Database = getDb(),
-  options: { notifyGraceMs?: number } = {},
+  options: { notifyGraceMs?: number; fallbackToken?: string | null } = {},
 ): Promise<string | null> {
   const txnId = fields.txnId && TXN_ID_SHAPE.test(fields.txnId) ? fields.txnId : null;
   const claimedInvoice = fields.invoiceNumber && INVOICE_SHAPE.test(fields.invoiceNumber) ? fields.invoiceNumber : null;
+
+  if (!txnId && !claimedInvoice) {
+    return options.fallbackToken ? handleEmptyReturn(options.fallbackToken, gateway, db) : null;
+  }
 
   if (txnId) {
     const settled = await findSettled(txnId, db, options.notifyGraceMs ?? 0);
@@ -463,6 +466,50 @@ export async function handleReturn(
   const txn = transactions.find((t) => t.txnId === txnId);
   if (txn) await resolveAttempt(row.attemptId, txn, "return", db);
   return row.publicToken;
+}
+
+const PUBLIC_TOKEN_SHAPE = /^[A-Za-z0-9_-]{16,64}$/;
+
+/**
+ * Converge came back with an empty POST: it does so whenever its hosted page
+ * failed before authorizing (seen 2026-10-02/03), and may on a cancel. The
+ * `pw_pay` cookie set by the Pay button names the link; it is untrusted and
+ * only picks which page to show and which invoice to ask Converge about. One
+ * `txnquery` by invoice (1 Fixie request) settles the newest pending attempt
+ * if a transaction does exist, under the usual amount and invoice checks.
+ */
+async function handleEmptyReturn(publicToken: string, gateway: Gateway, db: Database): Promise<string | null> {
+  if (!PUBLIC_TOKEN_SHAPE.test(publicToken)) return null;
+  const [link] = await db.select().from(paymentLinks).where(eq(paymentLinks.publicToken, publicToken));
+  if (!link) return null;
+
+  const [attempt] = await db
+    .select()
+    .from(paymentAttempts)
+    .where(and(eq(paymentAttempts.linkId, link.id), eq(paymentAttempts.status, "pending")))
+    .orderBy(desc(paymentAttempts.attemptNo))
+    .limit(1);
+  if (!attempt) return link.publicToken;
+
+  const result = await gateway.findByInvoice(attempt.providerInvoiceNumber);
+  const found = result.ok ? result.transactions.filter((t) => t.invoiceNumber === attempt.providerInvoiceNumber) : [];
+  if (!result.ok) console.error(JSON.stringify({ at: "payments.handleEmptyReturn", detail: result.detail }));
+
+  await db.insert(paymentEvents).values({
+    linkId: link.id,
+    attemptId: attempt.id,
+    type: "attempt.return_received",
+    actor: "customer",
+    data: { txn_id: null, verified: result.ok, via: "cookie", found: found.length },
+  });
+
+  // A decline then an approval on the same hosted page: apply in that order,
+  // so the attempt ends approved (`applyTransaction` only moves forward).
+  const order = { declined: 0, other: 1, approved: 2 } as const;
+  for (const txn of [...found].sort((a, b) => order[a.outcome] - order[b.outcome])) {
+    await resolveAttempt(attempt.id, txn, "return", db);
+  }
+  return link.publicToken;
 }
 
 const NOTIFY_POLL_MS = 500;

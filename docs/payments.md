@@ -204,6 +204,13 @@ Elavon's Converge docs now live under `developer.elavon.com/products/hosted-paym
 | **Export scripts**: after a transaction Converge POSTs the result (form-encoded, ISO-8859-1) to a URL Elavon has registered; setup takes up to 12 business days; a non-200 reply is logged as a failed export. **Not signed.** Source ranges: `62.17.112.80/28`, `62.134.193.208/28`, `65.201.175.80/28`, `204.137.47.32/28`, `204.137.43.32/28`. It can send a username and password. **Their sample POST has no `ssl_invoice_number`**, a `SALE` type, a masked card (`47**********0084`) and an `authorization` header on authenticated posts (read 2026-10-01) | [export scripts](https://developer.elavon.com/products/hosted-payment-page/v1/export-scripts), read 2026-09-30 | D119: `/pay/notify`, `converge.ts` |
 | Demo test cards approve at `$X.00`; `$X.88` declines. Visa `4000000000000002`, Mastercard `5121212121212124` | [test cards](https://developer.elavon.com/test-cards) | the demo walkthrough |
 
+**Settled by the first demo calls (2026-10-02/03):** the token call works with `ssl_merchant_id` and
+`apiuser116349`; **`ssl_description` is no longer sent**: with it, the hosted page issued the token and then
+failed every card with `errorType SYSTEM` "System error" (no transaction recorded), while the same $1.00 sale
+approved in the portal; and **after such a failure, "Return to Merchant" POSTs an empty body** (form type, 0
+bytes, despite "Include Transaction Data"). An empty return is matched by the `pw_pay` cookie the Pay button
+sets (`handleEmptyReturn`). The demo hosted page shows amounts in **USD**.
+
 **UNCONFIRMED; the first demo call settles each one:** that `ssl_merchant_id` is still accepted (it is what
 Elavon's PHP sample and working integrations send; the docs say `ssl_account_id`); that `ssl_description` is
 accepted on the token call; whether the return arrives as GET or POST (both are handled); and whether a

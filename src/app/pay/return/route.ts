@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { getNotifyCredentials, PaymentsNotConfiguredError } from "@/features/payments/config";
+import { getNotifyCredentials, PAY_RETURN_COOKIE, PaymentsNotConfiguredError } from "@/features/payments/config";
 import { convergeGateway } from "@/features/payments/converge";
 import { handleReturn } from "@/features/payments/service";
 
@@ -68,7 +68,10 @@ async function respond(request: NextRequest, fields: URLSearchParams, source: Re
       { txnId: read("ssl_txn_id"), invoiceNumber: read("ssl_invoice_number") },
       convergeGateway(),
       undefined,
-      { notifyGraceMs: getNotifyCredentials() ? NOTIFY_GRACE_MS : 0 },
+      {
+        notifyGraceMs: getNotifyCredentials() ? NOTIFY_GRACE_MS : 0,
+        fallbackToken: request.cookies.get(PAY_RETURN_COOKIE)?.value ?? null,
+      },
     );
   } catch (error) {
     // A misconfiguration or database error must still land the customer on a
