@@ -79,14 +79,12 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
 **Done 2026-10-01/02 (D121):** Fixie via the Vercel integration (outbound IPs `52.87.82.133`,
 `52.5.155.132`); Elavon allowlisted them on the demo account; `pay.platinumwheels.ca` on Vercel with its
 certificate, plus the Cloudflare CNAME (DNS only); `CONVERGE_ENV=demo`, `CONVERGE_ACCOUNT_ID=0023020`,
-`CONVERGE_USER_ID=apiuser116349` and the rotated `CONVERGE_PIN` in Vercel. **No demo extension** (owner
+`CONVERGE_USER_ID=apiuser116349` and the rotated `CONVERGE_PIN` in Vercel. Converge portal → Hosted
+Payments (2026-10-02): Cancel Link, Approval and Decline button links (with transaction data) and the
+Response Page Redirect URL all point at `https://pay.platinumwheels.ca/pay/return`; billing address fields
+are optional; CAPTCHA was already on and is left on. **No demo extension** (owner
 ruling 2026-10-01): demo testing wraps up by 2026-10-04.
 
-P3. **Converge portal → Settings → Hosted Payments.**
-   - Response Page → **Redirect URL**, the Decline button link, and Payment Page → **Cancel Link**:
-     `https://pay.platinumwheels.ca/pay/return`.
-   - Leave address fields optional: if they are required, token requests fail with `ssl_avs_address
-     required`.
 P8. **Export script (D119), self-serve in the portal.** Point it at `https://pay.platinumwheels.ca/pay/notify`
    with a username and password, then put them in Vercel as `CONVERGE_NOTIFY_USER` (plain) and
    `CONVERGE_NOTIFY_PASSWORD` (Sensitive), Production only, and redeploy. Until then the route is off.
