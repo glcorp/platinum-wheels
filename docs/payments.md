@@ -205,7 +205,8 @@ Elavon's Converge docs now live under `developer.elavon.com/products/hosted-paym
 | Demo test cards approve at `$X.00`; `$X.88` declines. Visa `4000000000000002`, Mastercard `5121212121212124` | [test cards](https://developer.elavon.com/test-cards) | the demo walkthrough |
 
 **Settled by the first demo calls (2026-10-02/03):** the token call works with `ssl_merchant_id` and
-`apiuser116349`; **`ssl_description` is no longer sent**: with it, the hosted page issued the token and then
+`apiuser116349`, but the hosted page then fails, so the account ID is now sent as **`ssl_account_id`** (Elavon's
+current required name); `apiuser116349` needed Batch VIEW rights for `txnquery` (error 4014 without them); **`ssl_description` is no longer sent**: with it, the hosted page issued the token and then
 failed every card with `errorType SYSTEM` "System error" (no transaction recorded), while the same $1.00 sale
 approved in the portal; and **after such a failure, "Return to Merchant" POSTs an empty body** (form type, 0
 bytes, despite "Include Transaction Data"). An empty return is matched by the `pw_pay` cookie the Pay button

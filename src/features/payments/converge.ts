@@ -117,10 +117,11 @@ async function post(config: ConvergeConfig, url: string, form: URLSearchParams):
 
 function credentials(config: ConvergeConfig): Record<string, string> {
   return {
-    // `ssl_merchant_id` is the name every working integration and Elavon's
-    // own PHP sample send; the docs call it `ssl_account_id` now ("formerly
-    // ssl_merchant_id"). Verified against the demo account (§10).
-    ssl_merchant_id: config.accountId,
+    // `ssl_account_id`, the name Elavon's current API reference marks
+    // required ("formerly known as ssl_merchant_id"). With the legacy name the
+    // demo issued session tokens, then its hosted page failed every card with
+    // errorType SYSTEM (2026-10-03, `docs/payments.md` §10).
+    ssl_account_id: config.accountId,
     ssl_user_id: config.userId,
     ssl_pin: config.pin,
   };
