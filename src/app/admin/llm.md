@@ -104,3 +104,11 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b.
    storefront path is served by the storefront rather than a 404 (the admin headers still apply). Older
    than D115; harmless while nothing dotted is sensitive. Tighten the matcher to `/images/` and named
    files if that changes. Owner.
+6. **After signing in on a local build (`next start`, `next dev`), the admin host shows the storefront home
+   until a reload** (found 2026-10-02 at the canonical merge, D124). `signIn` ends in
+   `redirect(ADMIN_ROUTES.home)`, and Next renders a Server Action's redirect target by fetching it from
+   the server's own origin (`localhost:<port>`; `createRedirectRenderResult` in
+   `node_modules/next/dist/server/app-render/action-handler.js`), so `src/proxy.ts` sees a storefront host.
+   Sign-out and the `router.push` after creating a product are unaffected. Not yet looked at on
+   production: sign in once after the deploy. If production shows it too, sign-in should navigate in the
+   browser instead of calling `redirect()`.

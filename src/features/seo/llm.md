@@ -135,3 +135,8 @@ and the `metadata` of `layout.tsx` and of each indexable page.
 7. **Never measured:** Lighthouse after this change (the home page grew about 0.6 KB gzipped and gained no
    client code), Google's Rich Results Test and any real link-unfurler, all of which need a public URL.
    Coordinator, at launch.
+8. **The product preview card is cached for a day.** `og.jpg` answers `public, max-age=3600,
+   s-maxage=86400`, and since D116 and D117 staff can hide a product or change and remove its photos;
+   `updateTag` does not purge that CDN entry, so a link preview can show the old photo, or a hidden
+   product's card, for up to 24 hours. Found at the canonical merge (D124); minor while the site is
+   `noindex`. A shorter `s-maxage` is the cheap fix.

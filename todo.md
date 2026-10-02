@@ -120,8 +120,9 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
 
 ## Owner — admin products (D116, D117)
 
-10. **Set `STOREFRONT_URL` in Vercel (Production)** to `https://platinum-wheels-one.vercel.app`, and change it
-    to `https://platinumwheels.ca` at launch.
+10. **`STOREFRONT_URL` is set in Vercel (Production)** to `https://platinum-wheels-one.vercel.app` (2026-10-01).
+    It reaches the site with the deploy the canonical merge (D124) triggers. Change it to
+    `https://platinumwheels.ca` at launch.
     - **Why:** the product edit page's **View on site** link is built from it; while it is unset the link
       is simply not shown. The admin lives on its own host, so the link cannot be relative.
     - **Check:** open a published product in the admin; **View on site** opens its storefront page.

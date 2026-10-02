@@ -34,8 +34,9 @@ composition only, `docs/decisions.md:62`); this is where the actual page content
   quote form island (D51, moved from `product/`), its Server Actions and the emails (D104). The cart's
   storage is `src/lib/cart.ts`, so the header can read it.
 
-- [`admin/`](admin/llm.md) — **built.** The staff tool at `/admin` (D89): shared sign-in (D95), payment-link
-  builder, links list (D106).
+- [`admin/`](admin/llm.md) — **built.** The staff tool (D89), prefix-less on `admin.platinumwheels.ca` since
+  D115: shared sign-in (D95), payment-link builder, links list (D106), product screens and photos (D116,
+  D117), home (D118).
 - [`payments/`](payments/llm.md) — **built** 2026-09-24. Converge adapter, link and attempt service, the Pay
   island (D99–D107). The only code that names the gateway.
 - [`seo/`](seo/llm.md) — **built** 2026-09-30 (D112). The indexing flag, `pageMetadata()`, the sitemap, the
