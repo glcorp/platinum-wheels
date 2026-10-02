@@ -140,15 +140,12 @@ async function createSession(config: ConvergeConfig, request: SessionRequest): P
     ...credentials(config),
     ssl_transaction_type: "ccsale",
     ssl_amount: formatCents(request.amountCents),
-    // No `ssl_description`: the demo account's hosted page issued the token
-    // with it and then failed every card with errorType SYSTEM "System error"
-    // (2026-10-03), while the same $1.00 sale approved in the portal. The
-    // description stays ours, on the pay page; the invoice number identifies
-    // the payment in Converge.
+    ssl_invoice_number: request.invoiceNumber,
+    // No `ssl_description`: the description stays ours, on the pay page; the
+    // invoice number identifies the payment in Converge. (It was dropped on
+    // 2026-10-03 as a suspect for the hosted page's SYSTEM error; the cause
+    // was the hand-off form, D125. It is simply not needed.)
   });
-
-  if (config.sendInvoice) form.set("ssl_invoice_number", request.invoiceNumber);
-  else console.warn(JSON.stringify({ at: "converge.createSession", invoice: "omitted (CONVERGE_SEND_INVOICE=false)" }));
 
   const result = await post(config, HOSTS[config.environment].token, form);
   if (!result.ok) return { ok: false, reason: "unavailable", detail: result.detail };
