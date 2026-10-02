@@ -238,7 +238,11 @@ export async function startAttempt(
         attemptNo,
         provider: "converge",
         environment: gateway.environment,
-        providerInvoiceNumber: `${link.reference}-${attemptNo}`,
+        // Letters and digits only: `PW-10007` attempt 1 → `PW10007N1`. With
+        // hyphens (`PW-10007-1`) the demo issued the session, then its hosted
+        // page failed every card with errorType SYSTEM, while a Buy Button
+        // sale (no invoice) by the same API user approved (2026-10-03).
+        providerInvoiceNumber: invoiceNumberFor(link.reference, attemptNo),
         amountCents: link.amountCents,
         sessionExpiresAt: new Date(Date.now() + SESSION_TTL_MS),
       })
@@ -396,7 +400,13 @@ async function applyTransaction(
 }
 
 const TXN_ID_SHAPE = /^[A-Za-z0-9-]{1,64}$/;
-const INVOICE_SHAPE = /^PW-\d+-\d+$/;
+/** Current `PW10007N1`, or the hyphenated `PW-10007-1` of attempts made
+ *  before 2026-10-03 (still in the database, still matchable). */
+const INVOICE_SHAPE = /^(PW\d+N\d+|PW-\d+-\d+)$/;
+
+export function invoiceNumberFor(reference: string, attemptNo: number): string {
+  return `${reference.replace(/[^A-Za-z0-9]/g, "")}N${attemptNo}`;
+}
 
 /**
  * The browser came back from the hosted page. `fields` is untrusted: it only

@@ -61,7 +61,7 @@ whether money moved. Nothing the browser sends is trusted for either.
 
 - **Expired is derived, not stored**: `status='active' AND expires_at <= now()`. No job exists to flip a
   stored flag at the right moment (D108), so a stored one would lie.
-- **References**: `PW-10001` from a Postgres sequence; attempt invoice `PW-10001-2` is what Converge
+- **References**: `PW-10001` from a Postgres sequence; attempt invoice `PW10001N2` (letters and digits only; `PW-10001-2` before 2026-10-03) is what Converge
   prints on the cardholder's statement, and what staff search for in the Converge portal.
 - **Links are never deleted** (FK `ON DELETE RESTRICT` from attempts and events). Cancel instead.
 - **No card data**: brand + last four only (PCI DSS permits). The Hosted Payment Page keeps us at
@@ -197,7 +197,7 @@ Elavon's Converge docs now live under `developer.elavon.com/products/hosted-paym
 | **The IP allowed list is mandatory for tokens; only Elavon can edit it** (demo: `sedevportalsupport@elavon.com`; production: 1-800-377-3962) | [Manage IP Address](https://support.convergepay.com/s/article/Whitelist-an-IP-Address), HPP overview | D102, `todo.md` |
 | **Return, decline and cancel URLs are portal settings** (Hosted Payments → Payment Page / Response Page), not token fields | [Customize the HPP](https://support.convergepay.com/s/article/Customize-the-Hosted-Payments-Page) | `/pay/return`, `todo.md` |
 | No currency field: `ssl_transaction_currency` is for multi-currency terminals and errors 5087 otherwise; the default is the terminal's (CAD) | [input fields](https://developer.elavon.com/products/xml-api/v1/supported-transaction-input-fields), [error codes](https://developer.elavon.com/products/xml-api/v1/error-codes) | `converge.ts` |
-| `ssl_invoice_number` ≤ 25 chars | API reference | `PW-10001-2` fits |
+| `ssl_invoice_number` ≤ 25 chars, alphanumeric | API reference, XML input fields | `PW10001N2`. The hyphenated `PW-10001-2` was accepted on the session but the hosted page then failed with `SYSTEM` (2026-10-03) |
 | `txnquery`: `POST …/VirtualMerchant(Demo)/processxml.do`, `xmldata=<txn>…</txn>`; search by `ssl_txn_id` or `ssl_invoice_number`; several results come in `<txnlist>`; errors are `errorCode`/`errorMessage`; `ssl_trans_status` PST/FPR/PRE = failed rules | [transaction management](https://developer.elavon.com/products/hosted-payment-page/v1/transaction-management) | `converge.ts` `query` |
 | Approval is read from `ssl_result_message` (`APPROVAL`): the txnquery examples omit `ssl_result` | same | `toGatewayTransaction` |
 | 5 wrong PINs put the calling IP on a fraud list | [Cartis FAQ](https://knowledge.cartispayments.com/hc/en-us/articles/4407890739351-Common-Integration-Questions-and-Answers-General-and-Converge) | `payments/llm.md` Rules |

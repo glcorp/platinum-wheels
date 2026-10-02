@@ -231,7 +231,8 @@ export const paymentAttempts = pgTable(
     environment: paymentEnvironment("environment").notNull(),
 
     /**
-     * Sent to Converge as `ssl_invoice_number`: `PW-10001-2`. Unique per
+     * Sent to Converge as `ssl_invoice_number`: `PW10001N2` (alphanumeric;
+     * `PW-10001-2` before 2026-10-03, see `invoiceNumberFor`). Unique per
      * attempt, which is how staff find the transaction in the Converge
      * portal when the customer closed the tab before the return redirect
      * (D108: nothing looks it up automatically).
