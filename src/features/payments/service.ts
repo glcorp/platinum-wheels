@@ -21,12 +21,14 @@
    gateway is passed in, so the money logic runs against a fake in tests.
 
    There is no reconcile (D108): an attempt whose customer never comes back
-   through `/pay/return` stays `pending`, and the admin list says so.
+   through `/pay/return` stays `pending`, and the admin list says so — unless
+   Converge's export script reaches `/pay/notify` (D119), which settles it
+   without a gateway query.
    --------------------------------------------------------------------------- */
 
 import { randomBytes } from "node:crypto";
 
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 
 import { getDb, type Database } from "@/db/client";
 import {
@@ -38,6 +40,7 @@ import {
   type PaymentLink,
 } from "@/db/schema";
 
+import { sendPaymentEmail } from "./payment-email";
 import { linkState, type Gateway, type GatewayTransaction, type LinkState } from "./types";
 
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -279,16 +282,38 @@ export async function startAttempt(
    Verification — the only path to `approved`
    =========================================================================== */
 
-type ResolveOutcome = "approved" | "duplicate" | "declined" | "unchanged" | "mismatch";
+export type ResolveOutcome = "approved" | "duplicate" | "declined" | "unchanged" | "mismatch";
 
 /**
- * Apply one gateway-verified transaction to its attempt. Called by the return
- * route, which got `txn` from a server-side query.
+ * Apply one gateway-verified transaction to its attempt. `txn` comes from a
+ * server-side query (`return`) or from Converge's authenticated export-script
+ * POST (`notify`, D119), never from the browser. Whichever path moves the
+ * attempt sends the shop's email; the other sees `unchanged` and sends none.
  */
 async function resolveAttempt(
   attemptId: string,
   txn: GatewayTransaction,
-  source: "return",
+  source: "return" | "notify",
+  db: Database,
+): Promise<ResolveOutcome> {
+  const outcome = await applyTransaction(attemptId, txn, source, db);
+  if (outcome === "approved" || outcome === "duplicate") {
+    // After the commit, outside the transaction: a slow or failed send never
+    // holds a row lock or undoes a payment (D120).
+    const [row] = await db
+      .select({ link: paymentLinks, attempt: paymentAttempts })
+      .from(paymentAttempts)
+      .innerJoin(paymentLinks, eq(paymentLinks.id, paymentAttempts.linkId))
+      .where(eq(paymentAttempts.id, attemptId));
+    if (row) await sendPaymentEmail(outcome, row.link, row.attempt);
+  }
+  return outcome;
+}
+
+async function applyTransaction(
+  attemptId: string,
+  txn: GatewayTransaction,
+  source: "return" | "notify",
   db: Database,
 ): Promise<ResolveOutcome> {
   return db.transaction(async (tx) => {
@@ -368,14 +393,34 @@ const INVOICE_SHAPE = /^PW-\d+-\d+$/;
  * names a transaction (or, failing that, an invoice) to ask the gateway about.
  * Returns the link's public token so the caller can send the customer back to
  * their page, or null when nothing matches.
+ *
+ * When the export script has already settled this transaction (D119), the
+ * attempt row says so and no gateway query is made: one Fixie request per
+ * payment instead of two. `notifyGraceMs` > 0 (only while `/pay/notify` is
+ * enabled) waits that long for the POST before falling back to the query.
  */
 export async function handleReturn(
   fields: { txnId: string | null; invoiceNumber: string | null },
   gateway: Gateway,
   db: Database = getDb(),
+  options: { notifyGraceMs?: number } = {},
 ): Promise<string | null> {
   const txnId = fields.txnId && TXN_ID_SHAPE.test(fields.txnId) ? fields.txnId : null;
   const claimedInvoice = fields.invoiceNumber && INVOICE_SHAPE.test(fields.invoiceNumber) ? fields.invoiceNumber : null;
+
+  if (txnId) {
+    const settled = await findSettled(txnId, db, options.notifyGraceMs ?? 0);
+    if (settled) {
+      await db.insert(paymentEvents).values({
+        linkId: settled.linkId,
+        attemptId: settled.attemptId,
+        type: "attempt.return_received",
+        actor: "customer",
+        data: { txn_id: txnId, verified: true, settled_by: "notify" },
+      });
+      return settled.publicToken;
+    }
+  }
 
   let transactions: GatewayTransaction[] = [];
   if (txnId) {
@@ -407,4 +452,50 @@ export async function handleReturn(
   const txn = transactions.find((t) => t.txnId === txnId);
   if (txn) await resolveAttempt(row.attemptId, txn, "return", db);
   return row.publicToken;
+}
+
+const NOTIFY_POLL_MS = 500;
+
+/** An attempt already verified under this gateway txn id: only a server-side
+ *  path (query or notify) can have written `provider_txn_id` + `verified_at`,
+ *  so the browser naming it proves nothing it could forge. */
+async function findSettled(txnId: string, db: Database, graceMs: number) {
+  const deadline = Date.now() + graceMs;
+  for (;;) {
+    const [row] = await db
+      .select({ attemptId: paymentAttempts.id, linkId: paymentLinks.id, publicToken: paymentLinks.publicToken })
+      .from(paymentAttempts)
+      .innerJoin(paymentLinks, eq(paymentLinks.id, paymentAttempts.linkId))
+      .where(and(eq(paymentAttempts.providerTxnId, txnId), isNotNull(paymentAttempts.verifiedAt)));
+    if (row || Date.now() + NOTIFY_POLL_MS > deadline) return row ?? null;
+    await new Promise((resolve) => setTimeout(resolve, NOTIFY_POLL_MS));
+  }
+}
+
+export type NotifyResult = ResolveOutcome | "unmatched";
+
+/**
+ * Converge's export script reported a transaction (D119). The route has
+ * already checked Elavon's source range and the agreed credentials; `txn` is
+ * what Converge posted. Matched by the invoice number we sent on the session,
+ * then held to the same amount and invoice checks as a query result.
+ */
+export async function handleNotify(txn: GatewayTransaction, db: Database = getDb()): Promise<NotifyResult> {
+  const invoice = txn.invoiceNumber && INVOICE_SHAPE.test(txn.invoiceNumber) ? txn.invoiceNumber : null;
+  if (!invoice || !TXN_ID_SHAPE.test(txn.txnId)) return "unmatched";
+
+  const [row] = await db
+    .select({ attemptId: paymentAttempts.id, linkId: paymentAttempts.linkId })
+    .from(paymentAttempts)
+    .where(eq(paymentAttempts.providerInvoiceNumber, invoice));
+  if (!row) return "unmatched";
+
+  await db.insert(paymentEvents).values({
+    linkId: row.linkId,
+    attemptId: row.attemptId,
+    type: "attempt.notify_received",
+    actor: "provider",
+    data: { txn: txn.raw },
+  });
+  return resolveAttempt(row.attemptId, txn, "notify", db);
 }

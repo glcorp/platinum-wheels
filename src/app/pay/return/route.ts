@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { PaymentsNotConfiguredError } from "@/features/payments/config";
+import { getNotifyCredentials, PaymentsNotConfiguredError } from "@/features/payments/config";
 import { convergeGateway } from "@/features/payments/converge";
 import { handleReturn } from "@/features/payments/service";
 
@@ -17,9 +17,17 @@ import { handleReturn } from "@/features/payments/service";
    `ssl_invoice_number` only to find the customer's page when that query
    cannot run. Converge may GET or POST (form body) this URL, so both work.
 
+   While `/pay/notify` is enabled (D119), the export script may already have
+   settled the transaction: then no query is made. The route waits up to
+   `NOTIFY_GRACE_MS` for that POST before querying, which saves a Fixie request.
+
    Always answers with a 303 to a page, never with payment data, so a refresh
    of the landing page never re-submits anything.
    --------------------------------------------------------------------------- */
+
+/** How long a returning customer waits for the export script before we ask
+ *  Converge ourselves. Short: the redirect is a page load. */
+const NOTIFY_GRACE_MS = 2_500;
 
 async function respond(request: NextRequest, fields: URLSearchParams | FormData) {
   const read = (key: string) => {
@@ -32,6 +40,8 @@ async function respond(request: NextRequest, fields: URLSearchParams | FormData)
     publicToken = await handleReturn(
       { txnId: read("ssl_txn_id"), invoiceNumber: read("ssl_invoice_number") },
       convergeGateway(),
+      undefined,
+      { notifyGraceMs: getNotifyCredentials() ? NOTIFY_GRACE_MS : 0 },
     );
   } catch (error) {
     // A misconfiguration or database error must still land the customer on a

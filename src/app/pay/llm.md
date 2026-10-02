@@ -10,8 +10,11 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
 - [`[token]/page.tsx`](%5Btoken%5D/page.tsx) — `/pay/<token>`: amount, description, reference, expiry and
   the Pay island, or the paid, expired or cancelled state. Dynamic, read at request time.
 - [`return/route.ts`](return/route.ts) — `/pay/return`, the one URL Converge sends every customer back to
-  (GET or POST). It verifies server-side, then 303s to the link's page. It is the
-  only thing that settles an attempt (D108).
+  (GET or POST). It verifies server-side, then 303s to the link's page. It skips the query when
+  `/pay/notify` has already settled that transaction (D119).
+- [`notify/route.ts`](notify/route.ts) — `/pay/notify`, Converge's export script (D119). POST only; 404
+  unless `CONVERGE_NOTIFY_USER` and `CONVERGE_NOTIFY_PASSWORD` are set; 403 outside Elavon's ranges; 401
+  without the agreed Basic credentials. Never answers with payment data.
 - [`done/page.tsx`](done/page.tsx) — `/pay/done`, the landing page for a return that matched no link. It
   tells the customer not to pay twice and to call the shop.
 
@@ -29,12 +32,13 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
 
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
-| — | — | None folder-scoped. | See D100, D105, D107, D108 in root `llm.md` §5b. | — |
+| — | — | None folder-scoped. | See D100, D105, D107, D108, D119 in root `llm.md` §5b. | — |
 
 ## Connects to
 
 - **Depends on:** `src/features/payments/`, `src/lib/site.ts` (contacts).
-- **Depended on by:** Converge's hosted page (the return URL) and the links staff email out.
+- **Depended on by:** Converge's hosted page (the return URL), Converge's export script (`/pay/notify`) and
+  the links staff email out.
 
 ## Don't
 
