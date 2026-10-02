@@ -12,7 +12,9 @@
    which a Server Action redirect (always GET) cannot make. The island posts it.
    --------------------------------------------------------------------------- */
 
-import { PaymentsNotConfiguredError } from "./config";
+import { cookies } from "next/headers";
+
+import { PAY_RETURN_COOKIE, PaymentsNotConfiguredError } from "./config";
 import { convergeGateway } from "./converge";
 import { startAttempt } from "./service";
 
@@ -36,6 +38,16 @@ export async function startPayment(publicToken: string): Promise<PayState> {
   const result = await startAttempt(publicToken, gateway);
   switch (result.kind) {
     case "redirect":
+      // Converge's return can arrive empty (`handleEmptyReturn`): remember
+      // which link this browser is paying, for 30 minutes. SameSite=None
+      // because the return is a cross-site POST from Converge's page.
+      (await cookies()).set(PAY_RETURN_COOKIE, publicToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        path: "/pay",
+        maxAge: 30 * 60,
+      });
       return { status: "redirect", hostedPageUrl: result.hostedPageUrl, token: result.token };
     case "unavailable":
       return {

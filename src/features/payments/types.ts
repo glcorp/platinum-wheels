@@ -19,7 +19,6 @@ export function linkState(link: Pick<PaymentLink, "status" | "expiresAt">, now =
 export interface SessionRequest {
   amountCents: number;
   invoiceNumber: string;
-  description: string;
 }
 
 export type SessionResult =
@@ -54,6 +53,8 @@ export interface Gateway {
   createSession(request: SessionRequest): Promise<SessionResult>;
   /** Look up one transaction by the gateway's id (the return redirect). */
   getTransaction(txnId: string): Promise<QueryResult>;
+  /** Look up by our invoice number, when the return named no transaction. */
+  findByInvoice(invoiceNumber: string): Promise<QueryResult>;
 }
 
 export type { PaymentAttempt, PaymentLink };

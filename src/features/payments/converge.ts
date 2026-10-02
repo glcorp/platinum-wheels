@@ -51,10 +51,8 @@ const HOSTS = {
  *  was issued; on a query it means "unknown": the attempt stays `pending` (D108). */
 const TIMEOUT_MS = 60_000;
 
-/** Converge's limits: invoice number ≤ 25 chars; description kept short so
- *  it survives any statement or receipt truncation. */
+/** Converge's limit: invoice number ≤ 25 chars. */
 const INVOICE_MAX = 25;
-const DESCRIPTION_MAX = 100;
 
 /** The only gateway fields that may be stored (`payment_events.data`). Card
  *  number is deliberately absent: we derive last four and drop the rest. */
@@ -142,7 +140,11 @@ async function createSession(config: ConvergeConfig, request: SessionRequest): P
     ssl_transaction_type: "ccsale",
     ssl_amount: formatCents(request.amountCents),
     ssl_invoice_number: request.invoiceNumber,
-    ssl_description: request.description.slice(0, DESCRIPTION_MAX),
+    // No `ssl_description`: the demo account's hosted page issued the token
+    // with it and then failed every card with errorType SYSTEM "System error"
+    // (2026-10-03), while the same $1.00 sale approved in the portal. The
+    // description stays ours, on the pay page; the invoice number identifies
+    // the payment in Converge.
   });
 
   const result = await post(config, HOSTS[config.environment].token, form);
@@ -310,5 +312,6 @@ export function convergeGateway(config: ConvergeConfig = getConvergeConfig()): G
     environment: config.environment,
     createSession: (request) => createSession(config, request),
     getTransaction: (txnId) => query(config, { ssl_txn_id: txnId }),
+    findByInvoice: (invoiceNumber) => query(config, { ssl_invoice_number: invoiceNumber }),
   };
 }

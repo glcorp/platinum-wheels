@@ -20,7 +20,8 @@ links point at nothing.
 - [`money.ts`](money.ts) — integer cents ⇄ `"452.60"` without floats.
 - [`service.ts`](service.ts) — every state change: `createLink` (idempotent), `cancelLink`, `listLinks`,
   `countOpenLinks` (the admin home's tile, D118),
-  `getPayPage`, `startAttempt` (row lock, then network), `handleReturn`, `handleNotify` (D119). The money rules are listed at
+  `getPayPage`, `startAttempt` (row lock, then network), `handleReturn` (with `handleEmptyReturn` for Converge's
+  empty POSTs, matched by the `pw_pay` cookie), `handleNotify` (D119). The money rules are listed at
   the top of the file.
 - [`payment-email.ts`](payment-email.ts) — the shop's "Payment received" / "Refund needed" email via
   Resend (D120). Sent after the commit, by whichever path settled the attempt.
