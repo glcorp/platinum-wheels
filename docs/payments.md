@@ -61,7 +61,7 @@ whether money moved. Nothing the browser sends is trusted for either.
 
 - **Expired is derived, not stored**: `status='active' AND expires_at <= now()`. No job exists to flip a
   stored flag at the right moment (D108), so a stored one would lie.
-- **References**: `PW-10001` from a Postgres sequence; attempt invoice `PW-10001-2` is what Converge
+- **References**: `PW-10001` from a Postgres sequence; attempt invoice `PW10001N2` (letters and digits only; `PW-10001-2` before 2026-10-03) is what Converge
   prints on the cardholder's statement, and what staff search for in the Converge portal.
 - **Links are never deleted** (FK `ON DELETE RESTRICT` from attempts and events). Cancel instead.
 - **No card data**: brand + last four only (PCI DSS permits). The Hosted Payment Page keeps us at
@@ -197,23 +197,29 @@ Elavon's Converge docs now live under `developer.elavon.com/products/hosted-paym
 | **The IP allowed list is mandatory for tokens; only Elavon can edit it** (demo: `sedevportalsupport@elavon.com`; production: 1-800-377-3962) | [Manage IP Address](https://support.convergepay.com/s/article/Whitelist-an-IP-Address), HPP overview | D102, `todo.md` |
 | **Return, decline and cancel URLs are portal settings** (Hosted Payments → Payment Page / Response Page), not token fields | [Customize the HPP](https://support.convergepay.com/s/article/Customize-the-Hosted-Payments-Page) | `/pay/return`, `todo.md` |
 | No currency field: `ssl_transaction_currency` is for multi-currency terminals and errors 5087 otherwise; the default is the terminal's (CAD) | [input fields](https://developer.elavon.com/products/xml-api/v1/supported-transaction-input-fields), [error codes](https://developer.elavon.com/products/xml-api/v1/error-codes) | `converge.ts` |
-| `ssl_invoice_number` ≤ 25 chars | API reference | `PW-10001-2` fits |
+| `ssl_invoice_number` ≤ 25 chars, alphanumeric | API reference, XML input fields | `PW10001N2`. The hyphenated `PW-10001-2` was accepted on the session but the hosted page then failed with `SYSTEM` (2026-10-03) |
 | `txnquery`: `POST …/VirtualMerchant(Demo)/processxml.do`, `xmldata=<txn>…</txn>`; search by `ssl_txn_id` or `ssl_invoice_number`; several results come in `<txnlist>`; errors are `errorCode`/`errorMessage`; `ssl_trans_status` PST/FPR/PRE = failed rules | [transaction management](https://developer.elavon.com/products/hosted-payment-page/v1/transaction-management) | `converge.ts` `query` |
 | Approval is read from `ssl_result_message` (`APPROVAL`): the txnquery examples omit `ssl_result` | same | `toGatewayTransaction` |
 | 5 wrong PINs put the calling IP on a fraud list | [Cartis FAQ](https://knowledge.cartispayments.com/hc/en-us/articles/4407890739351-Common-Integration-Questions-and-Answers-General-and-Converge) | `payments/llm.md` Rules |
 | **Export scripts**: after a transaction Converge POSTs the result (form-encoded, ISO-8859-1) to a URL Elavon has registered; setup takes up to 12 business days; a non-200 reply is logged as a failed export. **Not signed.** Source ranges: `62.17.112.80/28`, `62.134.193.208/28`, `65.201.175.80/28`, `204.137.47.32/28`, `204.137.43.32/28`. It can send a username and password. **Their sample POST has no `ssl_invoice_number`**, a `SALE` type, a masked card (`47**********0084`) and an `authorization` header on authenticated posts (read 2026-10-01) | [export scripts](https://developer.elavon.com/products/hosted-payment-page/v1/export-scripts), read 2026-09-30 | D119: `/pay/notify`, `converge.ts` |
 | Demo test cards approve at `$X.00`; `$X.88` declines. Visa `4000000000000002`, Mastercard `5121212121212124` | [test cards](https://developer.elavon.com/test-cards) | the demo walkthrough |
 
-**Settled by the first demo calls (2026-10-02/03):** the token call works with `ssl_merchant_id` and
-`apiuser116349`, but the hosted page then fails, so the account ID is now sent as **`ssl_account_id`** (Elavon's
-current required name); `apiuser116349` needed Batch VIEW rights for `txnquery` (error 4014 without them); **`ssl_description` is no longer sent**: with it, the hosted page issued the token and then
-failed every card with `errorType SYSTEM` "System error" (no transaction recorded), while the same $1.00 sale
-approved in the portal; and **after such a failure, "Return to Merchant" POSTs an empty body** (form type, 0
-bytes, despite "Include Transaction Data"). An empty return is matched by the `pw_pay` cookie the Pay button
-sets (`handleEmptyReturn`). The demo hosted page shows amounts in **USD**.
+**Settled by the demo calls (2026-10-02/03, D125b):** the account ID is sent as **`ssl_account_id`** (Elavon's
+current required name); `apiuser116349` needed Batch VIEW rights for `txnquery` (error 4014 without them);
+`ssl_description` is not sent (not needed); the invoice is `PW10001N2` (alphanumeric). **The cause of the
+hosted page's `errorType SYSTEM` "System error"** was the hand-off POST itself: the Pay form is a Next.js
+Server Action form, the server renders hidden `$ACTION_KEY` / `$ACTION_1:0` / `$ACTION_1:1` inputs into
+it, React keeps them after hydration, and the island reused that form element for the hand-off, so they
+reached Converge beside the token. The hosted page's `hpp/initialize` response (readable as
+`window.initialPaymentPageData.paymentPageData.initialRequestFields` on the page) showed them on our
+session and not on a portal Buy Button's; with them stripped, the same card approved. Converge's return
+on an approval is a **POST** to the Redirect URL with `ssl_result=0`, `ssl_result_message=APPROVAL`,
+`ssl_txn_id`, `ssl_approval_code`, `ssl_amount`, `ssl_transaction_type=SALE`, the masked card and
+`ssl_txn_time`; **after a hosted-page failure, "Return to Merchant" POSTs an empty body** (form type, 0
+bytes). An empty return is matched by the `pw_pay` cookie the Pay button sets (`handleEmptyReturn`). The
+demo hosted page shows amounts in **USD**. A Buy Button session differs from ours only in sending
+`ssl_transaction_type=SALE` (ours `ccsale`, stored as `CCSALE`) and `ssl_salestax=0.00`; neither matters.
 
-**UNCONFIRMED; the first demo call settles each one:** that `ssl_merchant_id` is still accepted (it is what
-Elavon's PHP sample and working integrations send; the docs say `ssl_account_id`); that `ssl_description` is
-accepted on the token call; whether the return arrives as GET or POST (both are handled); and whether a
-single-id `txnquery` is wrapped in `<txnlist>` (both are parsed). Elavon's own sample disables TLS
-verification; we never do (§5.4).
+**Still unconfirmed:** whether a return ever arrives as GET (both are handled), and whether a single-id
+`txnquery` is wrapped in `<txnlist>` (both are parsed). Elavon's own sample disables TLS verification; we
+never do (§5.4).
