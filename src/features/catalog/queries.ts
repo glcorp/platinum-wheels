@@ -34,6 +34,7 @@ import {
 } from "drizzle-orm";
 
 import { getDb } from "@/db/client";
+import { PRICES_VISIBLE } from "@/lib/site";
 import {
   accessorySpecs,
   productImages,
@@ -81,6 +82,23 @@ const NEAR = { tireWidth: 10, tireAspectRatio: 5, wheelWidth: 1 } as const;
 const NOTHING = sql`false`;
 
 const HAS_PHOTO = sql`exists (select 1 from ${productImages} where ${productImages.productId} = ${products.id})`;
+
+/* Prices switched off (D122; owner 2026-10-02, D124): a stored price never
+   leaves this module and never orders a page. Hiding it only in the
+   components still shipped it in the page data a browser receives, and
+   still ranked cheaper products first. Every reader of this file is a
+   storefront page; the admin reads prices through `store.ts`. */
+const PRICE_ORDER: SQL[] = PRICES_VISIBLE ? [sql`${products.price} asc nulls last`] : [];
+
+function storefrontPrice<T extends { price: number | null }>(product: T): T {
+  return PRICES_VISIBLE ? product : { ...product, price: null };
+}
+
+async function toStorefrontProducts(
+  ...args: Parameters<typeof toCatalogProducts>
+): Promise<CatalogProduct[]> {
+  return (await toCatalogProducts(...args)).map(storefrontPrice);
+}
 
 /* --- Filters → SQL ------------------------------------------------------- */
 
@@ -256,8 +274,8 @@ function conditions(
   if (options.omit !== "brands" && filters.brands && filters.brands.length > 0) {
     where.push(inArray(products.brand, [...filters.brands]));
   }
-  const priceMin = amount(filters.priceMin);
-  const priceMax = amount(filters.priceMax);
+  const priceMin = PRICES_VISIBLE ? amount(filters.priceMin) : undefined;
+  const priceMax = PRICES_VISIBLE ? amount(filters.priceMax) : undefined;
   if (priceMin !== undefined) where.push(gte(products.price, priceMin));
   if (priceMax !== undefined) where.push(lte(products.price, priceMax));
 
@@ -295,19 +313,21 @@ function conditions(
 
 function orderBy(sort: CatalogSort): SQL[] {
   // `id` last, so two pages of one query never disagree about the order.
-  switch (sort) {
+  // With prices off the price sorts read as `best` (D124).
+  switch (PRICES_VISIBLE ? sort : "best") {
     case "price-asc":
       return [sql`${products.price} asc nulls last`, asc(products.id)];
     case "price-desc":
       return [sql`${products.price} desc nulls last`, asc(products.id)];
     case "best":
       /* Every brand's strongest card before any brand's second: rank each
-         brand's products (one with a photo first, then the lowest price), and
+         brand's products (one with a photo first, then the lowest price while
+         prices show), and
          read across the ranks. Sorting by brand alone opened every list with
          six cards from whichever brand is first in the alphabet. */
       return [
-        sql`row_number() over (partition by ${products.brand} order by (${HAS_PHOTO}) desc, ${products.price} asc nulls last, ${products.id}) asc`,
-        sql`${products.price} asc nulls last`,
+        sql`row_number() over (partition by ${products.brand} order by ${sql.join([sql`(${HAS_PHOTO}) desc`, ...PRICE_ORDER, sql`${products.id}`], sql`, `)}) asc`,
+        ...PRICE_ORDER,
         asc(products.id),
       ];
   }
@@ -349,7 +369,7 @@ export async function listProducts(
   ]);
 
   return {
-    items: await toCatalogProducts(db, rows),
+    items: await toStorefrontProducts(db, rows),
     total: totals?.total ?? 0,
   };
 }
@@ -367,6 +387,7 @@ function sortedNumbers(values: ReadonlyArray<number | null>): number[] {
 export async function getPriceBounds(
   category: ProductCategory,
 ): Promise<{ min: number | null; max: number | null }> {
+  if (!PRICES_VISIBLE) return { min: null, max: null };
   const [row] = await getDb()
     .select({ min: min(products.price), max: max(products.price) })
     .from(products)
@@ -558,7 +579,7 @@ export async function getProductBySlug(
 
   const images = (await loadImages(db, [row.product.id])).get(row.product.id);
   return {
-    ...toCatalogProduct(row, images?.[0] ?? null),
+    ...storefrontPrice(toCatalogProduct(row, images?.[0] ?? null)),
     images: images ?? [],
   };
 }
@@ -611,7 +632,7 @@ export async function getOtherSizes(
     )
     .orderBy(...nearest, asc(products.name), asc(products.id))
     .limit(clampLimit(limit, 24));
-  return toCatalogProducts(db, rows);
+  return toStorefrontProducts(db, rows);
 }
 
 /**
@@ -696,13 +717,14 @@ export async function getSimilarProducts(
     where.push(eq(accessorySpecs.accessoryType, product.specs.accessoryType));
   }
 
-  /* Closest first; then a photo before none, the lower price, and `id` so
+  /* Closest first; then a photo before none, the lower price (while prices
+     show), and `id` so
      the order never wavers. */
   const closeness = sql.join(
     [
       ...order,
       sql`(${HAS_PHOTO}) desc`,
-      sql`${products.price} asc nulls last`,
+      ...PRICE_ORDER,
       sql`${products.id} asc`,
     ],
     sql`, `,
@@ -720,7 +742,7 @@ export async function getSimilarProducts(
       closeness,
     )
     .limit(clampLimit(limit, 6));
-  return toCatalogProducts(db, rows);
+  return toStorefrontProducts(db, rows);
 }
 
 /* --- Hand-picked rows ---------------------------------------------------- */
@@ -754,7 +776,7 @@ export async function getProductsBySlugs(
     ),
   );
   const bySlug = new Map(
-    (await toCatalogProducts(db, rows)).map((product) => [product.slug, product]),
+    (await toStorefrontProducts(db, rows)).map((product) => [product.slug, product]),
   );
   return wanted.flatMap((slug) => bySlug.get(slug) ?? []);
 }

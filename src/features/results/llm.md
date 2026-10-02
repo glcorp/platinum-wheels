@@ -104,6 +104,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   ignores `min`/`max`, `SORT_OPTIONS` holds `Best match` alone and `HAS_SORT_CHOICE` is false, so neither
   sort control renders and the mobile bar's `Filters` cell takes the whole row, and `filter-panel.tsx`
   drops the price group. Cards pass the checked search vehicle to `Add to cart` (`results-grid.tsx`).
+  Beneath that, `src/features/catalog/queries.ts` sends no price and ranks by none (D124), so a hidden
+  price is neither in the page data nor in the order of `Best match`.
 - **State is the URL.** No component holds filter state; islands call `router.replace(resultsHref(q))`
   with `scroll: false`. The server is the only place results are computed (D44, `docs/decisions.md` §4).
 - **Counts are computed from the seed, never typed** (D42); no artboard number ships as a count.

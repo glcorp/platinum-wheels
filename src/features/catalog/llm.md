@@ -107,6 +107,11 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 ## Rules
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
   `hidden` product or a vendor source; `store.ts` returns both (D105b).
+- **With prices off, `queries.ts` returns no price and orders by none (D124).** While `PRICES_VISIBLE` is
+  false every product it returns has `price: null`, `getPriceBounds` is `null`/`null`, `min`/`max` are
+  ignored, the price sorts read as `best`, and `best` and the similar row drop their price tie-break.
+  Hiding prices only in components still shipped them in the page data. The admin reads prices through
+  `store.ts` and is unaffected.
 - **Listings show `published` only; a product page loads `published` and `discontinued`; `hidden` is a
   404.** There is no in-stock flag (D105b).
 - **A slug is written once, at create, and never rewritten** (D107b).
