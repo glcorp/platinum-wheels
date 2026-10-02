@@ -25,15 +25,42 @@ import { handleReturn } from "@/features/payments/service";
    of the landing page never re-submits anything.
    --------------------------------------------------------------------------- */
 
+/** Fields whose values are safe to log (no card number, name, address or
+ *  email): enough to see what Converge sent back and why it declined. Every
+ *  other posted field is logged by name only. */
+const LOGGED_VALUES = [
+  "ssl_result",
+  "ssl_result_message",
+  "ssl_invoice_number",
+  "ssl_txn_id",
+  "ssl_trans_status",
+  "ssl_transaction_type",
+  "ssl_amount",
+  "ssl_approval_code",
+  "errorCode",
+  "errorName",
+  "errorMessage",
+] as const;
+
 /** How long a returning customer waits for the export script before we ask
  *  Converge ourselves. Short: the redirect is a page load. */
 const NOTIFY_GRACE_MS = 2_500;
 
-async function respond(request: NextRequest, fields: URLSearchParams | FormData) {
+async function respond(request: NextRequest, fields: URLSearchParams, source: Record<string, unknown>) {
   const read = (key: string) => {
     const value = fields.get(key);
     return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
   };
+
+  // One line per return: which fields Converge sent, and the safe values.
+  // The first real demo calls showed returns arriving with nothing we could
+  // match, so this stays until the return shape is confirmed (`docs/payments.md` §10).
+  const values: Record<string, string> = {};
+  for (const key of LOGGED_VALUES) {
+    const value = read(key);
+    if (value !== null) values[key] = value.slice(0, 120);
+  }
+  console.info(JSON.stringify({ at: "pay.return", ...source, fields: [...new Set(fields.keys())], values }));
 
   let publicToken: string | null = null;
   try {
@@ -50,20 +77,36 @@ async function respond(request: NextRequest, fields: URLSearchParams | FormData)
     console.error(JSON.stringify({ at: "pay.return", detail }));
   }
 
+  if (!publicToken) console.warn(JSON.stringify({ at: "pay.return", unmatched: true }));
   const target = publicToken ? `/pay/${publicToken}` : "/pay/done";
   return NextResponse.redirect(new URL(target, request.url), 303);
 }
 
 export async function GET(request: NextRequest) {
-  return respond(request, request.nextUrl.searchParams);
+  return respond(request, request.nextUrl.searchParams, { method: "GET" });
 }
 
+/** Read the body as text and parse it as a form whatever the content type
+ *  says: `request.formData()` throws on a missing or unexpected content type,
+ *  and that used to turn a real return into an empty one. Multipart is
+ *  handled separately, since it is not URL-encoded. */
 export async function POST(request: NextRequest) {
-  let form: FormData;
+  const contentType = request.headers.get("content-type") ?? "";
+  let fields = new URLSearchParams();
+  let bodyLength = 0;
   try {
-    form = await request.formData();
+    if (contentType.toLowerCase().startsWith("multipart/form-data")) {
+      const form = await request.formData();
+      for (const [key, value] of form) if (typeof value === "string") fields.append(key, value);
+    } else {
+      const body = await request.text();
+      bodyLength = body.length;
+      fields = new URLSearchParams(body);
+    }
   } catch {
-    form = new FormData();
+    fields = new URLSearchParams();
   }
-  return respond(request, form);
+  // A POST may also carry fields in its query string.
+  for (const [key, value] of request.nextUrl.searchParams) if (!fields.has(key)) fields.append(key, value);
+  return respond(request, fields, { method: "POST", contentType: contentType.slice(0, 80), bodyLength });
 }
