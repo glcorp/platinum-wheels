@@ -36,18 +36,17 @@ import type { Product } from "@/features/catalog/types";
  * The row, in the order it is shown. The heading reads `Winter sets, in stock
  * now.`, so these are winter tires.
  *
- * PLACEHOLDER SLUGS. They are winter tires from the vendors' own sheets, which
- * is all the catalogue held when this was written; a slug is brand + model +
- * size, so they resolve if the approved catalogue carries the same products.
- * **Replace them once the client-approved data is loaded** (`llm.md` Open).
+ * Six winter tires from six brands in one common car size, 205/55R16, picked
+ * from the D125 load (owner, 2026-10-03). Keep six or more so both desktop
+ * arrows have something to scroll (D74).
  */
 export const FEATURED_SLUGS: readonly string[] = [
-  "continental-vikingcontact-8-225-45r17-94",
-  "pirelli-ice-friction-235-55r19-105",
-  "nexen-winguard-winspike-3-215-55r17-98",
-  "yokohama-iceguard-g075-225-65r17-102",
-  "mazzini-snowleopard-225-50r17-98v",
-  "nexen-winguard-sport-2-205-55r16-91",
+  "continental-icecontact-xtrm-205-55r16-94",
+  "toyo-observe-g3-ice-205-55r16-91",
+  "pirelli-ice-friction-205-55r16-94",
+  "goodyear-wintercommand-ultra-205-55r16-94",
+  "yokohama-bluearth-winter-v906-205-55r16-94",
+  "general-tire-altimax-arctic-12-205-55r16-94",
 ];
 
 /** One cache entry per deployment. Vercel sets both; a local build has

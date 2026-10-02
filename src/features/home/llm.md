@@ -90,11 +90,7 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
   descriptor becomes flex `324×6`, and the track element's own y moves **−2px** (`sm:-mt-0.5`; every
   card stays put). Mobile row `featured track | columns / gap / w`: `260×4` becomes `260×6`; `w` 374
   and the 12px gap are unchanged. Mobile `featured h2 / next` is unaffected. The dot row is six bars.
-- **Two appended SKUs are other sizes of tires already in the row**, so `Antarctica Sport` and
-  `Snowleopard` each appear twice. The drawn heading `Winter sets, in stock now.` admits only winter,
-  in-stock SKUs and the seed holds exactly two more of those. Six distinct models needs real catalogue
-  data. Owner / client.
-- **`FEATURED_SLUGS` holds placeholder slugs** (D108b): six winter tires from the vendors' own sheets. All
-  six resolve in the stand-in load (D113), where they have no price and no photo. They
-  resolve after the approved catalogue only if it carries the same products. Replace them once that data is
-  loaded, and keep six or more so both desktop arrows have something to scroll (D74). Owner.
+- ~~**`FEATURED_SLUGS` holds placeholder slugs**~~ **Closed 2026-10-03:** the row is six winter tires from
+  six brands in 205/55R16, picked from the D125 load (owner chose *"Six brands, 205/55R16"*). Six distinct
+  models, so the old note about two SKUs appearing twice no longer holds. They have no price (D122) and
+  no photo until the Blob upload. The row shows only after a deploy (D111).
