@@ -8,6 +8,15 @@
    The form is visible, with its own button, so a browser that blocks the
    automatic submit still has a way forward.
 
+   The hand-off form is a NEW element (its own `key`), never the Pay form
+   reused (D125). The server renders the Pay form with hidden `$ACTION_*`
+   inputs for progressive enhancement; React leaves them in the DOM after
+   hydration. When both states rendered a <form> at the same position, React
+   kept that element, so the hand-off posted `$ACTION_KEY`, `$ACTION_1:0`
+   and `$ACTION_1:1` to Converge along with the token. Converge stored them
+   on the session and its hosted page then failed every card with
+   errorType SYSTEM. Only `ssl_txn_auth_token` may be posted.
+
    The button disables while pending: a second press would open a second
    session, and two sessions on one link is how a double charge starts.
    --------------------------------------------------------------------------- */
@@ -24,12 +33,25 @@ export function PayButton({ publicToken, amountLabel }: { publicToken: string; a
   const handoffRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (state.status === "redirect") handoffRef.current?.submit();
+    if (state.status !== "redirect") return;
+    const form = handoffRef.current;
+    if (!form) return;
+    // Belt and braces: nothing but the token leaves this form (D125).
+    for (const input of Array.from(form.querySelectorAll("input"))) {
+      if (input.name !== "ssl_txn_auth_token") input.remove();
+    }
+    form.submit();
   }, [state]);
 
   if (state.status === "redirect") {
     return (
-      <form ref={handoffRef} method="post" action={state.hostedPageUrl} className="flex flex-col gap-3">
+      <form
+        key="handoff"
+        ref={handoffRef}
+        method="post"
+        action={state.hostedPageUrl}
+        className="flex flex-col gap-3"
+      >
         <input type="hidden" name="ssl_txn_auth_token" value={state.token} />
         <p role="status" className="text-ink-muted text-14 leading-body">
           Taking you to our secure payment page…
@@ -42,7 +64,7 @@ export function PayButton({ publicToken, amountLabel }: { publicToken: string; a
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-3">
+    <form key="start" action={formAction} className="flex flex-col gap-3">
       <Button type="submit" variant="primary" size="panel" fullWidth disabled={isPending}>
         {isPending ? "Opening secure payment…" : `Pay ${amountLabel}`}
       </Button>

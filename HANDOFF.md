@@ -1,5 +1,22 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-03 (the Converge SYSTEM error found and fixed, D125, branch `payments-handoff-form`).**
+Every payment through our site failed on Converge's hosted page with `errorType SYSTEM` while a portal Buy
+Button approved. The cause was ours: the Pay island reused the Server Action form's DOM element for the
+hand-off, so the hidden `$ACTION_*` inputs Next.js renders for progressive enhancement were POSTed to
+Converge beside `ssl_txn_auth_token`. Converge stored them on the session (visible in the hosted page's
+`hpp/initialize` data) and failed at `hpp/process`. With them stripped in the browser, link PW-10013
+**approved** (invoice `PW10013N3`, approval 122262, Converge's return POSTed `ssl_result=0`). The fix keys
+the two forms so the hand-off is a fresh element and strips every non-token input before `submit()`. The
+`CONVERGE_SEND_INVOICE` switch (#23) is gone; the invoice is always sent. Elavon was never contacted.
+- **Checked:** `npm run check`; the cause and the fix on production by a patched page (§ above); not yet a
+  deploy of this branch.
+- **Owed next, in order:** `glcorp` merges this PR, then one $1.00 test on a fresh link should land on the
+  link page as **paid** (the invoice now matches); then `todo.md` P10 (delete `CONVERGE_SEND_INVOICE`,
+  CAPTCHA back on, narrow the API user's rights, void the three test sales), P8 and P9; then go-live P7.
+- **Portal facts learnt:** a Buy Button token never expires and is reusable; ours is single-use, 15 min.
+  The hosted page stores the session on `window.initialPaymentPageData`; reading it needs no XHR hook.
+
 **Last updated 2026-10-02 (the five open PRs, #13 to #17, combined into one branch for a single `glcorp`
 merge, D124).** The branch brings **#13** SEO behind `SEARCH_INDEXING_ENABLED` and tires at `/tires` (D112),
 **#16** Converge's export-script webhook `/pay/notify`, the shop's payment email and the PIN guard
