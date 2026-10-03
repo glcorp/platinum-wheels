@@ -33,8 +33,14 @@ import type {
   CatalogFacets,
   ProductFilters,
 } from "@/features/catalog/catalog-types";
-import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import {
+  CATEGORY_CONFIG,
+  EXTRA_COPY,
+  EXTRA_PARAM,
+  THREADED_ACCESSORY_TYPES,
+} from "@/features/catalog/categories";
+import {
+  getExtraValues,
   getFacets,
   getPriceBounds,
   getBrands,
@@ -45,9 +51,14 @@ import {
 } from "@/features/catalog/queries";
 import type { ProductCategory } from "@/features/catalog/types";
 import { findFitment, type FitmentSize } from "@/features/finder/data";
-import { parseResultsQuery, withPriceBounds } from "./query";
+import {
+  parseResultsQuery,
+  withOffsetBounds,
+  withPriceBounds,
+} from "./query";
 import {
   RESULTS_WINDOW,
+  type ExtraFacet,
   type FacetOption,
   type Facets,
   type PriceFacet,
@@ -157,46 +168,67 @@ function catalogFilters(
     tire: {
       ...tire,
       seasons: query.category === "tires" ? query.chips.map(seasonFromParam) : [],
+      loadIndexMin: numeric(query.loadMin),
     },
-    wheel,
+    wheel: {
+      ...wheel,
+      offsetMin: query.offsetMin ?? undefined,
+      offsetMax: query.offsetMax ?? undefined,
+      centerBore: numeric(query.bore),
+      finishes: query.finishes,
+    },
     accessory: {
       kinds:
         query.category === "accessories"
           ? query.chips.map(accessoryFromParam)
           : [],
       thread: fit?.thread,
+      threads: query.threads,
     },
   };
 }
 
 /* --- Facets --------------------------------------------------------------- */
 
-function sizeOptions(
-  values: ReadonlyArray<number | string>,
-  labelPrefix: string,
-): SizeOption[] {
-  return values.map((value) => ({
-    value: String(value),
-    label: `${labelPrefix}${value}`,
-  }));
+/** One option of a size select before its display prefix: the URL value and
+ *  the label. A flotation profile is written with two decimals, as the trade
+ *  does (`12.50`), while its URL value is the plain number (`12.5`). */
+interface RawSizeOption {
+  value: string;
+  label: string;
 }
 
+const plain = (value: number | string): RawSizeOption => ({
+  value: String(value),
+  label: String(value),
+});
+
+const twoDecimals = (value: number): RawSizeOption => ({
+  value: String(value),
+  label: value.toFixed(2),
+});
+
 /** Each size field's values, keyed by the category's own param names, in the
- *  order `categories.ts` draws them. */
+ *  order `categories.ts` draws them. Tires list the metric values first and
+ *  the flotation ones after: Width = metric section width, then flotation
+ *  overall diameter; Profile = aspect ratio, then flotation section width. */
 function sizeValues(
   tire: TireSizeOptions | null,
   wheel: WheelSizeOptions | null,
-): Record<string, ReadonlyArray<number | string>> {
+): Record<string, readonly RawSizeOption[]> {
   return {
     ...(tire && {
-      width: tire.widths,
-      profile: tire.aspectRatios,
-      rim: tire.rimDiameters,
+      width: [...tire.widths, ...tire.flotationDiameters].map(plain),
+      profile: [
+        ...tire.aspectRatios.map(plain),
+        ...tire.flotationSectionWidths.map(twoDecimals),
+      ],
+      rim: tire.rimDiameters.map(plain),
     }),
     ...(wheel && {
-      diameter: wheel.diameters,
-      width: wheel.widths,
-      bolt: wheel.boltPatterns,
+      diameter: wheel.diameters.map(plain),
+      width: wheel.widths.map(plain),
+      bolt: wheel.boltPatterns.map(plain),
     }),
   };
 }
@@ -222,14 +254,22 @@ function buildSizeGroup(
     label: config.label,
     fields: config.fields.map((field) => {
       const value = query.size[field.param] ?? null;
-      const offered = new Set((narrowed[field.param] ?? []).map(String));
-      const kept = (all[field.param] ?? []).filter(
-        (option) => offered.has(String(option)) || String(option) === value,
-      );
+      const offered = new Set((narrowed[field.param] ?? []).map((o) => o.value));
+      const seen = new Set<string>();
+      const options: SizeOption[] = [];
+      for (const option of all[field.param] ?? []) {
+        if (seen.has(option.value)) continue;
+        if (!offered.has(option.value) && option.value !== value) continue;
+        seen.add(option.value);
+        options.push({
+          value: option.value,
+          label: `${field.labelPrefix ?? ""}${option.label}`,
+        });
+      }
       return {
         param: field.param,
         caption: field.caption,
-        options: sizeOptions(kept, field.labelPrefix ?? ""),
+        options,
         value,
       };
     }),
@@ -303,11 +343,165 @@ function buildPrice(
   };
 }
 
+/* --- The extra groups ----------------------------------------------------
+ *
+ * Offset, centre bore, finish, load index and thread size (owner, 2026-10-03;
+ * `categories.ts` `ExtraGroupId`). Each is built from the catalogue's own
+ * values and counts, never typed, and is left out when it has nothing to
+ * offer, so a thin category shows a shorter panel rather than an empty group.
+ */
+
+/** Offset bounds as the slider shows them: the catalogue's lowest and highest
+ *  offset rounded outward to a whole mm. `null` = no wheel states an offset,
+ *  or they all state the same one, so there is nothing to slide. */
+function offsetBounds(catalog: CatalogFacets): { min: number; max: number } | null {
+  const offset = catalog.wheel?.offset;
+  if (!offset || offset.min === null || offset.max === null) return null;
+  const min = Math.floor(offset.min);
+  const max = Math.ceil(offset.max);
+  return min < max ? { min, max } : null;
+}
+
+/** The checkbox rows of a checks group: the catalogue's rows with their
+ *  counts, plus any ticked value the other filters leave at 0 (a ticked box
+ *  never vanishes, as for brands). Most products first, then A to Z. */
+function checkOptions(
+  rows: ReadonlyArray<{ value: string; count: number }>,
+  selected: readonly string[],
+): FacetOption[] {
+  const counts = new Map(rows.map((row) => [row.value, row.count]));
+  for (const value of selected) {
+    if (!counts.has(value)) counts.set(value, 0);
+  }
+  return [...counts]
+    .map(([value, count]) => ({
+      value,
+      label: value,
+      count,
+      selected: selected.includes(value),
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+function buildExtras(query: ResultsQuery, catalog: CatalogFacets): ExtraFacet[] {
+  const out: ExtraFacet[] = [];
+  for (const id of CATEGORY_CONFIG[query.category].extras) {
+    const copy = EXTRA_COPY[id];
+    switch (id) {
+      case "loadIndex": {
+        const options = (catalog.tire?.loadIndexes ?? []).map((value) => ({
+          value: String(value),
+          label: `${value} or higher`,
+        }));
+        if (options.length > 0) {
+          out.push({
+            kind: "select",
+            id,
+            label: copy.label,
+            caption: copy.caption ?? copy.label,
+            param: EXTRA_PARAM.loadIndex,
+            options,
+            value: query.loadMin,
+          });
+        }
+        break;
+      }
+      case "centerBore": {
+        const options = (catalog.wheel?.centerBores ?? []).map((value) => ({
+          value: String(value),
+          label: `${value} mm`,
+        }));
+        if (options.length > 0) {
+          out.push({
+            kind: "select",
+            id,
+            label: copy.label,
+            caption: copy.caption ?? copy.label,
+            param: EXTRA_PARAM.centerBore,
+            options,
+            value: query.bore,
+          });
+        }
+        break;
+      }
+      case "offset": {
+        const bounds = offsetBounds(catalog);
+        if (bounds !== null) {
+          const clamp = (value: number) =>
+            Math.min(Math.max(value, bounds.min), bounds.max);
+          out.push({
+            kind: "range",
+            id,
+            label: copy.label,
+            paramMin: EXTRA_PARAM.offsetMin,
+            paramMax: EXTRA_PARAM.offsetMax,
+            unit: "mm",
+            min: bounds.min,
+            max: bounds.max,
+            selectedMin: clamp(query.offsetMin ?? bounds.min),
+            selectedMax: clamp(query.offsetMax ?? bounds.max),
+          });
+        }
+        break;
+      }
+      case "finish": {
+        const options = checkOptions(catalog.wheel?.finishes ?? [], query.finishes);
+        if (options.length > 0) {
+          out.push({
+            kind: "checks",
+            id,
+            label: copy.label,
+            param: EXTRA_PARAM.finish,
+            options,
+          });
+        }
+        break;
+      }
+      case "thread": {
+        /* Only while the type filter holds a threaded type: a centre cap or a
+           TPMS sensor has no thread to pick. */
+        if (!query.chips.some((chip) => THREADED_ACCESSORY_TYPES.includes(chip))) {
+          break;
+        }
+        const options = checkOptions(catalog.accessory?.threads ?? [], query.threads);
+        if (options.length > 0) {
+          out.push({
+            kind: "checks",
+            id,
+            label: copy.label,
+            param: EXTRA_PARAM.thread,
+            options,
+          });
+        }
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+/** Is this extra group narrowing the list? Judged on what the visitor can
+ *  see: a range counts only when a handle is off its end. */
+function extraActive(extra: ExtraFacet): boolean {
+  switch (extra.kind) {
+    case "select":
+      return extra.value !== null;
+    case "range":
+      return extra.selectedMin !== extra.min || extra.selectedMax !== extra.max;
+    case "checks":
+      return extra.options.some((option) => option.selected);
+  }
+}
+
 /** `Filters (n)` on the mobile bar: groups carrying an active filter. Price
  *  counts only when a bound differs from the computed bound — a slider parked
  *  at either end is not a filter. A size lent by the vehicle is not counted:
  *  it is not something the buyer set in the rail. */
-function countActiveGroups(query: ResultsQuery, price: PriceFacet): number {
+function countActiveGroups(
+  query: ResultsQuery,
+  price: PriceFacet,
+  extras: readonly ExtraFacet[],
+): number {
   const priceActive =
     (query.priceMin !== null && price.selectedMin !== price.min) ||
     (query.priceMax !== null && price.selectedMax !== price.max);
@@ -316,6 +510,7 @@ function countActiveGroups(query: ResultsQuery, price: PriceFacet): number {
     query.chips.length > 0,
     query.brands.length > 0,
     priceActive,
+    ...extras.map(extraActive),
   ].filter(Boolean).length;
 }
 
@@ -324,14 +519,16 @@ function buildFacets(
   catalog: StorefrontFacets,
   price: PriceFacet,
 ): Facets {
+  const extras = buildExtras(query, catalog);
   return {
     category: query.category,
     sizeGroup: buildSizeGroup(query, catalog),
     chipGroup: buildChipGroup(query, catalog),
+    extras,
     brands: buildBrands(query, catalog),
     price,
     priceLabel: CATEGORY_CONFIG[query.category].priceLabel,
-    activeGroups: countActiveGroups(query, price),
+    activeGroups: countActiveGroups(query, price, extras),
   };
 }
 
@@ -399,12 +596,80 @@ function withKnownSizes(
   for (const field of config.fields) {
     const value = size[field.param];
     if (value === undefined || value === null) continue;
-    if (!(all[field.param] ?? []).some((option) => String(option) === value)) {
+    if (!(all[field.param] ?? []).some((option) => option.value === value)) {
       size[field.param] = null;
       changed = true;
     }
   }
   return changed ? { ...query, size } : query;
+}
+
+/**
+ * `finish=` and `thread=` against the category's own values, BEFORE the first
+ * read (`getExtraValues`): a value the category does not carry is dropped, and
+ * a known one takes the catalogue's spelling whatever its case, as for brands.
+ * A value the category carries that the other filters leave with no products
+ * is kept (its row reads 0, so a ticked box never vanishes).
+ */
+function settleChecks(wanted: readonly string[], carried: readonly string[]) {
+  const exact = new Set(carried);
+  const folded = new Map<string, string>();
+  for (const value of carried) {
+    const key = value.trim().replace(/\s+/g, " ").toLowerCase();
+    if (!folded.has(key)) folded.set(key, value);
+  }
+  const out: string[] = [];
+  for (const value of wanted) {
+    const canonical = exact.has(value)
+      ? value
+      : folded.get(value.trim().replace(/\s+/g, " ").toLowerCase());
+    if (canonical !== undefined && !out.includes(canonical)) out.push(canonical);
+  }
+  return out;
+}
+
+function withKnownChecks(
+  query: ResultsQuery,
+  carried: { finishes: readonly string[]; threads: readonly string[] },
+): ResultsQuery {
+  const finishes = settleChecks(query.finishes, carried.finishes);
+  const threads = settleChecks(query.threads, carried.threads);
+  const same = (a: readonly string[], b: readonly string[]) =>
+    a.length === b.length && a.every((value, index) => value === b[index]);
+  return same(finishes, query.finishes) && same(threads, query.threads)
+    ? query
+    : { ...query, finishes, threads };
+}
+
+/**
+ * `load=`, `bore=` and the offset range against the catalogue's own values,
+ * AFTER the first read (they arrive with the facets, like the size lists): a
+ * load index or bore the category does not hold becomes `Any`; an offset
+ * range is clamped into the catalogue's bounds with a handle parked on its end
+ * dropped, as the price range is. Returns the same object when nothing needed
+ * settling, which is how the caller knows not to read again.
+ */
+function withKnownExtras(
+  query: ResultsQuery,
+  catalog: CatalogFacets,
+): ResultsQuery {
+  let next = query;
+  if (
+    next.loadMin !== null &&
+    !(catalog.tire?.loadIndexes ?? []).some((value) => String(value) === next.loadMin)
+  ) {
+    next = { ...next, loadMin: null };
+  }
+  if (
+    next.bore !== null &&
+    !(catalog.wheel?.centerBores ?? []).some((value) => String(value) === next.bore)
+  ) {
+    next = { ...next, bore: null };
+  }
+  /* No offset bounds (none stated, or all alike) leaves the slider undrawn, so
+     a bound in the URL has no control to show it: drop both. */
+  const bounds = offsetBounds(catalog) ?? { min: 0, max: 0 };
+  return withOffsetBounds(next, bounds);
 }
 
 /* --- Search -------------------------------------------------------------- */
@@ -479,14 +744,15 @@ export async function searchResults(
   /* The price bounds and the brand list come first: whether the URL's `min` /
      `max` and `brand` are filters at all depends on them. Two small reads,
      one an indexed aggregate. */
-  const [bounds, carried] = await Promise.all([
+  const [bounds, carried, extraValues] = await Promise.all([
     getPriceBounds(category),
     getBrands(category),
+    getExtraValues(category),
   ]);
   const { min, max } = buildPrice(asked, bounds);
-  const settled = withKnownBrands(
-    withPriceBounds(asked, { min, max }),
-    carried,
+  const settled = withKnownChecks(
+    withKnownBrands(withPriceBounds(asked, { min, max }), carried),
+    extraValues,
   );
 
   const first = await readCatalogue(settled, bounds);
@@ -494,7 +760,10 @@ export async function searchResults(
   /* A size the selects do not offer was sent to the database as a filter.
      Read again without it: a hand-typed URL pays the second read, a link the
      page made never does. */
-  const query = withKnownSizes(settled, first.catalog);
+  const query = withKnownExtras(
+    withKnownSizes(settled, first.catalog),
+    first.catalog,
+  );
   if (query === settled) return first.view;
   return (await readCatalogue(query, bounds)).view;
 }

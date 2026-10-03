@@ -43,6 +43,11 @@ from `design/assets/`, and parity becomes eyeballing — which
   a blank key field, fills a winner's blank fields from the next vendor in priority, never a vendor's own
   code such as a part number (logged in the merge report), applies the owner's wheel brand table, and runs every output row through `planImport()` before writing. Exits 1
   if any final check fails. Reads `.xlsx` with `exceljs` (dev dependency).
+  **Since D135** the merge rules widen (M1 blank-key merges on a unique match, a shared vendor SKU
+  settling ties; M2 accessories on one SKU; M3 one vendor's listings identical in everything a shopper
+  sees, Part number included), `MODEL_ALIASES` folds model spellings (M4), accessory SKUs move to a
+  `Part number` spec (M5), and M6–M9 tidy models, pack sizes, P3 values and descriptions. It also writes
+  `changes-review.csv`: one row per data edit or merge decision, for the owner to review before a load.
 
 ## Rules
 - **`client-assets/` is where client material supplied AFTER the design export goes** (D63).

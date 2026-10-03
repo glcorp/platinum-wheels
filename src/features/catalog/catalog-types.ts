@@ -127,16 +127,31 @@ export interface ProductFilters {
   priceMin?: number;
   priceMax?: number;
   tire?: {
+    /** Section width in mm on a metric size; the OVERALL DIAMETER in inches on
+     *  a flotation one (`33` in `33x12.50R20`, the trade's convention). */
     width?: number;
+    /** Aspect ratio on a metric size; the SECTION WIDTH in inches on a
+     *  flotation one (`12.5`). */
     aspectRatio?: number;
     rimDiameter?: number;
     seasons?: readonly TireSeason[];
+    /** The lowest load index wanted. A product with no load index on record
+     *  never matches it; a pair (`121/118`) is read by its first number. */
+    loadIndexMin?: number;
   };
   wheel?: {
     diameter?: number;
     width?: number;
     /** `5x114.3`. Matches a wheel drilled for it, alone or with another. */
     boltPattern?: string;
+    /** Millimetres, inclusive, signed. A wheel with no offset on record never
+     *  matches a bound. */
+    offsetMin?: number;
+    offsetMax?: number;
+    /** Millimetres, matched exactly. */
+    centerBore?: number;
+    /** `wheel_specs.finish_family`, matched exactly as the facet spells it. */
+    finishes?: readonly string[];
   };
   accessory?: {
     kinds?: readonly AccessoryKind[];
@@ -147,6 +162,13 @@ export interface ProductFilters {
      * it returns only the lug nuts and wheel locks cut to a different one.
      */
     thread?: string;
+    /**
+     * Thread sizes the buyer ticked (`14x1.5`, `1/2 UNF`), matched exactly as
+     * the facet spells them. They narrow the lug nuts, lug bolts and wheel
+     * locks ONLY: every other type passes untouched, because a centre cap has
+     * no thread to match.
+     */
+    threads?: readonly string[];
   };
 }
 
@@ -186,20 +208,35 @@ export interface CatalogFacets {
   brands: readonly FacetCount[];
   /** Lowest and highest price in the category. `null` when nothing is priced. */
   price: { min: number | null; max: number | null };
-  /** The size selects' options: every value present in the category. */
+  /** The size selects' options: every value present in the category.
+   *  `widths` / `aspectRatios` are the METRIC parts; a flotation size has its
+   *  own two (`flotationDiameters` = the `33`, `flotationSectionWidths` = the
+   *  `12.5`), which the selects list after the metric ones. */
   tire: {
     widths: readonly number[];
     aspectRatios: readonly number[];
+    flotationDiameters: readonly number[];
+    flotationSectionWidths: readonly number[];
     rimDiameters: readonly number[];
     seasons: readonly FacetCount<TireSeason>[];
+    /** Every load index present (first number of a pair), ascending. */
+    loadIndexes: readonly number[];
   } | null;
   wheel: {
     diameters: readonly number[];
     widths: readonly number[];
     boltPatterns: readonly string[];
+    /** Lowest and highest offset in the category, mm. `null` = none on record. */
+    offset: { min: number | null; max: number | null };
+    /** Every centre bore present, mm, ascending. */
+    centerBores: readonly number[];
+    /** Finish families with the count each would yield (own group left out). */
+    finishes: readonly FacetCount[];
   } | null;
   accessory: {
     kinds: readonly FacetCount<AccessoryKind>[];
+    /** Thread sizes of lug nuts, lug bolts and wheel locks, with counts. */
+    threads: readonly FacetCount[];
   } | null;
 }
 

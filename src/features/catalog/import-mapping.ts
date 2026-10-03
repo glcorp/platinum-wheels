@@ -109,7 +109,7 @@ export const IMPORT_MAPPING: ImportMapping = {
     sku: "source_sku_{n}",
     url: "source_url_{n}",
     price: "source_price_{n}",
-    max: 10,
+    max: 20,
   },
 
   photos: ["image_1", "image_2", "image_3", "image_4", "image_5", "image_6"],

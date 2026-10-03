@@ -29,8 +29,15 @@ import type { Product, ProductCategory } from "@/features/catalog/types";
    `results/search.ts`: the finder's list is the only authority on what counts
    as a vehicle (D91b). */
 import { isFinderVehicle } from "@/features/finder/data";
-import { productName } from "@/lib/product-name";
+import { productName, stripBrandPrefix } from "@/lib/product-name";
 
+import {
+  backspacing,
+  hasMudAndSnow,
+  loadRating,
+  offsetMm,
+  tidyExtra,
+} from "./spec-format";
 import {
   DEFAULT_QUANTITY_BY_CATEGORY,
   PRODUCT_PARAM,
@@ -123,15 +130,17 @@ function seasonLabel(season: TireSeason | null, studdable: boolean): string {
 
 /**
  * The vendor facts that have no column (D125), after every column row, in the
- * order the vendor gave them, label and value exactly as stored. A pair with
- * a blank half is dropped, the same rule as every other row (D109(6)). Never a
+ * order the vendor gave them. Label and value are the vendor's own, tidied for
+ * reading by `spec-format.ts` `tidyExtra()` (D135: `yes` is `Yes`, a unit in a
+ * label moves to the value, `Mud & snow` is left to the badge). A pair with a
+ * blank half is dropped, the same rule as every other row (D109(6)). Never a
  * price: the importer keeps prices out of `extraSpecs`, and a vendor's own
  * price lives on its staff-only source row.
  */
 function extraRows(detail: CatalogProductDetail): SpecRows {
-  return detail.extraSpecs.map(({ label, value }): [string, string | null] => {
-    const key = label.trim();
-    return [key, key === "" ? null : value.trim()];
+  return detail.extraSpecs.flatMap((extra): Array<[string, string]> => {
+    const tidy = tidyExtra(extra, detail.category);
+    return tidy === null ? [] : [[tidy.label, tidy.value]];
   });
 }
 
@@ -149,7 +158,9 @@ function buildSpecs(
 ): readonly ProductSpecRow[] {
   const lead: SpecRows = [
     ["Brand", detail.brand],
-    ["Model", detail.model],
+    /* The brand has its own row above: a model that starts with it drops that
+       copy (D135). */
+    ["Model", detail.model && stripBrandPrefix(detail.brand, detail.model)],
   ];
 
   if (detail.category === "tires") {
@@ -158,8 +169,16 @@ function buildSpecs(
       ...lead,
       ["Size", sizeCode],
       ["Season", specs && seasonLabel(specs.season, specs.studdable)],
+      /* `Winter (studdable)` already says it on a winter tire; an all-season
+         or summer tire that takes studs gets its own row (D135). */
+      [
+        "Studdable",
+        specs?.studdable && specs.season !== "winter" ? "Yes" : null,
+      ],
       ["Load / speed", loadSpeed],
-      ["3PMSF", specs && (specs.winterApproved ? "Yes" : "No")],
+      /* `winter_approved` is false both when the vendor said no and when it
+         said nothing, so it only ever reads "Yes" (D135). */
+      ["3PMSF", specs?.winterApproved ? "Yes" : null],
       ["Load range", specs?.loadRange],
       ["Ply rating", specs?.plyRating?.toString()],
       ["Run-flat", specs?.runFlat ? "Yes" : null],
@@ -176,19 +195,28 @@ function buildSpecs(
       ["Size", wheel && `${wheel.diameter}×${wheel.width}`],
       /* ASCII `x` in the database and the URL, U+00D7 on screen. */
       ["Bolt pattern", specs?.boltPatterns.map(timesSign).join(" / ")],
-      ["Offset", specs?.offsetMm == null ? null : signedOffset(specs.offsetMm)],
+      ["Offset", offsetMm(specs?.offsetMm ?? null, signedOffset)],
       /* The vendor's own wording, as it arrived (D105b): no finish filter, so
          nothing groups or renames it. */
       ["Finish", specs?.finish],
       /* D125, the vendor sheets' own grouping and wording, as given. */
-      ["Finish family", specs?.finishFamily],
+      /* The sheets' grouping of the finish; shown only when it adds something
+         (D135). */
+      [
+        "Finish family",
+        specs?.finishFamily &&
+        specs.finishFamily.trim().toLowerCase() !==
+          (specs.finish ?? "").trim().toLowerCase()
+          ? specs.finishFamily
+          : null,
+      ],
       ["Colour", specs?.color],
       ["Lug count", specs?.lugCount == null ? null : String(specs.lugCount)],
       ["Centre bore", measure(specs?.centerBoreMm ?? null, "mm")],
-      ["Backspacing", measure(specs?.backspacing ?? null, "in")],
+      ["Backspacing", backspacing(specs?.backspacing ?? null)],
       ["Material", specs?.material],
       ["Seat type", specs?.seatType],
-      ["Load rating", measure(specs?.loadRatingLbs ?? null, "lb")],
+      ["Load rating", loadRating(specs?.loadRatingLbs ?? null)],
       ["TPMS compatible", yesNo(specs?.tpmsCompatible ?? null)],
       ["Winter use", yesNo(specs?.winterCompatible ?? null)],
       ...extraRows(detail),
@@ -204,9 +232,12 @@ function buildSpecs(
     ["Thread size", specs?.threadSize && timesSign(specs.threadSize)],
     ["Seat type", specs?.seatType],
     ["Finish", specs?.finish],
+    /* A pack of one says nothing (D135). */
     [
       "Pack quantity",
-      specs?.packQuantity == null ? null : String(specs.packQuantity),
+      specs?.packQuantity == null || specs.packQuantity === 1
+        ? null
+        : String(specs.packQuantity),
     ],
     ["Outer diameter", measure(specs?.outerDiameterMm ?? null, "mm")],
     ["Inner diameter", measure(specs?.innerDiameterMm ?? null, "mm")],
@@ -236,9 +267,9 @@ const SEASON_BADGE: Readonly<Record<Season, string>> = {
 
 /* --- Badge row ----------------------------------------------------------
    Never more than three (`product.md` §3.1): the season badge, `3PMSF` when
-   the product carries the mark, `M+S` when the season is winter. `M+S` is
-   derived, not a fact `Product` carries — sample until real sidewall data
-   exists (`types.ts` `PdpBadge` doc, D48 precedent, folder `llm.md` Open #3).
+   the product carries the mark, `M+S` when the vendor itself says the tire is
+   mud and snow rated (its `Mud & snow` fact is `yes`), whatever the season
+   (D135; the winter-implies-M+S rule of D53(3) was a sample-era stand-in).
 
    Wheels and accessories (D58) draw no badges at all: no wheel or accessory
    artboard exists to draw one, so none is invented here — the same D7
@@ -250,6 +281,7 @@ function buildBadges(
   product: Product,
   config: CategoryConfig,
   season: Season | null,
+  mudAndSnow: boolean,
 ): readonly PdpBadge[] {
   /* A discontinued product: the one dim badge takes the row, as it does on
      the card (`design/inventory/results.md:355`), whatever the category. */
@@ -274,7 +306,7 @@ function buildBadges(
     badges.push({ label: "3PMSF", variant: "outline", mark: "three-peak" });
   }
 
-  if (season === "winter") {
+  if (mudAndSnow) {
     badges.push({ label: "M+S", variant: "outline" });
   }
 
@@ -370,7 +402,13 @@ export function productView(
     sizeLine,
     fullName,
     specs: buildSpecs(detail, product, sizeCode, loadSpeed),
-    badges: buildBadges(product, config, season),
+    badges: buildBadges(
+      product,
+      config,
+      season,
+      detail.category === "tires" && hasMudAndSnow(detail.extraSpecs),
+    ),
+    description: detail.description?.trim() || null,
     quantity: parseQuantity(searchParams, config.category),
     vehicle,
     backHref: buildBackHref(searchParams, config.route),

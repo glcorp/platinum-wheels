@@ -92,8 +92,8 @@ export function vehicleLabel(view: Pick<ProductView, "vehicle">): string {
  * The buy panel's badge row draws three (`design/inventory/product.md` §3.1):
  * `Winter` filled, `3PMSF` outline (with a 14px mark on desktop, plain on
  * mobile), `M+S` outline. Only the first two are facts `Product` carries; the
- * `M+S` marking is derived from the winter badge and is **sample** until real
- * catalogue data arrives (D48 precedent). Never more than these three.
+ * `M+S` marking comes from the vendor's own `Mud & snow` fact, not from the
+ * season (D135). Never more than these three.
  */
 export interface PdpBadge {
   label: string;
@@ -139,6 +139,9 @@ export interface ProductView {
    *  Mobile's leaf is `product.model`. */
   fullName: string;
   specs: readonly ProductSpecRow[];
+  /** The vendor's prose about the product, trimmed, or `null` when it has
+   *  none (292 products). Shown under the specification table (D135). */
+  description: string | null;
   badges: readonly PdpBadge[];
   quantity: QuantityKey;
   /** Present only when all three finder params are in the URL. Never

@@ -117,6 +117,11 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     load alike. Pure.
 
 ## Rules
+- **One product per real item for the shopper, every vendor listing a source for the admin (D135).**
+  The builder merges; nothing here de-duplicates. An accessory slug is brand + name + Part number, the
+  brand dropped from the name when it already leads (`slug.ts`, `stripBrandPrefix`); a product may carry
+  20 sources. Wheel `getOtherSizes` keeps only wheels sharing a bolt pattern (D137). A wheel's size
+  line carries offset and finish (`adapter.ts`, D136).
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
   `hidden` product or a vendor source; `store.ts` returns both (D105b).
 - **A vendor's price never reaches the storefront (D125).** `product_sources.vendor_price` is what a

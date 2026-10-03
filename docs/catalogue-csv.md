@@ -29,7 +29,7 @@ catalogue data.
 | `price` | | `129.99` | The display price, a plain number. Blank shows "Inquire for price". Not in the D125 file |
 | `gtin` | | `8019227266603` | Barcode (UPC / EAN) |
 | `extra_specs` | | `Sidewall: Black \| Fitment: Audi:2025:A4` | Vendor facts with no column of their own, shown after the specifications in this order. `Label: value` pairs separated by ` \| ` (space, bar, space). A pair splits on its **first** `: `, so a value may hold colons. Labels up to 60 characters, values up to 2,000, at most 40 pairs, no label twice. A pair with no `: ` refuses the row |
-| `source_vendor_1` | | `Auto Country` | Where the shop orders it. A second vendor goes in `source_vendor_2`, up to `_10` |
+| `source_vendor_1` | | `Auto Country` | Where the shop orders it. A second vendor goes in `source_vendor_2`, up to `_20` |
 | `source_sku_1` | with a vendor | `6959613703553` | That vendor's SKU. **A vendor + SKU pair may appear on one row only** |
 | `source_url_1` | | `https://…` | The vendor's own page, a full link |
 | `source_price_1` | | `189.37` | **What that vendor charges the shop**, cents kept. Staff only: shown in the admin, **never on the storefront**, and it is not the display price. Blank for none; a `0` refuses the row |
@@ -93,8 +93,8 @@ Locks (`wheel_locks`), TPMS Sensors & Tools (`tpms_sensors_tools`), Tools, Gauge
   original cells. The rest of the file still loads. Nothing is corrected for you.
 - Two rows carrying the same vendor + SKU are **both** skipped.
 - Every product arrives `published`. The file does not set a status.
-- The product's web address is built from brand, model and size (an accessory adds its name; an
-  unbranded one starts at its model or name). Two products that would share one get `-2`, `-3` in file
+- The product's web address is built from brand, model and size. An accessory's is built from brand,
+  name and its `Part number` spec (an unbranded one starts at its name). Two products that would share one get `-2`, `-3` in file
   order, so keep the row order stable between versions of the file.
 - The report's `products.csv` lists each product's sources with their vendor prices, so they can be
   checked before a load.

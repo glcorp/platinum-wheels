@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CATEGORY_CONFIG } from "@/features/catalog/categories";
+import { CATEGORY_CONFIG, EXTRA_PARAM } from "@/features/catalog/categories";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import { SortSelect } from "@/features/results/components/sort-select";
 import {
@@ -134,6 +134,18 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
       : q.chips.map((chip): [string, string] => [chipParam, chip])),
     ...q.brands.map((brand): [string, string] => [RESULTS_PARAM.brand, brand]),
   ];
+  /* The extra groups (load index, centre bore, offset, finish, thread) are
+     filters like the rest, so a new vehicle keeps them too. */
+  if (q.loadMin !== null) carried.push([EXTRA_PARAM.loadIndex, q.loadMin]);
+  if (q.bore !== null) carried.push([EXTRA_PARAM.centerBore, q.bore]);
+  if (q.offsetMin !== null) {
+    carried.push([EXTRA_PARAM.offsetMin, String(q.offsetMin)]);
+  }
+  if (q.offsetMax !== null) {
+    carried.push([EXTRA_PARAM.offsetMax, String(q.offsetMax)]);
+  }
+  for (const finish of q.finishes) carried.push([EXTRA_PARAM.finish, finish]);
+  for (const thread of q.threads) carried.push([EXTRA_PARAM.thread, thread]);
   if (q.priceMin !== null) carried.push([RESULTS_PARAM.min, String(q.priceMin)]);
   if (q.priceMax !== null) carried.push([RESULTS_PARAM.max, String(q.priceMax)]);
   if (q.sort !== DEFAULT_SORT) carried.push([RESULTS_PARAM.sort, q.sort]);
