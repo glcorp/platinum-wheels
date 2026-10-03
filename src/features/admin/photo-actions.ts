@@ -1,7 +1,7 @@
 "use server";
 
 /* ---------------------------------------------------------------------------
-   Product photo Server Actions (D117, storage since D126): upload handshake,
+   Product photo Server Actions (D117, storage since D126b): upload handshake,
    record, remove, move.
 
    **How an upload works.** Phone photos run to several megabytes, past the
@@ -20,7 +20,7 @@
    its 10 minutes, so step 3 checks the size, then reads exactly the version
    it checked (`If-Match`) with a byte cap, and deletes an oversized file. An original whose step 3 never runs (tab
    closed) stays under `uploads/`, never shown anywhere; a bucket lifecycle
-   rule on that prefix clears it (D126).
+   rule on that prefix clears it (D126b).
 
    Every action calls `requireAdminAction(formData)` first (D95): each export
    here is a public POST endpoint, and the client calls them directly rather
@@ -224,7 +224,7 @@ export async function addPhoto(formData: FormData): Promise<PhotoActionResult> {
     return { ok: false, message: "This product no longer exists. Go back to the list." };
   }
 
-  // The two stored sizes (D126). Bytes that are not a readable image stop here.
+  // The two stored sizes (D126b). Bytes that are not a readable image stop here.
   let sized: Awaited<ReturnType<typeof makePhotoSizes>>;
   try {
     sized = await makePhotoSizes(
@@ -301,7 +301,7 @@ function storedKeys(store: PhotoStore, productId: string, url: string): string[]
 /** Removes the photo from the product, then deletes both its files from R2
  *  (owner, 2026-10-01: "delete it from storage too"). The URL is unlinked at
  *  once; copies Cloudflare's edge or a browser already cached may still answer
- *  it until they expire, since the files are marked immutable (D126). */
+ *  it until they expire, since the files are marked immutable (D126b). */
 export async function removePhoto(formData: FormData): Promise<PhotoActionResult> {
   await requireAdminAction(formData);
 

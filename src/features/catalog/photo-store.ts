@@ -1,5 +1,5 @@
 /**
- * The photo store: a Cloudflare R2 bucket, spoken to over R2's S3 API (D126).
+ * The photo store: a Cloudflare R2 bucket, spoken to over R2's S3 API (D126b).
  *
  * Photos are served to visitors from `PHOTOS_BASE_URL`, the bucket's own
  * subdomain (`https://photos.platinumwheels.ca`), where Cloudflare's cache

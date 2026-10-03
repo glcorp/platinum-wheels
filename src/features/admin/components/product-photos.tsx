@@ -11,7 +11,7 @@
    way to reorder.
 
    Each upload goes straight from the browser to the R2 photo bucket with a
-   one-time signed link (D126; `photo-actions.ts` explains why), and the
+   one-time signed link (D126b; `photo-actions.ts` explains why), and the
    server then makes the stored sizes. Files upload one after another,
    so the progress line is honest and the eighth-photo limit is checked per
    file by the server. After each change the page is refreshed from the

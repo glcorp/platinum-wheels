@@ -2,7 +2,7 @@
  * Small staff-side reads the product admin needs beside `store.ts` (D116):
  * the vendor list for the sources dropdown, the "is this one we already have"
  * checks behind the brand and vendor dropdowns, a count by status for the
- * admin home, and the rim sizes for the list's filter (D127).
+ * admin home, and the rim sizes for the list's filter (D127b).
  *
  * Brands and vendors are pick-from-existing on the admin (owner, 2026-10-01):
  * there is no brands or vendors table, so "existing" means "already on a
@@ -29,7 +29,7 @@ export async function listVendors(): Promise<string[]> {
 }
 
 /** Exact spelling, as the dropdown offers it, on a product of the same
- *  category (D127): the form offers only that category's brands. */
+ *  category (D127b): the form offers only that category's brands. */
 export async function brandExists(
   brand: string,
   category: ProductCategory,
@@ -63,7 +63,7 @@ export async function countProductsByStatus(status: ProductStatus): Promise<numb
 /**
  * Every rim size in the catalogue, smallest first: a tire's rim diameter and a
  * wheel's diameter, in inches, one entry per size (17 and 17.0 are one). The
- * admin list's Rim size filter (D127).
+ * admin list's Rim size filter (D127b).
  */
 export async function listRimSizes(): Promise<number[]> {
   const db = getDb();

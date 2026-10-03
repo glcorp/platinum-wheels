@@ -8,7 +8,7 @@ import { PRODUCT_LIST_PARAM } from "../product-types";
 import { ADMIN_ROUTES } from "../types";
 
 /* ---------------------------------------------------------------------------
-   PageJump — "Go to page" beside Previous / Next on the product list (D127).
+   PageJump — "Go to page" beside Previous / Next on the product list (D127b).
 
    NO ARTBOARD DRAWS THIS (D89). A GET form like `ProductFilters`: the list's
    current filter rides along as hidden fields, so jumping keeps it, and the

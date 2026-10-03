@@ -1,5 +1,5 @@
 /**
- * Makes a product photo's two stored sizes (D126). Server and laptop only:
+ * Makes a product photo's two stored sizes (D126b). Server and laptop only:
  * `sharp` is a native module.
  *
  * The admin upload (`src/features/admin/photo-actions.ts`) and the bulk photo

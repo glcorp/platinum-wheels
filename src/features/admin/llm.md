@@ -12,7 +12,7 @@ Since D99–D108 it is backed by real payments: the builder writes a `payment_li
 `src/features/payments/` and hands back the customer's `pay.platinumwheels.ca/pay/<token>` URL, and the
 links list shows which links were paid (D106). Sign-in is still one shared account, hardened by D95
 rather than replaced by an auth system. Since D105b the folder also holds the product admin's server side
-(gated reads and Server Actions), and since D116–D118 its screens, photo upload (R2 since D126) and the admin home.
+(gated reads and Server Actions), and since D116–D118 its screens, photo upload (R2 since D126b) and the admin home.
 
 ## Owns
 
@@ -38,14 +38,14 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   `PRODUCT_STATUS_FIELD`, `ProductFormState`, `ProductStatusState`, `ProductListQuery`. The product's
   own field names are `PRODUCT_FIELD` in `@/features/catalog/product-input`.
 - [`product-queries.ts`](product-queries.ts) — gated reads for Server Components: `adminListProducts`,
-  `adminGetProduct`, `adminListBrands` (every brand, or one category's since D127), `adminListVendors`,
-  `adminListRimSizes` (D127), `adminListPhotos`, `adminCountPublished`. Each calls `requireAdminSession()`
+  `adminGetProduct`, `adminListBrands` (every brand, or one category's since D127b), `adminListVendors`,
+  `adminListRimSizes` (D127b), `adminListPhotos`, `adminCountPublished`. Each calls `requireAdminSession()`
   first. Not `"use server"`.
 - [`product-actions.ts`](product-actions.ts) — `"use server"`. `createProductAction`,
   `updateProductAction`, `setProductStatusAction`, `bulkSetProductStatusAction`. Each calls
   `requireAdminAction(formData)` first and then `catalog/store.ts`; the create and update actions
   validate with `parseProductInput()` in between.
-- [`photo-actions.ts`](photo-actions.ts) — `"use server"`, D117, storage D126. `requestPhotoUpload` (signs a
+- [`photo-actions.ts`](photo-actions.ts) — `"use server"`, D117, storage D126b. `requestPhotoUpload` (signs a
   10-minute R2 link for `PUT`s of one type at one staging key `uploads/<product>/<stem>-<id>`), `addPhoto`
   (takes that key, checks it with a `HEAD`, reads exactly that version with a 10 MB cap, makes the 480 and
   1000 sizes, stores them under `products/<product>/`,
@@ -63,7 +63,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   accessory's brand select opens on `No brand` (empty value) and is not required; wheels gain Finish
   family / Colour / Lug count, accessories Part type / Weight (lb); every category ends with an `Extra
   specs` textarea (`extra_specs`, one `Label: value` per line); the edit page passes the saved
-  `lowestVendorPrice` for the sources block. D127: the brand list is the product's category's; the name
+  `lowestVendorPrice` for the sources block. D127b: the brand list is the product's category's; the name
   field is `Full name`, with a live "On the site this reads" line (brand + model, or the name when the model
   is blank, through `productName()`).
 - [`components/product-source-row.tsx`](components/product-source-row.tsx) — one source row (vendor,
@@ -75,15 +75,15 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   Publish / Hide / Discontinue for one product.
 - [`components/bulk-status-bar.tsx`](components/bulk-status-bar.tsx) — client island, ticked rows or all
   matching; builds the "all matching" post itself so ticked ids never ride along. It posts **every** list
-  filter (D127): one left out would widen the change past what the list shows.
+  filter (D127b): one left out would widen the change past what the list shows.
 - [`components/product-filters.tsx`](components/product-filters.tsx) — the list's GET form (`next/form`):
-  search, category, status, brand, and since D127 vendor, accessory type, rim size and a no-photo tick box.
+  search, category, status, brand, and since D127b vendor, accessory type, rim size and a no-photo tick box.
 - [`components/category-type-filter.tsx`](components/category-type-filter.tsx) — client island inside the
-  filters (D127): the Category select, and the Accessory type select shown while Accessories is chosen.
-- [`components/page-jump.tsx`](components/page-jump.tsx) — the list's Go to page GET form (D127), carrying
+  filters (D127b): the Category select, and the Accessory type select shown while Accessories is chosen.
+- [`components/page-jump.tsx`](components/page-jump.tsx) — the list's Go to page GET form (D127b), carrying
   the current filter as hidden fields. No JavaScript of its own.
 - [`components/product-photos.tsx`](components/product-photos.tsx) — client island, upload (browser →
-  R2 with the signed link, D126), order, remove. Thumbnails draw the `card` size via `photoSource()`.
+  R2 with the signed link, D126b), order, remove. Thumbnails draw the `card` size via `photoSource()`.
 - [`components/login-form.tsx`](components/login-form.tsx) — client island. `useActionState` + focus
   management, the `quote-form.tsx` idiom.
 - [`components/login-error-summary.tsx`](components/login-error-summary.tsx) — authored error state,
@@ -134,19 +134,19 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
 - **Every date and time is Brampton's** (D118): format through `@/lib/time`, never with a zone typed here.
 - **Brands and vendors are picked from the catalogue's own** (D116): dropdowns on the form, and the create
   and update actions refuse any other spelling. **A brand must already be on a product of the same
-  category** (D127), on the form and in the actions. There is no way to add a new brand or vendor once the
+  category** (D127b), on the form and in the actions. There is no way to add a new brand or vendor once the
   catalogue is loaded (owner, 2026-10-03: *"Leave it for now"*; the importer loads only into an empty
   catalogue, D113). **An accessory may have no brand** (D125); a tire or wheel may not, which the validator
   and the database hold too.
-- **Every list filter is also a bulk filter** (D127). A filter added to the list goes into
+- **Every list filter is also a bulk filter** (D127b). A filter added to the list goes into
   `PRODUCT_STATUS_FIELD`, `bulk-status-bar.tsx`, `readFilter()` in `product-actions.ts` (which refuses a
   value it cannot read) and `filterConditions()` in `catalog/store.ts`, in the same change.
 - **A vendor's price is staff only** (D125): typed and shown here, cents kept (`vendorPriceLabel`), never
   with `Price`, and never passed to anything on the storefront.
-- **A removed photo's URL can outlive it briefly** (D126): the files are deleted at once, but they are
+- **A removed photo's URL can outlive it briefly** (D126b): the files are deleted at once, but they are
   marked immutable, so a copy Cloudflare or a browser cached may answer the (unlinked) URL until it
   expires.
-- **A photo is recorded only after R2 confirms it** (D117, D126): `addPhoto` accepts only a staging key
+- **A photo is recorded only after R2 confirms it** (D117, D126b): `addPhoto` accepts only a staging key
   this product's handshake could have issued, `HEAD`s it for an allowed type within 10 MB, and records the
   stored `full` URL, never one the browser sends.
 
@@ -166,9 +166,9 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
 | D115 | 2026-10-01 | Prefix-less admin URLs on admin hosts only; `/admin/**` 404s everywhere | Owner: *"we should not build admin routes as /admin"* | Owner |
 | D116 | 2026-10-01 | Product screens: cards, per-card status, bulk ticked or all matching, "Display price", pick-from-existing brand and vendor, `STOREFRONT_URL` | P2 scope, rulings asked one at a time | Owner |
 | D117 | 2026-10-01 | Photos: browser → Blob with a one-file token, verified by `head()`; 8 × 10 MB; contain; delete removes the file | Owner chose each limit | Owner |
-| D126 | 2026-10-03 | Photos move to Cloudflare R2 in two sizes (480 / 1000 WebP); signed `PUT`, staging key, sized on the server; Blob removed | Hobby Blob locks for 30 days past 2,000 uploads; 5,000 resizes a month | Owner |
+| D126b | 2026-10-03 | Photos move to Cloudflare R2 in two sizes (480 / 1000 WebP); signed `PUT`, staging key, sized on the server; Blob removed | Hobby Blob locks for 30 days past 2,000 uploads; 5,000 resizes a month | Owner |
 | D118 | 2026-10-01 | Admin home greeting + tiles; builder at `/payment-links`; top bar nav; Brampton time everywhere | Owner: *"all times used in application need to be brampton time zone"* | Owner |
-| D127 | 2026-10-03 | `Full name` + title preview; category-scoped brands; vendor / type / rim / no-photo filters; Go to page; list index; bulk count in SQL | An audit of the admin against the loaded D125 catalogue | Owner |
+| D127b | 2026-10-03 | `Full name` + title preview; category-scoped brands; vendor / type / rim / no-photo filters; Go to page; list index; bulk count in SQL | An audit of the admin against the loaded D125 catalogue | Owner |
 
 Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced by ID, never restated.
 
@@ -179,7 +179,7 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 - **Depended on by:** `src/app/admin/` (layout and every admin route).
 - **Depends on (D125):** `src/lib/product-name.ts` (photo alt text).
 - **Depends on (D105b, D116, D117):** `src/features/catalog/` — `store.ts`, `lookups.ts`, `photos.ts`,
-  `product-input.ts`, `catalog-types.ts`, `adapter.ts` (labels), and for photos (D126) `photo-files.ts`,
+  `product-input.ts`, `catalog-types.ts`, `adapter.ts` (labels), and for photos (D126b) `photo-files.ts`,
   `photo-sizes.ts`, `photo-store.ts`; `src/lib/time.ts`.
   This is the D37 graph's existing direction (`features → catalog`), so no edge is reversed.
 - **Deliberately does not touch:** `src/features/finder|home|product|results/`. The admin shares the
@@ -205,7 +205,7 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 - **Don't add a delete action for products.** A product leaves the site by becoming `hidden` or
   `discontinued`, so old links keep working (D105b).
 - **Don't call the name field the product's title.** The storefront reads brand + model and falls back to
-  the name only when the model is blank (D127); the preview line under the field is the truth.
+  the name only when the model is blank (D127b); the preview line under the field is the truth.
 - **Don't let a bulk status change run with no ticked rows and no filter.** `bulkSetProductStatus`
   refuses it; an empty submit must never mean the whole catalogue (D107b).
 - **Don't put a product read in a `"use server"` file.** Every export there is a public POST endpoint.
@@ -214,9 +214,9 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 - **Don't post a ticked-rows change and an all-matching change in one request.** Ticked ids win and the
   filter is ignored (D107b); `bulk-status-bar.tsx` builds each separately.
 - **Don't send a photo's bytes in a Server Action's request.** A function request body tops out at
-  4.5 MB; the browser `PUT`s to R2 directly and `addPhoto` reads the file from there (D117, D126).
+  4.5 MB; the browser `PUT`s to R2 directly and `addPhoto` reads the file from there (D117, D126b).
 - **Don't let `addPhoto` take a URL or a key the server did not issue.** It parses the staging key against
-  the product id; anything else is refused before R2 is asked (D126).
+  the product id; anything else is refused before R2 is asked (D126b).
 
 ## Open
 

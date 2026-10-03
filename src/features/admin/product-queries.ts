@@ -65,13 +65,13 @@ export async function adminGetProduct(id: string): Promise<AdminProduct | null> 
 }
 
 /** Existing brand spellings: every one for the list's filter, or only one
- *  category's for the product form's dropdown (D127). */
+ *  category's for the product form's dropdown (D127b). */
 export async function adminListBrands(category?: ProductCategory): Promise<string[]> {
   await requireAdminSession();
   return listBrands(category);
 }
 
-/** Rim sizes in the catalogue, for the list's Rim size filter (D127). */
+/** Rim sizes in the catalogue, for the list's Rim size filter (D127b). */
 export async function adminListRimSizes(): Promise<number[]> {
   await requireAdminSession();
   return listRimSizes();

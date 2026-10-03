@@ -29,7 +29,7 @@
    only, cents kept, never shown on the storefront); and `Extra specs`, the
    vendor facts with no column of their own, one `Label: value` per line.
 
-   **D127.** The brand list is the product's own category's (the page passes
+   **D127b.** The brand list is the product's own category's (the page passes
    it). The name field is `Full name`: the storefront's title is brand +
    model, and reads the name only when the model is blank
    (`src/features/catalog/adapter.ts` `model ?? name`). A live line under the

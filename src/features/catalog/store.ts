@@ -92,7 +92,7 @@ function filterConditions(filter: AdminProductFilter): SQL[] {
     where.push(eq(sql`lower(${products.brand})`, brand.toLowerCase()));
   }
 
-  // D127. Each is an EXISTS on the product's own rows, so a product with two
+  // D127b. Each is an EXISTS on the product's own rows, so a product with two
   // sources from one vendor is still one product, counted once.
   const vendor = filter.vendor?.trim();
   if (vendor) {
@@ -261,7 +261,7 @@ export async function getProductById(id: string): Promise<AdminProduct | null> {
 }
 
 /** Every brand in the catalogue, A to Z, or only those already on a product
- *  of `category` (D127): the brand dropdown on the product form, so a new
+ *  of `category` (D127b): the brand dropdown on the product form, so a new
  *  product reuses an existing spelling instead of a typo, and a tire cannot
  *  take a brand only wheels carry. An unbranded accessory (D125) contributes
  *  nothing. */
@@ -628,7 +628,7 @@ export async function bulkSetProductStatus(
       : and(...filterConditions(filter));
 
   // Counted by Postgres (`rowCount`), not by returning every changed id: an
-  // all-matching change can move tens of thousands of rows (D127).
+  // all-matching change can move tens of thousands of rows (D127b).
   const result = await getDb()
     .update(products)
     .set({ status })

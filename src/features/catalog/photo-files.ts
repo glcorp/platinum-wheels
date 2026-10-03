@@ -1,6 +1,6 @@
 /**
  * Product photo files: their two sizes, their names in the store, and which
- * size a page draws (D126).
+ * size a page draws (D126b).
  *
  * Every product photo is stored twice, as WebP: `card` (480px) for product
  * cards, the cart and the admin thumbnails, and `full` (1000px) for the product
@@ -54,7 +54,7 @@ export function photoSized(keyOrUrl: string, size: PhotoSize): string | null {
  * A stored photo (any absolute URL) is drawn at the asked size and
  * `unoptimized`: the file is already the right size, and Vercel's resizer is
  * never asked for it. A site-root path (`/images/...`, a photo shipped in
- * `public/`) keeps the default resizer, as before D126.
+ * `public/`) keeps the default resizer, as before D126b.
  */
 export function photoSource(
   src: string,

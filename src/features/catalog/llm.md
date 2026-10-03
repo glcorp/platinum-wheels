@@ -90,7 +90,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`, and
     `createProductsBatch` (D114), the bulk form of `createProduct` for a catalogue load: one INSERT
     per table for a whole batch, inside the caller's transaction, with nothing looked up.
-    **Not gated**; `src/features/admin/` is the gate. Since D127 the admin filter (one set of conditions for
+    **Not gated**; `src/features/admin/` is the gate. Since D127b the admin filter (one set of conditions for
     the list and the bulk UPDATE, `products` columns and EXISTS subqueries only, no joins) also takes
     vendor, accessory type, rim size (a tire's rim diameter or a wheel's diameter) and no photo;
     `listBrands(category?)` lists one category's brands for the form; `bulkSetProductStatus` counts with
@@ -107,12 +107,12 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `store.ts`.
   - [`lookups.ts`](lookups.ts) — small staff reads beside `store.ts` (D116): `listVendors`, `brandExists`,
     `vendorExists` (the pick-from-existing dropdowns and their server-side check; `brandExists` takes the
-    category since D127), `countProductsByStatus`, and `listRimSizes` (D127, the list's Rim size filter).
+    category since D127b), `countProductsByStatus`, and `listRimSizes` (D127b, the list's Rim size filter).
     Not gated.
   - [`photos.ts`](photos.ts) — `product_images` reads and writes for the admin (D117): list, add (locks the
     product row; at most `MAX_PHOTOS_PER_PRODUCT`, 8), remove, move. Keeps each product's photos numbered
     0..n-1 and bumps `products.updated_at`. Talks to Postgres only; the files are the photo modules' job.
-- **Product photo files (D126).** Shared by the admin upload, the storefront, the link-preview card and the
+- **Product photo files (D126b).** Shared by the admin upload, the storefront, the link-preview card and the
   bulk photo load.
   - [`photo-files.ts`](photo-files.ts) — the two sizes (`PHOTO_WIDTH`: `card` 480, `full` 1000), the key
     layout (`photoKey`, `photoFolder`), `photoSized()` (one size's name from the other's) and
@@ -163,7 +163,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 - **`queries.ts`, `store.ts`, `rows.ts`, `lookups.ts` and `photos.ts` are server only.** They open database connections. A
   `"use client"` file may import `catalog-types.ts`, `product-input.ts`, `size.ts`, `slug.ts` and
   `photo-files.ts`. `photo-sizes.ts` and `photo-store.ts` are server only too (`sharp`, the R2 secret).
-- **Every `next/image` of a product photo spreads `photoSource(src, size)`** (D126): `card` on cards, the
+- **Every `next/image` of a product photo spreads `photoSource(src, size)`** (D126b): `card` on cards, the
   cart and admin thumbnails, `full` on the product page. It is what keeps stored photos away from Vercel's
   resizer; `next.config.ts` lists no remote host, so a photo drawn without it breaks (an error in dev,
   a broken image in production).
@@ -230,7 +230,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
-| D126 | 2026-10-03 | Photos live in R2 in two stored sizes; every page draws them `unoptimized` through `photoSource()`; `photo-files.ts`, `photo-sizes.ts`, `photo-store.ts` are the shared modules | Vercel Hobby's Blob and resize limits | Owner; D126 |
+| D126b | 2026-10-03 | Photos live in R2 in two stored sizes; every page draws them `unoptimized` through `photoSource()`; `photo-files.ts`, `photo-sizes.ts`, `photo-store.ts` are the shared modules | Vercel Hobby's Blob and resize limits | Owner; D126b |
 | D93b | 2026-09-30 | The `ProductCard` model link carries an `sr-only` size tail, so the same model in two sizes has distinct link names (WCAG 2.4.4); the brand stamp is `translate="no"`. Tests match the model name by regex prefix, never exactly. | Two links read identically to a screen reader. | QA pass; D93b |
 | D91b | 2026-09-29 | `ProductCard` takes an optional `sizes` (default unchanged); each grid passes its own. The photo box is a padded wrapping flex row, so the brand stamp wraps below the badges instead of overlapping them; the image link is `absolute inset-0`, the same box as before. | `sizes` said 50vw where the results grid is 1-up (400–719), so phones fetched about half the pixels they paint; the `Currently unavailable` badge overlapped the stamp by up to 34.6px at 1100–1180. | QA pass WDG-06, NJR-6; D91b |
 | D132 | 2026-10-03 | The size selects narrow one another: `getFacets` takes the buyer's own size (`sizeChoice`, never a vehicle-lent one) and adds `sizeOptions`; the three per-field `select distinct` reads become one aggregate row (tires: width / profile / rim; wheels: diameter / width / bolt via `left join lateral unnest`), read as `text[]` and `Number`ed, and the chip-count read joins the first wave. Tires 6 facet queries in 2 waves → 4 in 1; wheels 5 in 2 → 3 in 1; accessories 4 in 2 → 4 in 1. `StorefrontFacets`, `TireSizeOptions` and `WheelSizeOptions` live in `queries.ts`, not `catalog-types.ts`. | After `width=205` the profile and rim lists still offered values no 205 tire has, and the buyer landed on `0 matches · N similar` (owner chose the fix, 2026-10-03). | Owner, D132 |
@@ -248,7 +248,7 @@ in place.
 - **Depends on:** `src/components/ui/badge.tsx`, `button.tsx`, `price.tsx` (`product-card.tsx:4-6`);
   `src/features/catalog/types.ts` (`:7`); `next/image`, `next/link` (`:1-2`); `src/app/globals.css` for
   `photo-inset-card`, `photo-vignette`, `transition-card`, `tap-extend`, `display`, `numeral`;
-  `public/images/products/<slug>.webp`; `aws4fetch` and `sharp` for the photo modules (D126).
+  `public/images/products/<slug>.webp`; `aws4fetch` and `sharp` for the photo modules (D126b).
 - **Depends on (D105b):** `src/db/` (`getDb()`, the catalogue tables).
 - **Depended on by (D105b):** `src/features/admin/` — `product-queries.ts` and `product-actions.ts` call
   `store.ts` and `product-input.ts`.

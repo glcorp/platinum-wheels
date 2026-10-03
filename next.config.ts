@@ -27,7 +27,7 @@ const PAY_SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
-  /* No `images.remotePatterns`, on purpose (D126). Product photos are full
+  /* No `images.remotePatterns`, on purpose (D126b). Product photos are full
      URLs on the R2 photo bucket, stored already sized, and every page draws
      them `unoptimized` through `photoSource()`
      (`src/features/catalog/photo-files.ts`), so Vercel's resizer (5,000 a

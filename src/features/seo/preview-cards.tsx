@@ -148,7 +148,7 @@ const MAX_PHOTO_BYTES = 12 * 1024 * 1024;
  *
  * `src` is what the catalogue stores: a path from the site root
  * (`/images/products/x.webp`) or a full photo-bucket URL (its 1000px size).
- * Stored photos live in the R2 bucket served from `PHOTOS_BASE_URL` (D126);
+ * Stored photos live in the R2 bucket served from `PHOTOS_BASE_URL` (D126b);
  * a URL under any other origin is never fetched. A root path is read from
  * `public/` on disk, which `next.config.ts` adds to this route's bundle
  * (`outputFileTracingIncludes`). Any other host, a path that climbs out of

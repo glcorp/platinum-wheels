@@ -106,7 +106,7 @@ export function BulkStatusBar({
     if (filter.category) formData.set(PRODUCT_STATUS_FIELD.filterCategory, filter.category);
     if (filter.status) formData.set(PRODUCT_STATUS_FIELD.filterStatus, filter.status);
     if (filter.brand) formData.set(PRODUCT_STATUS_FIELD.filterBrand, filter.brand);
-    // D127. Every filter the list shows must ride along, or the change would
+    // D127b. Every filter the list shows must ride along, or the change would
     // reach products the list did not show.
     if (filter.vendor) formData.set(PRODUCT_STATUS_FIELD.filterVendor, filter.vendor);
     if (filter.accessoryType) formData.set(PRODUCT_STATUS_FIELD.filterAccessoryType, filter.accessoryType);

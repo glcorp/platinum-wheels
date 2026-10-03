@@ -3,7 +3,7 @@
 /* ---------------------------------------------------------------------------
    CategoryTypeFilter — the product list's Category select, and the
    Accessory type select that appears beside it while Accessories is chosen
-   (D127).
+   (D127b).
 
    A client island only so the type select can appear the moment Accessories
    is picked, without an Apply first. Both stay plain fields of the list's GET

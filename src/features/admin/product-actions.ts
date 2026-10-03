@@ -130,7 +130,7 @@ function fromWriteResult(
  * Brands and vendors are chosen from the catalogue's own, never typed new
  * (owner, 2026-10-01; D116). The dropdowns only offer existing spellings, and
  * this holds the same line for a hand-made POST. A brand must already be on a
- * product of the same category (D127), as the dropdown offers. On an edit the
+ * product of the same category (D127b), as the dropdown offers. On an edit the
  * product's own brand is on the product itself, so a product is never stuck on
  * save. An accessory may have no brand at all (D125).
  */

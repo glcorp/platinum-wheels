@@ -33,7 +33,7 @@ import {
    NO ARTBOARD DRAWS THIS (D89). Every status, newest change first, 50 a
    page; search and filters in the URL; bulk status changes for ticked rows
    or everything the filter matches. Served from this folder by `src/proxy.ts`
-   (D115). D127 adds the vendor, accessory type, rim size and no-photo
+   (D115). D127b adds the vendor, accessory type, rim size and no-photo
    filters and a Go to page box; a page past the end goes to the last one.
    --------------------------------------------------------------------------- */
 

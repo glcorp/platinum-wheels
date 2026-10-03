@@ -12,7 +12,7 @@ import { ADMIN_ROUTES } from "../types";
 import { CategoryTypeFilter } from "./category-type-filter";
 
 /* ---------------------------------------------------------------------------
-   ProductFilters — search and filter the admin product list (D116, D127).
+   ProductFilters — search and filter the admin product list (D116, D127b).
 
    A GET form: the filter lives in the URL, so a filtered list can be
    reloaded, shared between the owner's phone and tablet, and paged. `next/
@@ -20,7 +20,7 @@ import { CategoryTypeFilter } from "./category-type-filter";
    again at page 1, because the form never posts `page`.
 
    Brand and vendor are dropdowns of the catalogue's own spellings (owner,
-   2026-10-01). D127 adds Vendor, Accessory type (shown while Accessories is
+   2026-10-01). D127b adds Vendor, Accessory type (shown while Accessories is
    chosen, `category-type-filter.tsx`), Rim size (a tire's rim or a wheel's
    diameter) and a no-photo tick box. "Change all matching" honours every one.
    --------------------------------------------------------------------------- */

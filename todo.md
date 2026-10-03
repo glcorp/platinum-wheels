@@ -132,17 +132,17 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       is simply not shown. The admin lives on its own host, so the link cannot be relative.
     - **Check:** open a published product in the admin; **View on site** opens its storefront page.
 
-12. **Check the D127 admin changes on production once its PR merges.**
-    - **Why:** they were checked on a scratch database, never on the real catalogue (D127).
+12. **Check the D127b admin changes on production once its PR merges.**
+    - **Why:** they were checked on a scratch database, never on the real catalogue (D127b).
     - **Check:** on `/products`, filter by a vendor, by Accessories → a type, by a rim size and by
       **Only products with no photo**; each count looks right, and **Go to page** keeps the filter. On a
       tire's edit page the Brand list holds tire brands only, and the line under **Full name** reads the
       brand and model the storefront shows.
 
-## Owner — photo bucket (D126)
+## Owner — photo bucket (D126b)
 
 11. **Set up the Cloudflare R2 photo bucket and its five Vercel settings, before PR `photos-r2` merges.**
-    - **Why:** product photos live in R2 since D126. Until all five settings exist, the admin says
+    - **Why:** product photos live in R2 since D126b. Until all five settings exist, the admin says
       "Photo uploads are not set up on this deployment" and the bulk photo load cannot run.
     - **How** (Cloudflare dashboard, the account that holds `platinumwheels.ca`):
       1. **R2 Object Storage → turn R2 on.** Cloudflare asks for a payment method even on the free tier
@@ -178,7 +178,7 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       and `curl -sI https://photos.platinumwheels.ca/<a stored key>` answers `200` with
       `cache-control: public, max-age=31536000, immutable`.
     - **After the bulk load is proven:** delete the empty Vercel Blob store `platninum-wheels`
-      (Vercel → Storage); its `BLOB_*` settings go with it. Nothing reads them since D126.
+      (Vercel → Storage); its `BLOB_*` settings go with it. Nothing reads them since D126b.
 
 ## Owner — cart and prices (D122)
 

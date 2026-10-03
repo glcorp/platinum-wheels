@@ -19,11 +19,11 @@ URLs below are the admin host's.
   recent-links list (D106), moved unchanged from the root by D118. Mints the form's idempotency key, and
   renders if the links list fails.
 - [`products/page.tsx`](products/page.tsx) — `/products`, the product list (D116): filters in the URL,
-  bulk status, pagination. D127: vendor, accessory type (read only with the accessories category, so the
+  bulk status, pagination. D127b: vendor, accessory type (read only with the accessories category, so the
   filter applied is the one on screen), rim size and no-photo filters; a Go to page box; a page past the
   end redirects to the last page.
 - [`products/new/page.tsx`](products/new/page.tsx) — `/products/new`, category first, then the form,
-  whose brand list is that category's (D127).
+  whose brand list is that category's (D127b).
 - [`products/[id]/page.tsx`](products/[id]/page.tsx) — `/products/<id>`: status, View on site, photos
   (D117), the edit form, which shows the lowest saved vendor price above the sources (D125). An unbranded
   accessory's header reads `Accessory · No brand`.

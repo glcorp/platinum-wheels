@@ -1,7 +1,7 @@
 /**
  * Product photos: the staff-side reads and writes of `product_images` (D117).
  *
- * The files themselves live in the R2 photo bucket (D126); this module only
+ * The files themselves live in the R2 photo bucket (D126b); this module only
  * records which public URL belongs to which product, in which order.
  * Uploading and deleting the files is `src/features/admin/photo-actions.ts`'s
  * job, so nothing here talks to the bucket and everything here is plain
