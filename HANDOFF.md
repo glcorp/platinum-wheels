@@ -6,16 +6,18 @@ and found duplicates, untrue 3PMSF/M+S claims, indistinguishable wheels and vend
 each finding; this branch carries the fixes.
 - **Data (D135):** the builder's new merge model and M1–M9 rules give **39,961 products** (8,397 tires,
   29,838 wheels, 1,726 accessories), 0 refused; every edit is a row in `changes-review.csv`. The build was
-  made into the session scratchpad, **not** the vendor folder, and is **not loaded into production**.
+  approved by the owner, copied into `combined/share/output/` (previous files kept as `*.pre-d135.*`), and
+  **loaded into production 2026-10-03**: 39,961 products, 45,426 sources, payments unchanged (15 / 24 / 80);
+  live `/tires` 8,397, `/wheels` 29,838, `/accessories` 1,726 on the old code.
 - **Display (D136) and filters (D137):** 3PMSF only when true, M+S from the vendor, offset + finish on the
   wheel line, brand never twice, descriptions, growing spec rows, five new filters (70% fill rule),
   flotation sizes, Other sizes by bolt pattern. `DEVIATIONS.md` #108–#112.
 - **Checked:** `npm run check`; `next build`; on a local production build against PGlite loaded with the
   rebuilt CSV, totals, the five filters, flotation, wheel lines, PDP rows, featured slugs (all 200), no
   vendor wording in descriptions. **Not checked in a browser** (the pane could not be pointed at the build).
-- **Owed next, in order:** owner reviews `changes-review.csv`; `glcorp` merges; production catalogue
-  emptied and reloaded from the approved CSV (`catalog:import`, D113); copy the approved build into
-  `combined/share/output/`.
+- **Owed next:** `glcorp` merges PR #33 (deploys the display and filter code and refreshes the cached home
+  row); reset the `neondb_owner` password (`todo.md` item 9: the string was used, and printed once in a
+  session transcript).
 
 **Last updated 2026-10-03 (the D125 catalogue loaded into production, branch `catalog-load-2026-10-03`).**
 PR #24 merged and deployed (`e970674`, migration `0003` applied). `npm run catalog:import` loaded the 2026-10-03
