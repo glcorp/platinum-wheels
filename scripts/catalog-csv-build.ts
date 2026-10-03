@@ -152,6 +152,15 @@ const SEASON_BY_MAKER: Record<string, { season: string; source: string }> = {
   "toyo|celsius ii": { season: "all_weather", source: "toyotires.ca, all-weather-passenger-tire-celsius-ii" },
   "toyo|celsius cargo": { season: "all_weather", source: "toyotires.ca, all-weather-commercial-grade-light-truckvan-tire-celsius-cargo" },
   "toyo|open country a/t iii": { season: "all_weather", source: "toyotires.ca, all-terrain-all-weather-light-truck-tire-open-country-iii" },
+  // Third round, the models left open after the second (owner, 2026-10-03, D126):
+  "haida|hd869": { season: "all_season", source: "haidatires.ca/hd869-m%2Ft (Mud Terrain; group-B rule)" },
+  "transeagle|trail blazer mt": { season: "all_season", source: "quattrotires.com (mud-terrain; group-B rule)" },
+  "greentrac|quest-x": { season: "all_season", source: "Auto Country and North American retailers (Greentrac names no season)" },
+  "greentrac|quest-x suv": { season: "all_season", source: "Auto Country and North American retailers (Greentrac names no season)" },
+  "mazzini|eco602": { season: "all_season", source: "Direct Auto Import, Mazzini's Canadian distributor (owner's choice over mazzinitires.ca)" },
+  "mazzini|eco603": { season: "all_season", source: "Direct Auto Import, Mazzini's Canadian distributor (owner's choice over mazzinitires.ca)" },
+  "mazzini|falconer f1": { season: "all_season", source: "Direct Auto Import, Mazzini's Canadian distributor (owner's choice over mazzinitires.ca)" },
+  "yokohama|geolandar a/t g015": { season: "all_weather", source: "yokohama.ca/en/tires/geolandar-at-g015 (tagged All-Weather, as G018)" },
   // Second round, the 85 mixed-season models (owner, 2026-10-03; D126 groups A, B, C, E):
   "venom power|terra hunter x/t": { season: "all_season", source: "venompowertires.com/Light_Truck/terra-hunter-xt.html" },
   "continental|extremecontact dws06 plus": { season: "all_season", source: "continentaltire.com/tires/extremecontact-dws06-plus" },
@@ -241,6 +250,15 @@ const SEASON_REVIEWED_AS_IS = new Set([
   "hankook|dynapro at2 xtreme",
   "toyo|m-55 black",
 ]);
+
+/**
+ * D126 (owner, 2026-10-03): an accessory brand that is another spelling of a
+ * brand already in the catalogue takes that brand. The product name keeps the
+ * vendor's wording.
+ */
+const ACCESSORY_BRANDS: Record<string, string> = {
+  DAICAPS: "DAI Wheels",
+};
 
 const modelKey = (brand: string, model: string) => `${brand}|${model}`.toLowerCase();
 
@@ -839,7 +857,7 @@ function accessoryListing(row: InputRow): Listing {
   const listing = newListing([row]);
   const c = row.cells;
   const f = listing.fields;
-  if (c.brand_clean) f[F.brand] = c.brand_clean;
+  if (c.brand_clean) f[F.brand] = ACCESSORY_BRANDS[c.brand_clean] ?? c.brand_clean;
   const type = c.product_type ?? "";
   if (ACCESSORY_LABELS.has(type)) f[F.accessoryType] = type;
   else listing.problems.push(`accessory product_type "${type}" is not one of the fifteen`);
