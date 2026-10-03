@@ -1,5 +1,19 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-03 (the D125 catalogue loaded into production, branch `catalog-load-2026-10-03`).**
+PR #24 merged and deployed (`e970674`, migration `0003` applied). `npm run catalog:import` loaded the 2026-10-03
+`catalogue.csv` from `~/Platinum Wheels Vendor Data/combined/share/output/` into production Neon over the direct
+host: **42,165 products** (9,589 tires, 30,773 wheels, 1,803 accessories), all `published`, 45,426 vendor sources
+each with a vendor price, no display price, no photos, 0 refused, 34 s. The 15 `issues.csv` rows stay out.
+- **Checked:** read-only counts before (catalogue 0, payments 15 / 24 / 80) and after (catalogue matches the file,
+  payments unchanged); on `platinum-wheels-one.vercel.app`, `/tires`, `/wheels`, `/accessories` read 9,589 /
+  30,773 / 1,803 matches and three product pages answer 200; no vendor name, and none of those products'
+  vendor prices, in any page source fetched.
+- **This branch:** `FEATURED_SLUGS` is six winter tires from six brands in 205/55R16 (owner's pick); the
+  library now describes the real load. The home row stays empty until this merges and deploys (D111).
+- **Owed next:** reset the `neondb_owner` password (`todo.md` item 9; the string was used again for this
+  load); photos to Vercel Blob; a look at the 787 `needs-review.csv` rows.
+
 **Last updated 2026-10-03 (the merged vendor CSV aligned with the database, D125, on branch
 `catalog-csv-alignment`).** `npm run catalog:build-csv -- --share <combined/share> --final <combined/final>
 --out <dir>` turns the co-founder's merged workbooks into one `catalogue.csv` the importer takes whole:

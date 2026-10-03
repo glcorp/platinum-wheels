@@ -246,13 +246,15 @@ in place.
   present on both pages pairs and flies at once — Home → `/tires` flew six photos (D92b).
 
 ## Open
-13. **Production's catalogue is empty** (since 2026-10-03). The D113 stand-in load (44,143 products from
-    the scraped vendor sheets) was truncated on the owner's instruction (*"remove only data linked to
-    products don't touch anything related to payments"*): the six catalogue tables only, in one
-    transaction that checked the payment tables' counts were unchanged before committing. Migration
-    `0003`'s guard therefore passes, and the D125 branch can merge. Until the D125 CSV is loaded,
-    every listing reads `0 matches` and the home featured row does not render. Owner, to run the load.
-14. **Moot while the catalogue is empty (2026-10-03); recheck after the D125 load.** **10,249 stand-in slugs carried a `-2`, `-3` …**, mostly PRO WHEELS wheels that share brand, model,
+13. ~~**Production's catalogue is empty**~~ **Closed 2026-10-03: the D125 CSV is loaded.** The D113 stand-in
+    was truncated earlier that day (catalogue tables only; payment tables counted unchanged), then
+    `catalog:import` loaded the 2026-10-03 `catalogue.csv` into production: **42,165 products** (9,589
+    tires, 30,773 wheels, 1,803 accessories), all `published`, 45,426 vendor sources each with its vendor
+    price, no display price, no photos, 0 refused, in 34 s. The 15 rows in the builder's `issues.csv` are
+    not in it. Checked live: the three listings read those counts, and no vendor name or vendor price is
+    in any page source fetched. **Still owed:** photos (Blob upload), and a look at the 787
+    `needs-review.csv` rows. Owner.
+14. **Rechecked after the D125 load (2026-10-03): 7,540 slugs carry a `-2`, `-3` …** (the stand-in had 10,249), mostly PRO WHEELS wheels that share brand, model,
     size, bolt pattern, offset and finish and differ only in something the slug does not read (centre
     bore, SKU). Those suffixes follow file order, so they move if the file's order does. Whether the
     wheel slug should carry more is the owner's call (D107b(1)).

@@ -77,4 +77,5 @@ Proposed rows are listed in `docs/payments.md` §9; IDs are assigned in root `ll
    linked to products don't touch anything related to payments"*). `payment_links`, `payment_attempts`
    and `payment_events` were counted before and after, inside the same transaction, and were unchanged;
    the append-only trigger was never touched. Nothing in the repo empties the catalogue, by design
-   (`scripts/llm.md` Don't). `0003`'s guard now passes. What remains is the D125 load. Owner.
+   (`scripts/llm.md` Don't). `0003`'s guard passed and the D125 load followed the same day: 42,165 products, payment tables again
+   counted unchanged (`src/features/catalog/llm.md` Open #13).
