@@ -141,9 +141,15 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
 
 ## Owner — photo bucket (D126b)
 
-11. **Set up the Cloudflare R2 photo bucket and its five Vercel settings, before PR `photos-r2` merges.**
-    - **Why:** product photos live in R2 since D126b. Until all five settings exist, the admin says
-      "Photo uploads are not set up on this deployment" and the bulk photo load cannot run.
+11. **Finish the Cloudflare R2 photo bucket and its five Vercel settings.** The code is merged without them
+    (owner, 2026-10-03, D138).
+    - **Why:** product photos live in R2 since D126b. Until all five settings exist and the site is
+      redeployed, the admin says "Photo uploads are not set up on this deployment" and the bulk photo
+      load cannot run.
+    - **Where it stands, 2026-10-03:** step 2 is done (bucket `platinum-wheels-photos`, created 16:00 UTC)
+      and Vercel holds `R2_BUCKET` and `PHOTOS_BASE_URL` (Production and Preview). Still missing:
+      `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `photos.platinumwheels.ca` does not
+      resolve yet (step 3). Steps 4–6 could not be checked from here (no connector tool reads them).
     - **How** (Cloudflare dashboard, the account that holds `platinumwheels.ca`):
       1. **R2 Object Storage → turn R2 on.** Cloudflare asks for a payment method even on the free tier
          (10 GB, 1M writes and 10M reads a month, no charge for downloads). Owner only.
@@ -173,7 +179,7 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
          `https://photos.platinumwheels.ca` as plain values (the coordinator may add these three);
          `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` as **Sensitive**, typed by the owner only, never
          pasted into a chat.
-      8. Merge the PR (the deploy picks the settings up). Settings changed later need a redeploy.
+      8. **Redeploy** production once the last setting is in (settings are read at deploy time).
     - **Done when:** a photo added on a product's admin edit page shows on its storefront card and page,
       and `curl -sI https://photos.platinumwheels.ca/<a stored key>` answers `200` with
       `cache-control: public, max-age=31536000, immutable`.

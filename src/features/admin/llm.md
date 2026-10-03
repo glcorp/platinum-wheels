@@ -244,3 +244,8 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
    `admin.signin.rejected` log lines show guessing.
 7. ~~**Confirm the D96 reading of D95**~~ **Closed 2026-09-23:** *"no i meant admin stays and main website stays deferred"*. Admin subdomain wired, apex
    deferred.
+8. **`addPhoto` trusts the stored Content-Type** (`photo-actions.ts`): the browser declares JPEG, PNG or WebP
+   and `sharp` then decodes whatever bytes arrived, so a GIF, TIFF or SVG labelled `image/jpeg` would be
+   stored as WebP. Admin-only, and the 100-megapixel cap holds. A fix is to check
+   `(await sharp(buffer).metadata()).format` against the three types. Found by the D138 review; whether
+   to fix is the owner's call.

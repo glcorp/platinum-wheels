@@ -1,5 +1,31 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-03 (three open PRs combined into one branch for a single `glcorp` merge, D138,
+branch `integrate/prs-27-28-29`).** The branch brings **#28** `Add to cart` adds one and the header cart is
+not a link on `/cart` (D127), **#29** the admin's new list filters, Go to page, per-category brands, `Full
+name` preview and migration `0004` (D127b), and **#27** product photos on Cloudflare R2 in two stored sizes,
+with Vercel Blob removed (D126b).
+- **After the merge:** a card's `Add to cart` adds one, a product page opens on `1`; the admin list has
+  Vendor, Accessory type, Rim size and No photo filters; the deploy runs migration `0004` (one index on
+  `products`). Photo upload answers "not set up" until `todo.md` item 11 is finished and production is
+  redeployed; no product has a photo yet.
+- **Where the PRs met `main`, the owner ruled** that #27 goes in before its R2 setup is finished and that
+  #27's decision is `D126b` (main's tire-season `D126` keeps its number); #29's `D127` is `D127b` by
+  publication order (*derived*). Root `llm.md` D138.
+- **Checked on the combined tree:** `npm ci`, `npm run check`, `db:check`, `drizzle-kit generate` (no schema
+  changes), `next build`; migrations `0000`–`0004` on PGlite twice (second a no-op); on a local production
+  build against a PGlite fixture: card adds one per press, a product page opens on `1` and honours `?qty=4`,
+  `?qty=7` falls back to `1`, `/cart` header is a non-link, cards draw the 480px photo and the product page
+  the 1000px one; the admin list's filters each return the right products (a two-source wheel once, the
+  flotation tire under rim 20), a page past the end keeps its filters, a tire's brand list holds tire
+  brands only; host rules as D115 states.
+- **Not checked:** admin Server Actions in the browser pane (it posts `Origin: null` to a local admin host,
+  which Next refuses; checked on PGlite by #29 instead); anything against R2 or on Vercel or Neon; the e2e
+  suite (parked since D111).
+- **Owed next, in order:** `glcorp` merges with **Create a merge commit**; finish `todo.md` item 11 and
+  redeploy; `todo.md` item 12 (the admin check on production); the co-founder's bulk photo load; delete
+  the empty Blob store; reset the `neondb_owner` password (`todo.md` item 9).
+
 **Last updated 2026-10-03 (catalogue data QA and its fixes, D135–D137, branch `catalog-data-qa-fixes`).**
 A read-only audit of the live site against `catalogue.csv` found every count, filter and spec value correct,
 and found duplicates, untrue 3PMSF/M+S claims, indistinguishable wheels and vendor wording. The owner ruled
