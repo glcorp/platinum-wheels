@@ -47,7 +47,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   shows (no price), shared by the card, the PDP and the cart's refresh (D122).
 - [`components/product-card.tsx`](components/product-card.tsx) — `ProductCard`, props
   `{ product: Product }`. A Server Component: hover is pure CSS (`product-card.tsx:29-30`). Since D122 its
-  CTA is `AddToCartButton` (category `addQuantity`, optional `vehicle` prop) and its `Price` renders only
+  CTA is `AddToCartButton` (adds one, D127; optional `vehicle` prop) and its `Price` renders only
   while `PRICES_VISIBLE` (`DEVIATIONS.md` #96, #97). Composes
   `Badge`, `Button` and `Price` (`:4-6`). The photo src is `/images/products/` + `product.image ?? slug`
   + `.webp` (`product-card.tsx:160`). The photo is wrapped in a second `<Link>` to the same

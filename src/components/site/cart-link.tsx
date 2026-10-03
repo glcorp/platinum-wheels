@@ -25,9 +25,14 @@
    The prompt is a polite live region that is always mounted, so screen
    readers announce each add even though the button's own label change is
    visual only (`add-to-cart-button.tsx`).
+
+   On `/cart` itself the icon and count stay, so the header does not shift on
+   one page, but they are not a link (D127, owner: "Keep it, not a link"): a
+   link to the page you are on goes nowhere. The label adds `, current page`.
    --------------------------------------------------------------------------- */
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -64,6 +69,7 @@ function countLabel(units: number): string {
 export function CartLink() {
   const lines = useCartLines();
   const units = lines === null ? 0 : cartUnits(lines);
+  const onCart = usePathname() === ROUTES.cart;
   const [notice, setNotice] = useState<CartAddedNotice | null>(null);
   /** Bumped by an add; keys the count so it re-mounts and pops. `0` = no
    *  add yet on this page, so the count renders still. */
@@ -101,30 +107,48 @@ export function CartLink() {
     }, PROMPT_MS / 2);
   }
 
+  const label = units > 0 ? `Cart, ${units} ${units === 1 ? "item" : "items"}` : "Cart";
+  const icon = (
+    <>
+      {CART_ICON}
+      {units > 0 ? (
+        <span
+          key={pops}
+          aria-hidden="true"
+          data-probe="cart-count"
+          className={
+            pops > 0
+              ? "numeral bg-accent text-on-accent rounded-ctl cart-pop absolute top-0.5 right-0 inline-flex h-4.5 min-w-4.5 items-center justify-center px-1 text-11 leading-flat"
+              : "numeral bg-accent text-on-accent rounded-ctl absolute top-0.5 right-0 inline-flex h-4.5 min-w-4.5 items-center justify-center px-1 text-11 leading-flat"
+          }
+        >
+          {countLabel(units)}
+        </span>
+      ) : null}
+    </>
+  );
+
   return (
     <>
-      <Link
-        href={ROUTES.cart}
-        aria-label={units > 0 ? `Cart, ${units} ${units === 1 ? "item" : "items"}` : "Cart"}
-        data-probe="cart-link"
-        className="text-on-photo relative inline-flex size-11 touch-manipulation items-center justify-center active:translate-y-px"
-      >
-        {CART_ICON}
-        {units > 0 ? (
-          <span
-            key={pops}
-            aria-hidden="true"
-            data-probe="cart-count"
-            className={
-              pops > 0
-                ? "numeral bg-accent text-on-accent rounded-ctl cart-pop absolute top-0.5 right-0 inline-flex h-4.5 min-w-4.5 items-center justify-center px-1 text-11 leading-flat"
-                : "numeral bg-accent text-on-accent rounded-ctl absolute top-0.5 right-0 inline-flex h-4.5 min-w-4.5 items-center justify-center px-1 text-11 leading-flat"
-            }
-          >
-            {countLabel(units)}
-          </span>
-        ) : null}
-      </Link>
+      {onCart ? (
+        <span
+          role="img"
+          aria-label={`${label}, current page`}
+          data-probe="cart-link"
+          className="text-on-photo relative inline-flex size-11 items-center justify-center"
+        >
+          {icon}
+        </span>
+      ) : (
+        <Link
+          href={ROUTES.cart}
+          aria-label={label}
+          data-probe="cart-link"
+          className="text-on-photo relative inline-flex size-11 touch-manipulation items-center justify-center active:translate-y-px"
+        >
+          {icon}
+        </Link>
+      )}
 
       {/* The prompt. `fixed`, full width less the 16px page gutter on a phone
           and the 420px measure in the bottom-right corner from `sm:`, above

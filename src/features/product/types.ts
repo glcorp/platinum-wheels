@@ -15,8 +15,8 @@
  * data beyond the one `studdable` flag.
  */
 
-import { categoryConfig, type CategoryConfig } from "@/features/catalog/categories";
-import type { Product, ProductCategory } from "@/features/catalog/types";
+import type { CategoryConfig } from "@/features/catalog/categories";
+import type { Product } from "@/features/catalog/types";
 
 /* --- Quantity (D50) ------------------------------------------------------ */
 
@@ -36,22 +36,12 @@ export const QUANTITY_OPTIONS: ReadonlyArray<{
   { value: "custom", label: "Custom" },
 ];
 
-/** Per-category default for the `How many?` cells: the category's
- *  `addQuantity` (D122), the same number a card's `Add to cart` adds, so a card
- *  and its product page agree. That is `4` for tires and wheels, the cell the
- *  artboards draw selected (`product-desktop.html:114`), and `1` for an
- *  accessory, which has no natural multiple: the Acorn Lug Nuts PDP once
- *  opened on `4` for a product whose own size line reads `Set of 20` (craft
- *  audit P1, D65). */
-function cellFor(quantity: 1 | 4): QuantityKey {
-  return quantity === 1 ? "1" : "4";
-}
-
-export const DEFAULT_QUANTITY_BY_CATEGORY: Record<ProductCategory, QuantityKey> = {
-  tires: cellFor(categoryConfig("tires").addQuantity),
-  wheels: cellFor(categoryConfig("wheels").addQuantity),
-  accessories: cellFor(categoryConfig("accessories").addQuantity),
-};
+/** The `How many?` cell selected when `?qty=` is absent or unknown: `1` for
+ *  every category, the same one a card's `Add to cart` adds, so a card and its
+ *  product page agree (D127). The artboards draw `4` selected
+ *  (`product-desktop.html:114`, `DEVIATIONS.md` #98); a visitor who wants a
+ *  set picks `4`, and that pick is what the panel adds. */
+export const DEFAULT_QUANTITY: QuantityKey = "1";
 
 /** Query-string params this route reads. `qty` is its own (D50); the vehicle
  *  trio arrives from `/tires` and is passed straight through to the
