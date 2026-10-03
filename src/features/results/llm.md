@@ -117,6 +117,12 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `md:hidden`. `Not sure which one?` panel, `tel:` CTA from `PRIMARY_CONTACT` (D47(1)).
 
 ## Rules
+- **Five more filter groups (D137), each filled for at least 70% of what it applies to.** Tires
+  `load` (minimum load index); wheels `bore` (exact), `offset_min`/`offset_max` (the price slider's
+  `RangeGroup`), `finish` (finish families); accessories `thread`, shown, parsed and counted only while
+  `type` holds Lug Nuts, Lug Bolts or Wheel Locks. Flotation tires join Width (overall diameter) and
+  Profile (section width). `query.ts` normalises hand-typed sizes before the first read
+  (`5X114.3`, `17.0`, `8.50`). A new group must pass the same 70% test (`DEVIATIONS.md` #110).
 - **Prices can be switched off (D122, `DEVIATIONS.md` #97).** With `PRICES_VISIBLE` false: `query.ts`
   ignores `min`/`max`, `SORT_OPTIONS` holds `Best match` alone and `HAS_SORT_CHOICE` is false, so neither
   sort control renders and the mobile bar's `Filters` cell takes the whole row, and `filter-panel.tsx`

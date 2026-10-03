@@ -60,7 +60,62 @@ export interface SizeFieldConfig {
   /** Strips `labelPrefix` back off an inbound value, so a URL carrying either
    *  spelling resolves. Tires' rim only. */
   strip?: RegExp;
+  /** How a URL value is put into its one spelling before it is compared with
+   *  the options: `number` (`17.0` → `17`, `8.50` → `8.5`) or `bolt`
+   *  (`5X114.3`, `5×114.3`, `5x114.30` → `5x114.3`). Defaults to `number`. */
+  kind?: "number" | "bolt";
 }
+
+/* --- Extra filter groups --------------------------------------------------- */
+
+/**
+ * Filters that sit beside the size group, each only where the vendor data is
+ * filled in for most of the products it applies to (owner, 2026-10-03: at least
+ * 70%): wheel offset, centre bore and finish family, tire load index, and the
+ * thread size of lug nuts, lug bolts and wheel locks. Not offered: tire speed
+ * rating, XL / run-flat / 3PMSF / studdable, accessory seat type (all thinner).
+ */
+export type ExtraGroupId =
+  | "loadIndex"
+  | "centerBore"
+  | "offset"
+  | "finish"
+  | "thread";
+
+/** Query-string params, and the form control names the rail posts. */
+export const EXTRA_PARAM = {
+  /** `load=98` — the lowest load index wanted. */
+  loadIndex: "load",
+  /** `bore=66.6` — one centre bore, mm. */
+  centerBore: "bore",
+  /** `offset_min=-10&offset_max=45` — mm, signed, inclusive. */
+  offsetMin: "offset_min",
+  offsetMax: "offset_max",
+  /** `finish=Gloss+Black&finish=Silver` — finish families. */
+  finish: "finish",
+  /** `thread=14x1.5&thread=1/2+UNF` — lug thread sizes. */
+  thread: "thread",
+} as const;
+
+/** New copy under `.claude/rules/ui.md`, in the shape of the groups drawn. */
+export const EXTRA_COPY: Readonly<
+  Record<ExtraGroupId, { label: string; caption?: string }>
+> = {
+  loadIndex: { label: "Load index", caption: "Minimum" },
+  centerBore: { label: "Centre bore", caption: "Diameter" },
+  offset: { label: "Offset" },
+  finish: { label: "Finish" },
+  thread: { label: "Thread size" },
+};
+
+/** Chip values (accessory types) whose products have a thread. The thread
+ *  group renders, and the `thread` param counts, only while the type filter
+ *  holds at least one of these. */
+export const THREADED_ACCESSORY_TYPES: readonly string[] = [
+  "lug-nuts",
+  "lug-bolts",
+  "wheel-locks",
+];
 
 /* --- Chip group ----------------------------------------------------------- */
 
@@ -71,7 +126,9 @@ export interface SizeFieldConfig {
  *
  * **Wheels have none.** They used to filter on four authored finishes; the
  * real catalogue spells finish 500 different ways, so the owner ruled the
- * filter out and finish is a specification row only (D105b).
+ * chip filter out (D105b). Since 2026-10-03 the vendors' finish FAMILY (about
+ * fifteen values, filled on 99.9% of wheels) is offered as a checkbox list
+ * instead, one of the extra groups below, not a chip row.
  */
 export interface ChipGroupConfig {
   label: string;
@@ -119,6 +176,9 @@ export interface CategoryConfig {
   } | null;
   /** The chip row, or `null` when the category has none (wheels). */
   chips: ChipGroupConfig | null;
+  /** The extra groups, in the order the panel draws them, between the chip row
+   *  and Brand. Empty = none. */
+  extras: readonly ExtraGroupId[];
   /**
    * The vehicle finder on this category's results page — the `Change vehicle`
    * disclosure in `ResultsToolbar` and the vehicle chip beside it.
@@ -222,7 +282,7 @@ const WHEEL_SIZE_FIELDS: readonly SizeFieldConfig[] = [
   { param: "width", caption: "Width" },
   /* `5x114.3` in the URL and in the select: the value stays ASCII so a
      hand-typed URL and a form submit spell it the same way. */
-  { param: "bolt", caption: "Bolt pattern" },
+  { param: "bolt", caption: "Bolt pattern", kind: "bolt" },
 ];
 
 /* --- Accessories ---------------------------------------------------------- */
@@ -254,6 +314,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
       nav: "tires",
       size: { label: "Tire size", fields: TIRE_SIZE_FIELDS },
       chips: TIRE_SEASONS,
+      extras: ["loadIndex"],
       finder: { cta: "Find my tires" },
       priceLabel: "Price per tire",
       unit: {
@@ -281,6 +342,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
       nav: "wheels",
       size: { label: "Wheel size", fields: WHEEL_SIZE_FIELDS, dense: true },
       chips: null,
+      extras: ["centerBore", "offset", "finish"],
       finder: { cta: "Find my wheels" },
       priceLabel: "Price per wheel",
       unit: {
@@ -306,6 +368,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
       nav: "accessories",
       size: null,
       chips: ACCESSORY_TYPES,
+      extras: ["thread"],
       /* New copy under `.claude/rules/ui.md`, in the shape the other two
          already set (`Find my tires` is artboard-verbatim, `Find my wheels`
          follows it): same verb, same possessive, the category's own noun. */

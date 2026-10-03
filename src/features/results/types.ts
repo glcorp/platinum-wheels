@@ -101,6 +101,23 @@ export interface ResultsQuery {
   chips: readonly string[];
   /** Brand names exactly as `Product.brand` spells them. Empty = no filter. */
   brands: readonly string[];
+  /**
+   * The extra groups (owner, 2026-10-03; `categories.ts` `ExtraGroupId`). Each
+   * is read only on the category that draws it and is empty / `null` on the
+   * others, so a stray `bore=66.6` on `/tires` is no filter and no badge.
+   */
+  /** Tires: `load=98`, the lowest load index wanted, as the option spells it. */
+  loadMin: string | null;
+  /** Wheels: `bore=66.6`, one centre bore in mm, as the option spells it. */
+  bore: string | null;
+  /** Wheels: `offset_min` / `offset_max`, mm, signed, inclusive. */
+  offsetMin: number | null;
+  offsetMax: number | null;
+  /** Wheels: `finish=...`, finish families as the catalogue spells them. */
+  finishes: readonly string[];
+  /** Accessories: `thread=...`, lug thread sizes as the catalogue spells them.
+   *  Only meaningful while the type filter holds a threaded type. */
+  threads: readonly string[];
   /** Whole dollars, inclusive. `null` = bound not set. */
   priceMin: number | null;
   priceMax: number | null;
@@ -163,6 +180,41 @@ export interface PriceFacet {
   selectedMax: number;
 }
 
+/** One extra group, ready to render. Components branch on `kind`, never on the
+ *  category (the rule in `results/llm.md`). `id` is the stable key and the
+ *  prefix of the control ids. */
+export type ExtraFacet =
+  | {
+      kind: "select";
+      id: string;
+      label: string;
+      caption: string;
+      param: string;
+      /** `Any` is implicit. */
+      options: readonly SizeOption[];
+      value: string | null;
+    }
+  | {
+      kind: "range";
+      id: string;
+      label: string;
+      paramMin: string;
+      paramMax: string;
+      /** `mm`. */
+      unit: string;
+      min: number;
+      max: number;
+      selectedMin: number;
+      selectedMax: number;
+    }
+  | {
+      kind: "checks";
+      id: string;
+      label: string;
+      param: string;
+      options: readonly FacetOption[];
+    };
+
 export interface Facets {
   category: ProductCategory;
   /**
@@ -190,13 +242,16 @@ export interface Facets {
     param: string;
     options: readonly FacetOption[];
   } | null;
+  /** The extra groups the category draws, in panel order, between the chip
+   *  row and Brand. A group with nothing to offer is left out. */
+  extras: readonly ExtraFacet[];
   /** Every brand with a product in this category, most products first. The
    *  rail shows the first `BRAND_WINDOW` and folds the rest away (D108b). */
   brands: readonly FacetOption[];
   price: PriceFacet;
   /** `Price per tire` / `Price per wheel` / `Price per item`. */
   priceLabel: string;
-  /** Groups with an active filter — size, chips, brand, price — for `Filters (n)`. */
+  /** Groups with an active filter — size, chips, extras, brand, price — for `Filters (n)`. */
   activeGroups: number;
 }
 

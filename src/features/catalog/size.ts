@@ -94,12 +94,15 @@ const BOLT_PATTERNS_MAX_LENGTH = 200;
 const BOLT_PATTERNS_MAX_COUNT = 6;
 
 /**
- * `5x114.3`, `5X114.3`, `5 x 114.3` → `5x114.3`. `null` when it is not a bolt
- * pattern. The stored spelling is what the filter compares, so every writer
+ * `5x114.3`, `5X114.3`, `5×114.3`, `5 x 114.3`, `5x114.30` → `5x114.3`. `null`
+ * when it is not a bolt pattern. The stored spelling is what the filter compares, so every writer
  * goes through here.
  */
 export function normalizeBoltPattern(raw: string): string | null {
-  const match = BOLT_PATTERN.exec(raw.replace(/\s+/g, "").toUpperCase());
+  // `×` (U+00D7) is how the page spells it; a pasted URL may carry it.
+  const match = BOLT_PATTERN.exec(
+    raw.replace(/\s+/g, "").replace(/\u00D7/g, "x").toUpperCase(),
+  );
   if (!match) return null;
   const lugs = Number(match[1]);
   const pcd = Number(match[2]);
@@ -152,4 +155,20 @@ export function parseBoltPatterns(raw: string): string[] | null {
     if (!patterns.includes(pattern)) patterns.push(pattern);
   }
   return patterns;
+}
+
+const PLAIN_NUMBER = /^\d{1,4}(?:\.\d{1,4})?$/;
+
+/**
+ * A size value off a URL in its one spelling: `17.0` → `17`, `8.50` → `8.5`,
+ * `12.50` → `12.5`. The selects list `String(number)`, so a hand-typed
+ * `width=9.0` must become `9` before it is compared with them. `null` when the
+ * text is not a plain positive decimal (`abc`, `1e1`, `-5`, `9,5`), which the
+ * caller treats as an unknown value.
+ */
+export function canonicalSizeNumber(raw: string): string | null {
+  const text = raw.trim();
+  if (!PLAIN_NUMBER.test(text)) return null;
+  const value = Number(text);
+  return value > 0 ? String(value) : null;
 }

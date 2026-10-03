@@ -62,6 +62,7 @@ import {
   clearFilters,
   parseResultsQuery,
   resultsHref,
+  withOffsetBounds,
   withPriceBounds,
 } from "@/features/results/query";
 import {
@@ -69,6 +70,7 @@ import {
   BRAND_WINDOW,
   DEFAULT_SORT,
   RESULTS_PARAM,
+  type ExtraFacet,
   type FacetOption,
   type RawSearchParams,
   type ResultsView,
@@ -88,6 +90,16 @@ function slugifyId(value: string): string {
  *  (results-desktop.html:147). */
 function money(value: number): string {
   return `$${value}`;
+}
+
+/** Counts read with the thousands separator the page count uses (`5,762`),
+ *  not the bare digits: Brand and the other check groups run into the
+ *  thousands on wheels. */
+const COUNT_FORMAT = new Intl.NumberFormat("en-CA");
+
+/** `-10 mm`, `45 mm` — the offset slider's value format. */
+function millimetres(value: number): string {
+  return `${value} mm`;
 }
 
 function percentOf(value: number, min: number, max: number): number {
@@ -270,7 +282,7 @@ function SizeField({
   );
 }
 
-/* --- Price group ---------------------------------------------------------- */
+/* --- Range group (price, wheel offset) ------------------------------------- */
 
 /* Track (results-desktop.html:146, byte-identical in the sheet):
    `position:relative;height:20px;margin:0 8px`, a 2px `--border-strong` rail at
@@ -285,13 +297,18 @@ function SizeField({
 
    The fill's `left`/`right` are inline `style`: they are the live position of
    the selection, i.e. state, not a design value. Nothing measured is inline. */
-function PriceGroup({
+function RangeGroup({
   idPrefix,
   rail,
   min,
   max,
   selectedMin,
   selectedMax,
+  paramMin,
+  paramMax,
+  noun,
+  format,
+  probe,
 }: {
   idPrefix: string;
   rail: boolean;
@@ -299,6 +316,16 @@ function PriceGroup({
   max: number;
   selectedMin: number;
   selectedMax: number;
+  /** The two range inputs' `name`s: `min` / `max` for price, `offset_min` /
+   *  `offset_max` for the wheel offset. */
+  paramMin: string;
+  paramMax: string;
+  /** `price` / `offset`: the control ids and the accessible names. */
+  noun: string;
+  format: (value: number) => string;
+  /** Probe-id prefix: `price` keeps the measured `price-track` and
+   *  `price-values`. */
+  probe: string;
 }) {
   /* Transient drag position only. It is seeded from the URL-derived facet and
      re-seeded on every URL change, because the form this lives in is keyed on
@@ -310,7 +337,7 @@ function PriceGroup({
 
   return (
     <>
-      <div data-probe="price-track" className="relative mx-2 h-5">
+      <div data-probe={`${probe}-track`} className="relative mx-2 h-5">
         {/* Rail: 2px, --border-strong. */}
         <span
           aria-hidden="true"
@@ -338,15 +365,15 @@ function PriceGroup({
             it with `margin-left:-8px`. */}
         <div className="pointer-events-none absolute -inset-x-2 top-0 h-5">
           <input
-            id={`${idPrefix}-price-min`}
+            id={`${idPrefix}-${noun}-min`}
             type="range"
-            name={RESULTS_PARAM.min}
+            name={paramMin}
             min={min}
             max={max}
             step={1}
             value={range.min}
-            aria-label="Minimum price"
-            aria-valuetext={money(range.min)}
+            aria-label={`Minimum ${noun}`}
+            aria-valuetext={format(range.min)}
             onChange={(event) => {
               const next = Number(event.currentTarget.value);
               /* The two thumbs share a box, so the lower one is clamped rather
@@ -370,15 +397,15 @@ function PriceGroup({
             )}
           />
           <input
-            id={`${idPrefix}-price-max`}
+            id={`${idPrefix}-${noun}-max`}
             type="range"
-            name={RESULTS_PARAM.max}
+            name={paramMax}
             min={min}
             max={max}
             step={1}
             value={range.max}
-            aria-label="Maximum price"
-            aria-valuetext={money(range.max)}
+            aria-label={`Maximum ${noun}`}
+            aria-valuetext={format(range.max)}
             onChange={(event) => {
               const next = Number(event.currentTarget.value);
               setRange((current) => ({
@@ -395,7 +422,7 @@ function PriceGroup({
           in the sheet — results.md §4.4 group 5 records the missing
           `font-variant-numeric` as drawn, so `numeral` (which forces tabular)
           is only used on the rail. */}
-      <div data-probe="price-values" className="flex justify-between">
+      <div data-probe={`${probe}-values`} className="flex justify-between">
         <span
           className={
             rail
@@ -403,7 +430,7 @@ function PriceGroup({
               : "font-sans text-15 leading-flat font-bold text-ink"
           }
         >
-          {money(range.min)}
+          {format(range.min)}
         </span>
         <span
           className={
@@ -412,7 +439,7 @@ function PriceGroup({
               : "font-sans text-15 leading-flat font-bold text-ink"
           }
         >
-          {money(range.max)}
+          {format(range.max)}
         </span>
       </div>
 
@@ -425,8 +452,8 @@ function PriceGroup({
           `font:400 12px/1; color:var(--text-dim)`. */}
       {rail && (selectedMin !== min || selectedMax !== max) ? (
         <div className="flex justify-between">
-          <span className="text-12 leading-flat text-ink-dim">{money(min)}</span>
-          <span className="text-12 leading-flat text-ink-dim">{money(max)}</span>
+          <span className="text-12 leading-flat text-ink-dim">{format(min)}</span>
+          <span className="text-12 leading-flat text-ink-dim">{format(max)}</span>
         </div>
       ) : null}
     </>
@@ -469,6 +496,11 @@ export function FilterPanel({
   const href = resultsHref(query);
   const priceFloor = facets.price.min;
   const priceCeiling = facets.price.max;
+  /* The wheel offset slider's ends, when the category draws one. Without it
+     there is no offset input in the form, so any bounds do. */
+  const offsetRange = facets.extras.find((extra) => extra.kind === "range");
+  const offsetFloor = offsetRange?.kind === "range" ? offsetRange.min : 0;
+  const offsetCeiling = offsetRange?.kind === "range" ? offsetRange.max : 0;
 
   /* The URL a form commits to. A range input always submits both handles, so
      the raw form pins `min`/`max` at the bounds on every commit; a bound that
@@ -479,13 +511,16 @@ export function FilterPanel({
   const hrefFromForm = useCallback(
     (form: HTMLFormElement) =>
       resultsHref({
-        ...withPriceBounds(parseResultsQuery(query.category, readForm(form)), {
-          min: priceFloor,
-          max: priceCeiling,
-        }),
+        ...withOffsetBounds(
+          withPriceBounds(parseResultsQuery(query.category, readForm(form)), {
+            min: priceFloor,
+            max: priceCeiling,
+          }),
+          { min: offsetFloor, max: offsetCeiling },
+        ),
         allBrands: brandFoldOpen(form),
       }),
-    [query.category, priceFloor, priceCeiling],
+    [query.category, priceFloor, priceCeiling, offsetFloor, offsetCeiling],
   );
 
   /* Commit: the form's own FormData is the single source of the next URL, so a
@@ -580,12 +615,14 @@ export function FilterPanel({
      Sheet: `grid-template-columns:1fr 1fr`, rows 44px / `gap:10px`, name
      not flexed, count 12px non-tabular (results.md §4.4 group 4). */
   const brandList = rail ? "flex flex-col gap-0.5" : "grid grid-cols-2";
-  const brandRow = (option: FacetOption) => (
+  /* One row of a checkbox group, shared by Brand and the extra check groups
+     (finish, thread): same markup, a different `name` and id stem. */
+  const checkRow = (option: FacetOption, name: string, stem: string) => (
     <Checkbox
       key={option.value}
       variant="facet"
-      id={`${idPrefix}-brand-${slugifyId(option.value)}`}
-      name={RESULTS_PARAM.brand}
+      id={`${idPrefix}-${stem}-${slugifyId(option.value)}`}
+      name={name}
       value={option.value}
       defaultChecked={option.selected}
       labelClassName={rail ? "h-10 gap-3" : "h-11 gap-2.5"}
@@ -606,10 +643,88 @@ export function FilterPanel({
             : "text-12 leading-flat font-normal text-ink-dim"
         }
       >
-        {option.count}
+        {COUNT_FORMAT.format(option.count)}
       </span>
     </Checkbox>
   );
+  const brandRow = (option: FacetOption) =>
+    checkRow(option, RESULTS_PARAM.brand, "brand");
+
+  /* The extra groups (`categories.ts` `ExtraGroupId`): the same shells as the
+     groups drawn, a select, a range or a checkbox list inside. Undrawn, so
+     they borrow the size group's, the price group's and Brand's markup. */
+  const renderExtra = (extra: ExtraFacet) => {
+    const labelId = `${idPrefix}-${extra.id}-label`;
+    switch (extra.kind) {
+      case "select":
+        return (
+          <div
+            key={extra.id}
+            data-probe={`group-${extra.id}`}
+            role="group"
+            aria-labelledby={labelId}
+            className={shell}
+          >
+            <GroupLabel id={labelId} mark={rail}>
+              {extra.label}
+            </GroupLabel>
+            <SizeField
+              id={`${idPrefix}-${extra.id}`}
+              name={extra.param}
+              caption={extra.caption}
+              options={extra.options}
+              value={extra.value}
+            />
+          </div>
+        );
+      case "range":
+        return (
+          <div
+            key={extra.id}
+            data-probe={`group-${extra.id}`}
+            role="group"
+            aria-labelledby={labelId}
+            className={shellPrice}
+          >
+            <GroupLabel id={labelId} mark={rail}>
+              {extra.label}
+            </GroupLabel>
+            <RangeGroup
+              idPrefix={idPrefix}
+              rail={rail}
+              min={extra.min}
+              max={extra.max}
+              selectedMin={extra.selectedMin}
+              selectedMax={extra.selectedMax}
+              paramMin={extra.paramMin}
+              paramMax={extra.paramMax}
+              noun={extra.id}
+              format={millimetres}
+              probe={extra.id}
+            />
+          </div>
+        );
+      case "checks":
+        return (
+          <div
+            key={extra.id}
+            data-probe={`group-${extra.id}`}
+            role="group"
+            aria-labelledby={labelId}
+            className={shellBrand}
+          >
+            <GroupLabel id={labelId} mark={rail}>
+              {extra.label}
+            </GroupLabel>
+            <div className={brandList}>
+              {extra.options.map((option) =>
+                checkRow(option, extra.param, extra.id),
+              )}
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
     <form
@@ -814,7 +929,13 @@ export function FilterPanel({
         );
       })()}
 
-      {/* 3 — Brand ------------------------------------------------------- */}
+      {/* 3 — The extra groups: load index, centre bore, offset, finish, thread
+          size. Each only where the vendor data is filled in for most of the
+          products it applies to; `facets.extras` is already in panel order and
+          holds only the groups with something to offer. */}
+      {facets.extras.map(renderExtra)}
+
+      {/* 4 — Brand ------------------------------------------------------- */}
       <div
         data-probe="group-brand"
         role="group"
@@ -848,7 +969,7 @@ export function FilterPanel({
         )}
       </div>
 
-      {/* 4 — Price per tire / wheel / item -------------------------------- */}
+      {/* 5 — Price per tire / wheel / item -------------------------------- */}
       {/* D122: not rendered while prices are switched off; `query.ts` ignores
           a `min`/`max` in the URL then too. */}
       {PRICES_VISIBLE ? (
@@ -861,13 +982,18 @@ export function FilterPanel({
           <GroupLabel id={`${idPrefix}-price-label`} mark={rail}>
             {facets.priceLabel}
           </GroupLabel>
-          <PriceGroup
+          <RangeGroup
             idPrefix={idPrefix}
             rail={rail}
             min={facets.price.min}
             max={facets.price.max}
             selectedMin={facets.price.selectedMin}
             selectedMax={facets.price.selectedMax}
+            paramMin={RESULTS_PARAM.min}
+            paramMax={RESULTS_PARAM.max}
+            noun="price"
+            format={money}
+            probe="price"
           />
         </div>
       ) : null}

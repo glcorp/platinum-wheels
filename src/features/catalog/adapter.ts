@@ -15,6 +15,8 @@ import type {
   CatalogProduct,
   TireSeason,
 } from "./catalog-types";
+import { stripBrandPrefix } from "@/lib/product-name";
+
 import type { AccessoryType, Product, ProductBadge } from "./types";
 
 /* --- Enum spelling ---------------------------------------------------------
@@ -44,9 +46,10 @@ export function accessoryFromParam(value: string): AccessoryKind {
 /* --- Size line ---------------------------------------------------------- */
 
 /** `5x114.3` → `5×114.3` (U+00D7): ASCII in the database and the URL, the
- *  multiplication sign on screen. */
+ *  multiplication sign on screen. Only an `x` between two digits is a times
+ *  sign: `12x1.5 Hex` is `12×1.5 Hex`, never `12×1.5 He×`. */
 export function timesSign(value: string): string {
-  return value.replace(/x/gi, "×");
+  return value.replace(/(\d)x(?=\d)/gi, "$1×");
 }
 
 /** A number as the trade writes it: `18`, `8.5`, never `8.50`. */
@@ -57,6 +60,12 @@ function plain(value: number): string {
 /** `+35`, `-12`, `0`. An offset is always read with its sign. */
 export function signedOffset(value: number): string {
   return value > 0 ? `+${plain(value)}` : plain(value);
+}
+
+/** `ET+25`, `ET-12`, `ET0`: a wheel's offset as the trade writes it on a
+ *  size line. */
+export function etOffset(value: number): string {
+  return `ET${signedOffset(value)}`;
 }
 
 function tireSizeLine(product: CatalogProduct & { category: "tires" }): string {
@@ -74,7 +83,18 @@ function wheelSizeLine(
   if (specs === null) return "";
   const size = `${plain(specs.diameter)}×${plain(specs.width)}`;
   const bolts = specs.boltPatterns.map(timesSign).join(" / ");
-  return bolts === "" ? size : `${size} · ${bolts}`;
+  const finish = specs.finish?.trim() ?? "";
+  /* D135: `20×9.5 · 5×130 · ET+25 · Gloss Black`. Offset and finish tell two
+     wheels of one model and size apart; each is left out when the vendor gave
+     none. */
+  return [
+    size,
+    bolts,
+    specs.offsetMm === null ? "" : etOffset(specs.offsetMm),
+    finish,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 /** Shown on an accessory that states nothing about itself, and as the spec
@@ -127,8 +147,10 @@ export function toProduct(product: CatalogProduct): Product {
     slug: product.slug,
     image: product.image?.url,
     brand: product.brand,
-    // A product with no model (most accessories) leads with its name.
-    model: product.model ?? product.name,
+    // A product with no model (most accessories) leads with its name. The
+    // brand is shown on its own line above it, so a model that begins with the
+    // brand drops that copy (D135).
+    model: stripBrandPrefix(product.brand, product.model ?? product.name),
     // Zero is never a real price; the validator stores it as `null`, and this
     // keeps a row written some other way from reading `from $0`.
     price: product.price !== null && product.price > 0 ? product.price : null,

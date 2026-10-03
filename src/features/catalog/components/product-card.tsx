@@ -533,7 +533,12 @@ export function ProductCard({
               results-desktop.html:175; `700 14px/1.2` mobile —
               results-mobile.html:125. `numeral` is the 700 + tabular role
               (globals.css:276). */}
-          <span className="numeral text-ink-muted text-14 leading-tight sm:text-15">
+          {/* D135: a wheel's line now ends in its finish (`20×9.5 · 5×130 ·
+              ET+25 · Gloss Black`), which can be long. `min-w-0` lets this flex
+              item shrink to the row and `break-words` breaks a word longer
+              than the card, so the line wraps inside the body at 375 and 1440
+              instead of widening the card. A line that fits is unchanged. */}
+          <span className="numeral text-ink-muted min-w-0 text-14 leading-tight break-words sm:text-15">
             {size}
           </span>
 

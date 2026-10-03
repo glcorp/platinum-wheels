@@ -71,7 +71,7 @@ import { productRoute } from "@/lib/routes";
 /* Title and description name the size and the load and speed index as well as
    the model, so two sizes of one tire, or one size at two load indexes, are
    distinct results. The description's second sentence is the product's own
-   kind (`Winter tire`, `Wheel, Gloss Black`), not a fixed phrase. The canonical is the bare product path:
+   kind (`Winter tire`, `Wheel`; a wheel's finish is in its title, D136), not a fixed phrase. The canonical is the bare product path:
    `?qty=` and a carried vehicle never make a second address (D112). The preview
    image is the product's own photo on the dark card, or the site card when it
    has no photo (owner, 2026-09-30). */
@@ -160,7 +160,7 @@ export default async function ProductPage({
               against the drawn 48/1344 (D91b, VPE-1, measured). */}
           <div className="px-4 sm:px-8 md:px-12">
             <div className="lg:mx-auto lg:max-w-content">
-              <Specifications rows={view.specs} />
+              <Specifications rows={view.specs} description={view.description} />
             </div>
           </div>
 

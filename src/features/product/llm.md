@@ -16,7 +16,10 @@ Action, its emails and its two authored states moved there.
   is read by `view.ts`'s `parseQuantity` and, since D122, derived from `CategoryConfig.addQuantity`, the
   number a card's `Add to cart` adds, so a card and its PDP agree. `vehicleLabel(view)` is the checked
   vehicle string `Add to cart` saves on a cart line (D122).
-- `view.ts` — `productView(detail, searchParams, rows)`, pure. The only place any PDP value is computed.
+- `spec-format.ts` — pure spec-row formatters (D136): `tidyExtra`, `sidewall`, `hasMudAndSnow`,
+  `loadRating`, `backspacing`, `offsetMm`. No imports.
+- `view.ts` — `productView(detail, searchParams, rows)`, pure. Since D136: 3PMSF row only when true,
+  M+S from the vendor value, a `Studdable` row off-winter, `description` passed to `Specifications`. The only place any PDP value is computed.
   Since D108b it takes `CatalogProductDetail` plus the two rows and makes the card-shaped `Product` with
   `toProduct()`. Per category (D58): a **tire** builds the six drawn spec rows first, then Load range /
   Ply rating / Run-flat / UTQG when given; a **wheel** Brand / Model / Size / Bolt pattern / Offset /
@@ -102,7 +105,7 @@ rulings), **D6** (no sticky buy bar), **D21** (`Price context="pdp"`), **D37** (
 ## Open
 1. **`Vehicle` is declared three times** — here, `results/types.ts`, and implied by `finder/`. A third
    consumer means it belongs in `src/lib/`. **Owner** (root `llm.md` §7).
-2. **`M+S` is derived from the winter badge**, not a fact `Product` carries (D48). **Client.**
+2. ~~**`M+S` is derived from the winter badge**~~ Closed by **D136**: the badge follows the vendor's `Mud & snow` value.
 3. **One photo per SKU** until the admin's photo uploads reach the gallery (`HANDOFF.md` §7). **Client.**
 4. **`How many?` reads oddly on an accessory** whose size says `Set of 20`; accessories open on `1` (D65).
    **Owner's**, if the wording should change.

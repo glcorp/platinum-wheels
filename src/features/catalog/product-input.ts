@@ -112,7 +112,7 @@ export const PRODUCT_LIMITS = {
   shortText: 60,
   url: 500,
   price: 99_999_999.99,
-  sources: 10,
+  sources: 20,
   extraSpecLabel: 60,
   extraSpecValue: 2000,
   extraSpecs: 40,

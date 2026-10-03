@@ -28,8 +28,14 @@
 
 import {
   CATEGORY_CONFIG,
+  EXTRA_PARAM,
+  THREADED_ACCESSORY_TYPES,
   type SizeFieldConfig,
 } from "@/features/catalog/categories";
+import {
+  canonicalSizeNumber,
+  normalizeBoltPattern,
+} from "@/features/catalog/size";
 import type { ProductCategory } from "@/features/catalog/types";
 import { isFinderVehicle } from "@/features/finder/data";
 import {
@@ -94,8 +100,34 @@ function parseSizeField(
   const raw = firstValue(params, field.param);
   if (raw === null) return null;
   const stripped = field.strip ? raw.replace(field.strip, "").trim() : raw;
-  return stripped === "" ? null : stripped;
+  if (stripped === "") return null;
+  /* The options are spelled one way (`17`, `8.5`, `5x114.3`), so a hand-typed
+     `17.0`, `8.50`, `5X114.3`, `5×114.3` or `5x114.30` is put into it before it
+     is compared with them. Text that is not a size at all passes through
+     as typed and is turned into `Any` once the options are known
+     (`search.ts` `withKnownSizes`). */
+  const canonical =
+    field.kind === "bolt"
+      ? normalizeBoltPattern(stripped)
+      : canonicalSizeNumber(stripped);
+  return canonical ?? stripped;
 }
+
+/** An offset in mm: signed, at most two decimals. Anything else is no bound. */
+function parseOffset(raw: string | null): number | null {
+  if (raw === null || !/^-?\d{1,4}(?:\.\d{1,2})?$/.test(raw)) return null;
+  const parsed = Number(raw);
+  // `-0` would serialise as `0`; normalise it here so equal queries compare equal.
+  return Object.is(parsed, -0) ? 0 : parsed;
+}
+
+/** A load index off the URL: up to three digits, `098` → `98`. */
+function parseLoadIndex(raw: string | null): string | null {
+  return raw !== null && /^\d{1,3}$/.test(raw) ? String(Number(raw)) : null;
+}
+
+/** No filter lists more values than this; a longer URL is hostile or pasted. */
+const MAX_CHECKED = 24;
 
 /* --- Parse ----------------------------------------------------------------
  */
@@ -153,6 +185,37 @@ export function parseResultsQuery(
   /* Brands keep URL order: they come from the seed (D42), not a fixed list. */
   const brands = uniqueValues(params, RESULTS_PARAM.brand);
 
+  /* The extra groups, each read only on the category that draws it. */
+  const draws = (id: (typeof config.extras)[number]) => config.extras.includes(id);
+  const loadMin = draws("loadIndex")
+    ? parseLoadIndex(firstValue(params, EXTRA_PARAM.loadIndex))
+    : null;
+  const boreRaw = draws("centerBore")
+    ? firstValue(params, EXTRA_PARAM.centerBore)
+    : null;
+  const bore = boreRaw === null ? null : canonicalSizeNumber(boreRaw);
+  let offsetMin = draws("offset")
+    ? parseOffset(firstValue(params, EXTRA_PARAM.offsetMin))
+    : null;
+  let offsetMax = draws("offset")
+    ? parseOffset(firstValue(params, EXTRA_PARAM.offsetMax))
+    : null;
+  /* A crossed pair is a range, as for the price sliders. */
+  if (offsetMin !== null && offsetMax !== null && offsetMin > offsetMax) {
+    [offsetMin, offsetMax] = [offsetMax, offsetMin];
+  }
+  const finishes = draws("finish")
+    ? uniqueValues(params, EXTRA_PARAM.finish).slice(0, MAX_CHECKED)
+    : [];
+  /* A thread size is only a filter while the type filter holds a threaded
+     type: otherwise the group is not drawn and the badge would count a
+     control nobody can see or clear. */
+  const threadsDrawn =
+    draws("thread") && chips.some((chip) => THREADED_ACCESSORY_TYPES.includes(chip));
+  const threads = threadsDrawn
+    ? uniqueValues(params, EXTRA_PARAM.thread).slice(0, MAX_CHECKED)
+    : [];
+
   /* D122: with prices switched off a `min`/`max` in the URL is ignored, so a
      hand-typed range cannot filter by a price nobody can see. */
   let priceMin = PRICES_VISIBLE ? parsePrice(firstValue(params, RESULTS_PARAM.min)) : null;
@@ -174,6 +237,12 @@ export function parseResultsQuery(
     size,
     chips,
     brands,
+    loadMin,
+    bore,
+    offsetMin,
+    offsetMax,
+    finishes,
+    threads,
     priceMin,
     priceMax,
     sort,
@@ -188,7 +257,9 @@ export function parseResultsQuery(
 
 /** Canonical `<category route>?...` for a query. Param order: year, make,
  *  model, then each size field in `config.size.fields` order, then the chip
- *  param (repeated), then brand (repeated), min, max, `sort` (omitted at the
+ *  param (repeated), then the extra groups (load, bore, offset_min,
+ *  offset_max, finish*, thread*; none on tires but `load`), then brand
+ *  (repeated), min, max, `sort` (omitted at the
  *  default), `show` (omitted at the default window) and `brands=all` (only
  *  while the brand fold is open, D132) — defaults omitted throughout, so equal
  *  queries give equal hrefs. For tires this is exactly today's order:
@@ -213,6 +284,20 @@ export function resultsHref(query: ResultsQuery): string {
   if (config.chips !== null) {
     for (const chip of query.chips) search.append(config.chips.param, chip);
   }
+  /* The extra groups sit between the chip row and Brand, as in the panel.
+     Every one is empty / `null` on a category that does not draw it. */
+  append(EXTRA_PARAM.loadIndex, query.loadMin);
+  append(EXTRA_PARAM.centerBore, query.bore);
+  append(
+    EXTRA_PARAM.offsetMin,
+    query.offsetMin === null ? null : String(query.offsetMin),
+  );
+  append(
+    EXTRA_PARAM.offsetMax,
+    query.offsetMax === null ? null : String(query.offsetMax),
+  );
+  for (const finish of query.finishes) search.append(EXTRA_PARAM.finish, finish);
+  for (const thread of query.threads) search.append(EXTRA_PARAM.thread, thread);
   for (const brand of query.brands) search.append(RESULTS_PARAM.brand, brand);
 
   append(
@@ -258,15 +343,41 @@ export function withPriceBounds(
   query: ResultsQuery,
   bounds: PriceBounds,
 ): ResultsQuery {
-  const settle = (value: number | null, bound: number) => {
-    if (value === null) return null;
-    const clamped = Math.min(Math.max(value, bounds.min), bounds.max);
-    return clamped === bound ? null : clamped;
-  };
-  const priceMin = settle(query.priceMin, bounds.min);
-  const priceMax = settle(query.priceMax, bounds.max);
+  const priceMin = settleBound(query.priceMin, bounds.min, bounds.min, bounds.max);
+  const priceMax = settleBound(query.priceMax, bounds.max, bounds.min, bounds.max);
   if (priceMin === query.priceMin && priceMax === query.priceMax) return query;
   return { ...query, priceMin, priceMax };
+}
+
+/** A range bound clamped into `[lo, hi]`; one that lands exactly on `bound`
+ *  (its own end of the slider) is dropped, because a slider parked there is
+ *  not a filter. */
+function settleBound(
+  value: number | null,
+  bound: number,
+  lo: number,
+  hi: number,
+): number | null {
+  if (value === null) return null;
+  const clamped = Math.min(Math.max(value, lo), hi);
+  return clamped === bound ? null : clamped;
+}
+
+/**
+ * The same settling for the wheel offset slider, whose bounds are the
+ * catalogue's lowest and highest offset rounded outward to a whole mm. The
+ * rail posts both range inputs on every change, so without this every commit
+ * would pin `offset_min` / `offset_max` at the ends, and a pinned end would
+ * drop every wheel with no offset on record.
+ */
+export function withOffsetBounds(
+  query: ResultsQuery,
+  bounds: PriceBounds,
+): ResultsQuery {
+  const offsetMin = settleBound(query.offsetMin, bounds.min, bounds.min, bounds.max);
+  const offsetMax = settleBound(query.offsetMax, bounds.max, bounds.min, bounds.max);
+  if (offsetMin === query.offsetMin && offsetMax === query.offsetMax) return query;
+  return { ...query, offsetMin, offsetMax };
 }
 
 /** Same query with every filter cleared; keeps `category`, `vehicle` and
@@ -282,6 +393,12 @@ export function clearFilters(query: ResultsQuery): ResultsQuery {
     size: clearedSize,
     chips: [],
     brands: [],
+    loadMin: null,
+    bore: null,
+    offsetMin: null,
+    offsetMax: null,
+    finishes: [],
+    threads: [],
     priceMin: null,
     priceMax: null,
     sort: query.sort,

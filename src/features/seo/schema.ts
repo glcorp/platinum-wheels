@@ -173,7 +173,7 @@ export interface ProductSeo {
    *  product has none: an accessory, or a wheel with no spec row. */
   size: string;
   /** One plain phrase for what it is, from its own facts: `Winter tire`,
-   *  `Wheel, Gloss Black`, `Lug nuts`. The description's second sentence. */
+   *  `Wheel`, `Lug nuts`. The description's second sentence. */
   kind: string;
   /** The photo: a path from the site root or an absolute URL. `null` = none. */
   image: string | null;
@@ -191,7 +191,7 @@ const TIRE_KIND: Readonly<Partial<Record<Product["badges"][number], string>>> = 
  * The card-shaped product the page already holds, as the fields above.
  *
  * `sizeLine` is the page's own size string with everything it states
- * (`ProductView.sizeLine`): `215/55R16 97T XL` on a tire, `18×8.5 · 5×114.3`
+ * (`ProductView.sizeLine`): `215/55R16 97T XL` on a tire, `18×8.5 · 5×114.3 · ET+35 · Gloss Black`
  * on a wheel, `Set of 20 · 12×1.5` on an accessory. The title takes all of
  * it, because the catalogue holds the same tire in the same size at two load
  * indexes and they must not share a title. Its ` · ` separators become
@@ -240,8 +240,9 @@ export function toProductSeo(
   }
   if (category === "wheels") {
     if (product.wheel) size = `${product.wheel.diameter}×${product.wheel.width}`;
-    const finish = product.wheel?.finish?.trim();
-    kind = finish ? `Wheel, ${finish}` : "Wheel";
+    /* The finish is in the title now (the size line ends `ET+25, Gloss
+       Black`, D135), so the description's kind no longer repeats it. */
+    kind = "Wheel";
   }
 
   return {

@@ -32,6 +32,7 @@ import {
   min,
   ne,
   not,
+  or,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -80,7 +81,13 @@ const SLUG_MAX_LENGTH = 200;
 
 /** How far "near" reaches. A tire one step wider or one profile taller; a
  *  wheel up to an inch wider or narrower. */
-const NEAR = { tireWidth: 10, tireAspectRatio: 5, wheelWidth: 1 } as const;
+const NEAR = {
+  tireWidth: 10,
+  tireAspectRatio: 5,
+  wheelWidth: 1,
+  /** A flotation tire: overall diameter and section width, in inches. */
+  flotation: 1,
+} as const;
 
 const NOTHING = sql`false`;
 
@@ -107,7 +114,7 @@ async function toStorefrontProducts(
 
 /** A facet's own group is left out when counting its options, so a count says
  *  what choosing that option would yield given every OTHER filter. */
-type FilterGroup = "brands" | "chips";
+type FilterGroup = "brands" | "chips" | "finishes" | "threads";
 
 /**
  * Filters arrive from a query string, so a value may be anything. One that
@@ -141,14 +148,37 @@ function amount(value: number | undefined): number | undefined {
     : undefined;
 }
 
+/** A signed measure: an offset runs from about -265 to +169 mm, so `measure`
+ *  (positive only) cannot read it. */
+function signedMeasure(value: number | undefined): number | undefined {
+  return value !== undefined && Number.isFinite(value) && Math.abs(value) < 10_000
+    ? value
+    : undefined;
+}
+
 /** The three tire size parts and the three wheel size parts, cleaned. A bolt
- *  pattern is stored in one spelling, so the filter is put into it too. */
+ *  pattern is stored in one spelling, so the filter is put into it too.
+ *
+ *  A tire's `width` and `aspectRatio` are decimals here, not whole numbers:
+ *  on a flotation size they are the overall diameter (`33`, or `31.5`) and the
+ *  section width (`12.5`). `metricWidth` / `metricAspectRatio` are the parts
+ *  the INTEGER columns can be compared with, or `undefined` when the value is
+ *  not a whole number: Postgres answers `width = '205.5'` with an error, not
+ *  an empty list. */
 function sizeParts(filters: Pick<ProductFilters, "tire" | "wheel">) {
   const boltPattern = filters.wheel?.boltPattern;
+  const width = measure(filters.tire?.width);
+  const aspectRatio = measure(filters.tire?.aspectRatio);
   return {
     tire: {
-      width: wholeNumber(filters.tire?.width),
-      aspectRatio: wholeNumber(filters.tire?.aspectRatio),
+      width,
+      aspectRatio,
+      metricWidth:
+        width !== undefined && Number.isInteger(width) ? width : undefined,
+      metricAspectRatio:
+        aspectRatio !== undefined && Number.isInteger(aspectRatio)
+          ? aspectRatio
+          : undefined,
       rimDiameter: measure(filters.tire?.rimDiameter),
     },
     wheel: {
@@ -160,6 +190,42 @@ function sizeParts(filters: Pick<ProductFilters, "tire" | "wheel">) {
     },
   };
 }
+
+type TireParts = ReturnType<typeof sizeParts>["tire"];
+
+/* Tire width and profile mean two things (the trade's convention): on a metric
+   size they are the section width in mm and the aspect ratio; on a flotation
+   size (`33x12.50R20`) the "width" is the overall diameter and the "profile"
+   the section width, both in inches. A flotation tire has no `width` or
+   `aspect_ratio` and a metric one has no `overall_diameter` or
+   `section_width`, so one value matches whichever format owns it, and a
+   metric part paired with a flotation part matches nothing. `coalesce`
+   because the `or` is NULL, not false, on a row where the other format's
+   column is empty, and `not(NULL)` would drop it from the "similar" list. */
+function tireWidthIs(parts: TireParts): SQL | undefined {
+  if (parts.width === undefined) return undefined;
+  const either = or(
+    parts.metricWidth === undefined
+      ? undefined
+      : eq(tireSpecs.width, parts.metricWidth),
+    eq(tireSpecs.overallDiameter, parts.width),
+  );
+  return sql`coalesce(${either}, false)`;
+}
+
+function tireProfileIs(parts: TireParts): SQL | undefined {
+  if (parts.aspectRatio === undefined) return undefined;
+  const either = or(
+    parts.metricAspectRatio === undefined
+      ? undefined
+      : eq(tireSpecs.aspectRatio, parts.metricAspectRatio),
+    eq(tireSpecs.sectionWidth, parts.aspectRatio),
+  );
+  return sql`coalesce(${either}, false)`;
+}
+
+/** The leading number of a load index: `98`, or `121` of `121/118`. */
+const LOAD_INDEX_FIRST = sql`nullif(substring(${tireSpecs.loadIndex} from '^[0-9]{1,3}'), '')::int`;
 
 /**
  * True for a lug nut, lug bolt or wheel lock cut to a thread other than the
@@ -185,13 +251,13 @@ function exactSize(filters: ProductFilters): SQL | null {
   const thread = vehicleThread(filters);
   if (thread !== null) parts.push(not(contradictsThread(thread)));
   if (filters.category === "tires") {
-    const { width, aspectRatio, rimDiameter } = sizeParts(filters).tire;
-    if (width !== undefined) parts.push(eq(tireSpecs.width, width));
-    if (aspectRatio !== undefined) {
-      parts.push(eq(tireSpecs.aspectRatio, aspectRatio));
-    }
-    if (rimDiameter !== undefined) {
-      parts.push(eq(tireSpecs.rimDiameter, rimDiameter));
+    const tire = sizeParts(filters).tire;
+    const width = tireWidthIs(tire);
+    const profile = tireProfileIs(tire);
+    if (width !== undefined) parts.push(width);
+    if (profile !== undefined) parts.push(profile);
+    if (tire.rimDiameter !== undefined) {
+      parts.push(eq(tireSpecs.rimDiameter, tire.rimDiameter));
     }
   }
   if (filters.category === "wheels") {
@@ -210,6 +276,13 @@ function exactSize(filters: ProductFilters): SQL | null {
  * The "similar options" list: close to the size asked for, never the size
  * itself. Needs an anchor (a tire's rim, a wheel's diameter) and something to
  * relax (a width or a profile); without both there is nothing similar to show.
+ *
+ * A tire is near on its own format's terms, whichever the buyer's size is:
+ * metric = width within 10 mm and profile within 5; flotation = overall
+ * diameter within 1 inch and section width within 1 inch. Both clauses are
+ * offered and the one that cannot match (a metric width has no flotation
+ * tire within an inch of it, `205` against `33`) is empty, so a mixed pair
+ * (`33` with `45`) matches nothing.
  */
 function nearSize(filters: ProductFilters): SQL {
   const thread = vehicleThread(filters);
@@ -219,29 +292,62 @@ function nearSize(filters: ProductFilters): SQL {
   if (exact === null) return NOTHING;
 
   if (filters.category === "tires") {
-    const { width, aspectRatio, rimDiameter } = sizeParts(filters).tire;
+    const { width, aspectRatio, metricWidth, metricAspectRatio, rimDiameter } =
+      sizeParts(filters).tire;
     if (rimDiameter === undefined) return NOTHING;
     if (width === undefined && aspectRatio === undefined) return NOTHING;
-    const parts: SQL[] = [eq(tireSpecs.rimDiameter, rimDiameter)];
+    const rim = eq(tireSpecs.rimDiameter, rimDiameter);
+
+    const metric: SQL[] = [];
     if (width !== undefined) {
-      parts.push(
+      /* A fractional width is no metric width (the column is an integer). */
+      metric.push(
+        metricWidth === undefined
+          ? NOTHING
+          : between(
+              tireSpecs.width,
+              metricWidth - NEAR.tireWidth,
+              metricWidth + NEAR.tireWidth,
+            ),
+      );
+    }
+    if (aspectRatio !== undefined) {
+      metric.push(
+        metricAspectRatio === undefined
+          ? NOTHING
+          : between(
+              tireSpecs.aspectRatio,
+              metricAspectRatio - NEAR.tireAspectRatio,
+              metricAspectRatio + NEAR.tireAspectRatio,
+            ),
+      );
+    }
+    const flotation: SQL[] = [];
+    if (width !== undefined) {
+      flotation.push(
         between(
-          tireSpecs.width,
-          width - NEAR.tireWidth,
-          width + NEAR.tireWidth,
+          tireSpecs.overallDiameter,
+          width - NEAR.flotation,
+          width + NEAR.flotation,
         ),
       );
     }
     if (aspectRatio !== undefined) {
-      parts.push(
+      flotation.push(
         between(
-          tireSpecs.aspectRatio,
-          aspectRatio - NEAR.tireAspectRatio,
-          aspectRatio + NEAR.tireAspectRatio,
+          tireSpecs.sectionWidth,
+          aspectRatio - NEAR.flotation,
+          aspectRatio + NEAR.flotation,
         ),
       );
     }
-    return and(...parts, not(exact)) ?? NOTHING;
+    return (
+      and(
+        rim,
+        or(and(...metric), and(...flotation)),
+        not(sql`coalesce(${exact}, false)`),
+      ) ?? NOTHING
+    );
   }
 
   if (filters.category === "wheels") {
@@ -262,6 +368,50 @@ function nearSize(filters: ProductFilters): SQL {
   }
 
   return NOTHING;
+}
+
+/* --- The extra filters (offset, centre bore, finish, load index, thread) --
+ *
+ * Each of these narrows BOTH lists (best and similar) and is not a size part:
+ * it never decides whether a similar row is asked for.  */
+
+function extraConditions(
+  filters: ProductFilters,
+  omit: FilterGroup | undefined,
+): SQL[] {
+  const where: SQL[] = [];
+
+  if (filters.category === "tires") {
+    const loadMin = wholeNumber(filters.tire?.loadIndexMin);
+    // A product with no load index reads NULL here and never matches.
+    if (loadMin !== undefined) where.push(sql`${LOAD_INDEX_FIRST} >= ${loadMin}`);
+  }
+
+  if (filters.category === "wheels") {
+    const offsetMin = signedMeasure(filters.wheel?.offsetMin);
+    const offsetMax = signedMeasure(filters.wheel?.offsetMax);
+    if (offsetMin !== undefined) where.push(gte(wheelSpecs.offsetMm, offsetMin));
+    if (offsetMax !== undefined) where.push(lte(wheelSpecs.offsetMm, offsetMax));
+    const bore = measure(filters.wheel?.centerBore);
+    if (bore !== undefined) where.push(eq(wheelSpecs.centerBoreMm, bore));
+    if (omit !== "finishes" && filters.wheel?.finishes?.length) {
+      where.push(inArray(wheelSpecs.finishFamily, [...filters.wheel.finishes]));
+    }
+  }
+
+  if (
+    filters.category === "accessories" &&
+    omit !== "threads" &&
+    filters.accessory?.threads?.length
+  ) {
+    // Only a threaded type is held to the thread; a centre cap passes. The
+    // `coalesce` keeps a product with no spec row on the "passes" side.
+    where.push(
+      sql`(not coalesce(${accessorySpecs.accessoryType} in ('lug_nuts', 'lug_bolts', 'wheel_locks'), false) or ${inArray(accessorySpecs.threadSize, [...filters.accessory.threads])})`,
+    );
+  }
+
+  return where;
 }
 
 function conditions(
@@ -304,6 +454,8 @@ function conditions(
       );
     }
   }
+
+  where.push(...extraConditions(filters, options.omit));
 
   if (options.sizeMatch === "near") {
     where.push(nearSize(filters));
@@ -422,6 +574,62 @@ export async function getBrands(category: ProductCategory): Promise<string[]> {
   return rows.flatMap((row) => (row.value === null ? [] : [row.value]));
 }
 
+/**
+ * Every value the checkbox-style extra filters can take in a category,
+ * whatever else is filtered: the wheel finish families and the lug thread
+ * sizes. `search.ts` checks the URL's `finish=` / `thread=` against these
+ * BEFORE it reads (`getFacets` only counts what the other filters leave, so a
+ * ticked value they leave at 0 is missing from it, and must still be kept,
+ * like a ticked brand). Empty for a category that has none.
+ */
+export async function getExtraValues(
+  category: ProductCategory,
+): Promise<{ finishes: string[]; threads: string[] }> {
+  const db = getDb();
+  const published = and(
+    eq(products.category, category),
+    eq(products.status, "published"),
+  );
+  const [finishRows, threadRows] = await Promise.all([
+    category === "wheels"
+      ? db
+          .selectDistinct({ value: wheelSpecs.finishFamily })
+          .from(wheelSpecs)
+          .innerJoin(products, eq(products.id, wheelSpecs.productId))
+          .where(
+            and(
+              published,
+              isNotNull(wheelSpecs.finishFamily),
+              ne(wheelSpecs.finishFamily, ""),
+            ),
+          )
+          .orderBy(asc(wheelSpecs.finishFamily))
+      : Promise.resolve([]),
+    category === "accessories"
+      ? db
+          .selectDistinct({ value: accessorySpecs.threadSize })
+          .from(accessorySpecs)
+          .innerJoin(products, eq(products.id, accessorySpecs.productId))
+          .where(
+            and(
+              published,
+              inArray(accessorySpecs.accessoryType, [
+                "lug_nuts",
+                "lug_bolts",
+                "wheel_locks",
+              ]),
+              isNotNull(accessorySpecs.threadSize),
+              ne(accessorySpecs.threadSize, ""),
+            ),
+          )
+          .orderBy(asc(accessorySpecs.threadSize))
+      : Promise.resolve([]),
+  ]);
+  const values = (rows: ReadonlyArray<{ value: string | null }>) =>
+    rows.flatMap((row) => (row.value === null ? [] : [row.value]));
+  return { finishes: values(finishRows), threads: values(threadRows) };
+}
+
 /* --- Size options (D132) -------------------------------------------------
  *
  * The three size selects narrow one another: each lists the values that exist
@@ -445,8 +653,16 @@ export async function getBrands(category: ProductCategory): Promise<string[]> {
  */
 
 export interface TireSizeOptions {
+  /** Metric section widths, mm. */
   widths: readonly number[];
+  /** Metric aspect ratios. */
   aspectRatios: readonly number[];
+  /** Flotation overall diameters, inches: the `33` of `33x12.50R20`. They sit
+   *  in the Width select after the metric widths. */
+  flotationDiameters: readonly number[];
+  /** Flotation section widths, inches: the `12.5`. They sit in the Profile
+   *  select after the metric aspect ratios. */
+  flotationSectionWidths: readonly number[];
   rimDiameters: readonly number[];
 }
 
@@ -482,25 +698,40 @@ function boltPatternList(value: unknown): string[] {
     .sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
 }
 
+interface TireOptionLists extends TireSizeOptions {
+  loadIndexes: readonly number[];
+}
+
 async function readTireSizeOptions(
   inCategory: SQL | undefined,
   choice: Pick<ProductFilters, "tire" | "wheel">,
-): Promise<{ all: TireSizeOptions; narrowed: TireSizeOptions }> {
-  const { width, aspectRatio, rimDiameter } = sizeParts(choice).tire;
-  const w = width === undefined ? ANY : eq(tireSpecs.width, width);
-  const a =
-    aspectRatio === undefined ? ANY : eq(tireSpecs.aspectRatio, aspectRatio);
+): Promise<{ all: TireOptionLists; narrowed: TireSizeOptions }> {
+  const parts = sizeParts(choice).tire;
+  /* The width and profile predicates cover both formats (`tireWidthIs`): a
+     chosen `33` narrows the profiles to the flotation section widths found
+     with a 33, and a chosen `205` to the metric aspect ratios found with a
+     205. Each list leaves its own part out, so a choice never narrows itself. */
+  const w = tireWidthIs(parts) ?? ANY;
+  const a = tireProfileIs(parts) ?? ANY;
   const r =
-    rimDiameter === undefined ? ANY : eq(tireSpecs.rimDiameter, rimDiameter);
+    parts.rimDiameter === undefined
+      ? ANY
+      : eq(tireSpecs.rimDiameter, parts.rimDiameter);
   /* A flotation size has no width or profile (`35x12.50R20`): its nulls are
-     left out of those two lists and it still counts towards the rims. */
+     left out of the metric lists, and it has its own two. Every size counts
+     towards the rims. */
   const { rows } = await getDb().execute(sql`
     select
       array_agg(distinct ${tireSpecs.width}::text) filter (where ${tireSpecs.width} is not null) as all_widths,
       array_agg(distinct ${tireSpecs.aspectRatio}::text) filter (where ${tireSpecs.aspectRatio} is not null) as all_aspect_ratios,
+      array_agg(distinct ${tireSpecs.overallDiameter}::text) filter (where ${tireSpecs.overallDiameter} is not null) as all_flotation_diameters,
+      array_agg(distinct ${tireSpecs.sectionWidth}::text) filter (where ${tireSpecs.sectionWidth} is not null) as all_flotation_section_widths,
       array_agg(distinct ${tireSpecs.rimDiameter}::text) as all_rim_diameters,
+      array_agg(distinct (${LOAD_INDEX_FIRST})::text) filter (where ${LOAD_INDEX_FIRST} is not null) as all_load_indexes,
       array_agg(distinct ${tireSpecs.width}::text) filter (where ${tireSpecs.width} is not null and ${a} and ${r}) as widths,
       array_agg(distinct ${tireSpecs.aspectRatio}::text) filter (where ${tireSpecs.aspectRatio} is not null and ${w} and ${r}) as aspect_ratios,
+      array_agg(distinct ${tireSpecs.overallDiameter}::text) filter (where ${tireSpecs.overallDiameter} is not null and ${a} and ${r}) as flotation_diameters,
+      array_agg(distinct ${tireSpecs.sectionWidth}::text) filter (where ${tireSpecs.sectionWidth} is not null and ${w} and ${r}) as flotation_section_widths,
       array_agg(distinct ${tireSpecs.rimDiameter}::text) filter (where ${w} and ${a}) as rim_diameters
     from ${tireSpecs}
     inner join ${products} on ${products.id} = ${tireSpecs.productId}
@@ -511,20 +742,30 @@ async function readTireSizeOptions(
     all: {
       widths: numberList(row.all_widths),
       aspectRatios: numberList(row.all_aspect_ratios),
+      flotationDiameters: numberList(row.all_flotation_diameters),
+      flotationSectionWidths: numberList(row.all_flotation_section_widths),
       rimDiameters: numberList(row.all_rim_diameters),
+      loadIndexes: numberList(row.all_load_indexes),
     },
     narrowed: {
       widths: numberList(row.widths),
       aspectRatios: numberList(row.aspect_ratios),
+      flotationDiameters: numberList(row.flotation_diameters),
+      flotationSectionWidths: numberList(row.flotation_section_widths),
       rimDiameters: numberList(row.rim_diameters),
     },
   };
 }
 
+interface WheelOptionLists extends WheelSizeOptions {
+  offset: { min: number | null; max: number | null };
+  centerBores: readonly number[];
+}
+
 async function readWheelSizeOptions(
   inCategory: SQL | undefined,
   choice: Pick<ProductFilters, "tire" | "wheel">,
-): Promise<{ all: WheelSizeOptions; narrowed: WheelSizeOptions }> {
+): Promise<{ all: WheelOptionLists; narrowed: WheelSizeOptions }> {
   const { diameter, width, boltPattern } = sizeParts(choice).wheel;
   const d = diameter === undefined ? ANY : eq(wheelSpecs.diameter, diameter);
   const w = width === undefined ? ANY : eq(wheelSpecs.width, width);
@@ -536,7 +777,9 @@ async function readWheelSizeOptions(
         : arrayContains(wheelSpecs.boltPatterns, [boltPattern]);
   /* A wheel drilled for two patterns is one row per pattern here; `distinct`
      folds the repeats. `left join`, so a wheel with no pattern on record
-     still counts towards the diameters and widths. */
+     still counts towards the diameters and widths. The offset bounds and the
+     centre bores ride the same scan, whole-category like the full lists: the
+     offset slider and the bore select are not narrowed by anything. */
   const { rows } = await getDb().execute(sql`
     select
       array_agg(distinct ${wheelSpecs.diameter}::text) as all_diameters,
@@ -544,18 +787,25 @@ async function readWheelSizeOptions(
       array_agg(distinct bolt.pattern) filter (where bolt.pattern is not null) as all_bolt_patterns,
       array_agg(distinct ${wheelSpecs.diameter}::text) filter (where ${w} and ${b}) as diameters,
       array_agg(distinct ${wheelSpecs.width}::text) filter (where ${d} and ${b}) as widths,
-      array_agg(distinct bolt.pattern) filter (where bolt.pattern is not null and ${d} and ${w}) as bolt_patterns
+      array_agg(distinct bolt.pattern) filter (where bolt.pattern is not null and ${d} and ${w}) as bolt_patterns,
+      min(${wheelSpecs.offsetMm})::text as offset_min,
+      max(${wheelSpecs.offsetMm})::text as offset_max,
+      array_agg(distinct ${wheelSpecs.centerBoreMm}::text) filter (where ${wheelSpecs.centerBoreMm} is not null) as all_center_bores
     from ${wheelSpecs}
     inner join ${products} on ${products.id} = ${wheelSpecs.productId}
     left join lateral unnest(${wheelSpecs.boltPatterns}) as bolt(pattern) on true
     where ${inCategory}
   `);
   const row = rows[0] ?? {};
+  const bound = (value: unknown) =>
+    value === null || value === undefined ? null : Number(value);
   return {
     all: {
       diameters: numberList(row.all_diameters),
       widths: numberList(row.all_widths),
       boltPatterns: boltPatternList(row.all_bolt_patterns),
+      offset: { min: bound(row.offset_min), max: bound(row.offset_max) },
+      centerBores: numberList(row.all_center_bores),
     },
     narrowed: {
       diameters: numberList(row.diameters),
@@ -640,23 +890,84 @@ export async function getFacets(
             .orderBy(asc(accessorySpecs.accessoryType))
         : Promise.resolve([]);
 
-  const [[totals], brandRows, price, chipRows, tireSizes, wheelSizes] =
-    await Promise.all([
-      totalQuery,
-      brandsQuery,
-      getPriceBounds(category),
-      chipsQuery,
-      category === "tires"
-        ? readTireSizeOptions(inCategory, sizeChoice)
-        : Promise.resolve(null),
-      category === "wheels"
-        ? readWheelSizeOptions(inCategory, sizeChoice)
-        : Promise.resolve(null),
-    ]);
+  /* Wheels: the finish families, counted under every other filter (own group
+     left out). Blank families are no option. */
+  const finishesQuery =
+    category === "wheels"
+      ? withSpecs(
+          db
+            .select({ value: wheelSpecs.finishFamily, count: count() })
+            .from(products)
+            .$dynamic(),
+        )
+          .where(
+            and(
+              ...conditions(filters, { omit: "finishes" }),
+              isNotNull(wheelSpecs.finishFamily),
+              ne(wheelSpecs.finishFamily, ""),
+            ),
+          )
+          .groupBy(wheelSpecs.finishFamily)
+          .orderBy(asc(wheelSpecs.finishFamily))
+      : Promise.resolve([]);
+
+  /* Accessories: the thread sizes of the three threaded types, counted under
+     every other filter (own group left out). */
+  const threadsQuery =
+    category === "accessories"
+      ? withSpecs(
+          db
+            .select({ value: accessorySpecs.threadSize, count: count() })
+            .from(products)
+            .$dynamic(),
+        )
+          .where(
+            and(
+              ...conditions(filters, { omit: "threads" }),
+              inArray(accessorySpecs.accessoryType, [
+                "lug_nuts",
+                "lug_bolts",
+                "wheel_locks",
+              ]),
+              isNotNull(accessorySpecs.threadSize),
+              ne(accessorySpecs.threadSize, ""),
+            ),
+          )
+          .groupBy(accessorySpecs.threadSize)
+          .orderBy(asc(accessorySpecs.threadSize))
+      : Promise.resolve([]);
+
+  const [
+    [totals],
+    brandRows,
+    price,
+    chipRows,
+    tireSizes,
+    wheelSizes,
+    finishRows,
+    threadRows,
+  ] = await Promise.all([
+    totalQuery,
+    brandsQuery,
+    getPriceBounds(category),
+    chipsQuery,
+    category === "tires"
+      ? readTireSizeOptions(inCategory, sizeChoice)
+      : Promise.resolve(null),
+    category === "wheels"
+      ? readWheelSizeOptions(inCategory, sizeChoice)
+      : Promise.resolve(null),
+    finishesQuery,
+    threadsQuery,
+  ]);
   // Unbranded accessories (D125) are counted in `total` but are no brand row.
   const brands = brandRows.flatMap((row) =>
     row.value === null ? [] : [{ value: row.value, count: row.count }],
   );
+  const named = (rows: ReadonlyArray<{ value: string | null; count: number }>) =>
+    rows.flatMap((row) =>
+      row.value === null ? [] : [{ value: row.value, count: row.count }],
+    );
 
   return {
     category,
@@ -674,7 +985,10 @@ export async function getFacets(
                 TIRE_SEASONS.includes(row.value as TireSeason),
             ),
           },
-    wheel: wheelSizes === null ? null : wheelSizes.all,
+    wheel:
+      wheelSizes === null
+        ? null
+        : { ...wheelSizes.all, finishes: named(finishRows) },
     accessory:
       category === "accessories"
         ? {
@@ -683,6 +997,7 @@ export async function getFacets(
                 row.value !== null &&
                 ACCESSORY_KINDS.includes(row.value as AccessoryKind),
             ),
+            threads: named(threadRows),
           }
         : null,
     sizeOptions: {
@@ -728,6 +1043,12 @@ export async function getProductBySlug(
  * size first. Nearest, not smallest: a wheel model can come in hundreds of
  * variants, and the first page of those has to be the ones beside the size
  * being looked at. Empty for a product with no model.
+ *
+ * Wheels keep only what bolts onto the same car: a wheel that shares no bolt
+ * pattern with this one is not another size of it, it is a different fitment,
+ * so it is left out (a wheel with no pattern on record shares none, and has no
+ * other sizes). They rank by diameter, then width, then offset. Only the page
+ * itself is excluded.
  */
 export async function getOtherSizes(
   product: CatalogProduct,
@@ -736,9 +1057,20 @@ export async function getOtherSizes(
   if (product.model === null) return [];
   const db = getDb();
 
+  const where: SQL[] = [
+    eq(products.category, product.category),
+    eq(products.status, "published"),
+    product.brand === null
+      ? isNull(products.brand)
+      : eq(products.brand, product.brand),
+    eq(products.model, product.model),
+    ne(products.id, product.id),
+  ];
+
   const nearest: SQL[] = [];
   if (product.category === "tires" && product.specs) {
-    const { rimDiameter, width, aspectRatio } = product.specs;
+    const { rimDiameter, width, aspectRatio, overallDiameter, sectionWidth } =
+      product.specs;
     nearest.push(sql`abs(${tireSpecs.rimDiameter} - ${rimDiameter}) asc nulls last`);
     if (width !== null) {
       nearest.push(sql`abs(${tireSpecs.width} - ${width}) asc nulls last`);
@@ -748,29 +1080,38 @@ export async function getOtherSizes(
         sql`abs(${tireSpecs.aspectRatio} - ${aspectRatio}) asc nulls last`,
       );
     }
+    // A flotation size is placed by its own two dimensions.
+    if (overallDiameter !== null) {
+      nearest.push(
+        sql`abs(${tireSpecs.overallDiameter} - ${overallDiameter}) asc nulls last`,
+      );
+    }
+    if (sectionWidth !== null) {
+      nearest.push(
+        sql`abs(${tireSpecs.sectionWidth} - ${sectionWidth}) asc nulls last`,
+      );
+    }
   }
   if (product.category === "wheels" && product.specs) {
-    const { diameter, width } = product.specs;
+    const { diameter, width, offsetMm, boltPatterns } = product.specs;
+    where.push(
+      boltPatterns.length > 0
+        ? arrayOverlaps(wheelSpecs.boltPatterns, boltPatterns)
+        : NOTHING,
+    );
     nearest.push(
       sql`abs(${wheelSpecs.diameter} - ${diameter}) asc nulls last`,
       sql`abs(${wheelSpecs.width} - ${width}) asc nulls last`,
     );
+    if (offsetMm !== null) {
+      nearest.push(sql`abs(${wheelSpecs.offsetMm} - ${offsetMm}) asc nulls last`);
+    }
   }
 
   const rows = await withSpecs(
     db.select(PRODUCT_SELECTION).from(products).$dynamic(),
   )
-    .where(
-      and(
-        eq(products.category, product.category),
-        eq(products.status, "published"),
-        product.brand === null
-          ? isNull(products.brand)
-          : eq(products.brand, product.brand),
-        eq(products.model, product.model),
-        ne(products.id, product.id),
-      ),
-    )
+    .where(and(...where))
     .orderBy(...nearest, asc(products.name), asc(products.id))
     .limit(clampLimit(limit, 24));
   return toStorefrontProducts(db, rows);

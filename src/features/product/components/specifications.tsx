@@ -1,4 +1,5 @@
 import type { ProductSpecRow } from "@/features/product/types";
+import { cx } from "@/lib/cx";
 
 /* ---------------------------------------------------------------------------
    Specifications — the six-row spec table below the gallery/buy-panel split.
@@ -13,6 +14,8 @@ import type { ProductSpecRow } from "@/features/product/types";
 
 export interface SpecificationsProps {
   rows: readonly ProductSpecRow[];
+  /** The vendor's prose about the product, shown under the table (D135). */
+  description?: string | null;
 }
 
 /* Section: `padding:96px 48px 0;gap:32px` D (product-desktop.html:126) vs
@@ -42,8 +45,24 @@ const HEADING = "display text-ink text-display-32 sm:text-display-40";
    DEVIATIONS #24 (the export's presentational markup becomes real elements,
    geometry unchanged). `<th>`/`<td>` blockify automatically once their parent
    is a grid container, so no further display reset is needed on them. */
-const ROW =
-  "odd:bg-surface border-border grid h-12 grid-cols-2 items-center border-b px-3 sm:h-14 sm:px-6";
+/* D135: `h-12 sm:h-14` is now the MINIMUM (`min-h-12 sm:min-h-14`), so a value
+   that wraps grows its row instead of overflowing a fixed box. `py-3` keeps a
+   wrapped value off the hairlines; for a one-line value the minimum height
+   still decides and `items-center` centres it, so every drawn row measures
+   what it did (48 / 56). `gap-x-4` keeps the key off a long value. */
+const ROW_BASE =
+  "odd:bg-surface border-border grid min-h-12 border-b px-3 sm:min-h-14 sm:px-6";
+const ROW_INLINE = "grid-cols-2 items-center gap-x-4 py-3";
+
+/* A value this long (a wheel's `Fitment` list is ~285 characters, an
+   accessory's `Fits wheel` up to 1,292) cannot sit in half a row: it would
+   stack into a tall, narrow column. Past this length the row becomes one
+   column, key above, the value full width and flush left (D135). */
+const LONG_VALUE = 60;
+const ROW_STACKED = "grid-cols-1 items-start gap-y-2 py-4";
+/* Two separate class sets, never layered: there is no class-merge helper
+   here (`src/lib/cx.ts`), so a base and an override would fight on source
+   order. */
 
 /* Zebra: DOM order is Brand, Model, Size, Season, Load/speed, 3PMSF — rows
    1/3/5 are `--surface`, rows 2/4/6 `transparent` (`product.md` §3.7).
@@ -65,9 +84,25 @@ const KEY_CELL =
    tabular-nums;text-align:right;color:var(--text)` D → `700 14px/1` M. The
    `numeral` utility already carries family/weight/tabular-nums; only size,
    leading, colour and alignment are explicit. */
-const VALUE_CELL = "numeral text-ink text-right text-14 leading-flat sm:text-16";
+const VALUE_CELL =
+  "numeral text-ink text-14 wrap-anywhere sm:text-16";
+const VALUE_INLINE = "text-right leading-flat";
 
-export function Specifications({ rows }: SpecificationsProps) {
+/* A value that may take more than one line leaves the drawn `/1` line height,
+   which would stack wrapped lines on top of each other. Only a value longer
+   than the shortest one that can wrap in the half-width mobile cell (the
+   longest drawn value, `Winter (studdable)`, is 18) changes, so short rows
+   keep the measured box. */
+const WRAPPING = 18;
+const VALUE_WRAPPING = "text-right leading-snug";
+const VALUE_STACKED = "text-left leading-snug";
+
+/* Prose under the table: the prose-page paragraph (`prose-page.tsx`), flush
+   left, line breaks the vendor wrote kept. */
+const DESCRIPTION =
+  "text-16 leading-body text-ink-muted max-w-hero-lede break-words whitespace-pre-line sm:text-17";
+
+export function Specifications({ rows, description }: SpecificationsProps) {
   return (
     <section data-probe="specifications" className={SECTION}>
       <h2 className={HEADING}>Specifications</h2>
@@ -82,16 +117,34 @@ export function Specifications({ rows }: SpecificationsProps) {
           {/* Keyed by position as well as label: since D125 a vendor's extra
               fact may repeat a column's label (`Finish`), and two rows must
               never share a key. Rows are derived per render, never reordered. */}
-          {rows.map((row, index) => (
-            <tr key={`${index}-${row.key}`} className={ROW}>
-              <th scope="row" className={KEY_CELL}>
-                {row.key}
-              </th>
-              <td className={VALUE_CELL}>{row.value}</td>
-            </tr>
-          ))}
+          {rows.map((row, index) => {
+            const stacked = row.value.length > LONG_VALUE;
+            return (
+              <tr
+                key={`${index}-${row.key}`}
+                className={cx(ROW_BASE, stacked ? ROW_STACKED : ROW_INLINE)}
+              >
+                <th scope="row" className={KEY_CELL}>
+                  {row.key}
+                </th>
+                <td
+                  className={cx(
+                    VALUE_CELL,
+                    stacked
+                      ? VALUE_STACKED
+                      : row.value.length > WRAPPING
+                        ? VALUE_WRAPPING
+                        : VALUE_INLINE,
+                  )}
+                >
+                  {row.value}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
+      {description ? <p className={DESCRIPTION}>{description}</p> : null}
     </section>
   );
 }

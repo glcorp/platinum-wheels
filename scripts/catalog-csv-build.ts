@@ -15,12 +15,19 @@
    Output:
      catalogue.csv     one row per product, laid out as `docs/catalogue-csv.md`
      issues.csv        every input row left out, with the reason
-     merge-report.csv  every cross-vendor merge and what disagreed, every group
-                       that could not be merged, and every -B pair whose titles
-                       differ
+     merge-report.csv  every merge and what disagreed, every group that could
+                       not be merged, every -B pair whose titles differ, and the
+                       data-QA edits each merged listing carried before merging
+     changes-review.csv one row per data edit or merge decision of the data-QA
+                       rulings M1 to M9 (owner, 2026-10-03), with its evidence
      needs-review.csv  the rows the vendor sheets flag `needs_review`, loaded
                        normally, with why they are flagged
      summary.txt       the counts, and every input column not written and why
+
+   The data-QA rulings M1 to M9 of 2026-10-03 (merge over blank key fields,
+   accessories on one SKU, identical same-vendor listings, model spellings,
+   accessory names, blank models, pack sizes, small data fixes, descriptions)
+   sit in the section "Data-QA rulings" below, each as a named table or function.
 
    The rules are the owner's rulings of 2026-10-03 (D125), and the principle
    behind them is the owner's: align the data as the vendor does, so every
@@ -495,6 +502,8 @@ interface Listing {
   problems: string[];
   /** Raw wheel brand, kept for the rule-6 review reason. */
   rawBrand: string;
+  /** Data-QA edits applied to this listing, for merge-report.csv. */
+  edits: { rule: string; field: string; before: string; after: string }[];
 }
 
 /** A product in the catalogue: one listing, or several merged across vendors. */
@@ -606,6 +615,7 @@ function newListing(rows: InputRow[]): Listing {
     images: [],
     problems: [],
     rawBrand: primary.cells.brand ?? "",
+    edits: [],
   };
   const cells = primary.cells;
   const name = cells.title ?? "";
@@ -894,78 +904,909 @@ type BPairOutcome =
   | "b_pair_title_not_rewritten";
 const bPairTitles: { rows: InputRow[]; titles: string[]; chosen: string; outcome: BPairOutcome }[] = [];
 
-/* --- Merging (rule 4) ------------------------------------------------------------ */
+/* --- Data-QA rulings M1 to M9 (owner, 2026-10-03, "data QA") ------------------ */
 
 /**
- * Rule 4's key, or `null` when the listing must stay on its own. Owner,
- * 2026-10-03: a blank in ANY key field never matches, so a vendor that did
- * not state a value is never merged on it. Two fields are exempt because
- * their blank is a statement, not a gap: `load_index_dual` blank means the
- * tire has no dual index, and `side` blank means the wheel is not handed.
+ * Every data edit or merge decision made by the data-QA rules is one row of
+ * changes-review.csv, so the owner can read, veto and trace each of them.
  */
-function mergeKey(listing: Listing): string | null {
+interface Change {
+  rule: string;
+  rowIds: string[];
+  field: string;
+  before: string;
+  after: string;
+  reason: string;
+}
+const changes: Change[] = [];
+function logChange(
+  rule: string,
+  rowIds: readonly string[],
+  field: string,
+  before: string,
+  after: string,
+  reason: string,
+): void {
+  changes.push({ rule, rowIds: [...rowIds], field, before, after, reason });
+}
+const idsOf = (listing: Listing) => listing.rows.map((row) => row.rowId);
+
+/** Sets (or, with "", clears) a listing field and records the edit. */
+function editField(rule: string, listing: Listing, field: string, after: string, reason: string): void {
+  const before = listing.fields[field] ?? "";
+  if (before === after) return;
+  if (after === "") delete listing.fields[field];
+  else listing.fields[field] = after;
+  listing.edits.push({ rule, field, before, after });
+  logChange(rule, idsOf(listing), field, before, after, reason);
+}
+
+/** Lower case, spaces and dashes ignored (M1 SKU borrow, M2). */
+const skuKey = (sku: string) => sku.toLowerCase().replace(/[\s-]+/g, "");
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * M4 (owner 2026-10-03, data QA): model spellings that are one tire or wheel
+ * line, folded to ONE spelling. One entry per fold, so any can be vetoed.
+ * `to` is the spelling carried by more products in the 2026-10-03 catalogue
+ * (counts in `why`); on a tie the priority vendor's spelling would win (no
+ * tie occurred). Key: category|brand|from, lower case. Anything not sure to
+ * be the same line is NOT here; it is listed in changes-review.csv as
+ * "not folded" (`MODEL_NOT_FOLDED`).
+ */
+const MODEL_ALIASES: { category: Category; brand: string; from: string; to: string; why: string }[] = [
+  // Same vendor SKU listed by two vendors under both spellings (47 pairs).
+  { category: "tires", brand: "Zmax", from: "Winternova I", to: "Winternova Stud I", why: "Stud I 32 products vs I 10; 10 pairs share a vendor SKU across two vendors" },
+  { category: "tires", brand: "Zmax", from: "Winternova II", to: "Winternova Stud II", why: "Stud II 84 vs II 23; 21 pairs share a vendor SKU" },
+  { category: "tires", brand: "Zmax", from: "Winternova III", to: "Winternova Stud III", why: "Stud III 64 vs III 18; 19 pairs share a vendor SKU" },
+  // Haida: retailers and the maker's dealers sell one tire under each pair.
+  { category: "tires", brand: "Haida", from: "HD 878", to: "HD878 R/T", why: "HD878 R/T 44 vs HD 878 4; the HD878 is the R/T (rugged terrain), e.g. simpletire.com/brands/haida-tires/hd878-r-t" },
+  { category: "tires", brand: "Haida", from: "HD878 Rugged Terrain", to: "HD878 R/T", why: "HD878 R/T 44 vs 1; R/T means rugged terrain" },
+  { category: "tires", brand: "Haida", from: "A/T HD828", to: "HD828", why: "HD828 4 vs A/T HD828 2; one all-terrain tire, retailers write it 'Haida A/T HD828' (e.g. tiremart.com haida-hd828)" },
+  { category: "tires", brand: "Haida", from: "HD828 A/T", to: "HD828", why: "HD828 4 vs 1; same tire, A/T is its type" },
+  { category: "tires", brand: "Haida", from: "HD828 All-Terrain", to: "HD828", why: "HD828 4 vs 1; same tire, All-Terrain is its type" },
+  { category: "tires", brand: "Haida", from: "A/T HD829", to: "HD829", why: "HD829 25 vs 1; A/T is the type prefix" },
+  { category: "tires", brand: "Haida", from: "HD869 M/T", to: "HD869", why: "HD869 86 vs 1; the HD869 is the M/T (D126 cites haidatires.ca/hd869-m/t)" },
+  { category: "tires", brand: "Haida", from: "HD837 A/S", to: "HD837", why: "HD837 6 vs 2; retailers list one tire 'Haida HD837 H/T AS' (all-season)" },
+  { category: "tires", brand: "Haida", from: "HD837 Highway", to: "HD837", why: "HD837 6 vs 4; Highway is H/T, the same HD837" },
+  // Habilead.
+  { category: "tires", brand: "Habilead", from: "RS26 Practical Max", to: "RS 26 Practical Max H/P", why: "RS 26 Practical Max H/P 7 vs 1; the RS26 is the PracticalMax H/P (tyreleader.co.uk practicalmax-h-p-rs26)" },
+  { category: "tires", brand: "Habilead", from: "HF330 Headking H/P", to: "HF330 Head King", why: "HF330 Head King 8 vs 2; both are the Headking HF330 (tiremart.com headking-hf330-tires)" },
+  { category: "tires", brand: "Habilead", from: "H202 Comfort Max", to: "H202", why: "H202 3 vs 1; the H202 Comfort Max A/S, one tire" },
+  { category: "tires", brand: "Habilead", from: "H202 Comfort Max A/S", to: "H202", why: "H202 3 vs 2; the H202 Comfort Max A/S, one tire" },
+  // Others.
+  { category: "tires", brand: "Michelin", from: "Cross Climate 2 A/W", to: "CrossClimate 2", why: "CrossClimate 2 30 vs 1; Michelin writes CrossClimate 2 (michelin.ca crossclimate-2)" },
+  { category: "tires", brand: "Falken", from: "WildPeak M/T 01", to: "Wildpeak M/T MT01", why: "Wildpeak M/T MT01 3 vs 2; Falken's M/T01, one tire" },
+  { category: "tires", brand: "Mileking", from: "MK878", to: "MK878 R/T", why: "MK878 R/T 14 vs 1; same tire" },
+  { category: "wheels", brand: "Fuel Off-Road", from: "D500 DUALIE INNER", to: "D500 DUALLY INNER", why: "D500 DUALLY INNER 16 vs 1; DUALIE is a typo for DUALLY" },
+  { category: "wheels", brand: "Spec-1 Racing", from: "STP-33", to: "SPT-33", why: "SPT-33 47 vs 1; the 47 are the real model, STP-33 a transposition" },
+];
+const MODEL_ALIAS_INDEX = new Map(
+  MODEL_ALIASES.map((alias) => [`${alias.category}|${alias.brand}|${alias.from}`.toLowerCase(), alias]),
+);
+/** Pairs that look alike but are NOT folded (unsure they are one line). */
+const MODEL_NOT_FOLDED: { category: Category; brand: string; models: string; why: string }[] = [
+  { category: "tires", brand: "Nitto", models: "NT420V | NT-420S", why: "NT420V and NT420S are different Nitto tires (CUV vs SUV)" },
+  { category: "tires", brand: "Toyo", models: "Observe G3-Ice | Observe G3-Ice Studded", why: "studded is a separate product" },
+  { category: "tires", brand: "Goodyear", models: "Wrangler Duratrac RT | Wrangler Duratrac", why: "different tires" },
+  { category: "tires", brand: "Goodyear", models: "EAGLE F1 SuperCar 3R | EAGLE F1 SuperCar 3", why: "3R is its own tire" },
+  { category: "tires", brand: "Firestone", models: "Winterforce 2 UV | Winterforce 2", why: "UV is a separate tire" },
+  { category: "tires", brand: "Haida", models: "HD317 | HD317 EV", why: "EV is a separate tire" },
+  { category: "tires", brand: "Haida", models: "HD927 | HD927 SP", why: "SP could be a separate variant; no maker page found" },
+  { category: "tires", brand: "Haida", models: "HD927SP UHP Performance | HD927 UHP Performance", why: "one product each; unsure" },
+  { category: "tires", brand: "Hankook", models: "Ion Evo AS SUV | Ion Evo AS SUV (EV)", why: "EV marking is a separate tire line" },
+  { category: "tires", brand: "Nexen", models: "CP671H | CP671", why: "unsure whether the H is a speed rating or part of the name" },
+  { category: "tires", brand: "Suretrac", models: "Comfortride GP | Comfortride", why: "unsure; no maker page" },
+  { category: "tires", brand: "Michelin", models: "CrossClimate 2 | CrossClimate 2 CUV", why: "CUV is a separate tire" },
+  { category: "tires", brand: "Mazzini", models: "ECO307 | ECO307+", why: "the plus is a different tire" },
+  { category: "wheels", brand: "Fast Wheels", models: "EV01 | EV01(+)", why: "unsure whether (+) is a different wheel" },
+  { category: "wheels", brand: "Fast Wheels", models: "FC04X | FC04V", why: "different wheels" },
+  { category: "wheels", brand: "XF Off-Road", models: "XF-239 | XF-239C", why: "unsure; C may be a finish code" },
+];
+
+/**
+ * M8 (a) (owner 2026-10-03, data QA): TIS dually wheels the vendor rounds to
+ * 8.2 / 8.3. The maker's width is 8.25 (tiswheels.com/544 and every
+ * retailer: bbwheelsonline.com/tis-544bm-dually-..., duallywheels.com 544BM
+ * and D20B/D22B sets). Direct Auto Import's own page says 20x8.2.
+ */
+const TIS_WIDTH_FIX = {
+  brand: "TIS Wheels",
+  from: ["8.2", "8.3"],
+  to: "8.25",
+  reason:
+    "vendor rounded 8.25 to 1 decimal; maker and retailers list this dually as 8.25 (tiswheels.com/544; bbwheelsonline.com tis-544bm-dually-wheel-20x8-25; duallywheels.com 20x8-25-tis-544bm / 22x8-25-tis-544b)",
+};
+
+/** M8 (b): Spec-1 SP-51 18x8 lists 5x114; the maker's table has 5x114.3 and no 5x114. */
+const BOLT_FIXES: { rowId: string; from: string; to: string; reason: string }[] = [
+  {
+    rowId: "AC-W-SP-5118801638GB-C",
+    from: "5x114",
+    to: "5x114.3",
+    reason: "spec1wheels.com/product/sp-51/ lists 5x114.3 as the single-drilling pattern for the 18x8 and no 5x114",
+  },
+];
+
+/** M8 (c): brand respelling. Suretrac and Sierra are one maker (Staridge); the tire is sold under both names. */
+const TIRE_BRAND_FIXES: Record<string, { to: string; reason: string }> = {
+  "Suretrac / Sierra": {
+    to: "Suretrac",
+    reason:
+      "one maker (Staridge) sells the Wide Climber / RT line as Suretrac/Sierra; simpletire.com/brands/suretrac-tires/wide-climber-m-t2 and Wheel Works list the same tires as Suretrac",
+  },
+};
+
+/** M8 (f): the one tire with no season. */
+const SEASON_FIXES: { rowId: string; season: string; reason: string }[] = [
+  {
+    rowId: "VX-T-47663201583293",
+    season: "all_season",
+    reason:
+      "Goodyear lists the Wrangler Workhorse AT 2 as all-season / all-terrain with the three-peak snowflake (goodyear.com/en-ca/tires/wrangler-workhorse-at-2_25329; retailers); D126 rule B reads an all-terrain tire with the snowflake as all-season",
+  },
+];
+
+/** M8 (g) and (h): wheel finish text, exact-meaning respellings only. */
+const FINISH_TEXT_FIXES: Record<string, { to: string; reason: string }> = {
+  "Nanoï Gold": { to: "Nano Gold", reason: "the only non-ASCII finish; Auto Country and the maker write Nano Gold (azarawheels.com AZA-525)" },
+};
+
+/** Backspacing check (M8 e): inches = width / 2 + offset / 25.4. */
+const BACKSPACING_CHECK_FROM = 0.75;
+const BACKSPACING_REPLACE_FROM = 1.5;
+
+const SPEED_SYMBOLS = new Set("JKLMNPQRSTUHVWYZ".split(""));
+
+/** M8 (d), (e), (i), (j) and the table fixes above, applied to one listing. */
+function applyDataFixes(listing: Listing): void {
   const f = listing.fields;
-  const c = listing.primary.cells;
-  const required: [string, string][] =
-    listing.category === "tires"
-      ? [
-          ["brand", f[F.brand] ?? ""],
-          ["model", f[F.model] ?? ""],
-          ["tire size", f[F.tireSize] ?? ""],
-          ["load_index", c.load_index ?? ""],
-          ["speed_rating", c.speed_rating ?? ""],
-        ]
-      : listing.category === "wheels"
-        ? [
-            ["brand", f[F.brand] ?? ""],
-            ["model", f[F.model] ?? ""],
-            ["diameter", c.diameter ?? ""],
-            ["width", c.width ?? ""],
-            ["bolt_pattern", f[F.boltPatterns] ?? ""],
-            ["offset_mm", c.offset_mm ?? ""],
-            ["finish", c.finish ?? ""],
-            ["center_bore_mm", c.center_bore_mm ?? ""],
-          ]
-        : [];
-  if (required.length === 0) return null;
-  const blank = required.filter(([, value]) => value === "").map(([name]) => name);
-  if (blank.length > 0) {
-    const label = `${listing.category}: ${blank.join(", ")}`;
-    heldApart.set(label, (heldApart.get(label) ?? 0) + 1);
-    return null;
-  }
+  const id = listing.primary.rowId;
+
   if (listing.category === "tires") {
-    return [...required.map(([, value]) => value), c.load_index_dual ?? ""]
-      .map(keyPart)
-      .join("\u0000");
+    // (c)
+    const brandFix = TIRE_BRAND_FIXES[f[F.brand] ?? ""];
+    if (brandFix) editField("M8c", listing, F.brand, brandFix.to, brandFix.reason);
+    // (f)
+    for (const fix of SEASON_FIXES) {
+      if (id === fix.rowId && (f[F.season] ?? "") === "") editField("M8f", listing, F.season, fix.season, fix.reason);
+    }
+    // (i) dual load index written low/high becomes high/low.
+    const load = f[F.loadIndex] ?? "";
+    const dual = /^(\d+)\/(\d+)$/.exec(load);
+    if (dual && Number(dual[1]) < Number(dual[2])) {
+      const swapped = `${dual[2]}/${dual[1]}`;
+      editField("M8i", listing, F.loadIndex, swapped, "dual load index is written higher/lower (single/dual) everywhere else; the vendor wrote it low/high");
+      const name = f[F.name] ?? "";
+      if (name.includes(load)) editField("M8i", listing, F.name, name.replace(load, swapped), "the name carries the same reversed pair");
+    }
+    // (j) load / speed missing from the columns but stated once in the name.
+    if ((f[F.loadIndex] ?? "") === "" && (f[F.speedRating] ?? "") === "") {
+      const name = (f[F.name] ?? "").replace(f[F.tireSize] ?? "\u0000", " ");
+      const loose = name.match(/(?<![\w/.])\d{2,3}(?:\/\d{2,3})?[A-Z]+(?![\w/.])/g) ?? [];
+      const token = loose.length === 1 ? /^(\d{2,3})(?:\/(\d{2,3}))?([A-Z])$/.exec(loose[0] ?? "") : null;
+      if (token && SPEED_SYMBOLS.has(token[3] ?? "")) {
+        const load2 = token[2] ? `${token[1]}/${token[2]}` : (token[1] ?? "");
+        editField("M8j", listing, F.loadIndex, load2, `the vendor's own name states ${loose[0]}: "${f[F.name]}"`);
+        editField("M8j", listing, F.speedRating, token[3] ?? "", `the vendor's own name states ${loose[0]}: "${f[F.name]}"`);
+      }
+    }
   }
+
+  if (listing.category === "wheels") {
+    // (a)
+    const width = f[F.wheelWidth] ?? "";
+    if (f[F.brand] === TIS_WIDTH_FIX.brand && TIS_WIDTH_FIX.from.includes(width)) {
+      editField("M8a", listing, F.wheelWidth, TIS_WIDTH_FIX.to, TIS_WIDTH_FIX.reason);
+      const name = f[F.name] ?? "";
+      const fixed = name.replace(new RegExp(`(?<=\\dx)${escapeRegExp(width)}(?![\\d.])`), TIS_WIDTH_FIX.to);
+      if (fixed !== name) editField("M8a", listing, F.name, fixed, "the name carries the same rounded width");
+    }
+    // (b)
+    for (const fix of BOLT_FIXES) {
+      if (id === fix.rowId && f[F.boltPatterns] === fix.from) {
+        editField("M8b", listing, F.boltPatterns, fix.to, fix.reason);
+        const name = f[F.name] ?? "";
+        const fixed = name.replace(new RegExp(`(?<![\\w.])${escapeRegExp(fix.from)}(?![\\w.])`), fix.to);
+        if (fixed !== name) editField("M8b", listing, F.name, fixed, "the name carries the same bolt pattern");
+      }
+    }
+    // (d) lug count follows the bolt pattern when they disagree.
+    const patterns = (f[F.boltPatterns] ?? "").split("/").filter((p) => /^\d+x/.test(p));
+    const lugs = new Set(patterns.map((p) => /^(\d+)x/.exec(p)?.[1]));
+    const lug = f[F.lugCount] ?? "";
+    if (lug !== "" && lugs.size === 1 && !lugs.has(lug)) {
+      editField("M8d", listing, F.lugCount, [...lugs][0] ?? lug, `bolt pattern ${f[F.boltPatterns]} has ${[...lugs][0]} lugs, the vendor's lug count says ${lug}`);
+    }
+    // (g) finish text.
+    for (const field of [F.wheelFinish, F.wheelColor, F.name]) {
+      const value = f[field] ?? "";
+      for (const [bad, fix] of Object.entries(FINISH_TEXT_FIXES)) {
+        if (value.includes(bad)) editField("M8g", listing, field, value.replace(bad, fix.to), fix.reason);
+      }
+    }
+    // (e) backspacing that does not fit width and offset.
+    const w = Number(f[F.wheelWidth]);
+    const o = Number(f[F.offsetMm]);
+    const b = Number(f[F.backspacing]);
+    if (f[F.wheelWidth] && f[F.offsetMm] !== undefined && f[F.backspacing]) {
+      const expected = w / 2 + o / 25.4;
+      const delta = b - expected;
+      if (Math.abs(delta) >= BACKSPACING_CHECK_FROM) {
+        const signFlip = Math.abs(b - (w / 2 - o / 25.4)) <= 0.1;
+        const clear = Math.abs(delta) >= BACKSPACING_REPLACE_FROM && !signFlip;
+        const detail = `recorded ${b} in; width ${w} / 2 + offset ${o} mm / 25.4 = ${expected.toFixed(2)} (difference ${delta.toFixed(2)})`;
+        if (clear) {
+          editField("M8e", listing, F.backspacing, String(Math.round(expected * 100) / 100), `${detail}; too far off to be rounding, so recomputed`);
+        } else {
+          logChange(
+            "M8e (not changed)",
+            idsOf(listing),
+            F.backspacing,
+            String(b),
+            String(b),
+            `${detail}; ${signFlip ? "matches the sign-flipped offset, so the vendor's offset or backspacing is wrong and we cannot tell which" : "difference under 1.5 in, not clearly a vendor error"}`,
+          );
+        }
+      }
+    }
+  }
+}
+
+/** M8 (h): finish spellings within one brand that mean the same thing. */
+function finishKey(finish: string): string {
+  // Case is left alone (owner: mixed letter case stays, the site uppercases
+  // headings): only "Gun Metal"/"Gunmetal" and the typo "Sliver" are folded.
+  return finish.replace(/Gun Metal/g, "Gunmetal").replace(/\bSliver\b/g, "Silver");
+}
+function foldFinishSpellings(listings: Listing[]): void {
+  const counts = new Map<string, Map<string, number>>(); // brand|key → spelling → n
+  for (const l of listings) {
+    const finish = l.fields[F.wheelFinish];
+    if (!finish) continue;
+    const group = `${l.fields[F.brand]}|${finishKey(finish)}`;
+    const spellings = counts.get(group) ?? new Map<string, number>();
+    spellings.set(finish, (spellings.get(finish) ?? 0) + 1);
+    counts.set(group, spellings);
+  }
+  const winner = new Map<string, string>();
+  for (const [group, spellings] of counts) {
+    if (spellings.size < 2) {
+      // A lone typo spelling ("Sliver") is corrected even with no other spelling.
+      const only = [...spellings.keys()][0] ?? "";
+      if (/\bSliver\b/.test(only)) winner.set(group, only.replace(/\bSliver\b/g, "Silver"));
+      continue;
+    }
+    const best = [...spellings].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0];
+    if (best) winner.set(group, best[0].replace(/\bSliver\b/g, "Silver"));
+  }
+  for (const l of listings) {
+    const finish = l.fields[F.wheelFinish];
+    if (!finish) continue;
+    const to = winner.get(`${l.fields[F.brand]}|${finishKey(finish)}`);
+    if (to && to !== finish) {
+      const spellings = counts.get(`${l.fields[F.brand]}|${finishKey(finish)}`);
+      const detail = [...(spellings ?? [])].map(([s, n]) => `${s} (${n})`).join(" vs ");
+      editField("M8h", l, F.wheelFinish, to, `same meaning, more common spelling within ${l.fields[F.brand]}: ${detail}`);
+      const color = l.fields[F.wheelColor];
+      if (color === finish) editField("M8h", l, F.wheelColor, to, "the colour column repeats the finish text");
+    }
+  }
+}
+
+/* --- M1 SKU borrow (wheels with no model) and M6 --------------------------- */
+
+/**
+ * M1 (owner 2026-10-03, data QA): a wheel with NO model that shares a vendor
+ * SKU (case, spaces and dashes ignored) with another vendor's listing of the
+ * same brand, diameter and width takes that listing's model, so the two can
+ * merge. Only when every candidate agrees on the model.
+ */
+function borrowModels(wheels: Listing[]): number {
+  const bySku = new Map<string, Listing[]>();
+  for (const l of wheels) {
+    const key = skuKey(l.primary.sku);
+    const group = bySku.get(key) ?? [];
+    group.push(l);
+    bySku.set(key, group);
+  }
+  let borrowed = 0;
+  for (const l of wheels) {
+    if ((l.fields[F.model] ?? "") !== "" || (l.fields[F.brand] ?? "") === "") continue;
+    const candidates = (bySku.get(skuKey(l.primary.sku)) ?? []).filter(
+      (other) =>
+        other.primary.source !== l.primary.source &&
+        (other.fields[F.model] ?? "") !== "" &&
+        keyPart(other.fields[F.brand] ?? "") === keyPart(l.fields[F.brand] ?? "") &&
+        (other.fields[F.wheelDiameter] ?? "") === (l.fields[F.wheelDiameter] ?? "") &&
+        (other.fields[F.wheelWidth] ?? "") === (l.fields[F.wheelWidth] ?? ""),
+    );
+    const models = new Set(candidates.map((other) => keyPart(other.fields[F.model] ?? "")));
+    if (candidates.length === 0 || models.size !== 1) continue;
+    candidates.sort((a, b) => rank(a.primary.source) - rank(b.primary.source));
+    const from = candidates[0]!;
+    editField(
+      "M1 model from SKU",
+      l,
+      F.model,
+      from.fields[F.model] ?? "",
+      `blank model; ${from.primary.source} lists the same SKU ${from.primary.sku} as "${from.fields[F.model]}"`,
+    );
+    borrowed += 1;
+  }
+  return borrowed;
+}
+
+const toTitleCase = (text: string) =>
+  text === text.toUpperCase() ? text.toLowerCase().replace(/(^|[\s/-])([a-z])/g, (_m, a: string, b: string) => `${a}${b.toUpperCase()}`) : text;
+
+/**
+ * M6 (owner 2026-10-03, data QA): a product with a blank model gets the
+ * design or line name left in the vendor's name once the brand, size, load,
+ * speed, bolt pattern, offset, finish words and the word "blank" are taken
+ * out. When nothing is left the model stays blank and the product is listed.
+ * Accessories keep a blank model.
+ */
+const blankModelLeft: { rowIds: string[]; category: Category; name: string }[] = [];
+function modelFromName(listing: Listing): void {
+  const f = listing.fields;
+  if ((f[F.model] ?? "") !== "" || listing.category === "accessories") return;
+  let text = ` ${f[F.name] ?? ""} `;
+  const strip = (pattern: RegExp) => {
+    text = text.replace(pattern, " ");
+  };
+  const brands = [f[F.brand], listing.rawBrand, listing.primary.cells.brand_clean].filter((b): b is string => !!b);
+  for (const brand of new Set(brands)) strip(new RegExp(`(?<![\\w])${escapeRegExp(brand)}(?![\\w])`, "gi"));
+  if (listing.category === "tires") {
+    if (f[F.tireSize]) strip(new RegExp(escapeRegExp(f[F.tireSize]), "gi"));
+    strip(/(?<![\w/.])\d{2,3}(?:\/\d{2,3})?[A-Z]{1,2}(?![\w/.])/g);
+    strip(/(?<![\w])XL(?![\w])/gi);
+    strip(/(?<![\w])\d+\s?(?:PR|PLY)(?![\w])/gi);
+  } else {
+    strip(/(?<![\w.])\d+(?:\.\d+)?x\d+(?:\.\d+)?(?![\w.])/gi);
+    strip(/(?<![\w.])(?:ET|\+)?-?\d+(?:\.\d+)?\s?mm(?![\w])/gi);
+    const offset = f[F.offsetMm];
+    if (offset !== undefined) strip(new RegExp(`(?<![\\w.])(?:ET)?[+-]?${escapeRegExp(offset)}(?![\\w.])`, "gi"));
+    strip(/(?<![\w])blank(?![\w])/gi);
+    for (const word of (f[F.wheelFinish] ?? "").split(/[^A-Za-z0-9]+/).filter((w) => w.length > 0)) {
+      strip(new RegExp(`(?<![\\w])${escapeRegExp(word)}(?![\\w])`, "gi"));
+    }
+    for (const word of (f[F.wheelColor] ?? "").split(/[^A-Za-z0-9]+/).filter((w) => w.length > 0)) {
+      strip(new RegExp(`(?<![\\w])${escapeRegExp(word)}(?![\\w])`, "gi"));
+    }
+  }
+  const left = text.replace(/[-/&,()]+/g, " ").replace(/\s+/g, " ").trim();
+  if (left === "" || !/[A-Za-z0-9]/.test(left)) {
+    blankModelLeft.push({ rowIds: idsOf(listing), category: listing.category, name: f[F.name] ?? "" });
+    return;
+  }
+  editField("M6", listing, F.model, toTitleCase(left), `model was blank; left after removing brand, size, load/speed, bolt pattern, offset and finish words from the vendor name "${f[F.name]}"`);
+}
+
+/* --- M4 -------------------------------------------------------------------- */
+
+function foldModel(listing: Listing): void {
+  const model = listing.fields[F.model] ?? "";
+  if (model === "") return;
+  const alias = MODEL_ALIAS_INDEX.get(`${listing.category}|${listing.fields[F.brand]}|${model}`.toLowerCase());
+  if (alias) editField("M4", listing, F.model, alias.to, `model spellings folded to the one carried by more products: ${alias.why}`);
+}
+
+/* --- M5, M7 (accessories) ---------------------------------------------------- */
+
+/** Prefixes dropped from accessory names (M5), with the number of names each hit. */
+const strippedPrefixes = new Map<string, number>();
+
+function cleanAccessoryName(listing: Listing): void {
+  const f = listing.fields;
+  const sku = listing.primary.sku;
+  const before = f[F.name] ?? "";
+  let name = before;
+  // Vendor shorthand for the maker, when the brand already says it.
+  if ((f[F.brand] ?? "") === "DAI Wheels") {
+    for (const shorthand of ["DAI ACC", "DAI/ZETA"]) {
+      const pattern = new RegExp(`(^|\\s)${escapeRegExp(shorthand)}(?=\\s|$)`, "i");
+      if (pattern.test(name)) {
+        name = name.replace(pattern, " ").replace(/\s+/g, " ").trim();
+        strippedPrefixes.set(shorthand, (strippedPrefixes.get(shorthand) ?? 0) + 1);
+      }
+    }
+  }
+  // The vendor SKU at the end of the name moves to a Part number spec.
+  const tail = new RegExp(`(?:^|\\s)${escapeRegExp(sku)}$`, "i");
+  let stripped = false;
+  if (tail.test(name)) {
+    name = name.replace(tail, "").trim();
+    stripped = true;
+  } else {
+    const last = name.split(/\s+/).pop() ?? "";
+    if (last !== "" && skuKey(last) === skuKey(sku)) {
+      name = name.slice(0, name.length - last.length).trim();
+      stripped = true;
+    }
+  }
+  if (name === "") {
+    logChange("M5", idsOf(listing), F.name, before, before, "name would be empty after removing the SKU and shorthand; left as the vendor wrote it");
+    return;
+  }
+  if (name !== before) {
+    editField("M5", listing, F.name, name, `${stripped ? `vendor SKU ${sku} moved out of the name into a Part number spec` : "vendor shorthand removed"}${before !== name && !stripped ? "" : ""}`);
+  }
+  if (stripped && !listing.extra.some(([label]) => label.toLowerCase() === "part number")) {
+    listing.extra.unshift(["Part number", sku]);
+    listing.edits.push({ rule: "M5", field: "extra_specs: Part number", before: "", after: sku });
+    logChange("M5", idsOf(listing), "extra_specs: Part number", "", sku, "added from the SKU removed from the name");
+  }
+}
+
+/** M7: validated on the vendor's own rows, 40 of 40: an Auto Country SKU ending CH/BK + 20, 24 or 32 sells that many pieces. */
+const PACK_SUFFIX = /(?:CH|BK)(20|24|32)$/;
+
+function fixPackSizes(listing: Listing): void {
+  const f = listing.fields;
+  const pack = f[F.packQuantity] ?? "";
+  const labels = ["Quantity per box", "Pieces per pack"];
+  const get = (label: string) => listing.extra.find(([l]) => l === label)?.[1];
+  // A missing pack the vendor's own data settles.
+  if (pack === "") {
+    const qpb = get("Quantity per box");
+    const pieces = get("Pieces per pack");
+    const suffix = PACK_SUFFIX.exec(listing.primary.sku)?.[1];
+    if (pieces && /^\d+$/.test(pieces) && pieces !== "1") {
+      editField("M7", listing, F.packQuantity, pieces, `no pack count; the vendor's own "Pieces per pack: ${pieces}"`);
+    } else if (qpb && /^\d+$/.test(qpb) && qpb !== "1" && (suffix === undefined || suffix === qpb)) {
+      editField("M7", listing, F.packQuantity, qpb, `no pack count; the vendor's own "Quantity per box: ${qpb}"${suffix ? ` and SKU ending ${suffix}` : ""}`);
+    } else if (suffix && listing.primary.cells.quantity?.toLowerCase() === "1 kit") {
+      editField("M7", listing, F.packQuantity, suffix, `vendor quantity is "1 kit" with no piece count; SKU ${listing.primary.sku} ends ${suffix}, and 40 of 40 Auto Country SKUs ending CH/BK 20, 24 or 32 sell exactly that many pieces`);
+    }
+  }
+  const packNow = f[F.packQuantity] ?? "";
+  if (packNow === "") return;
+  for (const label of labels) {
+    const value = get(label);
+    if (value === undefined) continue;
+    const at = listing.extra.findIndex(([l]) => l === label);
+    if (value === packNow) {
+      listing.extra.splice(at, 1);
+      listing.edits.push({ rule: "M7", field: `extra_specs: ${label}`, before: value, after: "" });
+      logChange("M7", idsOf(listing), `extra_specs: ${label}`, value, "", `duplicates pack_quantity ${packNow}`);
+    } else if (/^\d+$/.test(value)) {
+      const quantity = listing.primary.cells.quantity ?? "";
+      listing.extra.splice(at, 1);
+      listing.edits.push({ rule: "M7", field: `extra_specs: ${label}`, before: value, after: "" });
+      logChange(
+        "M7",
+        idsOf(listing),
+        `extra_specs: ${label}`,
+        value,
+        "",
+        `contradicts pack_quantity ${packNow}; the vendor's own quantity column says "${quantity}"${label === "Quantity per box" ? `, so "${value}" counts boxes or kits, not pieces` : ""}${PACK_SUFFIX.exec(listing.primary.sku)?.[1] === packNow ? `; the SKU ends ${packNow}` : ""}. Auto Country's site is login-only and was not opened`,
+      );
+    }
+  }
+}
+
+/* --- M9 ----------------------------------------------------------------------- */
+
+/**
+ * M9 (coordinator, from the owner's "show descriptions if available"): a
+ * description is for shoppers. Sentences that name a vendor or talk about
+ * wholesale, dealers or pricing are removed; a trailing "at ... pricing"
+ * clause that is the sentence's only problem is trimmed and the sentence
+ * keeps its full stop. Words are only ever removed.
+ */
+const VENDOR_NAMES = /(?<![\w])(?:vertex(?: tires)?|auto country|direct auto import|wheel works|pro ?wheels|dealer ?wheels)(?![\w])/i;
+// "affordable", "cost-effective", "economical", "budget-conscious" and "retail"
+// are price or trade talk too (the coordinator's count of about 41 descriptions
+// needs them); "operating costs" (fuel) and "fleet" alone are left.
+const COMMERCIAL =
+  /(?<![\w])(?:wholesale|dealers?|dealerships?|distribut\w+|pricing|prices?|price point|afford\w*|cost[- ]effective\w*|economical|budget[\w-]*|retail\w*)(?![\w])/i;
+const PRICE_CLAUSE = /,?\s+(?:at|without)\s+[^,.]*?(?<![\w])(?:pricing|price(?: point)?)(?![\w])[^,.]*$/i;
+const problem = (text: string) => VENDOR_NAMES.test(text) || COMMERCIAL.test(text);
+let descriptionsEdited = 0;
+function cleanDescription(listing: Listing): void {
+  const before = listing.fields[F.description] ?? "";
+  if (before === "" || !problem(before)) return;
+  const sentences = before.split(/(?<=[.!?])\s+/);
+  const kept: string[] = [];
+  for (const sentence of sentences) {
+    if (!problem(sentence)) {
+      kept.push(sentence);
+      continue;
+    }
+    const end = /[.!?]$/.test(sentence) ? sentence.slice(-1) : "";
+    const body = end ? sentence.slice(0, -1) : sentence;
+    const trimmed = body.replace(PRICE_CLAUSE, "");
+    if (trimmed !== body && !problem(trimmed) && trimmed.trim() !== "") kept.push(`${trimmed.trimEnd()}${end}`);
+  }
+  const after = kept.join(" ").trim();
+  descriptionsEdited += 1;
+  if (after === "") editField("M9", listing, F.description, "", "description names a vendor or talks about wholesale, dealers or pricing and nothing meaningful is left");
+  else editField("M9", listing, F.description, after, "sentences naming a vendor or talking about wholesale, dealers or pricing removed; trailing pricing clauses trimmed");
+}
+
+/* --- Matching: M1, M2, M3 ------------------------------------------------------- */
+
+/**
+ * A listing's identity for M3: every field the shopper can see. Only the SKU,
+ * URL, vendor price, images and row id may differ. A Part number or
+ * Manufacturer code spec (the vendor's, or the SKU moved there by M5) is
+ * visible to the shopper, so two listings that differ in it are different
+ * parts and are NOT identical (coordinator correction, owner 2026-10-03, data
+ * QA). Run after M5. M2 (one SKU across vendors) is the same part and is
+ * unaffected.
+ */
+function identity(listing: Listing): string {
+  const fields = Object.entries(listing.fields).sort(([a], [b]) => (a < b ? -1 : 1));
+  const extra = listing.extra.map(([label, value]) => `${label}\u0001${value}`).sort();
+  return JSON.stringify([listing.primary.source, fields, extra]);
+}
+
+/** Identical same-vendor listings, merged into one unit with several sources. */
+interface Unit {
+  listings: Listing[];
+  vendor: string;
+}
+
+function makeUnits(listings: Listing[]): Unit[] {
+  const bySig = new Map<string, Unit>();
+  const units: Unit[] = [];
+  for (const listing of listings) {
+    const sig = identity(listing);
+    const unit = bySig.get(sig);
+    if (unit) unit.listings.push(listing);
+    else {
+      const fresh: Unit = { listings: [listing], vendor: listing.primary.source };
+      bySig.set(sig, fresh);
+      units.push(fresh);
+    }
+  }
+  return units;
+}
+
+/** Key of a unit for M1: a required bucket, and optional fields where null is "blank". */
+interface UnitKey {
+  bucket: string | null;
+  opt: (string | null)[];
+}
+const norm = (value: string | undefined) => (value === undefined || value === "" ? null : keyPart(value));
+const normLoad = (value: string | undefined) => (value === undefined || value === "" ? null : value.toLowerCase().replace(/\s+/g, ""));
+
+function unitKey(unit: Unit): UnitKey {
+  const listing = unit.listings[0]!;
+  const f = listing.fields;
+  if (listing.category === "tires") {
+    const required = [f[F.brand], f[F.model], f[F.tireSize]];
+    return {
+      bucket: required.some((v) => !v) ? null : required.map((v) => keyPart(v ?? "")).join("\u0000"),
+      opt: [normLoad(f[F.loadIndex]), norm(f[F.speedRating])],
+    };
+  }
+  const required = [f[F.brand], f[F.model], f[F.wheelDiameter], f[F.wheelWidth]];
   const patterns = (f[F.boltPatterns] ?? "")
     .split("/")
     .filter((p) => p !== "")
     .map(keyPart)
     .sort()
     .join(",");
-  return [
-    keyPart(f[F.brand] ?? ""),
-    keyPart(f[F.model] ?? ""),
-    keyPart(c.diameter ?? ""),
-    keyPart(c.width ?? ""),
-    patterns,
-    keyPart(c.offset_mm ?? ""),
-    keyPart(c.finish ?? ""),
-    keyPart(c.center_bore_mm ?? ""),
-    keyPart(c.side ?? ""),
-  ].join("\u0000");
+  return {
+    // `side` blank is a statement ("not handed"), so it is part of the bucket.
+    bucket: required.some((v) => !v)
+      ? null
+      : [...required.map((v) => keyPart(v ?? "")), keyPart(listing.primary.cells.side ?? "")].join("\u0000"),
+    opt: [patterns === "" ? null : patterns, norm(f[F.offsetMm]), norm(f[F.wheelFinish]), norm(f[F.centerBoreMm])],
+  };
 }
-/** Listings kept out of merging by a blank key field, by category and field. */
-const heldApart = new Map<string, number>();
+
+const compatible = (a: (string | null)[], b: (string | null)[]) =>
+  a.every((value, i) => value === null || b[i] === null || value === b[i]);
+
+class UnionFind {
+  private parent: number[];
+  constructor(size: number) {
+    this.parent = Array.from({ length: size }, (_, i) => i);
+  }
+  find(i: number): number {
+    let root = i;
+    while (this.parent[root] !== root) root = this.parent[root]!;
+    let node = i;
+    while (this.parent[node] !== root) {
+      const next = this.parent[node]!;
+      this.parent[node] = root;
+      node = next;
+    }
+    return root;
+  }
+  union(a: number, b: number): void {
+    this.parent[this.find(a)] = this.find(b);
+  }
+}
+
+/** What the matching could not do, for the summary and merge-report. */
+const matchNotes = {
+  blankAmbiguous: [] as { rowIds: string[]; candidates: string[] }[],
+  inconsistent: 0,
+  /** Components where one vendor has two different listings. */
+  vendorConflicts: [] as Listing[][],
+  /** Leftover units paired by a shared vendor SKU. */
+  skuPaired: 0,
+  brandConflict: [] as { skus: string; brands: string }[],
+  sameVendorDifferent: 0,
+};
+
+/** A cluster of listings meant to become one product. */
+interface Cluster {
+  listings: Listing[];
+  /** Merged over a blank key field (M1). */
+  viaBlank: boolean;
+}
 
 /**
- * Owner, 2026-10-03: in a cross-vendor merge every field except the name,
- * the photos and the sources takes the winner's value when it has one, and
- * otherwise the first non-blank value of the other vendors in priority
- * order. An extra spec the winner does not list is added the same way.
- * Every fill is logged; a real disagreement still follows the winner.
+ * M3 over clusters: clusters whose listings are identical vendor by vendor
+ * merge (identical same-vendor listings become sources of one product), and a
+ * cluster made only of one vendor's identical listings joins the one other
+ * cluster that already holds an identical listing from that vendor. When two
+ * such clusters could take it, it stays apart.
+ */
+function regroupIdentical(clusters: Cluster[]): Cluster[] {
+  const sigOf = (c: Cluster) =>
+    c.listings.map((l) => `${l.primary.source}\u0002${identity(l)}`).sort().join("\u0003");
+  const bySig = new Map<string, Cluster>();
+  const merged: Cluster[] = [];
+  for (const cluster of clusters) {
+    const sig = sigOf(cluster);
+    const into = bySig.get(sig);
+    if (into) {
+      into.listings.push(...cluster.listings);
+      into.viaBlank = into.viaBlank || cluster.viaBlank;
+    } else {
+      const fresh: Cluster = { listings: [...cluster.listings], viaBlank: cluster.viaBlank };
+      bySig.set(sig, fresh);
+      merged.push(fresh);
+    }
+  }
+  const vendorsOf = (c: Cluster) => new Set(c.listings.map((l) => l.primary.source));
+  const multi = merged.filter((c) => vendorsOf(c).size > 1);
+  const out: Cluster[] = [];
+  for (const cluster of merged) {
+    if (vendorsOf(cluster).size > 1) {
+      out.push(cluster);
+      continue;
+    }
+    const vendor = cluster.listings[0]!.primary.source;
+    const sig = identity(cluster.listings[0]!);
+    const homes = multi.filter((m) => m.listings.some((l) => l.primary.source === vendor && identity(l) === sig));
+    if (homes.length === 1) homes[0]!.listings.push(...cluster.listings);
+    else out.push(cluster);
+  }
+  return out;
+}
+
+/**
+ * M1/M2: groups the listings of one category into clusters. Tires and wheels
+ * share a bucket on the fields that must match (brand, model, size or
+ * diameter and width) and merge when every optional field BOTH sides filled
+ * agrees. A blank-key unit that fits two or more candidates that disagree with
+ * each other merges with none of them (counted). Where a vendor has two
+ * different listings in a group, only a shared vendor SKU can pair listings
+ * across vendors. Accessories (M2) pair on the same normalised SKU across
+ * vendors, brands agreeing or one blank. Identical same-vendor listings (M3)
+ * are then merged with `regroupIdentical`.
+ */
+function components(units: Unit[]): Cluster[] {
+  const out: Cluster[] = [];
+  const category = units[0]?.listings[0]?.category;
+  if (category === "accessories") {
+    const listings = units.flatMap((u) => u.listings);
+    const uf = new UnionFind(listings.length);
+    const bySku = new Map<string, number[]>();
+    listings.forEach((listing, index) => {
+      const key = skuKey(listing.primary.sku);
+      const group = bySku.get(key) ?? [];
+      group.push(index);
+      bySku.set(key, group);
+    });
+    for (const [sku, group] of bySku) {
+      if (group.length < 2) continue;
+      const vendors = new Set(group.map((i) => listings[i]!.primary.source));
+      const brands = new Set(group.map((i) => keyPart(listings[i]!.fields[F.brand] ?? "")).filter((b) => b !== ""));
+      if (brands.size > 1) {
+        matchNotes.brandConflict.push({ skus: sku, brands: [...brands].join(" / ") });
+        continue;
+      }
+      if (vendors.size < group.length) {
+        // One vendor lists the same normalised SKU twice: which one the other
+        // vendor means is unknown.
+        continue;
+      }
+      for (const i of group.slice(1)) uf.union(group[0]!, i);
+    }
+    const byRoot = new Map<number, Listing[]>();
+    listings.forEach((listing, index) => {
+      const root = uf.find(index);
+      const group = byRoot.get(root) ?? [];
+      group.push(listing);
+      byRoot.set(root, group);
+    });
+    return regroupIdentical([...byRoot.values()].map((group) => ({ listings: group, viaBlank: false })));
+  }
+
+  const keys = units.map(unitKey);
+  const unitIndex = new Map<Unit, number>(units.map((unit, index) => [unit, index]));
+  const buckets = new Map<string, number[]>();
+  keys.forEach((key, index) => {
+    if (key.bucket === null) {
+      out.push({ listings: units[index]!.listings, viaBlank: false });
+      return;
+    }
+    const group = buckets.get(key.bucket) ?? [];
+    group.push(index);
+    buckets.set(key.bucket, group);
+  });
+  const vendorsUnique = (group: Unit[]) => new Set(group.map((u) => u.vendor)).size === group.length;
+  for (const members of buckets.values()) {
+    // Nodes: distinct optional vectors.
+    const nodes = new Map<string, { opt: (string | null)[]; indexes: number[] }>();
+    for (const index of members) {
+      const opt = keys[index]!.opt;
+      const id = JSON.stringify(opt);
+      const node = nodes.get(id) ?? { opt, indexes: [] };
+      node.indexes.push(index);
+      nodes.set(id, node);
+    }
+    const list = [...nodes.values()];
+    const ambiguous = new Set<number>();
+    const ambiguousNotes: { rowIds: string[]; candidates: string[]; indexes: number[] }[] = [];
+    list.forEach((node, n) => {
+      if (!node.opt.some((v) => v === null)) return;
+      const fits = list.map((_o, m) => m).filter((m) => m !== n && compatible(node.opt, list[m]!.opt));
+      for (let x = 0; x < fits.length && !ambiguous.has(n); x += 1) {
+        for (let y = x + 1; y < fits.length; y += 1) {
+          if (!compatible(list[fits[x]!]!.opt, list[fits[y]!]!.opt)) {
+            ambiguous.add(n);
+            ambiguousNotes.push({
+              rowIds: node.indexes.flatMap((i) => units[i]!.listings.flatMap(idsOf)),
+              candidates: fits.map((m) => list[m]!.indexes.flatMap((i) => units[i]!.listings.flatMap(idsOf)).join("+")),
+              indexes: node.indexes,
+            });
+            break;
+          }
+        }
+      }
+    });
+    const uf = new UnionFind(list.length);
+    for (let n = 0; n < list.length; n += 1) {
+      if (ambiguous.has(n)) continue;
+      for (let m = n + 1; m < list.length; m += 1) {
+        if (ambiguous.has(m)) continue;
+        if (compatible(list[n]!.opt, list[m]!.opt)) uf.union(n, m);
+      }
+    }
+    const byRoot = new Map<number, number[]>();
+    list.forEach((_node, n) => {
+      if (ambiguous.has(n)) return;
+      const root = uf.find(n);
+      const group = byRoot.get(root) ?? [];
+      group.push(n);
+      byRoot.set(root, group);
+    });
+    // Units left over: those of an ambiguous node and those of a component
+    // where one vendor has two different listings. Only a shared vendor SKU
+    // can still pair them.
+    const leftoverUnits: Unit[] = [...ambiguous].flatMap((n) => list[n]!.indexes.map((i) => units[i]!));
+    const bucketOut: Cluster[] = [];
+    for (const group of byRoot.values()) {
+      const width = list[0]!.opt.length;
+      let consistent = true;
+      for (let i = 0; i < width && consistent; i += 1) {
+        const values = new Set(group.map((n) => list[n]!.opt[i]).filter((v) => v !== null));
+        if (values.size > 1) consistent = false;
+      }
+      const groupUnits = group.flatMap((n) => list[n]!.indexes.map((index) => units[index]!));
+      if (!consistent) {
+        matchNotes.inconsistent += 1;
+        for (const unit of groupUnits) bucketOut.push({ listings: unit.listings, viaBlank: false });
+        continue;
+      }
+      if (!vendorsUnique(groupUnits)) {
+        matchNotes.vendorConflicts.push(groupUnits.flatMap((u) => u.listings));
+        leftoverUnits.push(...groupUnits);
+        continue;
+      }
+      bucketOut.push({ listings: groupUnits.flatMap((u) => u.listings), viaBlank: group.length > 1 });
+    }
+
+    // The SKU pass. Items: every cluster formed so far, and every leftover
+    // listing on its own. Two items pair when they hold listings of different
+    // vendors with the same vendor SKU and their optional fields are
+    // consistent. A group is kept only when each vendor has ONE kind of
+    // listing in it (identical ones are fine) and the fields stay consistent.
+    if (leftoverUnits.length > 0) {
+      const optOf = new Map<Listing, (string | null)[]>();
+      for (const unit of units) for (const listing of unit.listings) optOf.set(listing, keys[unitIndex.get(unit)!]!.opt);
+      const items: Cluster[] = [
+        ...bucketOut,
+        ...leftoverUnits.flatMap((unit) => unit.listings.map((listing) => ({ listings: [listing], viaBlank: false }))),
+      ];
+      const pooledFrom = bucketOut.length;
+      const optsOf = (item: Cluster) => item.listings.map((l) => optOf.get(l)!);
+      const consistentOpts = (opts: (string | null)[][]) => {
+        const width = opts[0]?.length ?? 0;
+        for (let i = 0; i < width; i += 1) {
+          if (new Set(opts.map((o) => o[i]).filter((v) => v !== null)).size > 1) return false;
+        }
+        return true;
+      };
+      const sku = new UnionFind(items.length);
+      const bySku = new Map<string, { item: number; listing: Listing }[]>();
+      items.forEach((item, i) => {
+        for (const listing of item.listings) {
+          const key = skuKey(listing.primary.sku);
+          const group = bySku.get(key) ?? [];
+          group.push({ item: i, listing });
+          bySku.set(key, group);
+        }
+      });
+      for (const group of bySku.values()) {
+        for (let x = 0; x < group.length; x += 1) {
+          for (let y = x + 1; y < group.length; y += 1) {
+            const u = group[x]!;
+            const v = group[y]!;
+            if (u.item === v.item || u.listing.primary.source === v.listing.primary.source) continue;
+            // At least one side must be a leftover listing: formed clusters
+            // were already compared by M1 and are not re-joined here.
+            if (u.item < pooledFrom && v.item < pooledFrom) continue;
+            if (consistentOpts([...optsOf(items[u.item]!), ...optsOf(items[v.item]!)])) sku.union(u.item, v.item);
+          }
+        }
+      }
+      const skuGroups = new Map<number, number[]>();
+      items.forEach((_item, i) => {
+        const root = sku.find(i);
+        const group = skuGroups.get(root) ?? [];
+        group.push(i);
+        skuGroups.set(root, group);
+      });
+      const finalClusters: Cluster[] = [];
+      for (const members of skuGroups.values()) {
+        const groupItems = members.map((i) => items[i]!);
+        const listings = groupItems.flatMap((item) => item.listings);
+        const oneKindPerVendor = [...new Set(listings.map((l) => l.primary.source))].every(
+          (vendor) => new Set(listings.filter((l) => l.primary.source === vendor).map(identity)).size === 1,
+        );
+        if (members.length > 1 && oneKindPerVendor && consistentOpts(listings.map((l) => optOf.get(l)!))) {
+          if (members.some((i) => i >= pooledFrom)) matchNotes.skuPaired += 1;
+          finalClusters.push({
+            listings,
+            viaBlank: groupItems.some((item) => item.viaBlank) || new Set(listings.map((l) => JSON.stringify(optOf.get(l)))).size > 1,
+          });
+        } else {
+          finalClusters.push(...groupItems);
+        }
+      }
+      bucketOut.length = 0;
+      bucketOut.push(...regroupIdentical(finalClusters));
+      const merged = new Set(bucketOut.filter((c) => new Set(c.listings.map((l) => l.primary.source)).size > 1).flatMap((c) => c.listings));
+      for (const note of ambiguousNotes) {
+        const listingsOfNote = note.indexes.flatMap((i) => units[i]!.listings);
+        if (!listingsOfNote.every((l) => merged.has(l))) {
+          matchNotes.blankAmbiguous.push({ rowIds: note.rowIds, candidates: note.candidates });
+        }
+      }
+    }
+    out.push(...bucketOut);
+  }
+  return out;
+}
+
+/* --- Merging --------------------------------------------------------------------- */
+
+/**
+ * Owner, 2026-10-03: in a merge every field except the name, the photos and
+ * the sources takes the winner's value when it has one, and otherwise the
+ * first non-blank value of the other listings in priority order. An extra
+ * spec the winner does not list is added the same way. Every fill is logged;
+ * a real disagreement still follows the winner.
  */
 function resolveMerge(sorted: Listing[]): {
   fields: Record<string, string>;
@@ -1016,6 +1857,7 @@ interface ReportLine {
   values: string;
   filled: string[];
   notFilled?: string[];
+  edits?: string[];
 }
 const mergeReport: ReportLine[] = [];
 
@@ -1040,7 +1882,7 @@ function disagreements(listings: Listing[]): { fields: string[]; values: string 
     if (new Set(each.filter((value) => value !== "")).size < 2) continue;
     fields.push(name);
     parts.push(
-      `${name}: ${listings.map((l, i) => `${l.primary.source}=${each[i] === "" ? "(blank)" : each[i]}`).join("; ")}`,
+      `${name}: ${listings.map((l, i) => `${l.primary.source} ${l.primary.sku}=${each[i] === "" ? "(blank)" : each[i]}`).join("; ")}`,
     );
   }
   return { fields, values: parts.join(" || ") };
@@ -1048,66 +1890,97 @@ function disagreements(listings: Listing[]): { fields: string[]; values: string 
 
 const rowIds = (listings: Listing[]) => listings.flatMap((l) => l.rows.map((r) => r.rowId));
 
+/** Counts for summary.txt. */
+const mergeStats = {
+  m1Products: { tires: 0, wheels: 0 } as Record<string, number>,
+  m1SameSku: 0,
+  m2Products: 0,
+  m2TypeConflicts: 0,
+  m3Products: { tires: 0, wheels: 0, accessories: 0 } as Record<string, number>,
+  m3RowsMerged: { tires: 0, wheels: 0, accessories: 0 } as Record<string, number>,
+  ambiguousVendor: 0,
+  largestSources: 0,
+};
+
 function mergeCategory(listings: Listing[]): Product[] {
-  const groups = new Map<string, Listing[]>();
   const products: Product[] = [];
-  for (const listing of listings) {
-    const key = mergeKey(listing);
-    if (key === null) {
-      products.push({ category: listing.category, listings: [listing] });
-      continue;
-    }
-    const group = groups.get(key);
-    if (group) group.push(listing);
-    else groups.set(key, [listing]);
-  }
-  for (const group of groups.values()) {
-    if (group.length === 1) {
-      products.push({ category: group[0]!.category, listings: group });
-      continue;
-    }
-    const vendors = group.map((l) => l.primary.source);
-    if (new Set(vendors).size < vendors.length) {
-      // Rule 4: a vendor's own separate SKUs are never merged, and a group
-      // that holds two from one vendor merges nothing at all.
-      for (const listing of group) products.push({ category: listing.category, listings: [listing] });
-      const ids = rowIds(group);
-      mergeReport.push({
-        kind: "ambiguous_not_merged",
-        kept: "",
-        merged: ids,
-        sources: group.map((l) => `${l.primary.source} ${l.primary.sku}`),
-        disagreed: disagreements(group).fields,
-        winner: "",
-        values: disagreements(group).values,
-        filled: [],
-      });
-      continue;
-    }
-    const sorted = [...group].sort((a, b) => rank(a.primary.source) - rank(b.primary.source));
-    const winner = sorted[0]!;
-    const product: Product = { category: winner.category, listings: sorted, ...resolveMerge(sorted) };
-    if (sorted.length > MAX_SOURCES) {
-      for (const listing of sorted) {
-        issue(listing, `merged product would have ${sorted.length} sources (more than ${MAX_SOURCES})`);
-      }
-      continue;
-    }
-    products.push(product);
-    const { fields, values } = disagreements(sorted);
+  if (listings.length === 0) return products;
+  const units = makeUnits(listings);
+  const clusters = components(units);
+  // Groups where one vendor has two DIFFERENT listings: reported when the SKU
+  // pass could not pair every listing of them with another vendor's.
+  const crossVendor = new Set(
+    clusters.filter((c) => new Set(c.listings.map((l) => l.primary.source)).size > 1).flatMap((c) => c.listings),
+  );
+  for (const group of matchNotes.vendorConflicts.splice(0)) {
+    if (group.every((listing) => crossVendor.has(listing))) continue;
+    const found = disagreements(group);
+    mergeStats.ambiguousVendor += 1;
     mergeReport.push({
-      kind: "cross_vendor_merge",
-      kept: winner.primary.rowId,
-      merged: rowIds(sorted),
-      sources: sorted.map((l) => `${l.primary.source} ${l.primary.sku}`),
-      disagreed: fields,
-      winner: winner.primary.source,
-      values,
-      filled: product.fills ?? [],
-      notFilled: product.notFilled ?? [],
+      kind: "ambiguous_not_merged",
+      kept: "",
+      merged: rowIds(group),
+      sources: group.map((l) => `${l.primary.source} ${l.primary.sku}`),
+      disagreed: found.fields,
+      winner: "",
+      values: found.values,
+      filled: [],
     });
   }
+  for (const cluster of clusters) products.push(productOf(cluster.listings, cluster.viaBlank, true));
   return products;
+}
+
+function productOf(listings: Listing[], viaBlank: boolean, mayMergeAcrossVendors: boolean): Product {
+  const sorted = [...listings].sort((a, b) => rank(a.primary.source) - rank(b.primary.source) || a.primary.index - b.primary.index);
+  const winner = sorted[0]!;
+  if (sorted.length === 1) return { category: winner.category, listings: sorted };
+  const vendors = new Set(sorted.map((l) => l.primary.source));
+  const crossVendor = vendors.size > 1 && mayMergeAcrossVendors;
+  const merged = resolveMerge(sorted);
+  const product: Product = { category: winner.category, listings: sorted, ...merged };
+  const { fields, values } = disagreements(sorted);
+  const category = winner.category;
+  const sameVendorRows = sorted.length - vendors.size;
+  if (sameVendorRows > 0) {
+    mergeStats.m3Products[category] = (mergeStats.m3Products[category] ?? 0) + 1;
+    mergeStats.m3RowsMerged[category] = (mergeStats.m3RowsMerged[category] ?? 0) + sameVendorRows;
+  }
+  if (crossVendor) {
+    if (category === "accessories") {
+      mergeStats.m2Products += 1;
+      const types = new Set(sorted.map((l) => l.fields[F.accessoryType]).filter((t) => t));
+      if (types.size > 1) {
+        mergeStats.m2TypeConflicts += 1;
+        logChange(
+          "M2 type conflict",
+          rowIds(sorted),
+          F.accessoryType,
+          sorted.map((l) => `${l.primary.source}=${l.fields[F.accessoryType]}`).join("; "),
+          winner.fields[F.accessoryType] ?? "",
+          `same SKU ${winner.primary.sku} typed differently by two vendors; the priority winner (${winner.primary.source}) wins. Names: ${sorted.map((l) => `"${l.fields[F.name]}"`).join(" vs ")}`,
+        );
+      }
+    } else {
+      mergeStats.m1Products[category] = (mergeStats.m1Products[category] ?? 0) + (viaBlank ? 1 : 0);
+      if (viaBlank && new Set(sorted.map((l) => skuKey(l.primary.sku))).size === 1) mergeStats.m1SameSku += 1;
+    }
+  }
+  if (sorted.length > mergeStats.largestSources) mergeStats.largestSources = sorted.length;
+  const pieces = sorted.flatMap((l) => l.edits.map((e) => `${l.primary.rowId}: ${e.rule} ${e.field} "${e.before}" -> "${e.after}"`));
+  mergeReport.push({
+    kind: crossVendor ? (viaBlank ? "cross_vendor_merge_blank_key" : "cross_vendor_merge") : "same_vendor_identical_merge",
+    kept: winner.primary.rowId,
+    merged: rowIds(sorted),
+    sources: sorted.map((l) => `${l.primary.source} ${l.primary.sku}`),
+    disagreed: fields,
+    winner: winner.primary.source,
+    values,
+    filled: merged.fills,
+    notFilled: merged.notFilled,
+    edits: pieces,
+  });
+  return product;
 }
 
 /* --- Output ------------------------------------------------------------------------ */
@@ -1169,7 +2042,9 @@ function productRecord(product: Product): Record<string, string> {
     record[sourceColumn("url", n)] = row.cells.product_url ?? "";
     record[sourceColumn("price", n)] = row.price;
   });
-  winner.images.forEach((path, index) => {
+  // The winner's photos; when it has none, the first other listing that has some.
+  const photos = (winner.images.length > 0 ? winner : product.listings.find((l) => l.images.length > 0) ?? winner).images;
+  photos.forEach((path, index) => {
     const column = PHOTO_COLUMNS[index];
     if (column) record[column] = path;
   });
@@ -1280,11 +2155,33 @@ async function main(): Promise<void> {
     }
   }
 
+  // Data-QA rules (owner, 2026-10-03), in this order: the table fixes (M8),
+  // finish spellings (M8h), the model borrowed by SKU (M1), the model built
+  // from the name (M6), model spelling folds (M4), accessory names and pack
+  // sizes (M5, M7) and descriptions (M9). Then the matching (M1, M2, M3).
+  const apparel = [...valid.tires, ...valid.wheels];
+  for (const listing of apparel) applyDataFixes(listing);
+  foldFinishSpellings(valid.wheels);
+  const modelsBorrowed = borrowModels(valid.wheels);
+  for (const listing of apparel) modelFromName(listing);
+  for (const listing of apparel) foldModel(listing);
+  for (const listing of valid.accessories) {
+    cleanAccessoryName(listing);
+    fixPackSizes(listing);
+  }
+  for (const category of CATEGORIES) for (const listing of valid[category]) cleanDescription(listing);
+
   let products: Product[] = [
     ...mergeCategory(valid.tires),
     ...mergeCategory(valid.wheels),
-    ...valid.accessories.map((listing) => ({ category: listing.category, listings: [listing] })),
-  ];
+    ...mergeCategory(valid.accessories),
+  ].filter((product) => {
+    if (product.listings.length <= MAX_SOURCES) return true;
+    for (const listing of product.listings) {
+      issue(listing, `merged product would have ${product.listings.length} sources (more than ${MAX_SOURCES})`);
+    }
+    return false;
+  });
   const order = (p: Product) =>
     CATEGORIES.indexOf(p.category) * 1e6 + p.listings[0]!.primary.index;
   products.sort((a, b) => order(a) - order(b));
@@ -1413,11 +2310,82 @@ async function main(): Promise<void> {
       filled: [],
     });
   }
-  let report = csvLine(["kind", "kept_row_id", "merged_row_ids", "sources", "fields_that_disagreed", "winning_source", "values", "filled_from_other_vendors", "other_vendor_codes_not_filled"]);
+  let report = csvLine(["kind", "kept_row_id", "merged_row_ids", "sources", "fields_that_disagreed", "winning_source", "values", "filled_from_other_vendors", "other_vendor_codes_not_filled", "listing_edits_before_merge"]);
   for (const line of finalReport) {
-    report += csvLine([line.kind, line.kept, line.merged.join(";"), line.sources.join(";"), line.disagreed.join(";"), line.winner, line.values, line.filled.join(" || "), (line.notFilled ?? []).join(" || ")]);
+    report += csvLine([line.kind, line.kept, line.merged.join(";"), line.sources.join(";"), line.disagreed.join(";"), line.winner, line.values, line.filled.join(" || "), (line.notFilled ?? []).join(" || "), (line.edits ?? []).join(" || ")]);
   }
   writeFileSync(join(outDir, "merge-report.csv"), report);
+
+  // changes-review.csv: one row per data edit or merge decision new in this run.
+  const categoryOf = (id: string) => (id.includes("-T-") ? "tires" : id.includes("-W-") ? "wheels" : "accessories");
+  const reviewRows: Change[] = changes.filter((c) => c.rowIds.some((id) => loaded.has(id)));
+  for (const line of finalReport) {
+    const category = categoryOf(line.kept || line.merged[0] || "");
+    if (line.kind === "cross_vendor_merge_blank_key") {
+      reviewRows.push({
+        rule: "M1 merge",
+        rowIds: line.merged,
+        field: "(merge)",
+        before: `${line.merged.length} products: ${line.sources.join("; ")}`,
+        after: `one product, winner ${line.winner} ${line.kept}`,
+        reason: `${category}: every key field both sides filled agrees; the differences are blanks. Filled: ${line.filled.join("; ") || "none"}${line.disagreed.length ? `. Still disagree (winner kept): ${line.disagreed.join(", ")}` : ""}`,
+      });
+    } else if (line.kind === "cross_vendor_merge" && category === "accessories") {
+      reviewRows.push({
+        rule: "M2 merge",
+        rowIds: line.merged,
+        field: "(merge)",
+        before: `${line.merged.length} products: ${line.sources.join("; ")}`,
+        after: `one product, winner ${line.winner} ${line.kept}`,
+        reason: `same SKU (case, spaces, dashes ignored), brands agree or one blank${line.disagreed.length ? `. Disagree (winner kept): ${line.disagreed.join(", ")}` : ""}`,
+      });
+    }
+    if (line.kind.startsWith("cross_vendor_merge")) {
+      const vendors = line.sources.map((source) => source.slice(0, source.lastIndexOf(" ")));
+      if (new Set(vendors).size < vendors.length) {
+        reviewRows.push({
+          rule: "M3 merge",
+          rowIds: line.merged,
+          field: "(merge)",
+          before: `${line.merged.length} products: ${line.sources.join("; ")}`,
+          after: `one product, ${line.sources.length} sources (also cross-vendor)`,
+          reason: `${category}: a vendor's identical listings (every field the shopper sees equal) joined the cross-vendor product`,
+        });
+      }
+    }
+    if (line.kind === "same_vendor_identical_merge") {
+      reviewRows.push({
+        rule: "M3 merge",
+        rowIds: line.merged,
+        field: "(merge)",
+        before: `${line.merged.length} products: ${line.sources.join("; ")}`,
+        after: `one product, ${line.sources.length} sources`,
+        reason: `${category}: every field the shopper sees is identical; only SKU, URL, price, images and row id differ`,
+      });
+    }
+  }
+  for (const note of matchNotes.blankAmbiguous) {
+    reviewRows.push({
+      rule: "M1 not merged",
+      rowIds: note.rowIds,
+      field: "(merge)",
+      before: note.rowIds.join(";"),
+      after: "kept as its own product",
+      reason: `blank key field fits ${note.candidates.length} candidates that disagree with each other: ${note.candidates.join(" | ")}`,
+    });
+  }
+  for (const note of matchNotes.brandConflict) {
+    reviewRows.push({ rule: "M2 not merged", rowIds: [], field: "(merge)", before: note.skus, after: "kept apart", reason: `same SKU, brands disagree: ${note.brands}` });
+  }
+  for (const left of blankModelLeft) {
+    reviewRows.push({ rule: "M6 model left blank", rowIds: left.rowIds, field: F.model, before: "", after: "", reason: `nothing meaningful is left of "${left.name}" once brand, size, bolt pattern, offset and finish are taken out` });
+  }
+  for (const alias of MODEL_NOT_FOLDED) {
+    reviewRows.push({ rule: "M4 not folded", rowIds: [], field: F.model, before: `${alias.brand}: ${alias.models}`, after: "(unchanged)", reason: alias.why });
+  }
+  let changesCsv = csvLine(["rule", "row_ids", "field", "before", "after", "reason_or_evidence"]);
+  for (const c of reviewRows) changesCsv += csvLine([c.rule, c.rowIds.join(";"), c.field, c.before, c.after, c.reason]);
+  writeFileSync(join(outDir, "changes-review.csv"), changesCsv);
 
   // needs_review rows that are loaded (rule 10).
   let review = csvLine(["row_id", "source", "vendor_sku", "category", "title", "reason"]);
@@ -1459,7 +2427,7 @@ async function main(): Promise<void> {
     const label = i.problem.replace(/"[^"]*"/g, "…").replace(/images\/\S+/g, "…").replace(/\d+ sources/g, "N sources");
     issuesBy.set(label, (issuesBy.get(label) ?? 0) + 1);
   }
-  const merges = finalReport.filter((l) => l.kind.startsWith("cross_vendor_merge"));
+  const merges = finalReport.filter((l) => l.kind.startsWith("cross_vendor_merge") || l.kind === "same_vendor_identical_merge");
   const ambiguous = finalReport.filter((l) => l.kind === "ambiguous_not_merged");
   const mergedAway = merges.reduce((sum, l) => sum + l.sources.length - 1, 0);
   const bJoined = wheelUnits.filter((u) => u.length > 1).reduce((sum, u) => sum + u.length - 1, 0);
@@ -1471,6 +2439,8 @@ async function main(): Promise<void> {
       : fill.slice(0, fill.indexOf(": "));
     fillsBy.set(field, (fillsBy.get(field) ?? 0) + 1);
   }
+  const changeCount = (rule: string, field?: string) =>
+    changes.filter((c) => c.rule === rule && (field === undefined || c.field === field) && c.rowIds.some((id) => loaded.has(id))).length;
   const extraCount = records.filter((r) => (r[F.extraSpecs] ?? "") !== "").length;
   const lines: string[] = [
     `Built: ${new Date().toISOString()}`,
@@ -1495,24 +2465,34 @@ async function main(): Promise<void> {
     "",
     `Rows merged away: ${allRowIds.size - records.length - issues.length}`,
     `  by the -B join:            ${bJoined}`,
-    `  by cross-vendor merges:    ${mergedAway}`,
-    `Cross-vendor merges: ${merges.length} products`,
+    `  by merges (M1, M2, M3):    ${mergedAway}`,
+    `Merged products (cross-vendor and same-vendor): ${merges.length} products`,
     ...CATEGORIES.map((c) => `  ${c.padEnd(12)} ${productsBy(c).filter((r) => (r[sourceColumn("vendor", 2)] ?? "") !== "").length}`),
     `Blanks filled from a lower-priority vendor: ${fills.length} values in ${merges.filter((l) => l.filled.length > 0).length} merged products`,
     ...[...fillsBy].sort((a, b) => b[1] - a[1]).map(([field, n]) => `  ${String(n).padStart(6)}  ${field}`),
-    "Merge keys (owner, 2026-10-03): a blank in a key field never matches, so a listing whose vendor",
-    "left one blank is never merged on it and stays its own product.",
-    "  Tires:  brand, model, tire size, load_index, speed_rating must all be filled; load_index_dual is",
-    "          compared but may be blank.",
-    "  Wheels: brand, model, diameter, width, bolt pattern(s), offset_mm, finish, center_bore_mm must all",
-    "          be filled; side is compared but may be blank.",
-    "  The two exemptions, and why: a blank load_index_dual is the vendor saying the tire has no dual",
-    "  (rear-pair) index, which is true of most tires; a blank side is the vendor saying the wheel is not",
-    "  made as a left/right pair, which is true of every wheel but Auto Country's handed ones. In both,",
-    "  blank is a statement, not a gap. Both are still compared, so a dual-index tire never merges with a",
-    "  single-index one, and a handed wheel never merges with an unhanded one.",
-    "Listings kept out of merging by a blank key field",
-    ...[...heldApart].sort((a, b) => b[1] - a[1]).map(([label, n]) => `  ${String(n).padStart(6)}  ${label}`),
+    "Merge keys (owner, 2026-10-03, data QA): listings merge when every key field BOTH sides filled agrees;",
+    "a blank on one side is filled from the other, and only when the match is unique.",
+    "  Tires:  brand, model and size must be filled and equal; load index (with its dual) and speed rating may be blank on one side.",
+    "  Wheels: brand, model, diameter, width and side must be equal; bolt pattern(s), offset, finish and centre bore may be blank on one side.",
+    "  Accessories: the same vendor SKU (case, spaces and dashes ignored); brands agree or one is blank.",
+    "  A blank load_index_dual or side is a statement, not a gap, and is always compared.",
+    "",
+    "Data-QA rules (owner 2026-10-03)",
+    `  M1 tires/wheels merged across vendors over a blank key field: ${(mergeStats.m1Products.tires ?? 0)} tire products, ${(mergeStats.m1Products.wheels ?? 0)} wheel products (${mergeStats.m1SameSku} of them share the exact vendor SKU)`,
+    `     wheel models borrowed from another vendor's listing of the same SKU: ${modelsBorrowed}`,
+    `     blank-key listings that fit two or more candidates that disagree, so NOT merged: ${matchNotes.blankAmbiguous.length} nodes covering ${matchNotes.blankAmbiguous.reduce((n, x) => n + x.rowIds.length, 0)} rows`,
+    `     components whose optional fields still disagreed (nothing merged): ${matchNotes.inconsistent}`,
+    `  M2 accessories merged across vendors on one SKU: ${mergeStats.m2Products} products; type conflicts (priority winner's type used): ${mergeStats.m2TypeConflicts}; same SKU but brands disagree, kept apart: ${matchNotes.brandConflict.length}`,
+    `  M3 same-vendor identical listings merged into one product: tires ${mergeStats.m3Products.tires} products (${mergeStats.m3RowsMerged.tires} rows), wheels ${mergeStats.m3Products.wheels} (${mergeStats.m3RowsMerged.wheels}), accessories ${mergeStats.m3Products.accessories} (${mergeStats.m3RowsMerged.accessories})`,
+    `     groups held apart because one vendor has two DIFFERENT listings in them (no cross-vendor merge): ${mergeStats.ambiguousVendor}`,
+    `     largest number of sources on one product: ${mergeStats.largestSources} (limit ${MAX_SOURCES})`,
+    `  M4 model spellings folded: ${changeCount("M4")} listings in ${MODEL_ALIASES.length} alias entries; pairs deliberately not folded: ${MODEL_NOT_FOLDED.length}`,
+    `  M5 accessory names cleaned: ${changeCount("M5", F.name)} names; Part number specs added: ${changeCount("M5", "extra_specs: Part number")}`,
+    `     prefixes stripped: ${[...strippedPrefixes].map(([p2, n]) => `"${p2}" ${n}`).join(", ") || "none"}`,
+    `  M6 blank models filled from the name: ${changeCount("M6")}; left blank (nothing meaningful in the name): ${blankModelLeft.length} (${blankModelLeft.filter((x) => x.category === "wheels").length} wheels, ${blankModelLeft.filter((x) => x.category === "tires").length} tires)`,
+    `  M7 pack sizes: pack_quantity set ${changeCount("M7", F.packQuantity)}; redundant or contradicting "Quantity per box" / "Pieces per pack" specs dropped ${changeCount("M7", "extra_specs: Quantity per box") + changeCount("M7", "extra_specs: Pieces per pack")}`,
+    `  M8 a TIS widths ${changeCount("M8a", F.wheelWidth)}; b bolt ${changeCount("M8b", F.boltPatterns)}; c brand ${changeCount("M8c")}; d lug count ${changeCount("M8d")}; e backspacing recomputed ${changeCount("M8e")} (listed but not changed: ${changeCount("M8e (not changed)")}); f season ${changeCount("M8f")}; g Nanoi ${changeCount("M8g", F.wheelFinish)}; h finish spellings ${changeCount("M8h", F.wheelFinish)}; i dual load swapped ${changeCount("M8i", F.loadIndex)}; j load/speed from name ${changeCount("M8j", F.loadIndex)}`,
+    `  M9 descriptions edited: ${descriptionsEdited} (${changeCount("M9") } written to changes-review.csv; blanked: ${changes.filter((c) => c.rule === "M9" && c.after === "").length})`,
     `Ambiguous groups (two or more listings from one vendor, nothing merged): ${ambiguous.length}`,
     `  of which another vendor was also in the group (a cross-vendor merge held back): ${ambiguous.filter((l) => new Set(l.sources.map((s) => s.slice(0, s.lastIndexOf(" ")))).size > 1).length}`,
     "",

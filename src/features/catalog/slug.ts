@@ -1,6 +1,8 @@
 /**
  * Product slugs: brand + model + size, e.g. `pirelli-p-zero-235-45r18-98y`.
- * An accessory adds its name, and one with no brand (D125) has none to lead.
+ * An accessory is brand + name + part number (owner 2026-10-03, data QA): its
+ * name no longer carries the vendor SKU, and the Part number spec tells two
+ * accessories with one name apart. One with no brand (D125) has none to lead.
  * Pure. The store appends `-2`, `-3` … when two products would share one.
  *
  * A slug is written once, when the product is created, and never rewritten:
@@ -9,6 +11,7 @@
  */
 
 import type { ProductInput } from "./catalog-types";
+import { stripBrandPrefix } from "@/lib/product-name";
 
 /** Mirrors the `products_slug_format` CHECK, less room for a `-12` suffix. */
 const SLUG_MAX_LENGTH = 190;
@@ -39,15 +42,21 @@ function sizePart(input: ProductInput): string {
   }
 }
 
+/** The accessory's Part number spec, which tells same-named accessories apart. */
+function partNumber(input: ProductInput): string {
+  return input.extraSpecs.find((spec) => spec.label.toLowerCase() === "part number")?.value ?? "";
+}
+
 export function buildProductSlug(input: ProductInput): string {
   const brand = input.brand ?? "";
   const model = input.model ?? "";
-  // An accessory's name usually IS the product ("Gloss Black Cap + Chrome GT
-  // Logo"); a tire's or wheel's name repeats brand, model and size. An
-  // unbranded accessory (D125) simply starts at its model, or its name.
+  // An accessory's name IS the product ("Gloss Black Cap + Chrome GT Logo"); a
+  // tire's or wheel's name repeats brand, model and size. An unbranded
+  // accessory (D125) simply starts at its name. A name that already starts
+  // with the brand drops that copy, so the slug never reads `gorilla-gorilla-`.
   const parts =
     input.category === "accessories"
-      ? [brand, model, input.name, sizePart(input)]
+      ? [brand, stripBrandPrefix(brand, input.name), partNumber(input)]
       : [brand, model, sizePart(input)];
   const slug = slugify(parts.join(" ")).slice(0, SLUG_MAX_LENGTH);
   // The CHECK refuses a leading or trailing hyphen. `slugify` strips both,
