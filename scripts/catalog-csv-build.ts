@@ -138,8 +138,127 @@ const WHEEL_BRANDS: Record<string, { brand: string; prefix: string }> = {
  */
 const VENDOR_OWN_CODES = new Set(["Part number", "Manufacturer code"]);
 
-/** Owner, 2026-10-03: loaded as brand "Trailer" and not flagged for review. */
-const REVIEW_CLEARED_WHEEL_BRANDS = new Set(["Trailer"]);
+/**
+ * D126 (owner, 2026-10-03): a tire's season follows its MAKER where our
+ * vendors' label disagrees with it. Keyed on `brand|model_clean`, lower case,
+ * and applied to every vendor's listing of that model, so all its sizes read
+ * the same. Each entry names the page the maker's wording was read from.
+ */
+const SEASON_BY_MAKER: Record<string, { season: string; source: string }> = {
+  "hankook|weatherflex gt": { season: "all_weather", source: "hankooktire.com, Weatherflex GT (H755) launch" },
+  "sailun|atrezzo 4s": { season: "all_weather", source: "sailuntire.ca/en/plt/tires/4s/" },
+  "kumho|ha32": { season: "all_weather", source: "Point S Canada, Walmart.ca (kumhotire.ca unreachable)" },
+  "kumho|solus 4s ha32 suv": { season: "all_weather", source: "Point S Canada, Walmart.ca (kumhotire.ca unreachable)" },
+  "toyo|celsius ii": { season: "all_weather", source: "toyotires.ca, all-weather-passenger-tire-celsius-ii" },
+  "toyo|celsius cargo": { season: "all_weather", source: "toyotires.ca, all-weather-commercial-grade-light-truckvan-tire-celsius-cargo" },
+  "toyo|open country a/t iii": { season: "all_weather", source: "toyotires.ca, all-terrain-all-weather-light-truck-tire-open-country-iii" },
+  // Second round, the 85 mixed-season models (owner, 2026-10-03; D126 groups A, B, C, E):
+  "venom power|terra hunter x/t": { season: "all_season", source: "venompowertires.com/Light_Truck/terra-hunter-xt.html" },
+  "continental|extremecontact dws06 plus": { season: "all_season", source: "continentaltire.com/tires/extremecontact-dws06-plus" },
+  "general tire|altimax rt45": { season: "all_season", source: "generaltire.ca/car/tyres/altimax-rt45/" },
+  "venom power|terra hunter r/t": { season: "all_season", source: "venompowertires.com/Light_Truck/terra-hunter-rt.html" },
+  "venom power|swampthing m/t": { season: "all_season", source: "venompowertires.com/Light_Truck/swampthing-mt.html" },
+  "greentrac|journey-x": { season: "all_season", source: "greentractyre.com/863.html; premiertiresandwheels.ca" },
+  "yokohama|geolandar a/t4 g018": { season: "all_weather", source: "yokohama.ca/en/tires/geolandar-at-4-g018" },
+  "mileking|mk625": { season: "all_weather", source: "ditriptyre.com/tyres/mk625/; gba-tires.ca (owner: snowflake everyday tire)" },
+  "venom power|covert grip cv": { season: "all_season", source: "venompowertires.com/Car/covert-grip-cv.html" },
+  "michelin|crossclimate 2": { season: "all_weather", source: "michelin.ca/en/auto/tires/michelin-crossclimate-2 (owner: snowflake everyday tire)" },
+  "rydanz|revimax-r23-260-shibata": { season: "summer", source: "rydanz.com/product/revimax-r23/" },
+  "haida|hd829": { season: "all_season", source: "haidatires.ca/hd829" },
+  "falken|wildpeak a/t trail": { season: "all_weather", source: "falkentire.com/wildpeak/attrail" },
+  "rydanz|reac r05": { season: "all_season", source: "tiremart.com; carid.com (no maker page)" },
+  "venom power|primo hauler": { season: "all_season", source: "venompowertires.com/Commercial/49.html" },
+  "goodyear|wrangler duratrac rt": { season: "all_season", source: "goodyear.com/en-ca/tires/wrangler-duratrac-rt_24913" },
+  "venom power|trail hunter atx": { season: "all_season", source: "venompowertires.com/Light_Truck/trail-hunter-atx.html" },
+  "bridgestone|weatherpeak": { season: "all_weather", source: "bridgestonetire.ca/our-tires/tire-brand/weatherpeak/ (owner: snowflake everyday tire)" },
+  "continental|vancontact a/s ultra": { season: "all_weather", source: "continentaltire.com/vancontact-as-ultra" },
+  "rydanz|revimax-r23-280-shibata": { season: "summer", source: "rydanz.com/product/revimax-r23/" },
+  "general tire|grabber apt": { season: "all_season", source: "generaltire.ca/car/tyres/grabber-apt/" },
+  "falken|wildpeak r/t 01": { season: "all_season", source: "falkentire.com/wildpeak/rt" },
+  "venom power|van-co all season": { season: "all_season", source: "venompowertires.com/Commercial/van.html" },
+  "venom power|grand am wsw": { season: "all_season", source: "venompowertires.com/Car/grand-am.html" },
+  "venom power|ragnarok gts": { season: "all_season", source: "venompowertires.com/Car/ragnarok-gts.html" },
+  "venom power|swampthing a/t": { season: "all_season", source: "venompowertires.com/Light_Truck/swampthing-at.html" },
+  "rydanz|roadster r02": { season: "all_season", source: "rydanz.com/product/roadster-r02/; tiremart.com" },
+  "rydanz|raleigh r06": { season: "all_season", source: "rydanz.com/product/raleigh-r06/; simpletire.com" },
+  "venom power|terra hunter m/t": { season: "all_season", source: "venompowertires.com/Light_Truck/terra-hunter-mt.html" },
+  "nexen|roadian atx": { season: "all_season", source: "nexentirecanada.com (All Terrain (3PMS)), roadian-atx" },
+  "venom power|trail hunter ats": { season: "all_season", source: "venompowertires.com/Light_Truck/trail-hunter-ats.html" },
+  "venom power|terra hunter r/t+": { season: "all_season", source: "venompowertires.com/Light_Truck/terra-hunter-rt.html" },
+  "lionhart|lh-five": { season: "all_season", source: "lionharttires.com/tire/lh-five/" },
+  "greentrac|rough master rt": { season: "all_season", source: "greentractyre.com/876.html" },
+  "rydanz|roadster r02s": { season: "all_season", source: "rydanz.com/product/roadster-r02s/; simpletire.com" },
+  "bfgoodrich|all-terrain t/a ko3": { season: "all_weather", source: "bfgoodrich.ca/en/auto/tires/bfgoodrich-all-terrain-t-a-ko3" },
+  "rydanz|raptor r09": { season: "all_season", source: "rydanz.com/product/raptor-r09/" },
+  "goodyear|assurance weatherready 2": { season: "all_weather", source: "goodyear.com/en-ca/tires/assurance-weatherready-2_24987 (owner: snowflake everyday tire)" },
+  "zmax|dreamland r/t": { season: "all_season", source: "zodotiregroup.com/zmax-rt-tire-dreamland-rt.html" },
+  "lionhart|lh-ten": { season: "all_season", source: "lionharttires.com/tire/lh-ten/" },
+  "rydanz|revimax-r23-300-shibata": { season: "summer", source: "rydanz.com/product/revimax-r23/" },
+  "pirelli|scorpion all terrain plus": { season: "all_season", source: "pirelli.com/tires/en-ca/car/catalog/product/scorpion-all-terrain-plus" },
+  "mileking|mk829": { season: "all_season", source: "bestpricetirewarehouse.ca; simpletire.com (no maker page)" },
+  "venom power|grand am rwl": { season: "all_season", source: "venompowertires.com/Car/grand-am.html" },
+  "bridgestone|dueler a/t ascent": { season: "all_season", source: "tires.bridgestone.com/en-ca/tires/automotive/dueler/at-ascent" },
+  "rydanz|revimax-r31-200-shibatire": { season: "summer", source: "rydanz.com/product/revimax-r31/" },
+  "goodyear|wrangler duratrac": { season: "all_season", source: "goodyear.com/en-ca/tires/wrangler-duratrac_354" },
+  "suretrac|radial a/t": { season: "all_season", source: "suretractires.com/at/" },
+  "rydanz|revimax-r03s-140": { season: "summer", source: "rydanz.com/product/revimax-r03s/" },
+  "venom power|terra hunter x/t 2": { season: "all_season", source: "venompowertires.com/Light_Truck/terra-hunter-xt2.html" },
+  "venom power|trail hunter r/t": { season: "all_season", source: "venompowertires.com/Light_Truck/trail-hunter-rt.html" },
+  "zeta|alventi": { season: "summer", source: "asianalltires.com/index.php/product/alventi-2/ (Canadian distributor)" },
+  "continental|procontact tx": { season: "all_season", source: "continentaltire.com/tires/procontact-tx" },
+  "venom power|covert grip asp": { season: "all_season", source: "venompowertires.com/Car/covert-grip-asp.html" },
+  "greentrac|season master": { season: "all_weather", source: "toofastautoparts.com (owner: snowflake everyday tire)" },
+  "haida|hd878 r/t": { season: "all_season", source: "haidatires.com" },
+  "nexen|roadian htx 2": { season: "all_weather", source: "nexentirecanada.com roadian-htx-2 (owner: snowflake everyday tire)" },
+  "haida|hd868": { season: "all_season", source: "haidatires.com" },
+  "rydanz|rammer r08": { season: "all_season", source: "prioritytire.com (no maker page)" },
+  "venom power|covert grip h/t": { season: "all_season", source: "venompowertires.com/Car/covert-grip-ht.html" },
+  "lionhart|lh-501": { season: "all_season", source: "lionharttires.com/tire/lh-501/" },
+  "firestone|weathergrip": { season: "all_weather", source: "firestonetire.ca/our-tires/brands/weathergrip/" },
+  "lionhart|lh-503": { season: "all_season", source: "lionharttires.com/tire/lh-503/" },
+  "lionhart|lionclaw ht": { season: "all_season", source: "lionharttires.com/tire/lionclaw-ht/" },
+  "nexen|roadian gtx": { season: "all_season", source: "nexentireusa.com/tires/roadian_gtx/" },
+  "firestone|destination x/t": { season: "all_season", source: "firestonetire.com/our-tires/brands/destination/" },
+  "lionhart|lionclaw atx2": { season: "all_season", source: "lionharttires.com/tire/lionclaw-atx2/" },
+  "haida|hd837": { season: "all_season", source: "haidatires.com" },
+  "venom power|at-co all season": { season: "all_season", source: "venompowertires.com/Commercial/at.html" },
+  "rydanz|revimax-r31-280r-shibatire": { season: "summer", source: "rydanz.com/product/revimax-r31/" },
+  "goodyear|wrangler all-terrain adventure": { season: "all_season", source: "goodyear.com/en-ca/tires/wrangler-all-terrain-adventure-with-kevlar_2732" },
+  "goodyear|eagle enforcer a/w": { season: "all_weather", source: "tirerack.com (Eagle Enforcer All Weather)" },
+  "rydanz|revimax-r23-140-shibata": { season: "summer", source: "rydanz.com/product/revimax-r23/" },
+};
+
+/**
+ * D126: Vertex tires the owner reviewed against the maker on 2026-10-03 and
+ * kept as Vertex labels them (all-terrain, mud-terrain or all-season by the
+ * maker's own wording). With SEASON_BY_MAKER they clear the Vertex season flag.
+ */
+const SEASON_REVIEWED_AS_IS = new Set([
+  "sailun|terramax at2",
+  "sailun|terramax rt",
+  "sailun|atrezzo sh408",
+  "michelin|defender ltx m/s 2",
+  "hankook|dynapro at2 xtreme",
+  "toyo|m-55 black",
+]);
+
+const modelKey = (brand: string, model: string) => `${brand}|${model}`.toLowerCase();
+
+/** Every listing whose season SEASON_BY_MAKER changed, for summary.txt. */
+const seasonByMaker: { rowId: string; from: string; to: string }[] = [];
+
+/**
+ * Owner, 2026-10-03: loaded as these brands and not flagged for review.
+ * "Trailer" at the build; the four brand splits of rule 6 after the review
+ * (D126: "Ruffino Hard" is sold as its own brand by Canadian retailers).
+ */
+const REVIEW_CLEARED_WHEEL_BRANDS = new Set([
+  "Trailer",
+  "Asanti Black",
+  "Pro Comp Alloys",
+  "Ruffino Hard",
+  "Lock Xtreme",
+]);
 
 const REVIEW_WHEEL_BRAND = "brand split checked against the market (D125)";
 const REVIEW_VERTEX_SEASON =
@@ -532,6 +651,11 @@ function tireListing(row: InputRow): Listing {
     const ours = SEASONS[season];
     if (ours) f[F.season] = ours;
     else listing.problems.push(`needs owner ruling: season_clean "${season}"`);
+  }
+  const maker = SEASON_BY_MAKER[modelKey(c.brand ?? "", c.model_clean ?? "")];
+  if (maker && f[F.season] !== maker.season) {
+    seasonByMaker.push({ rowId: row.rowId, from: f[F.season] ?? "", to: maker.season });
+    f[F.season] = maker.season;
   }
   setYes(listing, F.isXl, "xl");
   setYes(listing, F.winterApproved, "three_pmsf");
@@ -1291,7 +1415,14 @@ async function main(): Promise<void> {
       }
       let reason = "";
       if (category === "wheels" && WHEEL_BRANDS[row.cells.brand ?? ""]) reason = REVIEW_WHEEL_BRAND;
-      else if (category === "tires" && row.source === "Vertex Tires" && (row.cells.brand ?? "") !== "") reason = REVIEW_VERTEX_SEASON;
+      else if (category === "tires" && row.source === "Vertex Tires" && (row.cells.brand ?? "") !== "") {
+        const key = modelKey(row.cells.brand ?? "", row.cells.model_clean ?? "");
+        if (SEASON_BY_MAKER[key] || SEASON_REVIEWED_AS_IS.has(key)) {
+          reviewCleared += 1;
+          continue;
+        }
+        reason = REVIEW_VERTEX_SEASON;
+      }
       else {
         reason = "needs owner ruling: no known reason";
         unexplained.push(row.rowId);
@@ -1370,7 +1501,9 @@ async function main(): Promise<void> {
     `Rows sent to issues.csv: ${issues.length}`,
     ...[...issuesBy].sort((a, b) => b[1] - a[1]).map(([label, n]) => `  ${String(n).padStart(6)}  ${label}`),
     "",
-    `needs_review rows loaded (needs-review.csv): ${reviewCount}${unexplained.length ? ` (${unexplained.length} with no known reason)` : ""}; cleared by owner ruling and left out: ${reviewCleared} (Trailer)`,
+    `needs_review rows loaded (needs-review.csv): ${reviewCount}${unexplained.length ? ` (${unexplained.length} with no known reason)` : ""}; cleared by owner ruling and left out: ${reviewCleared} (D125 Trailer; D126 brand splits and reviewed Vertex seasons)`,
+    `Tire seasons set by the maker (D126): ${seasonByMaker.length} listings`,
+    ...[...seasonByMaker.reduce((m, s) => m.set(`${s.from || "blank"} -> ${s.to}`, (m.get(`${s.from || "blank"} -> ${s.to}`) ?? 0) + 1), new Map<string, number>())].map(([label, n]) => `  ${String(n).padStart(6)}  ${label}`),
     `Float-noise values cleaned: ${noiseCleaned}`,
     "",
     "Input columns not written as columns, and why",
