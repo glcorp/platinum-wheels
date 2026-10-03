@@ -36,7 +36,8 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   of units, only when the cart is not empty, that pops (`cart-pop`) on an add and never on a page load;
   and a fixed `Added to cart` / `Cart updated` prompt with `View cart`, bottom of the screen on a phone
   and bottom-right at the 420px measure from `sm:`, held while hovered or focused, 6 s otherwise. The
-  prompt sits in an always-mounted polite live region. Reads `src/lib/cart.ts` only.
+  prompt sits in an always-mounted polite live region. On `/cart` (`usePathname()`) the icon and count
+  stay but render as a non-link `role="img"` labelled `…, current page` (D127). Reads `src/lib/cart.ts` only.
 - [`site-nav-drawer.tsx`](site-nav-drawer.tsx) — `"use client"`, named export `SiteNavDrawer`. Props:
   `{ links: ReadonlyArray<{ label: string; href: string; active: boolean }>; phone: { display: string;
   tel: string } }`. 44×44 hamburger trigger + a native `<dialog showModal()>` full-screen drawer

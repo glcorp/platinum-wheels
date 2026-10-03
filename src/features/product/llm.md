@@ -12,9 +12,9 @@ Action, its emails and its two authored states moved there.
 ## Owns
 - [`types.ts`](types.ts) — the contract, written before any component (D25). `ProductView` is what the
   page hands every section; `QuantityKey` / `QUANTITY_OPTIONS` are the buy panel's four cells (D50);
-  `PdpBadge` and `ProductSpecRow` are derived from `Product` (D53). `DEFAULT_QUANTITY_BY_CATEGORY` (D65)
-  is read by `view.ts`'s `parseQuantity` and, since D122, derived from `CategoryConfig.addQuantity`, the
-  number a card's `Add to cart` adds, so a card and its PDP agree. `vehicleLabel(view)` is the checked
+  `PdpBadge` and `ProductSpecRow` are derived from `Product` (D53). `DEFAULT_QUANTITY` (`1` for every
+  category, D127) is read by `view.ts`'s `parseQuantity`; it is the one a card's `Add to cart` adds, so a
+  card and its PDP agree. `vehicleLabel(view)` is the checked
   vehicle string `Add to cart` saves on a cart line (D122).
 - `view.ts` — `productView(detail, searchParams, rows)`, pure. The only place any PDP value is computed.
   Since D108b it takes `CatalogProductDetail` plus the two rows and makes the card-shaped `Product` with
@@ -51,7 +51,7 @@ Action, its emails and its two authored states moved there.
 - **No sticky mobile buy bar** — D6. **No fitment or install trust line in the buy panel** — D47(2).
 - **Quantity is a URL param** (D50). The cells are links that set `?qty=` and keep every other param;
   the panel stays a Server Component apart from the add island. `qty` never reaches `backHref`. The
-  *selected* cell defaults per category (D65); the four cells and their labels stay as drawn (D63).
+  *selected* cell defaults to `1` for every category (D127, `DEVIATIONS.md` #98); the four cells and their labels stay as drawn (D63).
   `role="group" aria-labelledby="qty-label"` (D66). Every cell is `scroll={false}`; `Custom` no longer
   carries `#quote` (D122), its field sits right under the cells.
 - **The searched vehicle reaches the cart only after the server checked it** (`view.ts`, D91b), passed as
@@ -104,7 +104,7 @@ rulings), **D6** (no sticky buy bar), **D21** (`Price context="pdp"`), **D37** (
    consumer means it belongs in `src/lib/`. **Owner** (root `llm.md` §7).
 2. **`M+S` is derived from the winter badge**, not a fact `Product` carries (D48). **Client.**
 3. **One photo per SKU** until the admin's photo uploads reach the gallery (`HANDOFF.md` §7). **Client.**
-4. **`How many?` reads oddly on an accessory** whose size says `Set of 20`; accessories open on `1` (D65).
-   **Owner's**, if the wording should change.
+4. **`How many?` reads oddly on an accessory** whose size says `Set of 20`; every PDP opens on `1`
+   (D127). **Owner's**, if the wording should change.
 5. **The unavailable PDP (D108b, undrawn)** borrows the card's treatment: the badge, the ghost CTA, the
    price dimmed when prices show. The photo is not dimmed. **Owner**, if it should be.

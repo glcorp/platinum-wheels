@@ -2,7 +2,7 @@
  * Product detail page (D91b QA pass, agent HPD).
  *
  * Covers: the `?qty=` cells and the quote-band select that must follow them
- * (D50, D84), per-category default quantity (D65 item 7), the `Custom`
+ * (D50, D84), per-category default quantity (D127), the `Custom`
  * quantity field (D75), the quote form's validation, focus and success paths
  * (D51, D57, D65), the `beforeunload` guard (D65 item 6), CASL consent
  * (`docs/decisions.md` §7), the preferred-contact radios (D53(7)), the
@@ -65,8 +65,8 @@ const categoryOf = (slug: string): Category | undefined =>
 const ALLOWED_TEL = ["tel:+14378825000", "tel:+13659980990"];
 
 const PDPS: Array<{ category: Category; slug: string; crumb: string; route: string; defaultQty: string; unitMany: string }> = [
-  { category: "tires", slug: SLUG.tire, crumb: "Tires", route: "/tires", defaultQty: "4", unitMany: "tires" },
-  { category: "wheels", slug: SLUG.wheel, crumb: "Wheels", route: "/wheels", defaultQty: "4", unitMany: "wheels" },
+  { category: "tires", slug: SLUG.tire, crumb: "Tires", route: "/tires", defaultQty: "1", unitMany: "tires" },
+  { category: "wheels", slug: SLUG.wheel, crumb: "Wheels", route: "/wheels", defaultQty: "1", unitMany: "wheels" },
   {
     category: "accessories",
     slug: SLUG.accessory,
@@ -256,16 +256,16 @@ test.describe("quantity cells (D50, D84)", () => {
   });
 
   for (const pdp of PDPS) {
-    test(`${pdp.category}: default quantity is ${pdp.defaultQty} (D65 item 7)`, async ({ page }) => {
+    test(`${pdp.category}: default quantity is ${pdp.defaultQty} (D127)`, async ({ page }) => {
       await openPdp(page, `/products/${pdp.slug}`);
       expect(await selectedCells(page)).toEqual([pdp.defaultQty]);
       await expect(qtySelect(page)).toHaveValue(pdp.defaultQty);
     });
   }
 
-  test("an unknown ?qty= falls back to the category default, not a crash", async ({ page }) => {
+  test("an unknown ?qty= falls back to 1, not a crash", async ({ page }) => {
     for (const [slug, expected] of [
-      [SLUG.tire, "4"],
+      [SLUG.tire, "1"],
       [SLUG.accessory, "1"],
     ] as const) {
       await openPdp(page, `/products/${slug}?qty=7`);

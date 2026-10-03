@@ -579,9 +579,10 @@ export function ProductCard({
               `+0.04em` — the Button primitive's `card` size.
 
               D122 (owner, 2026-10-01): the drawn `Request a quote` and
-              `Inquire about restock` are now one `Add to cart`, which puts the
-              category's set (`addQuantity`: four tires or wheels, one
-              accessory) in the browser cart. A discontinued product keeps the
+              `Inquire about restock` are now one `Add to cart`, which puts one
+              of the product in the browser cart (D127: one per press, never the
+              category's set; the cart's stepper sets the rest). A discontinued
+              product keeps the
               drawn ghost variant and can still be added; the cart marks it.
               `design/DEVIATIONS.md` #96. The sr-only tail names the product, so
               thirty identical buttons on one page do not read identically out
@@ -589,7 +590,7 @@ export function ProductCard({
           <AddToCartButton
             slug={slug}
             item={cartItem(product)}
-            quantity={configFor(product).addQuantity}
+            quantity={1}
             vehicle={vehicle}
             size="card"
             className="flex-1"

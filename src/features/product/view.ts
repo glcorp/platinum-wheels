@@ -24,7 +24,7 @@ import type {
   TireSeason,
 } from "@/features/catalog/catalog-types";
 import { configFor, type CategoryConfig } from "@/features/catalog/categories";
-import type { Product, ProductCategory } from "@/features/catalog/types";
+import type { Product } from "@/features/catalog/types";
 /* The one cross-feature import outside `catalog/` (D37), on the precedent of
    `results/search.ts`: the finder's list is the only authority on what counts
    as a vehicle (D91b). */
@@ -32,7 +32,7 @@ import { isFinderVehicle } from "@/features/finder/data";
 import { productName } from "@/lib/product-name";
 
 import {
-  DEFAULT_QUANTITY_BY_CATEGORY,
+  DEFAULT_QUANTITY,
   PRODUCT_PARAM,
   QUANTITY_OPTIONS,
   type PdpBadge,
@@ -283,14 +283,11 @@ function buildBadges(
 
 /* --- Quantity -------------------------------------------------------------- */
 
-function parseQuantity(
-  params: ProductSearchParams,
-  category: ProductCategory,
-): QuantityKey {
+function parseQuantity(params: ProductSearchParams): QuantityKey {
   const raw = params[PRODUCT_PARAM.qty];
   const value = Array.isArray(raw) ? raw[0] : raw;
   const match = QUANTITY_OPTIONS.find((option) => option.value === value);
-  return match?.value ?? DEFAULT_QUANTITY_BY_CATEGORY[category];
+  return match?.value ?? DEFAULT_QUANTITY;
 }
 
 /* --- Vehicle ----------------------------------------------------------------
@@ -371,7 +368,7 @@ export function productView(
     fullName,
     specs: buildSpecs(detail, product, sizeCode, loadSpeed),
     badges: buildBadges(product, config, season),
-    quantity: parseQuantity(searchParams, config.category),
+    quantity: parseQuantity(searchParams),
     vehicle,
     backHref: buildBackHref(searchParams, config.route),
     similar: rows.similar.map(toProduct),
