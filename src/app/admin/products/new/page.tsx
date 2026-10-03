@@ -41,7 +41,7 @@ export default async function NewProductPage({
   const raw = (await searchParams).category;
   const category = PRODUCT_CATEGORIES.find((value) => value === (Array.isArray(raw) ? raw[0] : raw));
   const [brands, vendors] = category
-    ? await Promise.all([adminListBrands(), adminListVendors()])
+    ? await Promise.all([adminListBrands(category), adminListVendors()])
     : [[], []];
 
   return (

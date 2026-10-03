@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { AdminProductCard } from "@/features/admin/components/admin-product-card";
 import { AdminTopBar } from "@/features/admin/components/admin-top-bar";
 import { BulkStatusBar } from "@/features/admin/components/bulk-status-bar";
-import { ProductFilters } from "@/features/admin/components/product-filters";
-import { adminListBrands, adminListProducts } from "@/features/admin/product-queries";
+import { PageJump } from "@/features/admin/components/page-jump";
+import { ProductFilters, type ProductFilterOptions } from "@/features/admin/components/product-filters";
+import {
+  adminListBrands,
+  adminListProducts,
+  adminListRimSizes,
+  adminListVendors,
+} from "@/features/admin/product-queries";
 import {
   PRODUCT_LIST_PAGE_SIZE,
   PRODUCT_LIST_PARAM,
@@ -14,6 +21,7 @@ import {
 import { requireAdminSession } from "@/features/admin/session";
 import { ADMIN_ROUTES } from "@/features/admin/types";
 import {
+  ACCESSORY_KINDS,
   PRODUCT_CATEGORIES,
   PRODUCT_STATUSES,
   type ProductList,
@@ -25,7 +33,8 @@ import {
    NO ARTBOARD DRAWS THIS (D89). Every status, newest change first, 50 a
    page; search and filters in the URL; bulk status changes for ticked rows
    or everything the filter matches. Served from this folder by `src/proxy.ts`
-   (D115).
+   (D115). D127 adds the vendor, accessory type, rim size and no-photo
+   filters and a Go to page box; a page past the end goes to the last one.
    --------------------------------------------------------------------------- */
 
 export const metadata: Metadata = {
@@ -40,36 +49,66 @@ function one(params: SearchParams, key: string): string | undefined {
   return text ? text : undefined;
 }
 
-/** The query string, read strictly: an unknown category or status is
- *  dropped rather than passed to the database. */
+/** The query string, read strictly: an unknown category, status or type is
+ *  dropped rather than passed to the database. An accessory type counts only
+ *  with the accessories category, the one place its control is shown, so the
+ *  filter applied is always the filter on screen. */
 function readQuery(params: SearchParams): ProductListQuery {
   const category = PRODUCT_CATEGORIES.find((value) => value === one(params, PRODUCT_LIST_PARAM.category));
   const status = PRODUCT_STATUSES.find((value) => value === one(params, PRODUCT_LIST_PARAM.status));
+  const accessoryType =
+    category === "accessories"
+      ? ACCESSORY_KINDS.find((value) => value === one(params, PRODUCT_LIST_PARAM.accessoryType))
+      : undefined;
+  const rawRim = one(params, PRODUCT_LIST_PARAM.rim);
+  const rim = rawRim === undefined ? Number.NaN : Number(rawRim);
   const page = Number(one(params, PRODUCT_LIST_PARAM.page) ?? "1");
   return {
     search: one(params, PRODUCT_LIST_PARAM.search)?.slice(0, 200),
     category,
     status,
     brand: one(params, PRODUCT_LIST_PARAM.brand),
+    vendor: one(params, PRODUCT_LIST_PARAM.vendor),
+    accessoryType,
+    rim: Number.isFinite(rim) && rim > 0 ? rim : undefined,
+    noPhoto: one(params, PRODUCT_LIST_PARAM.noPhoto) === "1" ? true : undefined,
     page: Number.isFinite(page) && page >= 1 ? Math.trunc(page) : 1,
   };
 }
 
-function pageHref(query: ProductListQuery, page: number): string {
+/** The filter as query-string pairs, in one order: the pagination links and
+ *  the Go to page box both carry it. */
+function filterParams(query: ProductListQuery): URLSearchParams {
   const params = new URLSearchParams();
   if (query.search) params.set(PRODUCT_LIST_PARAM.search, query.search);
   if (query.category) params.set(PRODUCT_LIST_PARAM.category, query.category);
+  if (query.accessoryType) params.set(PRODUCT_LIST_PARAM.accessoryType, query.accessoryType);
   if (query.status) params.set(PRODUCT_LIST_PARAM.status, query.status);
   if (query.brand) params.set(PRODUCT_LIST_PARAM.brand, query.brand);
+  if (query.vendor) params.set(PRODUCT_LIST_PARAM.vendor, query.vendor);
+  if (query.rim !== undefined) params.set(PRODUCT_LIST_PARAM.rim, String(query.rim));
+  if (query.noPhoto) params.set(PRODUCT_LIST_PARAM.noPhoto, "1");
+  return params;
+}
+
+function pageHref(query: ProductListQuery, page: number): string {
+  const params = filterParams(query);
   if (page > 1) params.set(PRODUCT_LIST_PARAM.page, String(page));
   const search = params.toString();
   return search ? `${ADMIN_ROUTES.products}?${search}` : ADMIN_ROUTES.products;
 }
 
-async function load(query: ProductListQuery): Promise<{ list: ProductList; brands: string[] } | null> {
+async function load(
+  query: ProductListQuery,
+): Promise<{ list: ProductList; options: ProductFilterOptions } | null> {
   try {
-    const [list, brands] = await Promise.all([adminListProducts(query), adminListBrands()]);
-    return { list, brands };
+    const [list, brands, vendors, rims] = await Promise.all([
+      adminListProducts(query),
+      adminListBrands(),
+      adminListVendors(),
+      adminListRimSizes(),
+    ]);
+    return { list, options: { brands, vendors, rims } };
   } catch (error) {
     // `redirect()` from the gate must still propagate.
     if (error instanceof Error && "digest" in error) throw error;
@@ -88,6 +127,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const total = data?.list.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PRODUCT_LIST_PAGE_SIZE));
   const items = data?.list.items ?? [];
+  // A page past the end (an old link, a number typed into Go to page) goes
+  // to the last page rather than an empty one.
+  // An empty list (`pages` is 1) sends any later page back to page 1.
+  if (data !== null && page > pages) redirect(pageHref(query, pages));
 
   return (
     <>
@@ -105,7 +148,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         </div>
 
         <div className="mt-8 sm:mt-10">
-          <ProductFilters query={filter} brands={data?.brands ?? []} />
+          <ProductFilters query={filter} options={data?.options ?? { brands: [], vendors: [], rims: [] }} />
         </div>
 
         {data === null ? (
@@ -135,12 +178,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   ))}
                 </ul>
               </>
-            ) : total > 0 ? (
-              <p className="text-ink-muted text-15 leading-body">This page is past the end of the list.</p>
             ) : null}
 
             {pages > 1 ? (
-              <nav aria-label="Pages" className="flex flex-wrap items-center gap-3 pt-4">
+              <nav aria-label="Pages" className="flex flex-wrap items-end gap-3 pt-4">
                 {page > 1 ? (
                   <Button href={pageHref(query, Math.min(page - 1, pages))} variant="secondary" size="compact">
                     Previous
@@ -151,6 +192,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                     Next
                   </Button>
                 ) : null}
+                <PageJump
+                  params={[...filterParams(query).entries()]}
+                  page={Math.min(page, pages)}
+                />
               </nav>
             ) : null}
           </section>

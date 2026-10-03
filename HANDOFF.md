@@ -19,6 +19,18 @@ each finding; this branch carries the fixes.
   row); reset the `neondb_owner` password (`todo.md` item 9: the string was used, and printed once in a
   session transcript).
 
+**Last updated 2026-10-03 (the admin caught up with the loaded catalogue, D127, branch `admin-audit-fixes`).**
+An audit of the admin product screens against the D125 schema and the 42,165 loaded products found the form
+covers every column and every loaded row saves as it is; it fixed what did not fit. The name field is `Full name`
+with a live "On the site this reads" line (the storefront's title is brand + model); the brand dropdown lists the
+product's own category's brands; the list gains Vendor, Accessory type, Rim size and No photo filters (honoured
+by "Change all matching") and Go to page; migration `0004` indexes the list's order; bulk changes count in SQL.
+- **Checked on PGlite:** migrations `0000`–`0004`, each filter and combination, the bulk count, the category brand
+  checks, the index serving `ORDER BY updated_at DESC, id`; `tsc`, `eslint`, `next build`.
+- **Not checked:** anything on Vercel or Neon, or in a browser. `todo.md` item 12 is the owner's check.
+- **Independent of PR #27** (photos to R2, D126); both touch `product-types.ts` and the library files, so
+  whichever merges second takes a small rebase. Deferred by the owner: adding a new brand or vendor after the load.
+
 **Last updated 2026-10-03 (the D125 catalogue loaded into production, branch `catalog-load-2026-10-03`).**
 PR #24 merged and deployed (`e970674`, migration `0003` applied). `npm run catalog:import` loaded the 2026-10-03
 `catalogue.csv` from `~/Platinum Wheels Vendor Data/combined/share/output/` into production Neon over the direct

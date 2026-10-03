@@ -11,6 +11,7 @@
 
 import type {
   AdminProduct,
+  ProductCategory,
   ProductList,
 } from "@/features/catalog/catalog-types";
 import {
@@ -18,7 +19,11 @@ import {
   listAllProducts,
   listBrands,
 } from "@/features/catalog/store";
-import { countProductsByStatus, listVendors } from "@/features/catalog/lookups";
+import {
+  countProductsByStatus,
+  listRimSizes,
+  listVendors,
+} from "@/features/catalog/lookups";
 import { listProductPhotos, type ProductPhoto } from "@/features/catalog/photos";
 
 import { requireAdminSession } from "./session";
@@ -42,6 +47,10 @@ export async function adminListProducts(
     category: query.category,
     status: query.status,
     brand: query.brand,
+    vendor: query.vendor,
+    accessoryType: query.accessoryType,
+    rim: query.rim,
+    noPhoto: query.noPhoto,
     limit: PRODUCT_LIST_PAGE_SIZE,
     offset: (page - 1) * PRODUCT_LIST_PAGE_SIZE,
   });
@@ -55,10 +64,17 @@ export async function adminGetProduct(id: string): Promise<AdminProduct | null> 
   return getProductById(id);
 }
 
-/** Existing brand spellings, for the suggestions under the brand field. */
-export async function adminListBrands(): Promise<string[]> {
+/** Existing brand spellings: every one for the list's filter, or only one
+ *  category's for the product form's dropdown (D127). */
+export async function adminListBrands(category?: ProductCategory): Promise<string[]> {
   await requireAdminSession();
-  return listBrands();
+  return listBrands(category);
+}
+
+/** Rim sizes in the catalogue, for the list's Rim size filter (D127). */
+export async function adminListRimSizes(): Promise<number[]> {
+  await requireAdminSession();
+  return listRimSizes();
 }
 
 /** Vendor names already on a product source, for the sources dropdown (D116). */
