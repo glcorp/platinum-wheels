@@ -22,22 +22,29 @@
    the content that moves beneath it. The active nav underline is its own
    element inside a named `<ViewTransition>`, so on a category change it
    travels from one item to the next instead of vanishing and reappearing.
+
+   D128: the desktop link row is `site-nav-links.tsx`, a third client island,
+   so that on `/` (`finderSwitch`) the category links switch the hero finder
+   instead of leaving the page. The header itself stays a Server Component.
    --------------------------------------------------------------------------- */
 
 import Image from "next/image";
 import Link from "next/link";
-import { ViewTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { CartLink } from "@/components/site/cart-link";
 import { SiteNavDrawer, type SiteNavDrawerLink } from "@/components/site/site-nav-drawer";
+import {
+  SiteNavLinks,
+  type NavItemId,
+  type SiteNavItem,
+} from "@/components/site/site-nav-links";
+import { FINDER_SWITCH_HINT_ID } from "@/lib/finder-category";
 import { PRIMARY_CONTACT } from "@/lib/site";
 import { ROUTES } from "@/lib/routes";
 
-type NavItemId = "tires" | "wheels" | "accessories" | "contact";
-
 /* Four nav items, in artboard order — design/inventory/home.md:137-139,
    home-desktop.html:100-109. Routes from src/lib/routes.ts (D39). */
-const NAV_ITEMS: ReadonlyArray<{ id: NavItemId; label: string; href: string }> = [
+const NAV_ITEMS: ReadonlyArray<SiteNavItem> = [
   { id: "tires", label: "Tires", href: ROUTES.tires },
   { id: "wheels", label: "Wheels", href: ROUTES.wheels },
   { id: "accessories", label: "Accessories", href: ROUTES.accessories },
@@ -47,6 +54,7 @@ const NAV_ITEMS: ReadonlyArray<{ id: NavItemId; label: string; href: string }> =
 export function SiteHeader({
   variant,
   active,
+  finderSwitch = false,
 }: {
   variant: "over-hero" | "solid";
   /** The current nav item. Every drawn route passes its own explicitly
@@ -56,8 +64,13 @@ export function SiteHeader({
    *  "tires", so those pages marked Tires as current in the desktop row and
    *  the mobile drawer alike. */
   active?: NavItemId;
+  /** `/` only (D128): Tires / Wheels / Accessories switch the hero finder
+   *  instead of navigating, in the desktop row and the drawer, and the active
+   *  marker follows the finder. Every other page leaves it off. */
+  finderSwitch?: boolean;
 }) {
   const drawerLinks: SiteNavDrawerLink[] = NAV_ITEMS.map((item) => ({
+    id: item.id,
     label: item.label,
     href: item.href,
     active: item.id === active,
@@ -111,62 +124,23 @@ export function SiteHeader({
 
         {/* Desktop link row — gap-10 (40px, home-desktop.html:100), hidden
             below md: (1100px), tablet band collapses it to the hamburger
-            (DESIGN.md §8 "88px, items collapse"). */}
+            (DESIGN.md §8 "88px, items collapse"). The links themselves are
+            `SiteNavLinks`, a leaf island since D128 so that on `/` they can
+            switch the hero finder; their classes and the travelling
+            `nav-indicator` (D92b) moved there unchanged. */}
         <div data-print="hide" className="hidden items-center gap-10 md:flex">
-          {NAV_ITEMS.map((item) => {
-            const isActive = item.id === active;
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                /* label text-13 tracking-10 py-2 border-b-2 — home-desktop.html:102-108.
-                   Active: text-on-photo + border-accent. Inactive: the artboard's
-                   rgba(244,244,245,.68) is the `--color-on-photo-muted` token (home.md:393)
-                   is a Tailwind v4 opacity modifier on the token; flagged for
-                   emission verification in the build report. Hover is the global
-                   `a:hover` → --text-muted, implemented here as hover:text-ink-muted
-                   on inactive links only; the base layer eases it over
-                   `--duration-feedback` since D92b (DEVIATIONS #75).
-
-                   D92b (DEVIATIONS #76): inactive links add `nav-rule`, a 2px
-                   `--border-strong` rule that draws in from the left on hover
-                   in the slot the active underline occupies. The active link's
-                   drawn `border-accent border-b-2` becomes `border-b-2
-                   border-transparent` plus a `nav-indicator` span — the same
-                   2px `--accent` bar at the same `bottom:-2px`, so the box is
-                   byte-identical — because only an element of its own can be
-                   named and carried between items by a view transition.
-
-                   `prefetch={true}`: a shared `nav-indicator` morph only forms
-                   if the destination renders in the same transition. A route
-                   that is not ready at the click renders nothing new yet, and
-                   the incoming half of the pair never exists
-                   (vercel-react-view-transitions, references/nextjs.md "When
-                   Content Must Be Ready"). A full prefetch makes the three
-                   category pages ready before the click. (This comment used
-                   to name `loading.tsx`'s skeleton as the cause; that file was
-                   removed in D91b, and the prefetch still earns its place.) */
-                prefetch={true}
-                aria-current={isActive ? "true" : undefined}
-                className={
-                  isActive
-                    ? "label text-13 tracking-10 text-on-photo relative border-b-2 border-transparent py-2"
-                    : "label text-13 tracking-10 text-on-photo-muted hover:text-ink-muted nav-rule border-b-2 border-transparent py-2 active:opacity-70"
-                }
-              >
-                {item.label}
-                {isActive ? (
-                  /* The span must be the boundary's direct child, and `share`
-                     must be explicit: `default="none"` would otherwise resolve
-                     the pair to none and the bar would never travel. */
-                  <ViewTransition name="nav-indicator" share="auto" default="none">
-                    <span aria-hidden="true" className="nav-indicator" />
-                  </ViewTransition>
-                ) : null}
-              </Link>
-            );
-          })}
+          <SiteNavLinks items={NAV_ITEMS} active={active} finderSwitch={finderSwitch} />
         </div>
+
+        {finderSwitch ? (
+          /* D128: the one description both link sets point at on `/`
+             (`aria-describedby`), so a screen reader hears what the category
+             links do here before activating one. Outside the `md:`-only row
+             because the drawer's links use it too. */
+          <span id={FINDER_SWITCH_HINT_ID} className="sr-only">
+            Changes the vehicle finder on this page
+          </span>
+        ) : null}
 
         <div className="flex items-center gap-2">
           {/* Phone CTA — accent Button, compact size, visible from sm: (720px).
@@ -238,6 +212,7 @@ export function SiteHeader({
           <div className="md:hidden">
             <SiteNavDrawer
               links={drawerLinks}
+              finderSwitch={finderSwitch}
               phone={{ display: PRIMARY_CONTACT.display, tel: PRIMARY_CONTACT.tel }}
             />
           </div>

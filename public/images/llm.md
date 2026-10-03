@@ -21,6 +21,11 @@ renders empty until the pipeline is re-run.
   winter pre-cropped (`CROPS`). Sources and licences: `design/ASSET-CREDITS.md`. The original client PNGs stay
   in `design/assets/photos/` (frozen) and are overwritten in the output by the replacements. The filename
   `winter-tacoma` is kept because two components import it; it no longer shows a Tacoma.
+- `brands/*.svg` — **19 brand logos for the home ticker (D129)**, the one folder here that is **not** pipeline output and not
+  webp: each is the brand's own vector logo, fetched 2026-10-03, metadata stripped, flattened to one colour (`#000`) and cropped
+  to its painted bounds. The page never shows the file's colour: `brand-strip.tsx` paints a token through it as a CSS mask.
+  Filenames are the slugs in `src/features/home/brand-logos.ts`. Sources, the per-file notes (wordmark-only, knockout,
+  one-colour variant) and the owner's permission quote: `design/ASSET-CREDITS.md` "Brand logos".
 - `logo/platinum-wheels-logo-transparent.webp` — **the working file**, used everywhere in the UI.
 - `logo/platinum-wheels-logo.webp` — the white-plate original; **print/invoice only** in the UI, and
   since D112 the `logo` the organisation's structured data names, because a search result shows a logo on
@@ -31,7 +36,8 @@ renders empty until the pipeline is re-run.
 ## Rules
 - **Nothing lands here without a row in `design/ASSET-CREDITS.md`** — licence recorded *before* the file
   exists (`design/ASSET-CREDITS.md:42-50`).
-- webp only, quality 82 / effort 6 (`scripts/prepare-assets.mjs:38`).
+- webp only, quality 82 / effort 6 (`scripts/prepare-assets.mjs:38`) — except `brands/`, which is SVG (D129): vector
+  logos at a fixed one-colour fill, small (1–10KB each), no scripts, no embedded rasters, no external references.
 - The pipeline **refuses to upscale**: `Math.min(scale, 1)` caps it and it prints a per-file warning
   instead of shipping a blurry cut-out (`scripts/prepare-assets.mjs:69-79`; **D19**). Vendor catalogue images,
   when they arrive, are upscaled by the feasibility study instead (**D90b**).
@@ -43,12 +49,12 @@ renders empty until the pipeline is re-run.
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
-| — | — | No folder-scoped rows. | Governed by **D4** (hero source) and **D19** (square canvas, never upscale). | root `llm.md` §5 |
+| — | — | No folder-scoped rows. | Governed by **D4** (hero source), **D19** (square canvas, never upscale) and **D129** (`brands/`). | root `llm.md` §5 |
 
 ## Connects to
 - Depends on: `scripts/prepare-assets.mjs` (the writer), `design/assets/{products,photos,logo}/*.png`
   (the inputs), `design/ASSET-CREDITS.md` (the gate).
-- Depended on by: `src/features/catalog/components/product-card.tsx:166`; every home/results/PDP section
+- Depended on by: `src/features/catalog/components/product-card.tsx:166`; `src/features/home/components/brand-strip.tsx` (`brands/`, D129); every home/results/PDP section
   that renders a photo (`design/manifest.md` §1); `public/llm.md` (parent).
 
 ## Don't
@@ -60,6 +66,8 @@ renders empty until the pipeline is re-run.
   (`HANDOFF.md` §7, `design/DEVIATIONS.md` bottom).
 - Don't use `logo/platinum-wheels-logo.webp` (white plate) in the UI — transparent is the working file.
 - Don't delete `client-assets/photos/`: `npm run assets` rebuilds the four home photos from it (D94b).
+- Don't replace a `brands/` file without re-measuring its `aspect` in `brand-logos.ts`, and never with a redrawn or traced
+  approximation of a trademark: the brand's own vector, or drop the brand (D129).
 - Don't assume `npm run assets` regenerates the hero: `hero-tread.webp` has **no source** in
   `design/assets/photos/` and is placed by hand under **D4**. The pipeline never touches it.
 

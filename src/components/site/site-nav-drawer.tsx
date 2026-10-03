@@ -14,6 +14,18 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
+import type { NavItemId } from "@/components/site/site-nav-links";
+import {
+  FINDER_FORM_ID,
+  FINDER_SWITCH_HINT_ID,
+  isFinderCategory,
+  isPlainPrimaryClick,
+  type FinderCategory,
+} from "@/lib/finder-category";
+import {
+  setFinderCategory,
+  useFinderCategory,
+} from "@/lib/finder-category-store";
 
 /* NJR-5 (D91b, owner ruling 2026-09-30 "Menu jumps to footer nav"). The drawer
    is a JS `<dialog>`, so with scripting off the trigger used to be a visible,
@@ -48,6 +60,7 @@ const MENU_ICON = (
 );
 
 export type SiteNavDrawerLink = {
+  id: NavItemId;
   label: string;
   href: string;
   active: boolean;
@@ -56,13 +69,24 @@ export type SiteNavDrawerLink = {
 export function SiteNavDrawer({
   links,
   phone,
+  finderSwitch = false,
 }: {
   links: ReadonlyArray<SiteNavDrawerLink>;
   phone: { display: string; tel: string };
+  /** `/` only (D128): the three category links switch the hero finder. */
+  finderSwitch?: boolean;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   const hydrated = useSyncExternalStore(subscribeNever, isHydrated, notHydrated);
+  const finderCategory = useFinderCategory();
+  /* D128: a category tapped in the drawer on `/`, held until the drawer has
+     closed. The effect below closes the dialog (which hands focus back to the
+     Menu button and lifts the scroll lock) and only then switches the
+     finder, so the finder's scroll-into-view runs on an unlocked page that
+     nothing will move again. Not the dialog's `close` event: Chrome holds
+     that event back while the tab is hidden, so it is not a reliable cue. */
+  const pendingSwitch = useRef<FinderCategory | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -74,12 +98,39 @@ export function SiteNavDrawer({
       document.body.style.overflow = "hidden";
     } else if (!open && dialog.open) {
       dialog.close();
+      const next = pendingSwitch.current;
+      pendingSwitch.current = null;
+      if (next) setFinderCategory(next);
     }
 
     return () => {
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  /* D128, `/` only: one listener on the dialog for the three category links
+     (`data-finder-switch`). A plain tap is stopped there, before it reaches
+     `next/link`'s handler or the loader's document listener, and closes the
+     drawer with the category held for the effect above. A modified click
+     falls through and opens the category page, as everywhere else. Same rule
+     as the desktop row (`site-nav-links.tsx`). */
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!finderSwitch || !dialog) return;
+    const onClick = (event: MouseEvent) => {
+      if (!isPlainPrimaryClick(event) || !(event.target instanceof Element)) return;
+      const category = event.target
+        .closest("a[data-finder-switch]")
+        ?.getAttribute("data-finder-switch");
+      if (!isFinderCategory(category)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      pendingSwitch.current = category;
+      setOpen(false);
+    };
+    dialog.addEventListener("click", onClick);
+    return () => dialog.removeEventListener("click", onClick);
+  }, [finderSwitch]);
 
   return (
     <>
@@ -166,22 +217,35 @@ export function SiteNavDrawer({
           {/* Links: display 40px, stacked left, 16px gap — DESIGN.md §4 Nav (~line 192).
               `active:opacity-70` is the text-link press (D92b). */}
           <ul className="flex flex-col gap-4">
-            {links.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  aria-current={link.active ? "true" : undefined}
-                  className={
-                    link.active
-                      ? "display text-display-40 text-ink border-accent inline-block border-b-2 active:opacity-70"
-                      : "display text-display-40 text-ink inline-block border-b-2 border-transparent active:opacity-70"
-                  }
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
+            {links.map((link) => {
+              /* On `/` the three categories switch the finder (D128): the
+                 active one is the finder's, and a plain tap closes the drawer
+                 and switches instead of navigating. Same semantics as the
+                 desktop row (`site-nav-links.tsx`). Any other link, and any
+                 modified click, navigates as before. */
+              const switchTo =
+                finderSwitch && isFinderCategory(link.id) ? link.id : null;
+              const isActive = switchTo ? switchTo === finderCategory : link.active;
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    data-finder-switch={switchTo ?? undefined}
+                    onClick={() => setOpen(false)}
+                    aria-current={isActive ? "true" : undefined}
+                    aria-controls={switchTo ? FINDER_FORM_ID : undefined}
+                    aria-describedby={switchTo ? FINDER_SWITCH_HINT_ID : undefined}
+                    className={
+                      isActive
+                        ? "display text-display-40 text-ink border-accent inline-block border-b-2 active:opacity-70"
+                        : "display text-display-40 text-ink inline-block border-b-2 border-transparent active:opacity-70"
+                    }
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
 
           <Button href={`tel:${phone.tel}`} variant="accent" size="compact" fullWidth>

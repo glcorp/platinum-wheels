@@ -19,6 +19,13 @@ import Image from "next/image";
  * header's own height (site-header.tsx `h-17 sm:h-22`) so grown copy never
  * slides under it. At default spacing the copy fits well inside the minimum,
  * so rest geometry at 390 and 1440 is unchanged.
+ *
+ * D128 (owner, 2026-10-03: "no matter what the device is, before scrolling at
+ * the end only find my tire should be there"): the minimum is now `hero-fit`,
+ * the drawn height capped by what leaves the finder on screen, and the h1
+ * steps down a token on short screens. 1440x900 is unchanged; 390x844 is not
+ * (hero 720 -> 575, so the finder's CTA ends 21px above the fold instead of
+ * 124px below it).
  */
 export function Hero() {
   return (
@@ -26,10 +33,19 @@ export function Hero() {
       data-probe="hero"
       className={[
         "relative flex flex-col justify-end overflow-hidden",
-        "min-h-180 sm:min-h-190 md:min-h-225",
+        /* D128: `hero-fit` (globals.css D128 block) is the drawn 720 / 760 /
+           900 (were `min-h-180 sm:min-h-190 md:min-h-225`) wherever the screen
+           is tall enough, and otherwise shrinks so the finder below it, CTA
+           included, is on screen before any scroll. */
+        "hero-fit",
         // Insets: 16px mobile -> 48px desktop; bottom 100px -> 200px
         // (home.md:22 mobile, :21 desktop). Were the copy's absolute offsets.
         "px-4 pt-17 pb-25 sm:px-12 sm:pt-22 sm:pb-50",
+        /* D128: on the shortest phones (`fold-minimal`, under 600px tall) the
+           gap between the lede and the overlapping finder closes from 28px to
+           16px (100 -> 88), which is the room the copy needs to clear the
+           header at 320x568. */
+        "max-sm:fold-minimal:pb-22",
       ].join(" ")}
     >
       {/* Photo: hero-tread.webp (D4), not the artboard's hotlinked Vossen/Ferrari
@@ -83,7 +99,16 @@ export function Hero() {
 
         <h1
           data-probe="hero-h1"
-          className="display text-on-photo text-display-56 sm:text-display-88 md:text-display-120 md:text-balance"
+          className={[
+            "display text-on-photo text-display-56 sm:text-display-88 md:text-display-120 md:text-balance",
+            /* D128: on a short screen the drawn size steps down one token at a
+               time, so the copy fits the shorter hero and the finder stays
+               above the fold. Heights are the `fold-*` variants (globals.css
+               D128 block); at 820px and taller nothing here applies. */
+            "max-sm:fold-short:text-display-48 max-sm:fold-cramped:text-display-40 max-sm:fold-minimal:text-display-32",
+            "sm:fold-short:text-display-56 sm:fold-cramped:text-display-48",
+            "md:fold-short:text-display-88 md:fold-cramped:text-display-56",
+          ].join(" ")}
         >
           The right tires. Confirmed by people who know.
         </h1>
@@ -105,8 +130,10 @@ export function Hero() {
             "sm:max-w-hero-lede",
           ].join(" ")}
         >
-          Search by your vehicle. We match, confirm fitment and quote — you
-          just drive.
+          {/* D130 (owner, 2026-10-03): no em dash in visible copy. The drawn
+              line was "We match, confirm fitment and quote — you just drive." */}
+          Search by your vehicle. We find the match, check the fit and quote
+          you.
         </p>
       </div>
     </div>

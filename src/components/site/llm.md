@@ -27,6 +27,21 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   are `prefetch={true}` because the indicator only travels if the destination renders in the same
   transition; the logo is typed `nav-back`. Shared by `/`, `/tires` and `/products/[slug]`
   (unbuilt routes may still import it per D26/D39). 88px bar from `sm:` / 68px below.
+  **D128:** a third prop, `finderSwitch` (passed by `/` only), and the desktop link row moved into
+  `site-nav-links.tsx` (classes, `prefetch` and the travelling indicator unchanged). With
+  `finderSwitch` the header also renders one `sr-only` line, `Changes the vehicle finder on this page`
+  (`id={FINDER_SWITCH_HINT_ID}`), that both link sets reference with `aria-describedby`.
+- [`site-nav-links.tsx`](site-nav-links.tsx) — `"use client"`, `SiteNavLinks({ items, active,
+  finderSwitch? })` plus the `NavItemId` / `SiteNavItem` types (**D128**, owner 2026-10-03: header
+  Wheels / Accessories "should stay on the home page and refresh that part only", option *"Header nav
+  switches it, home only"*). Off `/` it renders exactly the row the header rendered before. On `/` a
+  native listener on each category anchor takes an unmodified left click (`isPlainPrimaryClick`),
+  stops it at its target so neither `next/link` nor the loader's document listener sees it, and calls
+  `setFinderCategory`; modified and middle clicks, and every click before hydration or with JS off,
+  still open the category page. The active item follows the finder through `useDeferredValue`, so
+  the change renders in a transition and the D92b `nav-indicator` pair can form; whether the bar
+  visibly travels was not observable here (the pane's document was `hidden`, which aborts every view
+  transition, route changes included) and degrades to a plain swap.
 - [`site-footer.tsx`](site-footer.tsx) — Server Component, named export `SiteFooter`, no props.
   120px logo badge, Shop/Company/Legal link columns (`ROUTES`), a computed `Winter <year>` link
   and bottom-bar `© <year> {SITE.legalName} Inc.` (D32). Social row omitted per D34.
@@ -50,6 +65,12 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   the viewport edge and fell under the home indicator on a notched phone. Base padding moves 16px →
   20px and needs **no `design/DEVIATIONS.md` row** — the drawer is undrawn, so its layout is the
   coordinator's call (D31).
+  **D128:** each link carries its `id`; with `finderSwitch` (`/` only) the three category links carry
+  `data-finder-switch`, and one listener on the `<dialog>` takes a plain tap on one: it stops the
+  click, closes the drawer, and the open/close effect switches the finder **after** `dialog.close()`
+  (focus back on Menu, scroll lock lifted), so the finder's scroll-into-view is the last thing that
+  moves the page. Not the dialog's `close` event, which Chrome holds back in a hidden tab. Active state
+  and `aria-current` follow the finder there too.
 
 - [`page-stub.tsx`](page-stub.tsx) — `PageStub`, props `{ title; lede; active?; children? }` (**D93b**: `lede`
   is required — the built-in "This page is being built" line was false on a 404 — and `children` render
@@ -107,6 +128,8 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   Next 16's own hash scroll glides under `scroll-behavior: smooth` — `disableSmoothScrollDuringRouteTransition`
   runs with `dontForceLayout: true` and the hash branch never reads layout — and the glide can be cut short
   (card `Request a quote` → PDP `#quote` stopped at 1558–1638 against 1486, FIN-4).
+  **D131:** a click on a fragment link whose URL is exactly the current one (`/#contact` on `/#contact`) is taken
+  by a capture-phase click listener and scrolled here, because Next's same-URL navigation never scrolls.
 - [`route-error.tsx`](route-error.tsx) — `"use client"`. `RouteError({ error, retry })`, the storefront's
   route error boundary (**D62**), plus `RouteErrorPanel({ digest?, retry?, as? })`, its contents without
   the `<main>` wrapper so `/styleguide` §11 can render the real component instead of a copy that drifts
@@ -138,12 +161,19 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   so the mobile header is unaffected by any number change.
 - **The footer ships no social links** — D34, "No social links yet"; the drawn three social squares are
   omitted until URLs exist. Precedent D7: no dead links.
+- **On `/` the category links are links that switch the finder, and say so (D128).** They stay real
+  `<a href>`s (no-JS, new-tab and pre-hydration clicks navigate). The chosen one carries
+  `aria-current="true"` ("current item in a set"), never `"page"`, because the page is still home;
+  each carries `aria-controls` → the finder form and `aria-describedby` → the header's hint; the
+  finder announces the switch. No `aria-pressed` (a button state on a link). Contact is never
+  intercepted. Every other page passes no `finderSwitch` and the links navigate as before.
 - **The year is computed at render**, never hard-coded — D32. `© <year>` here, `Winter <year>` in the
   home promo. The artboards' `2026` is sample data (`design/DEVIATIONS.md`, "Sample data").
 - **Links point at planned routes** — D26. `/tires`, `/products/<slug>` and the stub routes are
   linkable before they exist; every `href` in the exports is `"#"` (`design/inventory/home.md:731`).
 - **Header and footer stay Server Components.** Only leaf islands take `"use client"` (the drawer, and
-  since D80/D92b `hash-scroll` and `scroll-reveal`, which render nothing)
+  since D80/D92b `hash-scroll` and `scroll-reveal`, which render nothing; since D128 the desktop link
+  row, `site-nav-links.tsx`)
   (`docs/decisions.md:73`). The drawer is the four nav links plus the phone CTA, full-screen, Esc
   closes, focus trapped, sized in `dvh` (D31); nothing else about it is drawn or specified.
 - **The written pages state no fact that is not already in the repo.** Everything on `/about`,
@@ -166,6 +196,7 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 | D91b | 2026-09-29 | `hash-scroll` stays as a safety net (its cause, `loading.tsx`, is gone); `site-footer` links may wrap (`break-words`); stale "suspends into `loading.tsx`" comments corrected across the folder. | QA pass HPD-1, KBD-7. | D91b |
 | D93b | 2026-09-30 | `SiteHeader`/`PageStub` default to no current item and the current link carries `aria-current="true"` (header + drawer); `PageStub` takes a required `lede`; the 404 gets the owner's line and action pair; `src/app/global-error.tsx` renders `RouteError` in its own `<html lang="en">` on the dark ground. | Tires was marked current on `/about`, `/privacy`, `/terms` and every 404; the 404 said "This page is being built"; a root-layout error showed Next's white unbranded page. Owner: *"Line + two actions"*, *"Add a branded global-error"*. | D93b |
 | D91b | 2026-09-30 | `scroll-reveal` reveals a fragment target instantly (link, `hashchange`, `popstate`, cold load); `nav-progress` drops the inert `[data-route-loading]` settle check, which only `loading.tsx` ever set; `hash-scroll` re-lands a fragment on route arrival. | QA pass: `/#contact` landed 12px short on `/`; the check could never fire after D91b. | D91b |
+| D128 | 2026-10-03 | `SiteHeader` takes `finderSwitch`; the desktop link row is the `site-nav-links.tsx` island; on `/` the category links in the row and the drawer switch the hero finder instead of navigating. | Owner: header Wheels / Accessories "should stay on the home page and refresh that part only"; chose "Header nav switches it, home only". | Owner, 2026-10-03; D128 |
 | — | — | None folder-scoped. | Every ruling that shapes this folder is global. | — |
 
 **D92b** (motion) governs `page-transition.tsx`, `scroll-reveal.tsx`, the header's pinned name and
@@ -178,6 +209,7 @@ all widths, hide rather than remove).
 
 ## Connects to
 - **Depends on:** `src/lib/site.ts` (`SITE`, `CONTACTS`, `PRIMARY_CONTACT`) and `src/lib/routes.ts`;
+  `src/lib/finder-category.ts` + `finder-category-store.ts` (D128: ids, guards, the shared value);
   `src/components/ui/button.tsx` for the header CTA; `src/app/globals.css` tokens; `next/image`,
   `next/link`; `public/images/` for the badge PNG.
 - **Depended on by:** `src/app/(storefront)/page.tsx:3-4` and `tires/page.tsx:3-4`
@@ -201,6 +233,11 @@ all widths, hide rather than remove).
   `src/features/finder/`.
 - **Don't mark the header or footer `"use client"`** to get the drawer working — extract the island
   (`docs/decisions.md:73`).
+- **Don't import `src/features/finder/` to switch the finder (D37, D128).** The header writes
+  `src/lib/finder-category-store.ts`; the finder reads it.
+- **Don't intercept the category links with `onClick` + `preventDefault` (D128).** `nav-progress.tsx`
+  deliberately ignores `defaultPrevented` and would start the loader for a navigation that never
+  comes; the click must be stopped at the anchor (or the dialog) before it reaches `document`.
 
 ## Open
 1. ~~**Is there a `mobile-call-bar.tsx`?**~~ No. Closed 2026-09-21 by **D47(1)**: `call-cta-panel` is a

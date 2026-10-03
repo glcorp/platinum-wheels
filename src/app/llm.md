@@ -11,6 +11,8 @@ entire site loses its type or its palette at once.
 - [`globals.css`](globals.css) (~1,230 ln) — the token system. See Rules. Cite it by utility or token
   **name**, not line: every insertion shifts the numbers (`HANDOFF.md` §8.21), and several `:NNN` citations
   below predate the D92b motion block and are approximate.
+  Two labelled blocks from 2026-10-03: "Brand marquee (D129)" (`brand-marquee`) and the D128 block
+  (`@custom-variant fold-short / fold-cramped / fold-minimal`, `hero-fit`, `finder-cta-label`).
 - [`layout.tsx`](layout.tsx) — root layout. Metadata (D112): `metadataBase` (`SITE_URL`), `title.default` +
   `template: "%s · Platinum Wheels"`, the site description, `robots` from the indexing flag
   (`siteRobots()`) and the site card as the default preview. **No `alternates.canonical` here**: every

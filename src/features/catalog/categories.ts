@@ -266,9 +266,10 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
       copy: {
         empty: "Nothing fits those filters yet. Clear them, or call us.",
         nearMiss: "size",
-        /* Artboard-verbatim, both PDP exports. */
+        /* Artboard wording, both PDP exports, with its em dash made a colon
+           (owner copy pass, 2026-10-03, D130). */
         quotePlaceholder:
-          "Anything we should know — current tires, storage, install timing…",
+          "Anything we should know: current tires, storage, install timing…",
         quoteConsent:
           "Yes, send me seasonal offers and tire tips from Platinum Wheels. You can unsubscribe anytime.",
       },
@@ -293,7 +294,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         empty: "Nothing fits those filters yet. Clear them, or call us.",
         nearMiss: "fitment",
         quotePlaceholder:
-          "Anything we should know — current setup, storage, install timing…",
+          "Anything we should know: current setup, storage, install timing…",
         quoteConsent:
           "Yes, send me seasonal offers and shop news from Platinum Wheels. You can unsubscribe anytime.",
       },
@@ -326,7 +327,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
            verb. */
         nearMiss: "fitment",
         quotePlaceholder:
-          "Anything we should know — your vehicle, wheel size, install timing…",
+          "Anything we should know: your vehicle, wheel size, install timing…",
         quoteConsent:
           "Yes, send me seasonal offers and shop news from Platinum Wheels. You can unsubscribe anytime.",
       },

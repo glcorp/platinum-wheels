@@ -23,14 +23,17 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
   The track is `tabIndex={0} role="group" aria-label="Featured tires"` (**D66**): Chrome will not focus
   a plain scrolling `<div>`, so below `sm:` a keyboard user could not scroll it and AT announced four
   cards in an unnamed container. The only paint it adds is the global focus ring.
-- [`components/brand-strip.tsx`](components/brand-strip.tsx) — `BrandStrip`. `<ul aria-label="Brands">` banded row from `BRANDS`. home.md §2.8.
+- [`components/brand-strip.tsx`](components/brand-strip.tsx) — `BrandStrip`. The drawn band (fill, hairlines, margins, paddings: home.md §2.8) holding a **CSS-only ticker of real brand logos** since **D129**: the list twice in a track that slides one list's width, the copy `aria-hidden`; a no-JS pause checkbox (WCAG 2.2.2) plus pause on hover and focus; reduced motion shows one static wrapping row. Mechanics are the `brand-marquee` utility (`globals.css`, "Brand marquee (D129)"). No longer reads `BRANDS`.
+- [`brand-logos.ts`](brand-logos.ts) — `BRAND_LOGOS`: the nineteen ticker brands in display order, each with its file slug (`public/images/brands/<slug>.svg`), measured `aspect` and optical `scale` (D129). Sources: `design/ASSET-CREDITS.md` "Brand logos".
 - [`components/contact.tsx`](components/contact.tsx) — `Contact`, `id="contact"`. One DOM, four blocks placed by grid per width (D22). home.md §2.9.
 
 ## Rules
 - One file per manifest section, named by the section: `hero.tsx`, `category-tiles.tsx`,
   `winter-promo.tsx`, `how-it-works.tsx`, `featured-tires.tsx`, `brand-strip.tsx`, `contact.tsx`.
 - Server Components. The only client island is the mobile featured carousel (D30).
-- Copy is artboard-verbatim (`.claude/rules/ui.md` "Copy"). Desktop wording at all widths (D22).
+- Copy is artboard-verbatim (`.claude/rules/ui.md` "Copy") **except where the owner's copy pass of
+  2026-10-03 (D130) rewrote it**: the four `how-it-works` steps, the winter promo's em dash and the
+  contact hours (`SITE.hours`). No visible line carries an em dash. Desktop wording at all widths (D22).
 - Year is computed at render (D32). Links come from `src/lib/routes.ts` (D39). Contact data from
   `src/lib/site.ts`. Products from `src/features/catalog/` (D37).
 - Every measured value cites `design/inventory/home.md:<line>` in a comment. Missing token → report,
@@ -47,13 +50,14 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D129 | 2026-10-03 | The brand strip becomes a right-to-left ticker of nineteen famous tire and wheel brands' real logos, one muted ink (`text-ink-dim`) brightening to `text-ink` on hover, painted through CSS masks so no brand colour shows. Supersedes D91b's brand-strip columns and the drawn text-wordmark grid; the band itself is unchanged. | Owner, 2026-10-03: *"get the actual brand logo and add it there … it could be a moving strip … like a ticker"*, then chose "Famous tire + wheel brands", muted, brighter on hover; owner states the shop has permission to show the logos. | D129; `design/ASSET-CREDITS.md` |
 | D93b | 2026-09-30 | The featured arrows are named "Previous featured tire" / "Next featured tire", carry `aria-controls="featured-track"` and a hover state; the brand-strip `<li>` is `translate="no"`. | Unnamed controls that scroll an unnamed region; browser translation mangled brand marks. | QA pass WDG-13, WDG-15; DEVIATIONS #83; D93b |
-| D91b | 2026-09-29 | Hero: `min-h-*` in place of fixed heights, copy in flow; brand strip: 6 columns from `sm:` to `lg:`, the drawn 8 from 1320 (DEVIATIONS #82); contact: phone numbers never wrap, cards stack from `sm:` and pair from `md:`, 24px card padding at 1100–1319; the desktop hero scrim's upper band is `--scrim-mid` (DEVIATIONS #79, in `globals.css`). 390 and 1440 unchanged except the scrim. | WCAG 1.4.12 clipped the hero copy by up to 216px; brand marks and phone pills collided or wrapped at rest in the undrawn bands; the eyebrow and h1 measured 2.03 and 2.29:1 over the photo. | QA pass KBD-1/2/6, NJR-7; owner rulings 2026-09-29; D91b |
+| D91b | 2026-09-29 | Hero: `min-h-*` in place of fixed heights, copy in flow; brand strip: 6 columns from `sm:` to `lg:`, the drawn 8 from 1320 (DEVIATIONS #82; **superseded by D129**, the ticker); contact: phone numbers never wrap, cards stack from `sm:` and pair from `md:`, 24px card padding at 1100–1319; the desktop hero scrim's upper band is `--scrim-mid` (DEVIATIONS #79, in `globals.css`). 390 and 1440 unchanged except the scrim. | WCAG 1.4.12 clipped the hero copy by up to 216px; brand marks and phone pills collided or wrapped at rest in the undrawn bands; the eyebrow and h1 measured 2.03 and 2.29:1 over the photo. | QA pass KBD-1/2/6, NJR-7; owner rulings 2026-09-29; D91b |
 None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root `llm.md` §5b).
 
 ## Connects to
 - Depends on: `src/components/ui/*`, `src/features/catalog/` (`ProductCard`, seed data),
-  `src/lib/site.ts`, `src/lib/routes.ts`, `public/images/`, `src/app/globals.css`.
+  `src/lib/site.ts`, `src/lib/routes.ts`, `public/images/` (incl. `public/images/brands/`, D129), `src/app/globals.css`.
 - Depended on by: `src/app/(storefront)/page.tsx` only.
 
 ## Don't
@@ -61,9 +65,20 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
 - Don't put the finder here (`src/features/finder/`).
 - Don't ship the artboard's `Winter 2026` or the mobile-only copy variant (D32, D22).
 - Don't add the desktop→mobile breakpoint from the artboards; they have none. `sm:` 720 is D10.
+- Don't give a brand logo its own colour, an `<img>`, or a link. The ticker paints every logo `currentColor` through a mask so the
+  colour is a token (D129); the owner did not ask for links. A new logo needs a row in `design/ASSET-CREDITS.md`, its measured
+  `aspect`, and a `scale` tuned on a rendered strip.
+- Don't drop the brand ticker's pause control or its reduced-motion fallback: moving content longer than 5s needs a pause
+  (WCAG 2.2.2), and the global reduced-motion kill alone would park the track on the hidden copy.
 
 ## Open
 - Parity table: `design/reports/home.md`.
+- **Brand ticker (D129) is unmeasured against a live build** — checked on a static render of the real component with the
+  compiled `globals.css` in headless Chromium at 320/390/768/1440/1920 (no page overflow, seamless loop, pause by toggle,
+  focus and hover, reduced-motion rows). Safari/Firefox and the real page are not checked. The e2e specs that read the old
+  strip (`home.spec.ts` `[data-probe="brands"] > li`, `parity.spec.ts` "brand strip item" / `grid-template-columns`, the
+  `a11y-interaction.spec.ts` brand fixme) describe the drawn grid and need rewriting when the suite is unparked (D111).
+  Coordinator: `design/reports/home.md` rows for the brand strip are stale.
 - ~~Finder `Model` select lists every make's models under `<optgroup>` (no JS).~~ **Closed 2026-09-22
   by D70:** the server still renders every make's models — that is the no-JS path — and a null-rendering
   leaf island narrows the list to the chosen `Make` when JS is available. The hero finder on `/` gets it

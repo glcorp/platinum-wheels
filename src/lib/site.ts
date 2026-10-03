@@ -23,7 +23,7 @@ export const SITE = {
   city: "Brampton",
   province: "ON",
   email: "sales@platinumwheels.ca",
-  hours: "Every day: 9 am – 8 pm",
+  hours: "Every day, 9 am to 8 pm",
   hoursLabel: "Phone & inquiry hours",
   /**
    * Prices are per tire, before tax and install (DESIGN.md §3 Numerals).

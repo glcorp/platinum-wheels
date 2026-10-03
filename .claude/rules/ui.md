@@ -50,8 +50,10 @@ differing from the design.
 
 ## Copy
 
-Artboard copy ships verbatim — exact wording, case and punctuation. The em-dash ban and other taste copy
-rules apply **only to new copy** we write for states the design doesn't show, never to design copy.
+No em dash (and no en dash or ` - ` used as a dash) anywhere a visitor can read, artboard copy included:
+owner, 2026-10-03, D130, *"no ai slop human tone no emdashes"* over the whole storefront. Artboard copy
+otherwise keeps its wording, case and punctuation unless a ruling rewrites it. Plain human tone; none of
+the AI-slop words or shapes ("seamless", forced triplets, "not just X, it's Y").
 Short, declarative, specific: brand and size over adjectives. CTAs ≤2 words. "You" for the customer, "we"
 for the shop. No exclamation marks, no emoji.
 

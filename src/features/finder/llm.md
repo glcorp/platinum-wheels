@@ -83,18 +83,32 @@ Built at `page home`, 2026-09-20.
 - **The year list is computed per render, never a module constant** — `finderYears()` is called in
   `vehicle-finder.tsx`'s JSX, not read from a binding (D32, D66).
 - Measured values cite `design/inventory/home.md` §2.3 (lines 152–165).
+- **The hero finder's category is switched from outside, never chosen inside it (D128).** No category
+  control is drawn in the panel; the header's Tires / Wheels / Accessories are the switch on `/`. The
+  CTA copy and target come from `CATEGORY_CONFIG` only, never typed here again.
+- **The no-JS page is the D58 page.** `switchable` may change the CTA copy and `formAction` after
+  hydration and nothing else; the server render says `Find my tires` and submits to `/tires`.
+- **The compact phone row is hero-only and `max-sm:`-scoped.** `fold-short` also matches tablets and
+  desktops, whose grids set their own tracks; unscoped it would overwrite `md:finder-grid`.
+- **The hero's `hero-fit` reserves this panel's height** (269 / 188 / 112px, globals.css D128 block).
+  A change to the panel's height, padding or rows means re-measuring those numbers.
 
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
 | D93b | 2026-09-30 | `VehicleFinder` accepts hidden `carry` inputs, so `Change vehicle` keeps the active filters while the vehicle fields stay empty. | Changing vehicle silently dropped every filter (WDG-17). | Owner: "Keep filters, stay empty"; D93b |
 | D91b | 2026-09-29 | `isFinderVehicle(year, make, model)` in `data.ts` is the one authority on what counts as a vehicle; `results/query.ts` and `product/view.ts` both call it, and anything else is "no vehicle". | The URL vehicle was printed verbatim in the results chip, the best-none note and the PDP quote chip, so any link could write its own text and phone number onto the page (escaped, never executed). Narrows D79. | Owner, 2026-09-29: "Accept finder vehicles only" |
-None folder-scoped. Governing: **D27, D28, D33, D39, D79**.
+| D128 | 2026-10-03 | On `/` the header switches the hero finder between tires, wheels and accessories (`switchable`, `FinderSwitchSubmit`); the CTA aligns to its row's end from `sm:`; the hero panel compacts on short phones so it sits above the fold. | Owner: the CTA was "off if we change the resolution" (1084×1116), "visible only after scroll in the mobile view", and header Wheels / Accessories "should stay on the home page and refresh that part only". | Owner, 2026-10-03; D128 |
+Governing: **D27, D28, D33, D39, D79**.
 
 ## Connects to
 - Depends on: `src/components/ui/{select,field-label,button}.tsx`, `src/lib/routes.ts`, and `react`
-  (`useEffect`) in the one leaf island (D70).
-- Depended on by: `src/app/(storefront)/page.tsx` (home §1 row 3, `variant="hero"`);
+  (`useEffect`) in the leaf islands (D70, D128); `src/features/catalog/categories.ts`
+  (`CATEGORY_CONFIG`, D37's sanctioned edge) and `src/lib/finder-category.ts` +
+  `finder-category-store.ts` (D128); the `fold-short` variant and `finder-cta-label` in `globals.css`.
+- Depended on by: `src/app/(storefront)/page.tsx` (home §1 row 3, `variant="hero"`, `switchable` since
+  D128); `src/components/site/site-nav-links.tsx` and `site-nav-drawer.tsx` write the category it reads,
+  through `src/lib/`, never by importing this folder (D37);
   `src/features/results/components/results-toolbar.tsx` — the `Change vehicle` `<details>` disclosure
   renders `<VehicleFinder variant="inline" action={route} cta={…} />` on all three results routes
   (D45, D58, D67);
@@ -114,6 +128,10 @@ None folder-scoped. Governing: **D27, D28, D33, D39, D79**.
   nothing. A client `<select>` rebuilding its own options would break the plain GET (D44, D45).
 - Don't give `FinderModelSync` any markup, class or style. It is inside a measured panel; rendering
   nothing is what keeps every parity row untouched.
+- Don't add a category picker inside the panel, or make the Year/Make/Model lists differ per category:
+  the owner chose the header as the switch and the same three selects for all (D128).
+- Don't move the switchable CTA's target into the form's `action`: that is the no-JS path and must stay
+  `/tires`; the category lives in the button's `formAction` (D128).
 - Don't put `required` back on a finder select to "fix" the bubble a different way, and don't build a
   styled error summary for an empty submit (D79). There is nothing invalid about it — it is D28's
   unselected ship state reaching the destination route, not a rejected form.

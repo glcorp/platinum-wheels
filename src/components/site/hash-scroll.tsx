@@ -64,6 +64,36 @@
    correction on that single arrival, never a follow-up, so a reader who has
    already started to scroll is not fought for the rest of the page's life.
    The same-page `hashchange` glide and the cold load are unchanged.
+
+   D131 (owner, 2026-10-03: "if we click on the contact button once it …
+   scrolls down to contact … but if we scroll up and then again click it so it
+   doesn't do anything"). A click on a fragment link whose URL is EXACTLY the
+   current one (`/#contact` while already on `/#contact`) scrolled nowhere.
+   Next 16 treats it as a "same page navigation", not a hash change:
+   `url.href === currentUrl.href` (`app-router-state.js` navigateToKnownRoute)
+   makes it refetch the page segment, `onlyHashChange` is false because the
+   hash did not change (`completeSoftNavigation`), the refreshed leaf only
+   carries forward its old, already-consumed scroll ref (`render-tree.js`
+   updateCacheNodeOnNavigation), so `InnerScrollHandler` (`layout-router.js`)
+   returns on `!scrollRef.current`; and `next/link` has prevented the default,
+   so the browser's own same-fragment scroll never runs and no `hashchange`
+   fires either. The first click worked only because the hash changed then.
+   So a capture-phase click listener on `window` (ahead of React's root on
+   `document`, `scroll-reveal`'s capture listener and `next/link`) takes
+   exactly that case: a plain left click on an `<a>` whose resolved URL equals
+   `location.href`, hash included. It prevents the default, which makes
+   `next/link` bail on `e.defaultPrevented` (`link.js` onClick) after it has
+   still run the link's own `onClick` (the drawer closes), so no pointless
+   refetch or transition starts, the URL and history stay exactly as Next
+   would have left them (it `replaceState`s an unchanged URL), and the scroll
+   runs through `settle(true)`: smooth, `instant` under reduced motion, a
+   frame later so `scroll-reveal` has un-translated a pending section and the
+   drawer has closed first. A focusable target (`<main tabIndex={-1}>` behind
+   the skip link) also takes focus, as the browser's own fragment jump would
+   give it. Every other click is untouched: a different hash on the same page
+   is Next's `onlyHashChange` scroll (forced, glides under `scroll-behavior:
+   smooth`), another path is a route navigation, modified clicks and
+   `target`/`download` links are the browser's.
    --------------------------------------------------------------------------- */
 
 import { usePathname } from "next/navigation";
@@ -82,9 +112,10 @@ export function HashScroll() {
     let frame = 0;
     let cancelled = false;
 
-    /** `smooth` only for a same-page `hashchange` (D92b); a cold load passes
-     *  nothing and lands instantly. */
-    function settle(smooth = false) {
+    /** `smooth` only for a same-page `hashchange` (D92b) or a same-URL click
+     *  (D131); a cold load passes nothing and lands instantly. `focus` only
+     *  for the click, which has prevented the browser's own fragment jump. */
+    function settle(smooth = false, focus = false) {
       const hash = window.location.hash;
       if (hash.length <= 1) return;
 
@@ -112,6 +143,12 @@ export function HashScroll() {
                    would glide 4000px after all. */
                 "instant";
           target.scrollIntoView({ behavior });
+          /* `preventScroll`, or the focus would cut the glide short. Only an
+             element that is focusable at all: a plain section has no
+             `tabindex` and stays unfocused, as it would natively. */
+          if (focus && (target.tabIndex >= 0 || target.hasAttribute("tabindex"))) {
+            target.focus({ preventScroll: true });
+          }
           return;
         }
         if (performance.now() - started < WINDOW_MS) {
@@ -132,13 +169,44 @@ export function HashScroll() {
        argument. */
     const onHashChange = () => settle(true);
 
+    /* D131: a click on a link to the URL we are already on. Nobody else
+       scrolls for it (see the header), so this does. */
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      if (!(event.target instanceof Element)) return;
+
+      const anchor = event.target.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (anchor.hasAttribute("download")) return;
+      const target = anchor.getAttribute("target");
+      if (target !== null && target !== "" && target !== "_self") return;
+
+      let url: URL;
+      try {
+        url = new URL(anchor.href, window.location.href);
+      } catch {
+        return;
+      }
+      /* Exactly the current URL, hash included. A different hash on this
+         page is Next's own (working) `onlyHashChange` scroll. */
+      if (url.hash.length <= 1 || url.href !== window.location.href) return;
+
+      event.preventDefault();
+      settle(true, true);
+    };
+
     /* Cold load and client-navigation arrival alike: both land instantly. */
     settle();
     window.addEventListener("hashchange", onHashChange);
+    window.addEventListener("click", onClick, true);
     return () => {
       cancelled = true;
       cancel();
       window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("click", onClick, true);
     };
   }, [pathname]);
 
