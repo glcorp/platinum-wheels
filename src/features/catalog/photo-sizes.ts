@@ -2,8 +2,9 @@
  * Makes a product photo's two stored sizes (D126b). Server and laptop only:
  * `sharp` is a native module.
  *
- * The admin upload (`src/features/admin/photo-actions.ts`) and the bulk photo
- * load both call this, so a photo looks the same however it arrived.
+ * The admin upload (`src/features/admin/photo-actions.ts`) calls this, and the
+ * bulk photo load (not built yet) is to call it too, so a photo looks the same
+ * however it arrived.
  *
  * Each size is fitted inside a square of its width, keeping its proportions:
  * never cropped (D117 draws photos whole) and never enlarged. The camera's

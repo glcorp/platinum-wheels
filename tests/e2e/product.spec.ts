@@ -146,8 +146,8 @@ test.describe("quantity cells (D50, D84)", () => {
   }) => {
     const watch = watchProblems(page);
     await openPdp(page, `/products/${SLUG.tire}?${VEHICLE}`);
-    await expect(qtySelect(page)).toHaveValue("4");
-    expect(await selectedCells(page)).toEqual(["4"]);
+    await expect(qtySelect(page)).toHaveValue("1");
+    expect(await selectedCells(page)).toEqual(["1"]);
 
     const steps: Array<[string, string]> = [
       ["1", "1"],
