@@ -10,19 +10,20 @@
    confirm. No drag and drop: on a phone or tablet, buttons are the reliable
    way to reorder.
 
-   Each upload goes straight from the browser to Vercel Blob with a one-time
-   token (`photo-actions.ts` explains why). Files upload one after another,
+   Each upload goes straight from the browser to the R2 photo bucket with a
+   one-time signed link (D126; `photo-actions.ts` explains why), and the
+   server then makes the stored sizes. Files upload one after another,
    so the progress line is honest and the eighth-photo limit is checked per
    file by the server. After each change the page is refreshed from the
    server, which is the one source of the photo list.
    --------------------------------------------------------------------------- */
 
-import { put } from "@vercel/blob/client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { photoSource } from "@/features/catalog/photo-files";
 
 import { addPhoto, movePhoto, removePhoto, requestPhotoUpload } from "../photo-actions";
 import {
@@ -90,20 +91,22 @@ export function ProductPhotos({
     const ticket = await requestPhotoUpload(ticketForm);
     if (!ticket.ok) return `${file.name}: ${ticket.message}`;
 
-    let url: string;
+    let uploaded: Response;
     try {
-      const blob = await put(ticket.pathname, file, {
-        access: "public",
-        token: ticket.token,
-        contentType: file.type,
+      uploaded = await fetch(ticket.uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
       });
-      url = blob.url;
     } catch {
       return `${file.name}: the upload did not finish. Check the connection and try again.`;
     }
+    if (!uploaded.ok) {
+      return `${file.name}: the upload was refused. Reload the page and try again.`;
+    }
 
     const recordForm = baseForm();
-    recordForm.set(PHOTO_FIELD.url, url);
+    recordForm.set(PHOTO_FIELD.key, ticket.key);
     const recorded = await addPhoto(recordForm);
     return recorded.ok ? null : `${file.name}: ${recorded.message}`;
   }
@@ -179,7 +182,7 @@ export function ProductPhotos({
             <li key={photo.id} className="bg-surface border-border-strong flex flex-col border">
               <div className="bg-surface-2 relative aspect-square">
                 <Image
-                  src={photo.url}
+                  {...photoSource(photo.url, "card")}
                   alt={photo.alt}
                   fill
                   sizes="(min-width: 1100px) 240px, (min-width: 720px) 30vw, 45vw"

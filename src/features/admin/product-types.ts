@@ -128,7 +128,7 @@ export const PRODUCT_STATUS_VERB = {
 export const PHOTO_FIELD = {
   photoId: "photo_id",
   move: "move",
-  url: "url",
+  key: "key",
   fileName: "file_name",
   contentType: "content_type",
   size: "size",
@@ -148,10 +148,10 @@ export const PHOTO_LIMITS = {
  *  iPhone converts a HEIC photo to JPEG when the input does not accept HEIC. */
 export const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp";
 
-/** The upload handshake's answer: where to put the file and the short-lived
- *  token that allows exactly that. */
+/** The upload handshake's answer (D126): the staging key `addPhoto` is then
+ *  handed, and the short-lived signed link that accepts one `PUT` there. */
 export type PhotoUploadTicket =
-  | { ok: true; pathname: string; token: string }
+  | { ok: true; key: string; uploadUrl: string }
   | { ok: false; message: string };
 
 /** Result of add / remove / move. */

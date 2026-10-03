@@ -99,7 +99,20 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `countProductsByStatus`. Not gated.
   - [`photos.ts`](photos.ts) — `product_images` reads and writes for the admin (D117): list, add (locks the
     product row; at most `MAX_PHOTOS_PER_PRODUCT`, 8), remove, move. Keeps each product's photos numbered
-    0..n-1 and bumps `products.updated_at`. Talks to Postgres only; Blob is `src/features/admin/`'s job.
+    0..n-1 and bumps `products.updated_at`. Talks to Postgres only; the files are the photo modules' job.
+- **Product photo files (D126).** Shared by the admin upload, the storefront, the link-preview card and the
+  bulk photo load.
+  - [`photo-files.ts`](photo-files.ts) — the two sizes (`PHOTO_WIDTH`: `card` 480, `full` 1000), the key
+    layout (`photoKey`, `photoFolder`), `photoSized()` (one size's name from the other's) and
+    `photoSource()`, which every `next/image` of a product photo spreads: a stored photo comes back at the
+    asked size and `unoptimized`. Zero imports; client-safe.
+  - [`photo-sizes.ts`](photo-sizes.ts) — `makePhotoSizes()`: upright, fitted inside the square, never
+    enlarged, WebP 82, one pass per size; refuses a canvas over 100 megapixels. `sharp`; server and laptop only.
+  - [`photo-store.ts`](photo-store.ts) — the R2 bucket over its S3 API (`aws4fetch`): `photoStore()` from
+    the five settings (`null` until all are set), `presignPut`, `headObject`, `getObject`, `putObject`
+    (with the one-year immutable cache header), `getObject` (pinned with `ifMatch`, capped with
+    `maxBytes`), `deleteObject`, `publicPhotoUrl`, `keyFromPublicUrl`,
+    `photosBaseUrl`. Reads the secret key; server and laptop only.
 - **The catalogue import (D113, D114).** Run by `scripts/catalog-import.ts`.
   - [`import-mapping.ts`](import-mapping.ts) — `IMPORT_MAPPING`: CSV header → product field, the exact
     value renames (the vendors' fifteen accessory labels, D125), the numbered source columns
@@ -131,7 +144,12 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   404.** There is no in-stock flag (D105b).
 - **A slug is written once, at create, and never rewritten** (D107b).
 - **`queries.ts`, `store.ts`, `rows.ts`, `lookups.ts` and `photos.ts` are server only.** They open database connections. A
-  `"use client"` file may import `catalog-types.ts`, `product-input.ts`, `size.ts` and `slug.ts`.
+  `"use client"` file may import `catalog-types.ts`, `product-input.ts`, `size.ts`, `slug.ts` and
+  `photo-files.ts`. `photo-sizes.ts` and `photo-store.ts` are server only too (`sharp`, the R2 secret).
+- **Every `next/image` of a product photo spreads `photoSource(src, size)`** (D126): `card` on cards, the
+  cart and admin thumbnails, `full` on the product page. It is what keeps stored photos away from Vercel's
+  resizer; `next.config.ts` lists no remote host, so a photo drawn without it breaks (an error in dev,
+  a broken image in production).
 - **The import reports; it does not repair** (D113). A row is valid as the file gives it, after the
   mapping's exact renames, or it is refused and listed. No cleanup, no de-duplication, no guessing in
   `import-plan.ts` or `import-mapping.ts`. Two rows with one vendor + SKU are both refused.
@@ -195,6 +213,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D126 | 2026-10-03 | Photos live in R2 in two stored sizes; every page draws them `unoptimized` through `photoSource()`; `photo-files.ts`, `photo-sizes.ts`, `photo-store.ts` are the shared modules | Vercel Hobby's Blob and resize limits | Owner; D126 |
 | D93b | 2026-09-30 | The `ProductCard` model link carries an `sr-only` size tail, so the same model in two sizes has distinct link names (WCAG 2.4.4); the brand stamp is `translate="no"`. Tests match the model name by regex prefix, never exactly. | Two links read identically to a screen reader. | QA pass; D93b |
 | D91b | 2026-09-29 | `ProductCard` takes an optional `sizes` (default unchanged); each grid passes its own. The photo box is a padded wrapping flex row, so the brand stamp wraps below the badges instead of overlapping them; the image link is `absolute inset-0`, the same box as before. | `sizes` said 50vw where the results grid is 1-up (400–719), so phones fetched about half the pixels they paint; the `Currently unavailable` badge overlapped the stamp by up to 34.6px at 1100–1180. | QA pass WDG-06, NJR-6; D91b |
 | — | 2026-10-03 | *Derived* under D125, each vetoable: (1) a vendor price of `0` refuses the row, where a display price of `0` is stored blank, because a silent 0 → blank would hide a sheet's error; (2) an `extra_specs` pair with no `: `, an empty half, a label twice (case-insensitive), a label over 60, a value over 2,000 (raised from 500 by owner ruling, 2026-10-03, so the longest vendor `Fits wheel` lists load) or more than 40 pairs refuses the row rather than dropping the pair; (3) `lug_bolts` joins `lug_nuts` and `wheel_locks` in the D67 thread match, since a bolt states a thread too; (4) an unbranded accessory's slug is model + name + size part. | The validator reports, it does not repair (D113); D125 split lug bolts out of lug nuts. | Coordinator brief, D125 |
@@ -211,7 +230,7 @@ in place.
 - **Depends on:** `src/components/ui/badge.tsx`, `button.tsx`, `price.tsx` (`product-card.tsx:4-6`);
   `src/features/catalog/types.ts` (`:7`); `next/image`, `next/link` (`:1-2`); `src/app/globals.css` for
   `photo-inset-card`, `photo-vignette`, `transition-card`, `tap-extend`, `display`, `numeral`;
-  `public/images/products/<slug>.webp`.
+  `public/images/products/<slug>.webp`; `aws4fetch` and `sharp` for the photo modules (D126).
 - **Depends on (D105b):** `src/db/` (`getDb()`, the catalogue tables).
 - **Depended on by (D105b):** `src/features/admin/` — `product-queries.ts` and `product-actions.ts` call
   `store.ts` and `product-input.ts`.
@@ -252,7 +271,7 @@ in place.
     tires, 30,773 wheels, 1,803 accessories), all `published`, 45,426 vendor sources each with its vendor
     price, no display price, no photos, 0 refused, in 34 s. The 15 rows in the builder's `issues.csv` are
     not in it. Checked live: the three listings read those counts, and no vendor name or vendor price is
-    in any page source fetched. **Still owed:** photos (Blob upload), and a look at the 787
+    in any page source fetched. **Still owed:** photos (the R2 bulk load, D126), and a look at the 787
     `needs-review.csv` rows. Owner.
 14. **Rechecked after the D125 load (2026-10-03): 7,540 slugs carry a `-2`, `-3` …** (the stand-in had 10,249), mostly PRO WHEELS wheels that share brand, model,
     size, bolt pattern, offset and finish and differ only in something the slug does not read (centre

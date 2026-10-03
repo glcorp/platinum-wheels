@@ -25,6 +25,7 @@ import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { photoSource } from "@/features/catalog/photo-files";
 import { amountLabel, CART_MAX_QUANTITY, type CartLine } from "@/lib/cart";
 import { productName } from "@/lib/product-name";
 import { productRoute } from "@/lib/routes";
@@ -72,7 +73,7 @@ export function CartLineRow({ line, onQuantity, onRemove }: CartLineRowProps) {
       >
         {item.image ? (
           <Image
-            src={item.image}
+            {...photoSource(item.image, "card")}
             alt=""
             width={1000}
             height={1000}

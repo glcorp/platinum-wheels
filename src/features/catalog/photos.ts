@@ -1,10 +1,11 @@
 /**
  * Product photos: the staff-side reads and writes of `product_images` (D117).
  *
- * The files themselves live in Vercel Blob; this module only records which
- * public URL belongs to which product, in which order. Uploading and deleting
- * the file is `src/features/admin/photo-actions.ts`'s job, so nothing here
- * talks to Blob and everything here is plain Postgres.
+ * The files themselves live in the R2 photo bucket (D126); this module only
+ * records which public URL belongs to which product, in which order.
+ * Uploading and deleting the files is `src/features/admin/photo-actions.ts`'s
+ * job, so nothing here talks to the bucket and everything here is plain
+ * Postgres.
  *
  * NOT GATED, like `store.ts`: the admin actions are the gate. Never import
  * this from a storefront page; the storefront reads photos through

@@ -12,7 +12,7 @@ Since D99–D108 it is backed by real payments: the builder writes a `payment_li
 `src/features/payments/` and hands back the customer's `pay.platinumwheels.ca/pay/<token>` URL, and the
 links list shows which links were paid (D106). Sign-in is still one shared account, hardened by D95
 rather than replaced by an auth system. Since D105b the folder also holds the product admin's server side
-(gated reads and Server Actions), and since D116–D118 its screens, Blob photo upload and the admin home.
+(gated reads and Server Actions), and since D116–D118 its screens, photo upload (R2 since D126) and the admin home.
 
 ## Owns
 
@@ -43,10 +43,12 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   `updateProductAction`, `setProductStatusAction`, `bulkSetProductStatusAction`. Each calls
   `requireAdminAction(formData)` first and then `catalog/store.ts`; the create and update actions
   validate with `parseProductInput()` in between.
-- [`photo-actions.ts`](photo-actions.ts) — `"use server"`, D117. `requestPhotoUpload` (mints a one-file Blob
-  client token), `addPhoto` (verifies the upload with Blob's `head()` before recording it), `removePhoto`
-  (row, then file), `movePhoto`. Each calls `requireAdminAction(formData)` first. The only file that
-  writes to Blob.
+- [`photo-actions.ts`](photo-actions.ts) — `"use server"`, D117, storage D126. `requestPhotoUpload` (signs a
+  10-minute R2 link for `PUT`s of one type at one staging key `uploads/<product>/<stem>-<id>`), `addPhoto`
+  (takes that key, checks it with a `HEAD`, reads exactly that version with a 10 MB cap, makes the 480 and
+  1000 sizes, stores them under `products/<product>/`,
+  deletes the original, then records the row), `removePhoto` (row, then both sizes), `movePhoto`. Each
+  calls `requireAdminAction(formData)` first. The only admin file that writes to the bucket.
 - [`product-display.ts`](product-display.ts) — pure: spec line, labels, `displayPrice`, and
   `productFormValues()` (a saved product as form values, extra specs and vendor prices included).
   Since D125 also `vendorPriceLabel()` (`$388.12`, cents always), `lowestVendorPrice()` and
@@ -71,7 +73,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   matching; builds the "all matching" post itself so ticked ids never ride along.
 - [`components/product-filters.tsx`](components/product-filters.tsx) — the list's GET form (`next/form`).
 - [`components/product-photos.tsx`](components/product-photos.tsx) — client island, upload (browser →
-  Blob), order, remove.
+  R2 with the signed link, D126), order, remove. Thumbnails draw the `card` size via `photoSource()`.
 - [`components/login-form.tsx`](components/login-form.tsx) — client island. `useActionState` + focus
   management, the `quote-form.tsx` idiom.
 - [`components/login-error-summary.tsx`](components/login-error-summary.tsx) — authored error state,
@@ -126,8 +128,12 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   hold too.
 - **A vendor's price is staff only** (D125): typed and shown here, cents kept (`vendorPriceLabel`), never
   with `Price`, and never passed to anything on the storefront.
-- **A photo is recorded only after Blob confirms it** (`head()`): in our store, under
-  `products/<id>/`, an allowed type within 10 MB (D117).
+- **A removed photo's URL can outlive it briefly** (D126): the files are deleted at once, but they are
+  marked immutable, so a copy Cloudflare or a browser cached may answer the (unlinked) URL until it
+  expires.
+- **A photo is recorded only after R2 confirms it** (D117, D126): `addPhoto` accepts only a staging key
+  this product's handshake could have issued, `HEAD`s it for an allowed type within 10 MB, and records the
+  stored `full` URL, never one the browser sends.
 
 ## Decisions
 
@@ -145,6 +151,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
 | D115 | 2026-10-01 | Prefix-less admin URLs on admin hosts only; `/admin/**` 404s everywhere | Owner: *"we should not build admin routes as /admin"* | Owner |
 | D116 | 2026-10-01 | Product screens: cards, per-card status, bulk ticked or all matching, "Display price", pick-from-existing brand and vendor, `STOREFRONT_URL` | P2 scope, rulings asked one at a time | Owner |
 | D117 | 2026-10-01 | Photos: browser → Blob with a one-file token, verified by `head()`; 8 × 10 MB; contain; delete removes the file | Owner chose each limit | Owner |
+| D126 | 2026-10-03 | Photos move to Cloudflare R2 in two sizes (480 / 1000 WebP); signed `PUT`, staging key, sized on the server; Blob removed | Hobby Blob locks for 30 days past 2,000 uploads; 5,000 resizes a month | Owner |
 | D118 | 2026-10-01 | Admin home greeting + tiles; builder at `/payment-links`; top bar nav; Brampton time everywhere | Owner: *"all times used in application need to be brampton time zone"* | Owner |
 
 Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced by ID, never restated.
@@ -152,11 +159,12 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 ## Connects to
 
 - **Depends on:** `src/components/ui/` (button, input, field-label), `src/lib/site.ts` (`SITE`),
-  `next/headers`, `next/navigation`, `node:crypto`, and `@vercel/blob` for photos (D117).
+  `next/headers`, `next/navigation` and `node:crypto`.
 - **Depended on by:** `src/app/admin/` (layout and every admin route).
 - **Depends on (D125):** `src/lib/product-name.ts` (photo alt text).
 - **Depends on (D105b, D116, D117):** `src/features/catalog/` — `store.ts`, `lookups.ts`, `photos.ts`,
-  `product-input.ts`, `catalog-types.ts`, `adapter.ts` (labels); `@vercel/blob` (D117); `src/lib/time.ts`.
+  `product-input.ts`, `catalog-types.ts`, `adapter.ts` (labels), and for photos (D126) `photo-files.ts`,
+  `photo-sizes.ts`, `photo-store.ts`; `src/lib/time.ts`.
   This is the D37 graph's existing direction (`features → catalog`), so no edge is reversed.
 - **Deliberately does not touch:** `src/features/finder|home|product|results/`. The admin shares the
   primitives and the tokens, and nothing else.
@@ -187,8 +195,10 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
   reference, not the value; that is why `BULK_FORM_ID` lives in `product-types.ts`.
 - **Don't post a ticked-rows change and an all-matching change in one request.** Ticked ids win and the
   filter is ignored (D107b); `bulk-status-bar.tsx` builds each separately.
-- **Don't route a photo's bytes through a Server Action.** A function request body tops out at 4.5 MB;
-  the browser uploads to Blob directly (D117).
+- **Don't send a photo's bytes in a Server Action's request.** A function request body tops out at
+  4.5 MB; the browser `PUT`s to R2 directly and `addPhoto` reads the file from there (D117, D126).
+- **Don't let `addPhoto` take a URL or a key the server did not issue.** It parses the staging key against
+  the product id; anything else is refused before R2 is asked (D126).
 
 ## Open
 

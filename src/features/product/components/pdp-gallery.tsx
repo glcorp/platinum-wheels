@@ -2,6 +2,7 @@ import Image from "next/image";
 import { ViewTransition } from "react";
 
 import { ProductPhotoPlaceholder } from "@/features/catalog/components/product-photo-placeholder";
+import { photoSource } from "@/features/catalog/photo-files";
 import { productImageSrc } from "@/features/catalog/types";
 
 import { Badge } from "@/components/ui/badge";
@@ -105,7 +106,7 @@ export function PdpGallery({
             <ProductPhotoPlaceholder brand={brand} context="gallery" />
           ) : (
             <Image
-              src={photo}
+              {...photoSource(photo, "full")}
               alt={productName(brand, model)}
               width={1000}
               height={1000}

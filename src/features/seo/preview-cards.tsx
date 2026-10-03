@@ -36,6 +36,7 @@ import { join, sep } from "node:path";
 import { ImageResponse } from "next/og";
 import sharp from "sharp";
 
+import { photosBaseUrl } from "@/features/catalog/photo-store";
 import { PREVIEW_SIZE } from "@/features/seo/metadata";
 import { SITE } from "@/lib/site";
 
@@ -139,10 +140,6 @@ export async function renderSiteCard(): Promise<ImageResponse> {
  *  cut-out sits centred with the dark ground on both sides. */
 const PHOTO_BOX = { width: 1008, height: 534 } as const;
 
-/** Product photos staff upload live in Vercel Blob (`next.config.ts`
- *  `images.remotePatterns` names the same host: change both). Nothing else is
- *  ever fetched: the URL comes from a database row. */
-const BLOB_HOST_SUFFIX = ".public.blob.vercel-storage.com";
 
 const MAX_PHOTO_BYTES = 12 * 1024 * 1024;
 
@@ -150,7 +147,9 @@ const MAX_PHOTO_BYTES = 12 * 1024 * 1024;
  * The bytes of a product photo, or `null` when it cannot be had.
  *
  * `src` is what the catalogue stores: a path from the site root
- * (`/images/products/x.webp`) or a full Blob URL. A root path is read from
+ * (`/images/products/x.webp`) or a full photo-bucket URL (its 1000px size).
+ * Stored photos live in the R2 bucket served from `PHOTOS_BASE_URL` (D126);
+ * a URL under any other origin is never fetched. A root path is read from
  * `public/` on disk, which `next.config.ts` adds to this route's bundle
  * (`outputFileTracingIncludes`). Any other host, a path that climbs out of
  * `public/`, a slow or failed fetch and an oversized file all return `null`,
@@ -164,10 +163,9 @@ export async function loadProductPhoto(src: string): Promise<Buffer | null> {
       return await readFile(file);
     }
 
+    const base = photosBaseUrl();
+    if (!base || !src.startsWith(`${base}/`) || !src.startsWith("https://")) return null;
     const url = new URL(src);
-    if (url.protocol !== "https:" || !url.hostname.endsWith(BLOB_HOST_SUFFIX)) {
-      return null;
-    }
     const response = await fetch(url, { signal: AbortSignal.timeout(5_000) });
     if (!response.ok) return null;
     const bytes = Buffer.from(await response.arrayBuffer());

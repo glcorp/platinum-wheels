@@ -93,4 +93,4 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
 - ~~**`FEATURED_SLUGS` holds placeholder slugs**~~ **Closed 2026-10-03:** the row is six winter tires from
   six brands in 205/55R16, picked from the D125 load (owner chose *"Six brands, 205/55R16"*). Six distinct
   models, so the old note about two SKUs appearing twice no longer holds. They have no price (D122) and
-  no photo until the Blob upload. The row shows only after a deploy (D111).
+  no photo until the R2 photo load (D126). The row shows only after a deploy (D111).
