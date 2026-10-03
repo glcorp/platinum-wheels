@@ -19,8 +19,10 @@ each with a vendor price, no display price, no photos, 0 refused, 34 s. The 15 `
   D126. Live `/tires`: all-season 4,393, winter 3,006, summer 1,242, all-weather 947. Ruffino Hard stays its
   own brand. A third round ruled the last open models (117 more tires) and folded `DAICAPS` into `DAI Wheels`;
   live `/tires`: all-season 4,508, winter 2,981, summer 1,234, all-weather 865. The 15 `issues.csv` rows are dropped.
-- **Unexplained:** `/accessories` reads 1,753, not the 1,803 loaded; ~50 accessories are no longer `published`
-  (not by the season or brand scripts, which touch nothing else). Ask who hid them in the admin.
+- **50 accessories were set `discontinued` at 07:39 UTC on 2026-10-03** (all Direct Auto Import, mostly centre caps;
+  one admin page of 50, so almost certainly a bulk Discontinue; Vercel's logs had expired). The vendor data and
+  site mark none of them discontinued, so the owner had them **published again** the same day (D125: every
+  product loads published). All 1,803 accessories are live. If staff discontinue products on purpose, record why.
 
 **Last updated 2026-10-03 (the merged vendor CSV aligned with the database, D125, on branch
 `catalog-csv-alignment`).** `npm run catalog:build-csv -- --share <combined/share> --final <combined/final>
