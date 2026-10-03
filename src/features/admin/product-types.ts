@@ -12,6 +12,7 @@
  */
 
 import type {
+  AccessoryKind,
   ProductCategory,
   ProductStatus,
 } from "@/features/catalog/catalog-types";
@@ -63,6 +64,11 @@ export const PRODUCT_STATUS_FIELD = {
   filterCategory: "filter_category",
   filterStatus: "filter_status",
   filterBrand: "filter_brand",
+  /** D127. `filterNoPhoto` is `1` or absent; `filterRim` is inches. */
+  filterVendor: "filter_vendor",
+  filterAccessoryType: "filter_accessory_type",
+  filterRim: "filter_rim",
+  filterNoPhoto: "filter_no_photo",
 } as const;
 
 export type ProductStatusState =
@@ -80,6 +86,12 @@ export interface ProductListQuery {
   category?: ProductCategory;
   status?: ProductStatus;
   brand?: string;
+  /** D127: vendor, accessory type (only with the accessories category), rim
+   *  size in inches, and "no photo" (`true` or absent, never `false`). */
+  vendor?: string;
+  accessoryType?: AccessoryKind;
+  rim?: number;
+  noPhoto?: true;
   page?: number;
 }
 
@@ -97,6 +109,11 @@ export const PRODUCT_LIST_PARAM = {
   category: "category",
   status: "status",
   brand: "brand",
+  vendor: "vendor",
+  accessoryType: "type",
+  rim: "rim",
+  /** `1` when ticked; absent otherwise. */
+  noPhoto: "no_photo",
   page: "page",
 } as const;
 

@@ -132,6 +132,13 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       is simply not shown. The admin lives on its own host, so the link cannot be relative.
     - **Check:** open a published product in the admin; **View on site** opens its storefront page.
 
+12. **Check the D127 admin changes on production once its PR merges.**
+    - **Why:** they were checked on a scratch database, never on the real catalogue (D127).
+    - **Check:** on `/products`, filter by a vendor, by Accessories → a type, by a rim size and by
+      **Only products with no photo**; each count looks right, and **Go to page** keeps the filter. On a
+      tire's edit page the Brand list holds tire brands only, and the line under **Full name** reads the
+      brand and model the storefront shows.
+
 ## Owner — cart and prices (D122)
 
 C1. **Prices stay off for launch; turning them on is one variable and a redeploy.**

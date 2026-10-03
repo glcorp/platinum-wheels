@@ -226,6 +226,16 @@ export interface AdminProductFilter {
   category?: ProductCategory;
   status?: ProductStatus;
   brand?: string;
+  /** Has a source from this vendor, exact spelling (D127). */
+  vendor?: string;
+  /** An accessory of this type (D127). */
+  accessoryType?: AccessoryKind;
+  /** A tire with this rim diameter, or a wheel with this diameter, in
+   *  inches (D127). */
+  rim?: number;
+  /** `true` = only products with no photo (D127). Never `false`: an unset
+   *  filter is absent, so "any filter set?" stays a plain check. */
+  noPhoto?: true;
 }
 
 export interface AdminListInput extends AdminProductFilter {

@@ -83,7 +83,11 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`, and
     `createProductsBatch` (D114), the bulk form of `createProduct` for a catalogue load: one INSERT
     per table for a whole batch, inside the caller's transaction, with nothing looked up.
-    **Not gated**; `src/features/admin/` is the gate.
+    **Not gated**; `src/features/admin/` is the gate. Since D127 the admin filter (one set of conditions for
+    the list and the bulk UPDATE, `products` columns and EXISTS subqueries only, no joins) also takes
+    vendor, accessory type, rim size (a tire's rim diameter or a wheel's diameter) and no photo;
+    `listBrands(category?)` lists one category's brands for the form; `bulkSetProductStatus` counts with
+    `rowCount` rather than returning ids.
   - [`product-input.ts`](product-input.ts) — `PRODUCT_FIELD` and `parseProductInput()`, the one
     validator every writer goes through. Pure. Since D125 it also reads `extra_specs` (`Label: value`
     pairs, ` | ` or one per line, split on the first `: `), each source's `source_price`, the wheel
@@ -95,8 +99,9 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   - [`rows.ts`](rows.ts) — the product + specs join and the row mapper, shared by `queries.ts` and
     `store.ts`.
   - [`lookups.ts`](lookups.ts) — small staff reads beside `store.ts` (D116): `listVendors`, `brandExists`,
-    `vendorExists` (the pick-from-existing dropdowns and their server-side check) and
-    `countProductsByStatus`. Not gated.
+    `vendorExists` (the pick-from-existing dropdowns and their server-side check; `brandExists` takes the
+    category since D127), `countProductsByStatus`, and `listRimSizes` (D127, the list's Rim size filter).
+    Not gated.
   - [`photos.ts`](photos.ts) — `product_images` reads and writes for the admin (D117): list, add (locks the
     product row; at most `MAX_PHOTOS_PER_PRODUCT`, 8), remove, move. Keeps each product's photos numbered
     0..n-1 and bumps `products.updated_at`. Talks to Postgres only; Blob is `src/features/admin/`'s job.

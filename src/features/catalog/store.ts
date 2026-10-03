@@ -27,6 +27,7 @@ import {
   isNotNull,
   like,
   ne,
+  notExists,
   or,
   sql,
   type SQL,
@@ -35,6 +36,7 @@ import {
 import { getDb } from "@/db/client";
 import {
   accessorySpecs,
+  productImages,
   products,
   productSources,
   tireSpecs,
@@ -46,6 +48,7 @@ import type {
   AdminProduct,
   AdminProductFilter,
   NewProduct,
+  ProductCategory,
   ProductInput,
   ProductList,
   ProductSource,
@@ -74,11 +77,12 @@ function likePattern(search: string): string {
 }
 
 /**
- * Reads `products` columns and one EXISTS only, no joins, so the same
+ * Reads `products` columns and EXISTS subqueries only, no joins, so the same
  * conditions drive the list (a SELECT) and the bulk status change (an
  * UPDATE): what staff see filtered is exactly what the bulk action touches.
  */
 function filterConditions(filter: AdminProductFilter): SQL[] {
+  const db = getDb();
   const where: SQL[] = [];
   if (filter.category) where.push(eq(products.category, filter.category));
   if (filter.status) where.push(eq(products.status, filter.status));
@@ -88,10 +92,80 @@ function filterConditions(filter: AdminProductFilter): SQL[] {
     where.push(eq(sql`lower(${products.brand})`, brand.toLowerCase()));
   }
 
+  // D127. Each is an EXISTS on the product's own rows, so a product with two
+  // sources from one vendor is still one product, counted once.
+  const vendor = filter.vendor?.trim();
+  if (vendor) {
+    where.push(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(productSources)
+          .where(
+            and(
+              eq(productSources.productId, products.id),
+              eq(productSources.vendor, vendor),
+            ),
+          ),
+      ),
+    );
+  }
+  if (filter.accessoryType) {
+    where.push(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(accessorySpecs)
+          .where(
+            and(
+              eq(accessorySpecs.productId, products.id),
+              eq(accessorySpecs.accessoryType, filter.accessoryType),
+            ),
+          ),
+      ),
+    );
+  }
+  if (filter.rim !== undefined && Number.isFinite(filter.rim)) {
+    const rim = or(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(tireSpecs)
+          .where(
+            and(
+              eq(tireSpecs.productId, products.id),
+              eq(tireSpecs.rimDiameter, filter.rim),
+            ),
+          ),
+      ),
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(wheelSpecs)
+          .where(
+            and(
+              eq(wheelSpecs.productId, products.id),
+              eq(wheelSpecs.diameter, filter.rim),
+            ),
+          ),
+      ),
+    );
+    if (rim) where.push(rim);
+  }
+  if (filter.noPhoto) {
+    where.push(
+      notExists(
+        db
+          .select({ one: sql`1` })
+          .from(productImages)
+          .where(eq(productImages.productId, products.id)),
+      ),
+    );
+  }
+
   const search = filter.search?.trim();
   if (search) {
     const pattern = likePattern(search);
-    const db = getDb();
     const matches = or(
       ilike(products.name, pattern),
       ilike(products.brand, pattern),
@@ -186,14 +260,21 @@ export async function getProductById(id: string): Promise<AdminProduct | null> {
   };
 }
 
-/** Every brand in the catalogue, A to Z: the suggestions under the brand
- *  field, so a new product reuses an existing spelling instead of a typo.
- *  An unbranded accessory (D125) contributes nothing. */
-export async function listBrands(): Promise<string[]> {
+/** Every brand in the catalogue, A to Z, or only those already on a product
+ *  of `category` (D127): the brand dropdown on the product form, so a new
+ *  product reuses an existing spelling instead of a typo, and a tire cannot
+ *  take a brand only wheels carry. An unbranded accessory (D125) contributes
+ *  nothing. */
+export async function listBrands(category?: ProductCategory): Promise<string[]> {
   const rows = await getDb()
     .selectDistinct({ brand: products.brand })
     .from(products)
-    .where(isNotNull(products.brand))
+    .where(
+      and(
+        isNotNull(products.brand),
+        category ? eq(products.category, category) : undefined,
+      ),
+    )
     .orderBy(asc(products.brand));
   return rows.flatMap((row) => (row.brand === null ? [] : [row.brand]));
 }
@@ -546,10 +627,11 @@ export async function bulkSetProductStatus(
       ? inArray(products.id, [...ids])
       : and(...filterConditions(filter));
 
-  const changed = await getDb()
+  // Counted by Postgres (`rowCount`), not by returning every changed id: an
+  // all-matching change can move tens of thousands of rows (D127).
+  const result = await getDb()
     .update(products)
     .set({ status })
-    .where(and(where, ne(products.status, status)))
-    .returning({ id: products.id });
-  return { ok: true, changed: changed.length };
+    .where(and(where, ne(products.status, status)));
+  return { ok: true, changed: result.rowCount ?? 0 };
 }

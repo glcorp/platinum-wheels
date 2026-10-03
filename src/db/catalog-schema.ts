@@ -196,6 +196,10 @@ export const products = pgTable(
     ),
     // "Other sizes": same brand and model.
     index("products_brand_model_idx").on(t.brand, t.model),
+    // The admin list: every status, newest change first (D127). NULLS FIRST
+    // because that is what `ORDER BY updated_at DESC` means; an index that
+    // orders nulls the other way cannot serve the sort.
+    index("products_updated_at_idx").on(t.updatedAt.desc().nullsFirst(), t.id),
 
     check(
       "products_slug_format",
