@@ -143,7 +143,7 @@ function amount(value: number | undefined): number | undefined {
 
 /** The three tire size parts and the three wheel size parts, cleaned. A bolt
  *  pattern is stored in one spelling, so the filter is put into it too. */
-function sizeParts(filters: ProductFilters) {
+function sizeParts(filters: Pick<ProductFilters, "tire" | "wheel">) {
   const boltPattern = filters.wheel?.boltPattern;
   return {
     tire: {
@@ -422,13 +422,167 @@ export async function getBrands(category: ProductCategory): Promise<string[]> {
   return rows.flatMap((row) => (row.value === null ? [] : [row.value]));
 }
 
+/* --- Size options (D132) -------------------------------------------------
+ *
+ * The three size selects narrow one another: each lists the values that exist
+ * together with the OTHER size parts chosen, so after `width=205` the profile
+ * and rim lists hold only what a 205 tire comes in, and a buyer cannot build a
+ * size the catalogue has no tire in. Only size parts narrow size options:
+ * brand, season, type and price do not. The size group stays the answer to
+ * "what sizes exist", so a buyer who knows their size can always pick it and
+ * the best/similar split (D109(1)) says whether a ticked brand carries it.
+ *
+ * Every list is also read whole, unnarrowed: that is what says whether a
+ * URL's size value exists in the category at all (D111(1), `search.ts`
+ * `withKnownSizes`), and what lets a chosen value stay listed when the others
+ * would filter it out.
+ *
+ * One round trip per category: one row of `array_agg(distinct ...)`, each
+ * narrowed list a `filter (where ...)` on the same scan. Cast to `text[]` so
+ * every list arrives as strings whatever the column type (drizzle hands a
+ * `numeric[]` back raw), then read with `Number`, exactly as the columns'
+ * `mode: "number"` reads one value.
+ */
+
+export interface TireSizeOptions {
+  widths: readonly number[];
+  aspectRatios: readonly number[];
+  rimDiameters: readonly number[];
+}
+
+export interface WheelSizeOptions {
+  diameters: readonly number[];
+  widths: readonly number[];
+  boltPatterns: readonly string[];
+}
+
+/** `CatalogFacets` plus each size select's narrowed options (D132). The
+ *  `tire` / `wheel` lists of `CatalogFacets` stay every value the category
+ *  holds. */
+export type StorefrontFacets = CatalogFacets & {
+  sizeOptions: {
+    tire: TireSizeOptions | null;
+    wheel: WheelSizeOptions | null;
+  };
+};
+
+const ANY = sql`true`;
+
+function numberList(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return sortedNumbers(
+    value.map((item) => (item === null ? null : Number(item))),
+  ).filter(Number.isFinite);
+}
+
+function boltPatternList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .sort((a, b) => a.localeCompare(b, "en", { numeric: true }));
+}
+
+async function readTireSizeOptions(
+  inCategory: SQL | undefined,
+  choice: Pick<ProductFilters, "tire" | "wheel">,
+): Promise<{ all: TireSizeOptions; narrowed: TireSizeOptions }> {
+  const { width, aspectRatio, rimDiameter } = sizeParts(choice).tire;
+  const w = width === undefined ? ANY : eq(tireSpecs.width, width);
+  const a =
+    aspectRatio === undefined ? ANY : eq(tireSpecs.aspectRatio, aspectRatio);
+  const r =
+    rimDiameter === undefined ? ANY : eq(tireSpecs.rimDiameter, rimDiameter);
+  /* A flotation size has no width or profile (`35x12.50R20`): its nulls are
+     left out of those two lists and it still counts towards the rims. */
+  const { rows } = await getDb().execute(sql`
+    select
+      array_agg(distinct ${tireSpecs.width}::text) filter (where ${tireSpecs.width} is not null) as all_widths,
+      array_agg(distinct ${tireSpecs.aspectRatio}::text) filter (where ${tireSpecs.aspectRatio} is not null) as all_aspect_ratios,
+      array_agg(distinct ${tireSpecs.rimDiameter}::text) as all_rim_diameters,
+      array_agg(distinct ${tireSpecs.width}::text) filter (where ${tireSpecs.width} is not null and ${a} and ${r}) as widths,
+      array_agg(distinct ${tireSpecs.aspectRatio}::text) filter (where ${tireSpecs.aspectRatio} is not null and ${w} and ${r}) as aspect_ratios,
+      array_agg(distinct ${tireSpecs.rimDiameter}::text) filter (where ${w} and ${a}) as rim_diameters
+    from ${tireSpecs}
+    inner join ${products} on ${products.id} = ${tireSpecs.productId}
+    where ${inCategory}
+  `);
+  const row = rows[0] ?? {};
+  return {
+    all: {
+      widths: numberList(row.all_widths),
+      aspectRatios: numberList(row.all_aspect_ratios),
+      rimDiameters: numberList(row.all_rim_diameters),
+    },
+    narrowed: {
+      widths: numberList(row.widths),
+      aspectRatios: numberList(row.aspect_ratios),
+      rimDiameters: numberList(row.rim_diameters),
+    },
+  };
+}
+
+async function readWheelSizeOptions(
+  inCategory: SQL | undefined,
+  choice: Pick<ProductFilters, "tire" | "wheel">,
+): Promise<{ all: WheelSizeOptions; narrowed: WheelSizeOptions }> {
+  const { diameter, width, boltPattern } = sizeParts(choice).wheel;
+  const d = diameter === undefined ? ANY : eq(wheelSpecs.diameter, diameter);
+  const w = width === undefined ? ANY : eq(wheelSpecs.width, width);
+  const b =
+    boltPattern === undefined
+      ? ANY
+      : boltPattern === null
+        ? NOTHING
+        : arrayContains(wheelSpecs.boltPatterns, [boltPattern]);
+  /* A wheel drilled for two patterns is one row per pattern here; `distinct`
+     folds the repeats. `left join`, so a wheel with no pattern on record
+     still counts towards the diameters and widths. */
+  const { rows } = await getDb().execute(sql`
+    select
+      array_agg(distinct ${wheelSpecs.diameter}::text) as all_diameters,
+      array_agg(distinct ${wheelSpecs.width}::text) as all_widths,
+      array_agg(distinct bolt.pattern) filter (where bolt.pattern is not null) as all_bolt_patterns,
+      array_agg(distinct ${wheelSpecs.diameter}::text) filter (where ${w} and ${b}) as diameters,
+      array_agg(distinct ${wheelSpecs.width}::text) filter (where ${d} and ${b}) as widths,
+      array_agg(distinct bolt.pattern) filter (where bolt.pattern is not null and ${d} and ${w}) as bolt_patterns
+    from ${wheelSpecs}
+    inner join ${products} on ${products.id} = ${wheelSpecs.productId}
+    left join lateral unnest(${wheelSpecs.boltPatterns}) as bolt(pattern) on true
+    where ${inCategory}
+  `);
+  const row = rows[0] ?? {};
+  return {
+    all: {
+      diameters: numberList(row.all_diameters),
+      widths: numberList(row.all_widths),
+      boltPatterns: boltPatternList(row.all_bolt_patterns),
+    },
+    narrowed: {
+      diameters: numberList(row.diameters),
+      widths: numberList(row.widths),
+      boltPatterns: boltPatternList(row.bolt_patterns),
+    },
+  };
+}
+
+/* --- Facets: the rail ---------------------------------------------------- */
+
 /**
  * The filter rail for one category: option lists, and counts that agree with
  * what `listProducts` would return for the same filters.
+ *
+ * `sizeChoice` is the size the buyer chose, which narrows the size options
+ * (D132). It is separate from `filters` because a vehicle can lend `filters`
+ * a size the selects do not show (D48(4)): with a vehicle and every select at
+ * `Any`, the options stay whole. Defaults to the size in `filters`.
+ *
+ * Every read is issued at once: one round trip, four queries on tires
+ * (total, brands, seasons, sizes), three on wheels and on accessories.
  */
 export async function getFacets(
   filters: ProductFilters,
-): Promise<CatalogFacets> {
+  sizeChoice: Pick<ProductFilters, "tire" | "wheel"> = filters,
+): Promise<StorefrontFacets> {
   const db = getDb();
   const { category } = filters;
   const inCategory = and(
@@ -450,120 +604,92 @@ export async function getFacets(
     .groupBy(products.brand)
     .orderBy(asc(products.brand));
 
-  const [[totals], brandRows, price] = await Promise.all([
-    totalQuery,
-    brandsQuery,
-    getPriceBounds(category),
-  ]);
+  /* The chip row's counts: seasons on tires, types on accessories, none on
+     wheels (D105b). */
+  const chipsQuery =
+    category === "tires"
+      ? withSpecs(
+          db
+            .select({ value: tireSpecs.season, count: count() })
+            .from(products)
+            .$dynamic(),
+        )
+          .where(
+            and(
+              ...conditions(filters, { omit: "chips" }),
+              isNotNull(tireSpecs.season),
+            ),
+          )
+          .groupBy(tireSpecs.season)
+          // Enum order: summer, all-season, all-weather, winter.
+          .orderBy(asc(tireSpecs.season))
+      : category === "accessories"
+        ? withSpecs(
+            db
+              .select({ value: accessorySpecs.accessoryType, count: count() })
+              .from(products)
+              .$dynamic(),
+          )
+            .where(
+              and(
+                ...conditions(filters, { omit: "chips" }),
+                isNotNull(accessorySpecs.accessoryType),
+              ),
+            )
+            .groupBy(accessorySpecs.accessoryType)
+            .orderBy(asc(accessorySpecs.accessoryType))
+        : Promise.resolve([]);
+
+  const [[totals], brandRows, price, chipRows, tireSizes, wheelSizes] =
+    await Promise.all([
+      totalQuery,
+      brandsQuery,
+      getPriceBounds(category),
+      chipsQuery,
+      category === "tires"
+        ? readTireSizeOptions(inCategory, sizeChoice)
+        : Promise.resolve(null),
+      category === "wheels"
+        ? readWheelSizeOptions(inCategory, sizeChoice)
+        : Promise.resolve(null),
+    ]);
   // Unbranded accessories (D125) are counted in `total` but are no brand row.
   const brands = brandRows.flatMap((row) =>
     row.value === null ? [] : [{ value: row.value, count: row.count }],
   );
 
-  const facets: CatalogFacets = {
+  return {
     category,
     total: totals?.total ?? 0,
     brands,
     price,
-    tire: null,
-    wheel: null,
-    accessory: null,
+    tire:
+      tireSizes === null
+        ? null
+        : {
+            ...tireSizes.all,
+            seasons: chipRows.filter(
+              (row): row is FacetCount<TireSeason> =>
+                row.value !== null &&
+                TIRE_SEASONS.includes(row.value as TireSeason),
+            ),
+          },
+    wheel: wheelSizes === null ? null : wheelSizes.all,
+    accessory:
+      category === "accessories"
+        ? {
+            kinds: chipRows.filter(
+              (row): row is FacetCount<AccessoryKind> =>
+                row.value !== null &&
+                ACCESSORY_KINDS.includes(row.value as AccessoryKind),
+            ),
+          }
+        : null,
+    sizeOptions: {
+      tire: tireSizes?.narrowed ?? null,
+      wheel: wheelSizes?.narrowed ?? null,
+    },
   };
-
-  if (category === "tires") {
-    const values = (
-      column:
-        | typeof tireSpecs.width
-        | typeof tireSpecs.aspectRatio
-        | typeof tireSpecs.rimDiameter,
-    ) =>
-      db
-        .selectDistinct({ value: column })
-        .from(tireSpecs)
-        .innerJoin(products, eq(products.id, tireSpecs.productId))
-        .where(inCategory);
-    const [widths, aspectRatios, rimDiameters, seasons] = await Promise.all([
-      values(tireSpecs.width),
-      values(tireSpecs.aspectRatio),
-      values(tireSpecs.rimDiameter),
-      withSpecs(
-        db
-          .select({ value: tireSpecs.season, count: count() })
-          .from(products)
-          .$dynamic(),
-      )
-        .where(
-          and(
-            ...conditions(filters, { omit: "chips" }),
-            isNotNull(tireSpecs.season),
-          ),
-        )
-        .groupBy(tireSpecs.season)
-        // Enum order: summer, all-season, all-weather, winter.
-        .orderBy(asc(tireSpecs.season)),
-    ]);
-    facets.tire = {
-      widths: sortedNumbers(widths.map((row) => row.value)),
-      aspectRatios: sortedNumbers(aspectRatios.map((row) => row.value)),
-      rimDiameters: sortedNumbers(rimDiameters.map((row) => row.value)),
-      seasons: seasons.filter(
-        (row): row is FacetCount<TireSeason> => row.value !== null,
-      ),
-    };
-  }
-
-  if (category === "wheels") {
-    const values = (
-      column: typeof wheelSpecs.diameter | typeof wheelSpecs.width,
-    ) =>
-      db
-        .selectDistinct({ value: column })
-        .from(wheelSpecs)
-        .innerJoin(products, eq(products.id, wheelSpecs.productId))
-        .where(inCategory);
-    const [diameters, widths, boltPatterns] = await Promise.all([
-      values(wheelSpecs.diameter),
-      values(wheelSpecs.width),
-      db
-        .selectDistinct({
-          value: sql<string>`unnest(${wheelSpecs.boltPatterns})`.as("value"),
-        })
-        .from(wheelSpecs)
-        .innerJoin(products, eq(products.id, wheelSpecs.productId))
-        .where(inCategory),
-    ]);
-    facets.wheel = {
-      diameters: sortedNumbers(diameters.map((row) => row.value)),
-      widths: sortedNumbers(widths.map((row) => row.value)),
-      boltPatterns: boltPatterns
-        .map((row) => row.value)
-        .sort((a, b) => a.localeCompare(b, "en", { numeric: true })),
-    };
-  }
-
-  if (category === "accessories") {
-    const kinds = await withSpecs(
-      db
-        .select({ value: accessorySpecs.accessoryType, count: count() })
-        .from(products)
-        .$dynamic(),
-    )
-      .where(
-        and(
-          ...conditions(filters, { omit: "chips" }),
-          isNotNull(accessorySpecs.accessoryType),
-        ),
-      )
-      .groupBy(accessorySpecs.accessoryType)
-      .orderBy(asc(accessorySpecs.accessoryType));
-    facets.accessory = {
-      kinds: kinds.filter(
-        (row): row is FacetCount<AccessoryKind> => row.value !== null,
-      ),
-    };
-  }
-
-  return facets;
 }
 
 /* --- Product page -------------------------------------------------------- */

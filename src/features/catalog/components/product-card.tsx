@@ -189,6 +189,15 @@ export interface ProductCardProps {
    * results grid and the PDP rows pass it; the home row has none.
    */
   vehicle?: string;
+  /**
+   * A positional id for the `<article>` (`result-7`, `similar-4`), set only by
+   * the results grid so `Load more` can link to the first card it adds and
+   * focus that card's product link (D133). It also takes a scroll margin, so
+   * a fragment landing leaves a little room above the card; below 1100 that
+   * adds to the `scroll-padding-top` under the sticky filter bar (D91b).
+   * Every other caller passes nothing and renders no id and no margin.
+   */
+  anchorId?: string;
 }
 
 export function ProductCard({
@@ -197,6 +206,7 @@ export function ProductCard({
   morph = true,
   sizes = IMAGE_SIZES,
   vehicle = "",
+  anchorId,
 }: ProductCardProps) {
   const {
     slug,
@@ -229,10 +239,17 @@ export function ProductCard({
 
   /* What fills the photo box, defined once so the `morph` switch below wraps
      the same element it would otherwise render bare. No photo on record: the
-     placeholder tile, never a guessed path (D108b). */
+     placeholder tile, never a guessed path (D108b). With no brand the tile
+     sets the accessory type instead of standing empty (D133); the tile is
+     still `photo`, so the named morph below wraps it exactly as before
+     (D111(3)). */
   const photo =
     photoSrc === null ? (
-      <ProductPhotoPlaceholder brand={brandName} dimmed={!available} />
+      <ProductPhotoPlaceholder
+        brand={brandName}
+        accessoryType={product.accessoryType}
+        dimmed={!available}
+      />
     ) : (
       <Image
         src={photoSrc}
@@ -265,7 +282,11 @@ export function ProductCard({
        `@media (hover: hover)`, so it cannot stick after a tap
        (`design/DEVIATIONS.md` #10). The photo does not zoom. */
     <article
-      className="bg-surface border-border text-ink transition-card ease-card relative flex h-full flex-col border font-sans duration-150 hover:-translate-y-0.5 hover:border-accent-hover"
+      id={anchorId}
+      className={cx(
+        "bg-surface border-border text-ink transition-card ease-card relative flex h-full flex-col border font-sans duration-150 hover:-translate-y-0.5 hover:border-accent-hover",
+        anchorId !== undefined && "scroll-mt-4 md:scroll-mt-10",
+      )}
     >
       {/* `position:relative;aspect-ratio:1/1;background:var(--bg);
           overflow:hidden` — results-desktop.html:157. The square is the
@@ -492,6 +513,9 @@ export function ProductCard({
                `active:opacity-70` is the text-link press. */
             transitionTypes={["nav-forward", "product-open"]}
             prefetch={true}
+            /* D133: the element `Load more` focuses on the first card it
+               adds (`load-more-landing.tsx`). */
+            data-card-link=""
             className="display text-ink text-display-24 tap-extend break-words active:opacity-70 sm:text-display-28"
           >
             {model}

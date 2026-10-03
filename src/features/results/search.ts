@@ -39,6 +39,9 @@ import {
   getPriceBounds,
   getBrands,
   listProducts,
+  type StorefrontFacets,
+  type TireSizeOptions,
+  type WheelSizeOptions,
 } from "@/features/catalog/queries";
 import type { ProductCategory } from "@/features/catalog/types";
 import { findFitment, type FitmentSize } from "@/features/finder/data";
@@ -106,6 +109,23 @@ function numeric(value: string | null | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+/** The size parts as the catalogue reads them. One object serves both
+ *  categories: only the block matching the category is read. */
+function sizeFilters(size: SizeFilter): Pick<ProductFilters, "tire" | "wheel"> {
+  return {
+    tire: {
+      width: numeric(size.width),
+      aspectRatio: numeric(size.profile),
+      rimDiameter: numeric(size.rim),
+    },
+    wheel: {
+      diameter: numeric(size.diameter),
+      width: numeric(size.width),
+      boltPattern: size.bolt ?? undefined,
+    },
+  };
+}
+
 /**
  * The URL's filters as the catalogue reads them.
  *
@@ -123,6 +143,7 @@ function catalogFilters(
   fit: FitmentSize | null,
   price: PriceFacet,
 ): ProductFilters {
+  const { tire, wheel } = sizeFilters(size);
   return {
     category: query.category,
     brands: query.brands,
@@ -134,16 +155,10 @@ function catalogFilters(
     priceMin: price.selectedMin > price.min ? price.selectedMin : undefined,
     priceMax: price.selectedMax < price.max ? price.selectedMax : undefined,
     tire: {
-      width: numeric(size.width),
-      aspectRatio: numeric(size.profile),
-      rimDiameter: numeric(size.rim),
+      ...tire,
       seasons: query.category === "tires" ? query.chips.map(seasonFromParam) : [],
     },
-    wheel: {
-      diameter: numeric(size.diameter),
-      width: numeric(size.width),
-      boltPattern: size.bolt ?? undefined,
-    },
+    wheel,
     accessory: {
       kinds:
         query.category === "accessories"
@@ -166,34 +181,58 @@ function sizeOptions(
   }));
 }
 
+/** Each size field's values, keyed by the category's own param names, in the
+ *  order `categories.ts` draws them. */
+function sizeValues(
+  tire: TireSizeOptions | null,
+  wheel: WheelSizeOptions | null,
+): Record<string, ReadonlyArray<number | string>> {
+  return {
+    ...(tire && {
+      width: tire.widths,
+      profile: tire.aspectRatios,
+      rim: tire.rimDiameters,
+    }),
+    ...(wheel && {
+      diameter: wheel.diameters,
+      width: wheel.widths,
+      bolt: wheel.boltPatterns,
+    }),
+  };
+}
+
+/**
+ * The size selects. Each lists the values found together with the OTHER size
+ * parts the buyer chose (D132, `queries.ts` "Size options"), read off the full
+ * list so the order is the category's own. The field's own value is always
+ * kept, even when the other parts would filter it out: a URL never silently
+ * loses its own choice. Only a value the category does not hold at all is
+ * dropped, and that is `withKnownSizes`' job, before this runs on the final
+ * read.
+ */
 function buildSizeGroup(
   query: ResultsQuery,
-  catalog: CatalogFacets,
+  catalog: StorefrontFacets,
 ): Facets["sizeGroup"] {
   const config = CATEGORY_CONFIG[query.category].size;
   if (config === null) return null;
-  /* Keyed by the category's own param names, in the order `categories.ts`
-     draws them. */
-  const values: Record<string, ReadonlyArray<number | string>> = {
-    ...(catalog.tire && {
-      width: catalog.tire.widths,
-      profile: catalog.tire.aspectRatios,
-      rim: catalog.tire.rimDiameters,
-    }),
-    ...(catalog.wheel && {
-      diameter: catalog.wheel.diameters,
-      width: catalog.wheel.widths,
-      bolt: catalog.wheel.boltPatterns,
-    }),
-  };
+  const all = sizeValues(catalog.tire, catalog.wheel);
+  const narrowed = sizeValues(catalog.sizeOptions.tire, catalog.sizeOptions.wheel);
   return {
     label: config.label,
-    fields: config.fields.map((field) => ({
-      param: field.param,
-      caption: field.caption,
-      options: sizeOptions(values[field.param] ?? [], field.labelPrefix ?? ""),
-      value: query.size[field.param] ?? null,
-    })),
+    fields: config.fields.map((field) => {
+      const value = query.size[field.param] ?? null;
+      const offered = new Set((narrowed[field.param] ?? []).map(String));
+      const kept = (all[field.param] ?? []).filter(
+        (option) => offered.has(String(option)) || String(option) === value,
+      );
+      return {
+        param: field.param,
+        caption: field.caption,
+        options: sizeOptions(kept, field.labelPrefix ?? ""),
+        value,
+      };
+    }),
     dense: config.dense ?? false,
   };
 }
@@ -282,7 +321,7 @@ function countActiveGroups(query: ResultsQuery, price: PriceFacet): number {
 
 function buildFacets(
   query: ResultsQuery,
-  catalog: CatalogFacets,
+  catalog: StorefrontFacets,
   price: PriceFacet,
 ): Facets {
   return {
@@ -341,23 +380,26 @@ function withKnownBrands(
 }
 
 /**
- * A size value that is not one of the category's own options becomes `Any`.
- * The options arrive with the facets, so this runs after the first read; it
- * returns the same object when every value is known, which is how the caller
- * knows not to read again.
+ * A size value the category does not hold at all becomes `Any`. Checked
+ * against the category's FULL lists, never the narrowed options (D132): a
+ * value that exists, just not with the other parts chosen, stays. The lists
+ * arrive with the facets, so this runs after the first read; it returns the
+ * same object when every value is known, which is how the caller knows not to
+ * read again.
  */
 function withKnownSizes(
   query: ResultsQuery,
   catalog: CatalogFacets,
 ): ResultsQuery {
-  const group = buildSizeGroup(query, catalog);
-  if (group === null) return query;
+  const config = CATEGORY_CONFIG[query.category].size;
+  if (config === null) return query;
+  const all = sizeValues(catalog.tire, catalog.wheel);
   const size: Record<string, string | null> = { ...query.size };
   let changed = false;
-  for (const field of group.fields) {
+  for (const field of config.fields) {
     const value = size[field.param];
     if (value === undefined || value === null) continue;
-    if (!field.options.some((option) => option.value === value)) {
+    if (!(all[field.param] ?? []).some((option) => String(option) === value)) {
       size[field.param] = null;
       changed = true;
     }
@@ -372,7 +414,7 @@ function withKnownSizes(
 async function readCatalogue(
   query: ResultsQuery,
   bounds: CatalogFacets["price"],
-): Promise<{ view: ResultsView; catalog: CatalogFacets }> {
+): Promise<{ view: ResultsView; catalog: StorefrontFacets }> {
   const { category } = query;
 
   /* The vehicle's placeholder fitment entry, read once (D48(4)). `null` for
@@ -408,7 +450,10 @@ async function readCatalogue(
             : RESULTS_WINDOW.similar,
         })
       : { items: [], total: 0 },
-    getFacets(filters),
+    /* The size options narrow on the buyer's own choice, `query.size`, not
+       on `size`: a size lent by the vehicle is not shown in the selects, so
+       it does not narrow them either (D132). */
+    getFacets(filters, sizeFilters(query.size)),
   ]);
 
   return {

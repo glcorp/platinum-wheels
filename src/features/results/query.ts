@@ -33,6 +33,7 @@ import {
 import type { ProductCategory } from "@/features/catalog/types";
 import { isFinderVehicle } from "@/features/finder/data";
 import {
+  ALL_BRANDS,
   DEFAULT_SORT,
   RESULTS_PARAM,
   RESULTS_WINDOW,
@@ -178,6 +179,7 @@ export function parseResultsQuery(
     sort,
     /* `Load more` is a link that raises `show` (D44, D108b). */
     show: parseShow(firstValue(params, RESULTS_PARAM.show)),
+    allBrands: firstValue(params, RESULTS_PARAM.brands) === ALL_BRANDS,
   };
 }
 
@@ -187,9 +189,11 @@ export function parseResultsQuery(
 /** Canonical `<category route>?...` for a query. Param order: year, make,
  *  model, then each size field in `config.size.fields` order, then the chip
  *  param (repeated), then brand (repeated), min, max, `sort` (omitted at the
- *  default) and `show` (omitted when false) — defaults omitted throughout, so
- *  equal queries give equal hrefs. For tires this is exactly today's order:
- *  year, make, model, width, profile, rim, season, brand, min, max, sort, show. */
+ *  default), `show` (omitted at the default window) and `brands=all` (only
+ *  while the brand fold is open, D132) — defaults omitted throughout, so equal
+ *  queries give equal hrefs. For tires this is exactly today's order:
+ *  year, make, model, width, profile, rim, season, brand, min, max, sort, show,
+ *  brands. */
 export function resultsHref(query: ResultsQuery): string {
   const config = CATEGORY_CONFIG[query.category];
   const search = new URLSearchParams();
@@ -224,6 +228,8 @@ export function resultsHref(query: ResultsQuery): string {
   if (query.show !== RESULTS_WINDOW.best) {
     search.append(RESULTS_PARAM.show, String(query.show));
   }
+  /* Last, so every href without it is byte-identical to before D132. */
+  if (query.allBrands) search.append(RESULTS_PARAM.brands, ALL_BRANDS);
 
   const serialised = search.toString();
   return serialised === "" ? config.route : `${config.route}?${serialised}`;
@@ -264,7 +270,7 @@ export function withPriceBounds(
 }
 
 /** Same query with every filter cleared; keeps `category`, `vehicle` and
- *  `sort`. `Clear all`. Size keys stay present, all set to `null` — the
+ *  `sort`, and closes the brand fold. `Clear all`. Size keys stay present, all set to `null` — the
  *  selects still have something to read `Any` off of. */
 export function clearFilters(query: ResultsQuery): ResultsQuery {
   const clearedSize: Record<string, string | null> = {};
@@ -280,6 +286,8 @@ export function clearFilters(query: ResultsQuery): ResultsQuery {
     priceMax: null,
     sort: query.sort,
     show: RESULTS_WINDOW.best,
+    /* `Clear all` starts over: the brand fold closes too. */
+    allBrands: false,
   };
 }
 

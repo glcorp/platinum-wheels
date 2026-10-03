@@ -68,7 +68,12 @@ export const RESULTS_PARAM = {
   max: "max",
   sort: "sort",
   show: "show",
+  /** `?brands=all`: the brand fold is open (D132). */
+  brands: "brands",
 } as const;
+
+/** The one value `RESULTS_PARAM.brands` takes. Anything else is no param. */
+export const ALL_BRANDS = "all";
 
 export interface ResultsQuery {
   /** Which route this query belongs to. Carried, never serialised: the
@@ -107,6 +112,16 @@ export interface ResultsQuery {
    * maximum: with a real catalogue "all" can be thousands of cards.
    */
   show: number;
+  /**
+   * `?brands=all` — the visitor had `Show all brands` open when they last
+   * changed a filter, so the fold renders open again (D132). The form is
+   * keyed on the URL and re-mounts on every change, so the fold would
+   * otherwise close each time. A view state, not a filter: never counted in
+   * `Filters (n)`, never sent to the catalogue. The fold also opens on its
+   * own, without this, when a ticked brand sits outside the first
+   * `BRAND_WINDOW` (`filter-panel.tsx`).
+   */
+  allBrands: boolean;
 }
 
 /** `Record<string, string | string[] | undefined>` — what `PageProps` hands a page. */

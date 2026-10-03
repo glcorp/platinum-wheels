@@ -4,6 +4,7 @@ import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import { SortSelect } from "@/features/results/components/sort-select";
 import {
+  ALL_BRANDS,
   DEFAULT_SORT,
   HAS_SORT_CHOICE,
   RESULTS_PARAM,
@@ -136,6 +137,8 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
   if (q.priceMin !== null) carried.push([RESULTS_PARAM.min, String(q.priceMin)]);
   if (q.priceMax !== null) carried.push([RESULTS_PARAM.max, String(q.priceMax)]);
   if (q.sort !== DEFAULT_SORT) carried.push([RESULTS_PARAM.sort, q.sort]);
+  /* D132: an opened brand fold stays open across a vehicle change. */
+  if (q.allBrands) carried.push([RESULTS_PARAM.brands, ALL_BRANDS]);
 
   return (
     <div

@@ -1810,3 +1810,20 @@ dialog:modal {
     transition: opacity var(--duration-state) var(--ease-arrive);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   D134 — the hero's two starting-price tags (hero.tsx, `STARTING_PRICES` in
+   src/lib/site.ts). Owner, 2026-10-03: "add that this on the hero image or
+   you know make it attractive so that people can see".
+   The tag is a link and already eases its own fill, border and colour through
+   the D92b base rule. Its words are spans with their own colours (the lime
+   category word, the muted lead), and a span is not in that rule, so on hover
+   they would snap to the dark ink while the fill eased round them. This gives
+   them the same feedback timing. The reduced-motion `*` kill still makes it a
+   cut.
+   --------------------------------------------------------------------------- */
+@utility price-tag-ink {
+  transition-property: color;
+  transition-duration: var(--duration-feedback);
+  transition-timing-function: var(--ease-card);
+}

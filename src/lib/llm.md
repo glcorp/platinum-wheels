@@ -15,14 +15,20 @@ the next session guesses which of the two phone numbers is real.
   emitted class string must stay byte-identical, and the consolidation was verified by diffing the
   `class="…"` attributes of all six rendered pages before and after. Zero imports, which is what keeps
   `src/lib/` free of any feature dependency (D37).
-- [`site.ts`](site.ts) — seven named exports. Four are sourced from `design/DESIGN.md` "Contact block
-  (canonical)" (`site.ts:1-8`); two were added by D112, and one by D122:
+- [`site.ts`](site.ts) — eight named exports. Four are sourced from `design/DESIGN.md` "Contact block
+  (canonical)" (`site.ts:1-8`); two were added by D112, one by D122 and one by D134:
   - `PRICES_VISIBLE` — `NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED === "true"` (D122). Off for launch: no price
     anywhere, no price filter or sort, and the footer shows `SITE.placeNote` (`Brampton, Ontario`)
     instead of `priceNote`, since with no price there is no currency to declare. `NEXT_PUBLIC_` because
     `ProductCard` also renders in a client island; inlined at build, so a change needs a redeploy.
   - `SITE_URL` — `https://platinumwheels.ca`, the one canonical origin (apex, no `www`, no trailing
     slash). A constant, not an env var, so a preview still names the real site as canonical.
+  - `STARTING_PRICES` — the home hero's two starting prices (**D134**, owner 2026-10-03): `Tires starting
+    from $79.99 ea` and `Wheels starting from $249.99 ea`, each split into `label` / `lead` / `amount` /
+    `unit` so the hero can weight the words, plus `category`, a `ROUTES` key the hero turns into the link
+    (so this file stays import-free). **Owner marketing lines, not catalogue prices:** they show whatever
+    `PRICES_VISIBLE` says, and keep the owner's cents and `ea`, which `docs/decisions.md` §7's catalogue
+    format (`from`, no cents) does not govern. Change a price here, nowhere else.
   - `CONTACT_HOURS` — `SITE.hours` as data (days, `09:00`, `20:00`) for structured data only. **Phone
     hours, not opening hours**: there is no shop (owner, 2026-09-30).
   - `SITE` — `name`, `legalName`, `tagline`, `city`, `province`, `email`, `hours`, `hoursLabel`, and
