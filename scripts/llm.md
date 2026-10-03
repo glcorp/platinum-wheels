@@ -61,7 +61,8 @@ from `design/assets/`, and parity becomes eyeballing — which
 - **Import reports go to `import-report/`, which is git-ignored.** They hold vendor data row by row.
 - **`catalog-csv-build.ts` decides nothing the owner did not rule** (D125). Since **D126** a tire's season
   follows its maker where the vendors disagree: `SEASON_BY_MAKER` holds each ruled model with the page it
-  was read from, and a model joins it only by the owner's ruling. The rulings of 2026-10-03
+  was read from, and a model joins it only by the owner's ruling. `ACCESSORY_BRANDS` folds an accessory brand
+  the owner ruled a respelling into the existing brand (`DAICAPS` → `DAI Wheels`). The rulings of 2026-10-03
   are its spec, under the owner's principle that the data is aligned *as the vendor has it*. A case they
   do not settle is sent to `issues.csv` as `needs owner ruling: …`, never resolved in code. A blank is
   "not known": no `0`, `N/A` or `-` is ever written, except `offset_mm`, where 0 is a real offset.
