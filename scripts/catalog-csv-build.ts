@@ -138,8 +138,54 @@ const WHEEL_BRANDS: Record<string, { brand: string; prefix: string }> = {
  */
 const VENDOR_OWN_CODES = new Set(["Part number", "Manufacturer code"]);
 
-/** Owner, 2026-10-03: loaded as brand "Trailer" and not flagged for review. */
-const REVIEW_CLEARED_WHEEL_BRANDS = new Set(["Trailer"]);
+/**
+ * D126 (owner, 2026-10-03): a tire's season follows its MAKER where our
+ * vendors' label disagrees with it. Keyed on `brand|model_clean`, lower case,
+ * and applied to every vendor's listing of that model, so all its sizes read
+ * the same. Each entry names the page the maker's wording was read from.
+ */
+const SEASON_BY_MAKER: Record<string, { season: string; source: string }> = {
+  "hankook|weatherflex gt": { season: "all_weather", source: "hankooktire.com, Weatherflex GT (H755) launch" },
+  "sailun|atrezzo 4s": { season: "all_weather", source: "sailuntire.ca/en/plt/tires/4s/" },
+  "kumho|ha32": { season: "all_weather", source: "Point S Canada, Walmart.ca (kumhotire.ca unreachable)" },
+  "kumho|solus 4s ha32 suv": { season: "all_weather", source: "Point S Canada, Walmart.ca (kumhotire.ca unreachable)" },
+  "toyo|celsius ii": { season: "all_weather", source: "toyotires.ca, all-weather-passenger-tire-celsius-ii" },
+  "toyo|celsius cargo": { season: "all_weather", source: "toyotires.ca, all-weather-commercial-grade-light-truckvan-tire-celsius-cargo" },
+  "toyo|open country a/t iii": { season: "all_weather", source: "toyotires.ca, all-terrain-all-weather-light-truck-tire-open-country-iii" },
+};
+
+/**
+ * D126: Vertex tires the owner reviewed against the maker on 2026-10-03 and
+ * kept as Vertex labels them (all-terrain, mud-terrain or all-season by the
+ * maker's own wording). With SEASON_BY_MAKER they clear the Vertex season flag.
+ */
+const SEASON_REVIEWED_AS_IS = new Set([
+  "sailun|terramax at2",
+  "sailun|terramax rt",
+  "sailun|atrezzo sh408",
+  "michelin|defender ltx m/s 2",
+  "hankook|dynapro at2 xtreme",
+  "bfgoodrich|all-terrain t/a ko3",
+  "toyo|m-55 black",
+]);
+
+const modelKey = (brand: string, model: string) => `${brand}|${model}`.toLowerCase();
+
+/** Every listing whose season SEASON_BY_MAKER changed, for summary.txt. */
+const seasonByMaker: { rowId: string; from: string; to: string }[] = [];
+
+/**
+ * Owner, 2026-10-03: loaded as these brands and not flagged for review.
+ * "Trailer" at the build; the four brand splits of rule 6 after the review
+ * (D126: "Ruffino Hard" is sold as its own brand by Canadian retailers).
+ */
+const REVIEW_CLEARED_WHEEL_BRANDS = new Set([
+  "Trailer",
+  "Asanti Black",
+  "Pro Comp Alloys",
+  "Ruffino Hard",
+  "Lock Xtreme",
+]);
 
 const REVIEW_WHEEL_BRAND = "brand split checked against the market (D125)";
 const REVIEW_VERTEX_SEASON =
@@ -532,6 +578,11 @@ function tireListing(row: InputRow): Listing {
     const ours = SEASONS[season];
     if (ours) f[F.season] = ours;
     else listing.problems.push(`needs owner ruling: season_clean "${season}"`);
+  }
+  const maker = SEASON_BY_MAKER[modelKey(c.brand ?? "", c.model_clean ?? "")];
+  if (maker && f[F.season] !== maker.season) {
+    seasonByMaker.push({ rowId: row.rowId, from: f[F.season] ?? "", to: maker.season });
+    f[F.season] = maker.season;
   }
   setYes(listing, F.isXl, "xl");
   setYes(listing, F.winterApproved, "three_pmsf");
@@ -1291,7 +1342,14 @@ async function main(): Promise<void> {
       }
       let reason = "";
       if (category === "wheels" && WHEEL_BRANDS[row.cells.brand ?? ""]) reason = REVIEW_WHEEL_BRAND;
-      else if (category === "tires" && row.source === "Vertex Tires" && (row.cells.brand ?? "") !== "") reason = REVIEW_VERTEX_SEASON;
+      else if (category === "tires" && row.source === "Vertex Tires" && (row.cells.brand ?? "") !== "") {
+        const key = modelKey(row.cells.brand ?? "", row.cells.model_clean ?? "");
+        if (SEASON_BY_MAKER[key] || SEASON_REVIEWED_AS_IS.has(key)) {
+          reviewCleared += 1;
+          continue;
+        }
+        reason = REVIEW_VERTEX_SEASON;
+      }
       else {
         reason = "needs owner ruling: no known reason";
         unexplained.push(row.rowId);
@@ -1370,7 +1428,9 @@ async function main(): Promise<void> {
     `Rows sent to issues.csv: ${issues.length}`,
     ...[...issuesBy].sort((a, b) => b[1] - a[1]).map(([label, n]) => `  ${String(n).padStart(6)}  ${label}`),
     "",
-    `needs_review rows loaded (needs-review.csv): ${reviewCount}${unexplained.length ? ` (${unexplained.length} with no known reason)` : ""}; cleared by owner ruling and left out: ${reviewCleared} (Trailer)`,
+    `needs_review rows loaded (needs-review.csv): ${reviewCount}${unexplained.length ? ` (${unexplained.length} with no known reason)` : ""}; cleared by owner ruling and left out: ${reviewCleared} (D125 Trailer; D126 brand splits and reviewed Vertex seasons)`,
+    `Tire seasons set by the maker (D126): ${seasonByMaker.length} listings`,
+    ...[...seasonByMaker.reduce((m, s) => m.set(`${s.from || "blank"} -> ${s.to}`, (m.get(`${s.from || "blank"} -> ${s.to}`) ?? 0) + 1), new Map<string, number>())].map(([label, n]) => `  ${String(n).padStart(6)}  ${label}`),
     `Float-noise values cleaned: ${noiseCleaned}`,
     "",
     "Input columns not written as columns, and why",

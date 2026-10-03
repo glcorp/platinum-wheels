@@ -252,8 +252,8 @@ in place.
     tires, 30,773 wheels, 1,803 accessories), all `published`, 45,426 vendor sources each with its vendor
     price, no display price, no photos, 0 refused, in 34 s. The 15 rows in the builder's `issues.csv` are
     not in it. Checked live: the three listings read those counts, and no vendor name or vendor price is
-    in any page source fetched. **Still owed:** photos (Blob upload), and a look at the 787
-    `needs-review.csv` rows. Owner.
+    in any page source fetched. **Still owed:** photos (Blob upload). The 787 `needs-review.csv` rows were ruled
+    the same day (D126) and 95 tire seasons updated in place. Owner.
 14. **Rechecked after the D125 load (2026-10-03): 7,540 slugs carry a `-2`, `-3` …** (the stand-in had 10,249), mostly PRO WHEELS wheels that share brand, model,
     size, bolt pattern, offset and finish and differ only in something the slug does not read (centre
     bore, SKU). Those suffixes follow file order, so they move if the file's order does. Whether the

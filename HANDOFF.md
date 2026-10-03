@@ -12,7 +12,11 @@ each with a vendor price, no display price, no photos, 0 refused, 34 s. The 15 `
 - **This branch:** `FEATURED_SLUGS` is six winter tires from six brands in 205/55R16 (owner's pick); the
   library now describes the real load. The home row stays empty until this merges and deploys (D111).
 - **Owed next:** reset the `neondb_owner` password (`todo.md` item 9; the string was used again for this
-  load); photos to Vercel Blob; a look at the 787 `needs-review.csv` rows.
+  load); photos to Vercel Blob.
+- **Then the review (D126):** `needs-review.csv` is ruled and now empty. A tire's season follows its maker where
+  vendors disagree (`SEASON_BY_MAKER` in the builder); production updated in place, **95 tires all-season →
+  all-weather** (live `/tires`: all-weather 1,238, all-season 3,474). Ruffino Hard stays its own brand.
+  **Next:** 85 more mixed-season models; the maker lookup is done and waits on the owner's list review.
 
 **Last updated 2026-10-03 (the merged vendor CSV aligned with the database, D125, on branch
 `catalog-csv-alignment`).** `npm run catalog:build-csv -- --share <combined/share> --final <combined/final>
