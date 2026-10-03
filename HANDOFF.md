@@ -31,6 +31,21 @@ by "Change all matching") and Go to page; migration `0004` indexes the list's or
 - **Independent of PR #27** (photos to R2, D126); both touch `product-types.ts` and the library files, so
   whichever merges second takes a small rebase. Deferred by the owner: adding a new brand or vendor after the load.
 
+**Last updated 2026-10-03 (product photos move to Cloudflare R2, D126, branch `photos-r2`).** Vercel Hobby's
+Blob allows 2,000 uploads a month and locks the store for 30 days once over, and its image resizer allows
+5,000 a month; the 5,844-photo load would have broken both. Photos now live in an R2 bucket served from
+`PHOTOS_BASE_URL`, each stored as a 480px `card` and a 1000px `full` WebP, drawn `unoptimized` everywhere
+through `photoSource()`. The admin upload keeps its rules (8 × 10 MB, JPEG/PNG/WebP, contain, remove deletes
+the files): the browser `PUT`s to a signed link, the server makes the sizes. `@vercel/blob` is gone.
+- **Checked:** `tsc`, `eslint` and `next build` clean.
+- **Not checked:** anything against R2 (the bucket does not exist yet) or on Vercel; no local run (owner
+  tests on production).
+- **Owed before merge:** `todo.md` item 11 (R2 bucket, domain, CORS, lifecycle rule, key, five Vercel
+  settings). Merged without them, the admin says "Photo uploads are not set up" and nothing else changes.
+- **Owed after:** the bulk load, built by the co-founder's session from the photo prompt against
+  `photo-files.ts`, `photo-sizes.ts` and `photo-store.ts`; delete the empty Blob store in Vercel (its
+  `BLOB_*` settings go with it).
+
 **Last updated 2026-10-03 (the D125 catalogue loaded into production, branch `catalog-load-2026-10-03`).**
 PR #24 merged and deployed (`e970674`, migration `0003` applied). `npm run catalog:import` loaded the 2026-10-03
 `catalogue.csv` from `~/Platinum Wheels Vendor Data/combined/share/output/` into production Neon over the direct
@@ -43,7 +58,7 @@ each with a vendor price, no display price, no photos, 0 refused, 34 s. The 15 `
 - **This branch:** `FEATURED_SLUGS` is six winter tires from six brands in 205/55R16 (owner's pick); the
   library now describes the real load. The home row stays empty until this merges and deploys (D111).
 - **Owed next:** reset the `neondb_owner` password (`todo.md` item 9; the string was used again for this
-  load); photos to Vercel Blob.
+  load); photos (to R2 since D126b).
 - **Then the review (D126):** `needs-review.csv` is ruled and now empty. A tire's season follows its maker where
   vendors disagree (`SEASON_BY_MAKER` in the builder); production updated in place, **95 tires all-season →
   all-weather**, then a second round on 85 more mixed-season models: **1,069 more tires**, three rules recorded in
@@ -154,7 +169,7 @@ listing every line (D104). **Every storefront price is off for launch** behind
   `/wheels`, `/accessories` and a product page. **No test file is committed.**
 - **Not checked:** the home featured row, which shows a bulk load only after a deploy (D111).
 - **Owed next:** reset the Neon password (`todo.md` item 9); a deploy, for the home row; the cleaned
-  CSV, then empty the catalogue and load it fresh (emptying is not built); photos (Vercel Blob).
+  CSV, then empty the catalogue and load it fresh (emptying is not built); photos (R2, D126).
 
 **Last updated 2026-09-30 (SEO groundwork, D112, on branch `seo`, off `main` once #12 had merged).**
 Search engines stay blocked until launch behind `SEARCH_INDEXING_ENABLED` (on only at exactly `true`; off
@@ -349,7 +364,7 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | Admin URLs | **Prefix-less on `admin.platinumwheels.ca` since D115**; the pages live in `src/app/admin/` and `/admin/...` is a 404 everywhere. Rows below name the admin-host URL. |
 | `/` (admin) | The admin home: rotating Brampton-time greeting, two tiles with live counts (D118). |
 | `/payment-links` | Payment-link builder and recent links: `AdminTopBar` + `PaymentLinkForm` + `PaymentLinkList`. Amount + description + expiry, no computation (D92, D103). Moved from the root by D118. |
-| `/products`, `/products/new`, `/products/<id>` | Product CRUD (D116) and Blob photo upload (D117). |
+| `/products`, `/products/new`, `/products/<id>` | Product CRUD (D116) and photo upload to R2 (D117, D126). |
 | `/login` | Flush-left 420px sign-in column, username + password (D91). Redirects home if already signed in. |
 | `/styleguide` (admin) | The admin's authored states (D93), gated. Renders the real components inert. |
 | `src/features/admin/` | `types.ts` (contract), `session.ts` (one shared sign-in, hardened by D95: scrypt hash, signed `__Host-` cookie, CSRF + origin checks), two `"use server"` actions that call `requireAdminAction()` first, 6 components; islands `login-form`, `payment-link-form`, `copy-link-button`. `scripts/hash-admin-password.mjs` makes `ADMIN_PASSWORD_HASH`. |

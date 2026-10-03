@@ -8,6 +8,7 @@ import { cartItem } from "@/features/catalog/cart-item";
 import { configFor } from "@/features/catalog/categories";
 import { AddToCartButton } from "@/features/catalog/components/add-to-cart-button";
 import { ProductPhotoPlaceholder } from "@/features/catalog/components/product-photo-placeholder";
+import { photoSource } from "@/features/catalog/photo-files";
 import {
   productImageSrc,
   type Product,
@@ -252,7 +253,7 @@ export function ProductCard({
       />
     ) : (
       <Image
-        src={photoSrc}
+        {...photoSource(photoSrc, "card")}
         alt={fullName}
         width={1000}
         height={1000}

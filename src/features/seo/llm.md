@@ -104,12 +104,12 @@ and the `metadata` of `layout.tsx` and of each indexable page.
 - Don't add `streetAddress`, `postalCode`, `openingHours`, `offers`, `aggregateRating` or `review` to a
   schema to satisfy a validator's warning. Each is an owner ruling; `tests/e2e/seo.spec.ts` fails on any
   of them.
-- Don't widen the `robots.txt` disallow to `/*?`. It would also block `/_next/image?url=…`, the product
-  photos.
+- Don't widen the `robots.txt` disallow to `/*?`. It would also block `/_next/image?url=…`, the site's
+  own resized images. (Product photos are served from the R2 subdomain since D126, outside this file.)
 - Don't disallow the `noindex` pages in `robots.txt`. A crawler must be able to fetch a page to read its
   `noindex`.
-- Don't fetch a photo from any host but Vercel Blob in `loadProductPhoto()`. The URL comes from a
-  database row.
+- Don't fetch a photo from any origin but `PHOTOS_BASE_URL` (the R2 photo bucket, D126) in
+  `loadProductPhoto()`. The URL comes from a database row.
 - Don't put a `loading.tsx` or a `<Suspense>` above a category or product page. Next would then stream
   the title, canonical and robots meta into `<body>` for Googlebot and every AI crawler, which are not on
   its "HTML-limited" list; today they arrive in `<head>` because the page waits on the database first

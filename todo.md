@@ -139,6 +139,47 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       tire's edit page the Brand list holds tire brands only, and the line under **Full name** reads the
       brand and model the storefront shows.
 
+## Owner — photo bucket (D126)
+
+11. **Set up the Cloudflare R2 photo bucket and its five Vercel settings, before PR `photos-r2` merges.**
+    - **Why:** product photos live in R2 since D126. Until all five settings exist, the admin says
+      "Photo uploads are not set up on this deployment" and the bulk photo load cannot run.
+    - **How** (Cloudflare dashboard, the account that holds `platinumwheels.ca`):
+      1. **R2 Object Storage → turn R2 on.** Cloudflare asks for a payment method even on the free tier
+         (10 GB, 1M writes and 10M reads a month, no charge for downloads). Owner only.
+      2. **Create bucket** `platinum-wheels-photos` (the coordinator can do this through the Cloudflare
+         connector once R2 is on).
+      3. Bucket → **Settings → Custom Domains → Add** `photos.platinumwheels.ca` → **Connect Domain**.
+         Cloudflare adds the DNS record itself. Leave the `r2.dev` URL **off**: it is rate-limited.
+      4. Bucket → **Settings → CORS Policy → Add CORS policy**, JSON tab:
+         ```json
+         [
+           {
+             "AllowedOrigins": ["https://admin.platinumwheels.ca"],
+             "AllowedMethods": ["PUT"],
+             "AllowedHeaders": ["Content-Type"],
+             "MaxAgeSeconds": 3600
+           }
+         ]
+         ```
+         Without it the admin's browser upload is refused.
+      5. Bucket → **Settings → Object lifecycle rules → Add rule**: prefix `uploads/`, delete objects
+         **1 day** after upload. It clears originals whose upload tab was closed halfway.
+      6. **R2 → Manage API tokens → Create API token**: permission **Object Read & Write**, applied to
+         **`platinum-wheels-photos` only**, no expiry. Copy the **Access Key ID** and **Secret Access
+         Key** (the secret is shown once). Note the **Account ID** shown on the R2 overview page.
+      7. **Vercel → platinum-wheels → Settings → Environment Variables**, Production and Preview:
+         `R2_ACCOUNT_ID`, `R2_BUCKET` = `platinum-wheels-photos` and `PHOTOS_BASE_URL` =
+         `https://photos.platinumwheels.ca` as plain values (the coordinator may add these three);
+         `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` as **Sensitive**, typed by the owner only, never
+         pasted into a chat.
+      8. Merge the PR (the deploy picks the settings up). Settings changed later need a redeploy.
+    - **Done when:** a photo added on a product's admin edit page shows on its storefront card and page,
+      and `curl -sI https://photos.platinumwheels.ca/<a stored key>` answers `200` with
+      `cache-control: public, max-age=31536000, immutable`.
+    - **After the bulk load is proven:** delete the empty Vercel Blob store `platninum-wheels`
+      (Vercel → Storage); its `BLOB_*` settings go with it. Nothing reads them since D126.
+
 ## Owner — cart and prices (D122)
 
 C1. **Prices stay off for launch; turning them on is one variable and a redeploy.**
