@@ -20,6 +20,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `SizeFieldFacet`, `ResultsView`, `SORT_OPTIONS`, `RESULTS_WINDOW`, `RESULTS_PARAM` (coordinator-written,
   D25, rewritten for D58). `RESULTS_PARAM` holds only the params **shared** by all three categories; the
   size-select and chip names live in `catalog/categories.ts`. Nothing here is in tire vocabulary.
+  Since **D132** `RESULTS_PARAM.brands` / `ALL_BRANDS` (`?brands=all`) and `ResultsQuery.allBrands`: the
+  brand fold was open at the visitor's last change. A view state, never a filter, never counted.
 - [`components/results-page.tsx`](components/results-page.tsx) — `ResultsPage({ category, searchParams })`,
   Server. The **entire** composition, so the three routes share it (D58); each `page.tsx` is an export, a
   `metadata` object and one call.
@@ -44,7 +46,13 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   gives a known one the catalogue's spelling whatever its case (`catalog/queries.ts` `getBrands`; D65
   stands again), while a brand it carries that the other filters empty keeps its ticked row at 0; the
   price range goes through `withPriceBounds`; after the read, `withKnownSizes` turns a size value the
-  selects do not offer into `Any` and reads once more.
+  category does not hold at all into `Any` and reads once more. **The size selects narrow one another
+  (D132):** each lists the values found with the OTHER size parts the buyer chose (`getFacets`'
+  `sizeOptions`), read off the full list so the order holds, and always keeps its own value, so a URL
+  never silently loses its choice; `withKnownSizes` checks the full lists, never the narrowed ones. The
+  narrowing uses `query.size` only, so a vehicle-lent size (D48(4)) leaves every select whole, and
+  brand / chips / price never narrow sizes, so the size group stays "what sizes exist" and D109(1)'s
+  best/similar split is untouched.
 - [`components/results-toolbar.tsx`](components/results-toolbar.tsx) — `ResultsToolbar({ view })`, Server.
   Breadcrumb, then a `<details>` whose `<summary>` is the vehicle chip plus the `Change vehicle` /
   `Add vehicle` link (D45, D47(5)) opening a `<VehicleFinder variant="inline">` that submits to **this**
@@ -71,7 +79,12 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   sheet's footer `Apply` is the panel's only visible submit and the rail has none, filtering live
   with JS only. Navigates on native `change`, re-focusing the changed control by `id`. Exports
   `CLEAR_ALL_CLASS`; every label/param/option comes off `view.facets`. `isPending` surfaces as `aria-busy`
-  (D66/D67). Size selects take `autoComplete="off"` (D44).
+  (D66/D67). Size selects take `autoComplete="off"` (D44). **Brand fold (D132):** the first
+  `BRAND_WINDOW` rows show, the rest fold A to Z into `<details data-brand-fold>`, whose `open` is
+  server-rendered: open on `?brands=all` or when a ticked brand sits in the fold. A ticked brand is no
+  longer hoisted above the fold; it stays in place and opens it. Each commit sets `brands=all` from the
+  fold's live `open` (`hrefFromForm`), and a hidden `brands=all` input keeps an arrived-open fold open
+  across a no-JS submit. `Clear all` closes it (`clearFilters`).
 - [`components/filter-rail.tsx`](components/filter-rail.tsx) — `FilterRail({ view })`, Server.
   `<aside aria-label="Filters">`, `hidden md:flex`, sticky `top:96`; the 32px group gap sits on the form.
   Since **D68** it is also its own scroll region, via `md:filter-rail` (globals.css): sticky alone left
@@ -83,6 +96,10 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `md:`, body scroller `overscroll-contain` (**D65**). Footer submits via `form=` and reads **`Apply`**,
   with no count (#74, **D85**, superseding #72 and D49's "keeps the total" clause) — size splits the set
   rather than shrinking it (D47(8)), so two counts are true at once and the button carries neither.
+- [`components/load-more-landing.tsx`](components/load-more-landing.tsx) — `"use client"` leaf island,
+  renders `null` (D133): records the `a[data-load-more]` press and, on the next `show` change, scrolls
+  instantly to the first new card and focuses its `data-card-link`. Cards carry position ids
+  `result-N` / `similar-N`; the `Load more` href ends in the first new card's id; `scroll={false}` stays (D68).
 - [`components/results-grid.tsx`](components/results-grid.tsx) — `ResultsGrid({ view })` and
   `ResultsEmpty({ clearHref, as?, body? })`, Server. `body` defaults to the category copy so the
   `/styleguide` call site stays untouched (one sentence for all three today, D73). `Best matches` is the
@@ -140,6 +157,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D132 | 2026-10-03 | (1) The size selects narrow one another on the buyer's own size parts only (see `search.ts` above); a URL's own value is always kept; tires `width=205` → profile 15 → 10 options, rim 17 → 7. (2) The brand fold stays open: `?brands=all`, set from the fold's state at each commit, plus server-side opening when a ticked brand is folded; closes Open #8. | Owner chose both fixes, 2026-10-03: a buyer picking 205 was offered sizes with no 205 tire and landed on `0 matches`; the fold closed after every filter change. | Owner, D132 |
 | D93b | 2026-09-30 | `query.ts`, `search.ts` and `filter-panel.tsx` harden hostile URLs: a JS commit no longer pins min/max at the price bounds (WDG-07); unknown size values and brands do not count as filters, so the badge and the visible controls agree (WDG-08); an empty category renders no `$Infinity` (WDG-18). Proven by `tests/e2e/hostile-query.spec.ts`. | A shareable URL (D44) could put the page in a state its controls could not show. | QA pass WDG-07/08/18; D93b |
 | D91b | 2026-09-29 | (1) `query.ts` accepts a vehicle only via `isFinderVehicle` (a new import of `finder/data`, a few KB in the islands' bundle); (2) the toolbar's vehicle row wraps and the chip truncates (`min-w-0`), so a long real vehicle no longer widens the page at 320 (was 333px); (3) the crumb wrapper is `text-11 leading-none md:text-12`, restoring the drawn 11px row (the mobile toolbar had sat 13px low); (4) `filter-sort-bar` carries `data-sticky-filter-bar`, the hook for the `globals.css` scroll padding that keeps keyboard focus out from under it (WCAG 2.4.11); (5) `results-grid` passes a `sizes` matching its 1/2/3-up grid; (6) the price fill carries `data-price-fill` for forced colours. | QA pass WDG-03, NJR-9, VPE-4, AXE-1, WDG-06, KBD-3 (`design/reports/qa.md`). | D91b |
 | D91b | 2026-09-30 | `filter-panel` attaches its native `change` listener (and the refocus/close-on-arrival step) in `useLayoutEffect`, not `useEffect`: the form is keyed on `href`, and a click landing between the commit that re-mounts it and a passive effect toggled a control with no listener, so the change never reached the URL. `sort-select` has no such gap (React's delegated `onChange`). | QA pass FIN-2: 22 of 36 rapid chip/brand sequences dropped a click before the fix, 36/36 after (`results.spec.ts` › rapid filter changes). | D91b |
@@ -191,11 +209,14 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 5. Every wheel and accessory SKU, brand, finish and price is **placeholder data** (D58 under D48), and
    five client photos cover the nine accessory SKUs (#51). Client, via owner.
 6. ~~`wheel-size-grid`/`wheel-size-grid-sheet`~~ (closed, #67; dead code owed for removal, D25). Owner.
-7. **`Load more` drops keyboard focus to `<body>`** — the link unmounts on arrival, D65's defect again,
-   and nothing announces the new cards (the count is unchanged by `?show=`). `results-grid.tsx`
-   is a Server Component by design, so the fix is a leaf island, not a directive on it. Owner.
-8. **Brand rows fold after eight** into a native `<details>` (`Show all brands`, D108b). The form is keyed
-   on the URL, so the fold closes again after every filter change; a ticked brand is always shown. Owner,
-   if it should stay open.
+7. ~~**`Load more` drops keyboard focus to `<body>`**~~ **Closed by D133** (2026-10-03): the href names the
+   first new card (`#result-N`) and `load-more-landing.tsx` scrolls to it and focuses its model link.
+   Still true: nothing announces the new cards (the count is unchanged by `?show=`).
+8. ~~**Brand rows fold after eight** and the fold closed again after every filter change.~~ **Closed by
+   D132:** `?brands=all` carries an open fold across changes, and a ticked folded brand opens it.
+   Left as known: toggling the fold alone does not touch the URL (it would cost a server round trip), so
+   a reload right after opening it, with no filter change between, arrives closed; the toolbar's
+   `Change vehicle` form does not carry `brands=all`; and with JS off, a fold opened by hand is not
+   carried by a submit unless it holds a ticked brand.
 9. **The vehicle → size map is still the placeholder `FITMENT` table.** Real fitment data is its own
    session (D105b). Owner.

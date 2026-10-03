@@ -43,6 +43,11 @@ import { SITE } from "@/lib/site";
        intended behaviour once it is wired, which is what a visitor needs to
        know; revisit it when delivery lands.
 
+   2026-10-03 (D130), the owner's copy pass: the wording is plainer
+   (contractions, "take care of it" for "action it"), with every clause's
+   meaning, scope and order kept. "What we collect" now says "products and
+   quantities" in the plural, because the cart sends several (D122).
+
    **There is deliberately no "Updated <date>" line.** D32 requires a computed
    date and forbids a typed one, and this page has no honest source for one:
    `new Date()` would claim the policy changed today on every request, and a
@@ -71,11 +76,11 @@ const SECTIONS: ReadonlyArray<{
         <p>
           Only what you type into a quote request: your name, email address,
           phone number, your preferred way to be contacted, and an optional
-          message. We also record which product you asked about, the quantity,
-          and the vehicle you selected if you used the vehicle finder.
+          message. We also record the products and quantities in your request,
+          and the vehicle you searched with if you used the vehicle finder.
         </p>
         <p>
-          We do not ask for payment details anywhere on this site, because
+          We don&apos;t ask for payment details anywhere on this site, because
           nothing is sold here.
         </p>
       </>
@@ -86,8 +91,8 @@ const SECTIONS: ReadonlyArray<{
     title: "Why we collect it",
     body: (
       <p>
-        To prepare your quote, confirm the fitment against your vehicle, and
-        reply to you. That is the only reason.
+        To prepare your quote, check the fitment against your vehicle and reply
+        to you. That&apos;s the only reason.
       </p>
     ),
   },
@@ -97,9 +102,9 @@ const SECTIONS: ReadonlyArray<{
     body: (
       <p>
         The offers checkbox on the quote form is optional and starts unticked.
-        If you leave it unticked we will only contact you about the quote you
-        asked for. If you tick it, you can unsubscribe at any time, and every
-        message will tell you how.
+        If you leave it unticked, we&apos;ll only contact you about the quote
+        you asked for. If you tick it, you can unsubscribe at any time, and
+        every message will tell you how.
       </p>
     ),
   },
@@ -110,8 +115,8 @@ const SECTIONS: ReadonlyArray<{
       <p>
         This site sets no cookies and runs no analytics. The one thing it keeps
         in your browser is your cart: the products and quantities you add, in
-        this browser&apos;s local storage, so they are still there when you come
-        back. It stays in your browser until you send a quote request. You can
+        this browser&apos;s local storage, so they&apos;re still there when you
+        come back. It stays in your browser until you send a quote request. You can
         empty it by removing the products, or by clearing this site&apos;s data
         in your browser. There is no advertising or third-party tracking on any
         page.
@@ -123,9 +128,9 @@ const SECTIONS: ReadonlyArray<{
     title: "Sharing",
     body: (
       <p>
-        We do not sell or rent your information. We share it only where we have
-        to in order to fulfil your request, such as with a supplier confirming
-        stock, and only the detail that is needed.
+        We don&apos;t sell or rent your information. We share it only when we
+        have to in order to fulfil your request, for example with a supplier
+        confirming stock, and only the details that are needed.
       </p>
     ),
   },
@@ -139,7 +144,7 @@ const SECTIONS: ReadonlyArray<{
         <a href={`mailto:${SITE.email}`} className={PROSE_LINK}>
           {SITE.email}
         </a>{" "}
-        and we will action it.
+        and we&apos;ll take care of it.
       </p>
     ),
   },

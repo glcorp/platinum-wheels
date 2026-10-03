@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import type { Product } from "@/features/catalog/types";
+import { LoadMoreLanding } from "@/features/results/components/load-more-landing";
 import { clearFilters, resultsHref, withMore } from "@/features/results/query";
 import { RESULTS_WINDOW, type ResultsView } from "@/features/results/types";
 import { PRIMARY_CONTACT } from "@/lib/site";
@@ -134,11 +135,16 @@ const EMPTY_BODY = "Nothing fits those filters yet. Clear them, or call us.";
 function CardGrid({
   products,
   probe,
+  anchorPrefix,
   priorityCount = 0,
   vehicle,
 }: {
   products: readonly Product[];
   probe: string;
+  /** Each card's id is `<prefix>-<position>`, 1-based (`result-7`), so
+   *  `Load more` can link to the first card it adds (D133). Positional on
+   *  purpose: the link names a slot, not a product. */
+  anchorPrefix: "result" | "similar";
   /** The checked search vehicle, saved on a cart line by `Add to cart`. */
   vehicle: string;
   /** How many leading cards preload their photo instead of lazy-loading it. */
@@ -178,6 +184,7 @@ function CardGrid({
             priority={index < priorityCount}
             sizes={CARD_SIZES}
             vehicle={vehicle}
+            anchorId={`${anchorPrefix}-${index + 1}`}
           />
         </ViewTransition>
       ))}
@@ -256,9 +263,20 @@ export function ResultsGrid({ view }: ResultsGridProps) {
   const bestHidden = view.bestTotal - best.length;
   const similarHidden = view.similarTotal - similar.length;
   const atCeiling = view.query.show >= RESULTS_WINDOW.max;
+  const growsBest = bestHidden > 0 && !atCeiling;
   const canLoadMore =
-    (bestHidden > 0 && !atCeiling) ||
+    growsBest ||
     (similarHidden > 0 && view.query.show === RESULTS_WINDOW.best);
+  /* D133 — where `Load more` lands: the first card the press adds. That is
+     the next best match whenever best grows (with a size set it grows ABOVE
+     the similar row and the button, which is why holding the scroll showed
+     the reader the wrong list), else the fourth similar card on the one press
+     that only opens the similar row. Both exist on arrival: `bestHidden > 0`
+     guarantees card `best.length + 1`, and the similar-only press is taken
+     only while `similarHidden > 0`. */
+  const landingId = growsBest
+    ? `result-${best.length + 1}`
+    : `similar-${similar.length + 1}`;
 
   return (
     <div className="flex flex-col md:gap-20">
@@ -339,7 +357,13 @@ export function ResultsGrid({ view }: ResultsGridProps) {
               : `No exact ${copy.nearMiss} match for your ${view.query.vehicle.year} ${view.query.vehicle.make} ${view.query.vehicle.model} yet. Similar ${copy.nearMiss}s are below.`}
           </p>
         ) : (
-          <CardGrid products={best} probe="best-grid" priorityCount={3} vehicle={vehicle} />
+          <CardGrid
+            products={best}
+            probe="best-grid"
+            anchorPrefix="result"
+            priorityCount={3}
+            vehicle={vehicle}
+          />
         )}
       </section>
 
@@ -358,7 +382,12 @@ export function ResultsGrid({ view }: ResultsGridProps) {
               Similar matches
             </h2>
           </div>
-          <CardGrid products={similar} probe="similar-grid" vehicle={vehicle} />
+          <CardGrid
+            products={similar}
+            probe="similar-grid"
+            anchorPrefix="similar"
+            vehicle={vehicle}
+          />
         </section>
       )}
 
@@ -393,20 +422,34 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             size="load"
             fullWidth
             className="md:w-auto"
-            href={resultsHref(withMore(view.query))}
+            href={`${resultsHref(withMore(view.query))}#${landingId}`}
+            /* The hook `LoadMoreLanding` listens for. Written out, not
+               imported: every export of a "use client" module reaches a
+               Server Component as a client reference, never as its value. */
+            data-load-more=""
             /* `scroll={false}`: this is a `?show=` link (D44), and Next
                scrolls a navigation to the top by default — so pressing
                `Load more` threw the reader back to the header, away from the
                cards it had just revealed. Measured before the fix: scrollY
-               2146 → 0. The newly revealed cards render directly below the
-               button's old position, so holding the scroll position puts them
-               exactly where the reader is already looking. D68. */
+               2146 → 0 (D68).
+               D133: holding the position was right only with one list. With
+               a size set, the new best cards arrive above the similar row and
+               this button, off-screen. So the href now names the first new
+               card (`#result-7`): without JS the browser lands on it; with JS
+               `scroll={false}` still keeps Next out of it (its fragment scroll
+               can glide short, D91b, and `HashScroll` only corrects pathname
+               changes) and `LoadMoreLanding` scrolls there instantly and moves
+               focus to that card's product link. */
             scroll={false}
           >
             Load more
           </Button>
         </div>
       )}
+
+      {/* D133. Renders nothing; mounted in every state, after every slot the
+          live-region note above depends on, so it changes no DOM. */}
+      <LoadMoreLanding show={view.query.show} />
     </div>
   );
 }

@@ -15,14 +15,20 @@ the next session guesses which of the two phone numbers is real.
   emitted class string must stay byte-identical, and the consolidation was verified by diffing the
   `class="…"` attributes of all six rendered pages before and after. Zero imports, which is what keeps
   `src/lib/` free of any feature dependency (D37).
-- [`site.ts`](site.ts) — seven named exports. Four are sourced from `design/DESIGN.md` "Contact block
-  (canonical)" (`site.ts:1-8`); two were added by D112, and one by D122:
+- [`site.ts`](site.ts) — eight named exports. Four are sourced from `design/DESIGN.md` "Contact block
+  (canonical)" (`site.ts:1-8`); two were added by D112, one by D122 and one by D134:
   - `PRICES_VISIBLE` — `NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED === "true"` (D122). Off for launch: no price
     anywhere, no price filter or sort, and the footer shows `SITE.placeNote` (`Brampton, Ontario`)
     instead of `priceNote`, since with no price there is no currency to declare. `NEXT_PUBLIC_` because
     `ProductCard` also renders in a client island; inlined at build, so a change needs a redeploy.
   - `SITE_URL` — `https://platinumwheels.ca`, the one canonical origin (apex, no `www`, no trailing
     slash). A constant, not an env var, so a preview still names the real site as canonical.
+  - `STARTING_PRICES` — the home hero's two starting prices (**D134**, owner 2026-10-03): `Tires starting
+    from $79.99 ea` and `Wheels starting from $249.99 ea`, each split into `label` / `lead` / `amount` /
+    `unit` so the hero can weight the words, plus `category`, a `ROUTES` key the hero turns into the link
+    (so this file stays import-free). **Owner marketing lines, not catalogue prices:** they show whatever
+    `PRICES_VISIBLE` says, and keep the owner's cents and `ea`, which `docs/decisions.md` §7's catalogue
+    format (`from`, no cents) does not govern. Change a price here, nowhere else.
   - `CONTACT_HOURS` — `SITE.hours` as data (days, `09:00`, `20:00`) for structured data only. **Phone
     hours, not opening hours**: there is no shop (owner, 2026-09-30).
   - `SITE` — `name`, `legalName`, `tagline`, `city`, `province`, `email`, `hours`, `hoursLabel`, and
@@ -40,7 +46,8 @@ the next session guesses which of the two phone numbers is real.
   - `BRANDS` — twelve wordmarks in a deliberate order: house brands first (`Zeta`, `ZMAX`, `Mazzini`,
     `Touren`, `Spec-1`), then the majors (`Michelin`, `Bridgestone`, `Continental`, `Pirelli`,
     `Goodyear`, `Hankook`, `Toyo`) — the order in `design/DESIGN.md` "Contact block" and in the artboard
-    brand strip (`design/inventory/home.md:728`).
+    brand strip (`design/inventory/home.md:728`). Since **D129** (2026-10-03) it feeds only the `/about`
+    wordmarks; the home strip reads its own logo list, `src/features/home/brand-logos.ts`.
 
 - [`time.ts`](time.ts) — `SHOP_TIME_ZONE` (`America/Toronto`), `SHOP_DATE_TIME`, `SHOP_WEEKDAY_DATE` and
   `shopHour()`. Every date and time the application shows or reasons about is Brampton time (D118); format
@@ -57,6 +64,16 @@ the next session guesses which of the two phone numbers is real.
   name when an accessory has no brand (**D125**), never a leading space or a stand-in brand. The one join
   for card alt text, the PDP title, structured data, the cart, the owner alert and photo alt text. Zero
   imports, so `cart.ts` can use it.
+- [`finder-category.ts`](finder-category.ts) and [`finder-category-store.ts`](finder-category-store.ts)
+  — the home finder's category (**D128**, owner 2026-10-03: on `/` the header's Wheels / Accessories
+  "should stay on the home page and refresh that part only"). Here because the header writes it and the
+  finder reads it, and `src/components/` may not import a feature (D37); the three categories are
+  spelled out for the same reason as `cart.ts`'s. Two files because Server Components import the first:
+  `finder-category.ts` is pure (`FINDER_CATEGORIES`, `FinderCategory`, `DEFAULT_FINDER_CATEGORY`,
+  `FINDER_FORM_ID`, `FINDER_SWITCH_HINT_ID`, `isFinderCategory`, `isPlainPrimaryClick`);
+  `finder-category-store.ts` holds the in-memory value (`get` / `set` with a `user` | `restore`
+  reason / `reset` / `subscribe`) and `useFinderCategory()` through `useSyncExternalStore`, server
+  snapshot `tires`, and only client islands import it. No URL write, no storage.
 - [`routes.ts`](routes.ts) — `ROUTES` (every internal href; `ROUTES.cart` since D122), `PRODUCT_PATH`, `productRoute()`. `quoteRoute()` and the PDP's `#quote` anchor went with D122. The
   one place a path literal lives (D39); components import from here, never write `/tires` themselves.
   **The tire category is `ROUTES.tires` = `/tires` since D112**; the old `ROUTES.results` key and the
@@ -72,9 +89,8 @@ the next session guesses which of the two phone numbers is real.
   everywhere"*; Harman Singh's `365-998-0990` was deliberately **not** changed, because the instruction
   gave one number and the two rows are two people. Whether the second row should also move, or be
   removed, is Open #3 below.
-- **`BRANDS` renders as text wordmarks.** No logo files exist, and brand names stay text "unless the
-  client supplies monochrome white logos **and** confirms they stock those brands"
-  (`docs/decisions.md:127`, `HANDOFF.md` §7, `site.ts:35-39`).
+- **`BRANDS` renders as text wordmarks** on `/about`. The home strip's logos (D129) live in
+  `src/features/home/brand-logos.ts` and `public/images/brands/`, not here.
 - **`display` strings ship verbatim** — verbatim from whoever is authoritative for that row: the owner
   for `CONTACTS[0]` (D76), the artboards for `CONTACTS[1]`. Never renormalise one to match the other.
   The `tel` field is the only reformatting, it is E.164, and it is **never** built by concatenating or
@@ -107,8 +123,7 @@ constants).
   (`docs/decisions.md:129`).
 - **Don't reorder or prune `BRANDS` to "tidy" it.** The house-then-majors order is the artboard's
   (`design/inventory/home.md:728`).
-- **Don't add logo image paths to `BRANDS`** until the client supplies monochrome white logos and
-  confirms stock (`docs/decisions.md:127`).
+- **Don't add logo image paths to `BRANDS`.** Logos belong to the home strip's own list (D129).
 - **Don't add a hard-coded year, a `Winter 2026` string, or `© 2026`.** Computed at render (D32);
   the artboards' `2026` is listed as sample data that must be replaced (`design/DEVIATIONS.md`).
 - **Don't put the finder or catalog seed data here.** It belongs to its feature —

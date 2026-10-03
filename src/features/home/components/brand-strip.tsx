@@ -1,56 +1,99 @@
 /* ---------------------------------------------------------------------------
-   BrandStrip — twelve wordmarks on a banded row. Server Component.
+   BrandStrip — a ticker of real brand logos on the drawn band. Server
+   Component, no JS (D129).
 
-   Desktop `margin-top:120px;background:var(--surface-2);border-top/bottom:1px
-   solid var(--border);padding:40px 48px;display:grid;
-   grid-template-columns:repeat(8,minmax(0,1fr));align-items:center` — NO
-   `gap` declared — `design/inventory/home.md:70,343-345`.
-   Mobile `margin-top:56px`, same band fills/borders,
-   `padding:20px 16px;display:flex;gap:28px;overflow:hidden` —
-   `design/inventory/home.md:70,306-308`. Tablet gets the desktop grid
-   (`design/DESIGN.md` §8 "Horizontal rows: full grid"), with `sm:px-8`.
+   The band is as drawn: `margin-top:120px;background:var(--surface-2);
+   border-top/bottom:1px solid var(--border);padding:40px 48px` desktop,
+   `margin-top:56px;padding:20px 16px` mobile — `design/inventory/home.md:70,
+   306-308,343-345` — with `sm:px-8 sm:mt-20` in the tablet band (D41).
 
-   Names come from `BRANDS` (`src/lib/site.ts`), in the artboard's house-then-
-   majors order — do not reorder (`src/lib/llm.md` "Don't").
+   What sits inside it changed (D129, owner 2026-10-03: *"get the actual brand
+   logo and add it there … it could be a moving strip … like a ticker"*). The
+   drawn twelve text wordmarks in a grid — and with them D91b's six-column
+   rule for the undrawn bands (DEVIATIONS #82) — are replaced by nineteen
+   famous tire and wheel brands from the loaded catalogue
+   (`../brand-logos.ts`), painted one muted ink that brightens on hover, and
+   scrolling right to left forever. `BRANDS` in `src/lib/site.ts` is no longer
+   read here; /about still uses it.
 
-   Mobile marks skip the `display` role utility: the artboards' brand marks
-   here carry `letter-spacing:.02em` (+2%), not `display`'s -0.015em, and
-   `line-height:1` at every width — composed explicitly instead
-   (`design/inventory/home.md:70` desktop/mobile deltas).
+   Mechanics live in the `brand-marquee` utility (`globals.css`, "Brand
+   marquee (D129)"): the track holds the list twice and slides exactly one
+   list, so the loop has no seam; the second copy is `aria-hidden` and holds
+   nothing focusable. WCAG 2.2.2: a visible pause control (native checkbox in
+   a label, ≥24px target, no JS) plus pause on hover and on focus. Reduced
+   motion gets one static, wrapping, flush-left row and no control.
 
-   Six columns, two rows, from `sm:` to `lg:` (D91b, owner ruling
-   2026-09-29): eight columns were too narrow for the longest marks in the
-   undrawn bands — `Bridgestone` ran into `Continental` by 19.7px at 720 and
-   6.7px at 1100, measured. The drawn eight return at `lg:` 1320, so 1440 is
-   unchanged. `wrap-anywhere` only engages when a mark cannot fit its column,
-   which at rest never happens; it is the WCAG 1.4.12 text-spacing case.
+   Logos are not links (not asked for). Each `<li>` carries the brand's name as
+   `sr-only` text with `translate="no"` (WDG-15); the painted logo is
+   decorative to AT.
 
    `data-reveal` on the band's root marks it for the below-the-fold reveal
    (D92b): armed only if it starts below the viewport, never hidden without JS
-   or with reduced motion. No links here, so no press or transition type.
+   or with reduced motion.
    --------------------------------------------------------------------------- */
 
-import { BRANDS } from "@/lib/site";
+import type { CSSProperties } from "react";
+
+import { BRAND_LOGOS, type BrandLogo } from "../brand-logos";
+
+/* Per-logo custom properties read by `[data-marquee="logo"]`. Data, not
+   styling: the box size and mask come from the utility. */
+function logoStyle(logo: BrandLogo): CSSProperties {
+  return {
+    "--logo-src": `url("/images/brands/${logo.slug}.svg")`,
+    "--logo-aspect": logo.aspect,
+    "--logo-scale": logo.scale,
+  } as CSSProperties;
+}
+
+function LogoItems() {
+  return BRAND_LOGOS.map((logo) => (
+    <li key={logo.slug} className="text-ink-dim md:hover:text-ink">
+      <span className="sr-only" translate="no">
+        {logo.name}
+      </span>
+      <span aria-hidden="true" data-marquee="logo" style={logoStyle(logo)} />
+    </li>
+  ));
+}
 
 export function BrandStrip() {
   return (
-    <ul
-      aria-label="Brands"
+    <div
       data-probe="brands"
       data-reveal=""
-      className="border-border bg-surface-2 mt-14 flex items-center gap-7 overflow-hidden border-y px-4 py-5 sm:mt-20 sm:grid sm:grid-cols-6 sm:items-center lg:grid-cols-8 sm:gap-0 sm:overflow-visible sm:px-8 sm:py-10 md:mt-30 md:px-12"
+      className="brand-marquee border-border bg-surface-2 mt-14 border-y px-4 py-5 sm:mt-20 sm:px-8 sm:py-10 md:mt-30 md:px-12"
     >
-      {BRANDS.map((brand) => (
-        <li
-          key={brand}
-          /* Brand names are proper nouns: machine translation turns
-             "Continental" or "Toyo" into something else (WDG-15). */
-          translate="no"
-          className="font-display text-ink-dim leading-flat tracking-2 text-display-20 flex-none font-bold whitespace-nowrap uppercase sm:min-w-0 sm:whitespace-normal sm:wrap-anywhere md:hover:text-ink md:text-display-26 md:text-center"
-        >
-          {brand}
-        </li>
-      ))}
-    </ul>
+      <div data-marquee="viewport">
+        <div data-marquee="track">
+          <ul aria-label="Brands" data-marquee="list">
+            <LogoItems />
+          </ul>
+          <ul aria-hidden="true" data-marquee="list copy">
+            <LogoItems />
+          </ul>
+        </div>
+      </div>
+
+      <label
+        data-marquee="pause"
+        className="border-border-strong text-ink-dim rounded-ctl has-focus-visible:outline-accent hover:text-ink grid size-8 flex-none cursor-pointer place-items-center border has-focus-visible:outline-2 has-focus-visible:outline-offset-0"
+      >
+        <input
+          type="checkbox"
+          data-marquee="toggle"
+          aria-label="Pause brand logos"
+          className="sr-only"
+        />
+        {/* Pause: two bars. Play: a triangle. Swapped by the utility. */}
+        <svg aria-hidden="true" data-icon="pause" viewBox="0 0 12 12" className="size-3 fill-current">
+          <rect x="2" y="1" width="3" height="10" />
+          <rect x="7" y="1" width="3" height="10" />
+        </svg>
+        <svg aria-hidden="true" data-icon="play" viewBox="0 0 12 12" className="size-3 fill-current">
+          <path d="M3 1 11 6 3 11Z" />
+        </svg>
+      </label>
+    </div>
   );
 }

@@ -46,12 +46,56 @@ _D94b, 2026-09-30, looked at and refused under rule 3 (legible marks) or rule 4 
 | `design/assets/photos/{accessories,tires-tile,wheels-tile,winter-tacoma}.png` | The original client photos. **No longer shipped** (D94b): the four `public/images/photos/` files of the same name are the Unsplash replacements listed under *In use*. The PNGs stay as frozen export. |
 | `public/images/products/*.webp` | From `design/assets/products/`, trimmed and normalised to one 1000px square canvas. **Two are too low-resolution** — see `design/DEVIATIONS.md`, bottom section. |
 
+## Brand logos (D129)
+
+The home brand ticker shows nineteen tire and wheel brands carried by the loaded catalogue, as their
+real logos. **Permission is the owner's statement**, 2026-10-03, verbatim: *"for the brands now we have
+the data ingested so look for the major players who are famous so for them get the actual brand logo and
+add it there we have permission to add brand logos so you can get those from the internet and add those
+like it should look premium"*. The owner then chose "Famous tire + wheel brands", shown in one muted
+colour, brightening on hover. This replaces D63's refusal of logos, which rested on there being no such
+permission; the licence itself is not on file here, so whoever holds it should be able to produce it.
+
+Every file is the brand's own vector artwork, fetched 2026-10-03, never redrawn. Each was processed the
+same way (scratchpad script, not committed): editor metadata, comments, titles, unused ids and styles
+stripped; every visible fill flattened to one colour (`#000`; the site paints it a token through a CSS
+mask, so the file's colour never shows); viewBox cropped to the painted bounds, measured by rasterising.
+No scripts, no embedded rasters, no external references. Each was rendered in one colour on `--surface-2`
+and looked at before use.
+
+| File (`public/images/brands/`) | Brand | Source | Notes |
+|---|---|---|---|
+| `michelin.svg` | Michelin | [Commons `Michelin_Wordmark.svg`](https://commons.wikimedia.org/wiki/File:Michelin_Wordmark.svg) | **Wordmark only.** Michelin's own full lockup (michelin.ca sprite) adds Bibendum and a yellow rule; Bibendum is a white figure drawn with dark outlines and becomes an unreadable blob in one colour. |
+| `bridgestone.svg` | Bridgestone | [Commons `Bridgestone_logo.svg`](https://commons.wikimedia.org/wiki/File:Bridgestone_logo.svg) | The red B-mark and the wordmark merge into one ink, as Bridgestone's own one-colour use does. |
+| `continental.svg` | Continental | [Commons `Continental_logo.svg`](https://commons.wikimedia.org/wiki/File:Continental_logo.svg) | Already one colour (`currentColor`), wordmark plus horse. |
+| `goodyear.svg` | Goodyear | [en.wikipedia `Goodyear_Logo_2025.svg`](https://en.wikipedia.org/wiki/File:Goodyear_Logo_2025.svg) | One colour in the source (yellow). goodyear.ca serves its logo through an HTML wrapper, not a file. |
+| `pirelli.svg` | Pirelli | [Commons `Pirelli_-_logo_black_(Italy,_1970).svg`](https://commons.wikimedia.org/wiki/File:Pirelli_-_logo_black_(Italy,_1970).svg) | **The one-colour (black) variant** of the long-P wordmark; its letterforms are identical to the current red-on-yellow version (`Pirelli - logo full (Italy, 1997).svg`), compared by rendering both. |
+| `yokohama.svg` | Yokohama | [Commons `Yokohama_(Unternehmen)_logo.svg`](https://commons.wikimedia.org/wiki/File:Yokohama_(Unternehmen)_logo.svg) | Chevron mark plus wordmark. |
+| `toyo-tires.svg` | Toyo Tires | [Commons `Toyo_Tire_logo.svg`](https://commons.wikimedia.org/wiki/File:Toyo_Tire_logo.svg) | |
+| `nitto.svg` | Nitto | [nittotire.com header logo](https://www.nittotire.com/media/ij3l5cph/header-nitto-logo.svg) | Brand's own site. |
+| `falken.svg` | Falken | [Commons `Falken_Tire_logo.svg`](https://commons.wikimedia.org/wiki/File:Falken_Tire_logo.svg) | Blue wordmark and red accent merge into one ink. |
+| `general-tire.svg` | General Tire | [Commons `General_Tire_logo.svg`](https://commons.wikimedia.org/wiki/File:General_Tire_logo.svg) | **Knockout.** The shield's white `GT` sits on red; flattened naively it would vanish into a solid shield, so the white shapes are cut out of the ink (an SVG mask inside the file), which is how the mark reads in one colour. Looked at magnified: the `GT` reads. |
+| `nexen.svg` | Nexen | [en.wikipedia `Nexen_Tire_logo.svg`](https://en.wikipedia.org/wiki/File:Nexen_Tire_logo.svg) | Stacked emblem + `NEXEN TIRE`; the emblem's lines are holes in the source, so it survives one colour. The brand's sites offered no SVG. |
+| `fuel.svg` | Fuel Off-Road | [fueloffroad.com header logo](https://www.fueloffroad.com/static/version1790065637/frontend/WheelProsNew/fueloffroad/en_US/images/logo/logo.svg) | Brand's own site. The orange emblem's `F` is a hole in the source. |
+| `kmc.svg` | KMC | [kmcwheels.com header logo](https://www.kmcwheels.com/static/version1790065637/frontend/WheelProsNew/kmc/en_US/images/logo/logo.svg) | |
+| `american-racing.svg` | American Racing | [americanracing.com header logo](https://www.americanracing.com/static/version1790065637/frontend/WheelProsNew/americanracing/en_US/images/logo/logo.svg) | **Wordmark only.** The site's file is a lockup of a dated "70 / 1956–2026" anniversary badge, a divider and the wordmark; the badge and divider (the first 13 shapes) are removed, the wordmark is untouched. |
+| `rotiform.svg` | Rotiform | [rotiform.com header logo](https://www.rotiform.com/static/version1790065637/frontend/WheelProsNew/rotiform/en_US/images/logo/logo.svg) | |
+| `black-rhino.svg` | Black Rhino | [blackrhinowheels.com header logo](https://www.blackrhinowheels.com/static/version1790065637/frontend/WheelProsNew/blackrhino/en_US/images/logo/logo.svg) | |
+| `motegi.svg` | Motegi Racing | [motegiwheels.com header logo](https://www.motegiwheels.com/static/version1790065637/frontend/WheelProsNew/motegi/en_US/images/logo/logo.svg) | (Commons' `Motegi logo.svg` is the Japanese race track, not this brand.) |
+| `moto-metal.svg` | Moto Metal | [motometal.com header logo](https://www.motometal.com/static/version1790065637/frontend/WheelProsNew/motometal/en_US/images/logo/logo.svg) | |
+| `tsw.svg` | TSW | [tsw.com header logo](https://www.tsw.com/static/version1790065637/frontend/WheelProsNew/tsw/en_US/images/logo/logo.svg) | (Commons' `TSW Emblem.svg` is unrelated.) |
+
+The Wheel Pros sites' `images/logo.svg` (one level up) is the Wheel Pros group mark on every site and
+`images/logo/logo-white.svg` is another brand's artwork (`SPRIG`); neither is used. The `version…`
+segment in those URLs changes when the sites redeploy.
+
 ## Rules for adding an image
 
 1. Licence must permit commercial use. Record it here before the file lands in `public/`.
 2. **Look at it.** Do not trust a stock site's caption — two of the three candidates above were described
    inaccurately in ways that would have shipped a defect.
 3. No legible tyre, wheel or vehicle brand marks. Magnify and brighten to check; embossed text that is
-   illegible at 2× brightness is fine.
+   illegible at 2× brightness is fine. (This governs photography. The brand logos above are the
+   deliberate exception, under the owner's stated permission, D129.)
 4. Neutral or warm-neutral cast. No second hue competing with `--accent`.
 5. Run it through `npm run assets` or the same webp treatment; confirm the served size at 390px.

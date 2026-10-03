@@ -165,8 +165,9 @@ const DEMO_UNDRAWN: Product[] = [
 ];
 
 /* An accessory the vendor sells unbranded (D125), with a photo and without:
-   no brand stamp, no brand line, and an empty tile where the brand would be
-   set. Its descriptive name carries the card. */
+   no brand stamp, no brand line, and the accessory type set on the tile where
+   the brand would be (D133; it was an empty tile). Its descriptive name
+   carries the card. */
 const DEMO_UNBRANDED: Product[] = [
   {
     category: "accessories",
@@ -582,8 +583,9 @@ export default function StyleguidePage() {
           </div>
           <p className="text-14 leading-body text-ink-dim mt-6">
             A branded accessory beside two the vendor sells unbranded, with a
-            photo and without. No brand means no stamp, no brand line and an
-            empty tile; the name starts a line higher and the card keeps its
+            photo and without. No brand means no stamp and no brand line, and
+            a tile with no photo sets the accessory type where the brand would
+            be; the name starts a line higher and the card keeps its
             row&rsquo;s height, CTA on the same baseline.
           </p>
         </Block>

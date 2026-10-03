@@ -36,6 +36,11 @@ import { ROUTES } from "@/lib/routes";
    `ScrollReveal` arms the below-the-fold sections that carry `data-reveal` —
    never the hero or the finder, and nothing at all without JS or with reduced
    motion.
+
+   D128: on `/` only, the header's Tires / Wheels / Accessories switch the
+   hero finder instead of leaving the page (`finderSwitch` on the header,
+   `switchable` on the finder; both talk through `src/lib/finder-category.ts`).
+   Every other page passes neither, so the same links navigate there as before.
    --------------------------------------------------------------------------- */
 
 /* The featured row is read from the catalogue (D108b) through a cached read
@@ -57,11 +62,11 @@ export const metadata: Metadata = pageMetadata({
 export default function HomePage() {
   return (
     <>
-      <SiteHeader variant="over-hero" active="tires" />
+      <SiteHeader variant="over-hero" active="tires" finderSwitch />
       <PageTransition>
         <main id="main" tabIndex={-1} className="flex-1">
           <Hero />
-          <VehicleFinder />
+          <VehicleFinder switchable />
           <CategoryTiles />
           <WinterPromo />
           <HowItWorks />

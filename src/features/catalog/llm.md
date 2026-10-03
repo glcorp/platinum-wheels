@@ -67,8 +67,10 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 - [`cache-tag.ts`](cache-tag.ts) — `CATALOGUE_TAG`, the one tag for a cached catalogue read; the product
   admin's actions expire it on every write.
 - [`components/product-photo-placeholder.tsx`](components/product-photo-placeholder.tsx) — the tile a
-  product with no photo shows in the card and the gallery: its brand in display type, nothing else
-  (owner, 2026-09-30, D108b).
+  product with no photo shows in the card and the gallery: its brand in display type (owner, 2026-09-30,
+  D108b), or with no brand the accessory type from `ACCESSORY_LABEL` (D133). Only a brand is
+  `translate="no"`. `ProductCard` also takes `anchorId` (results grid only) and marks its model link
+  `data-card-link` (D133).
 - **The database-backed catalogue (D105b, D106b), read by every storefront page since D108b.** It was
   exercised against a throwaway Postgres loaded with the vendor sheets; **no test file is committed.**
   - [`catalog-types.ts`](catalog-types.ts) — the data contract: `CatalogProduct`, `ProductFilters`,
@@ -78,7 +80,12 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs` (`includeDiscontinued` for the cart,
     D122), `getPriceBounds`, `getBrands` (every
     brand a category carries, whatever is filtered; D111), `listProductUrls`.
-    The only place visibility is decided.
+    The only place visibility is decided. **Since D132 `getFacets(filters, sizeChoice)` returns
+    `StorefrontFacets`**: `CatalogFacets` (whose `tire` / `wheel` lists stay every value the category
+    holds) plus `sizeOptions`, each size select's values narrowed to those found with the OTHER size parts
+    in `sizeChoice`. Only size parts narrow size options; brand, season, type and price do not. All the
+    size lists, whole and narrowed, come from one `array_agg(distinct …) filter (where …)` row per
+    category, and every facet read is issued in one wave.
   - [`store.ts`](store.ts) — staff reads and every write: `listAllProducts`, `getProductById`,
     `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`, and
     `createProductsBatch` (D114), the bulk form of `createProduct` for a catalogue load: one INSERT
@@ -197,6 +204,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 |---|---|---|---|---|
 | D93b | 2026-09-30 | The `ProductCard` model link carries an `sr-only` size tail, so the same model in two sizes has distinct link names (WCAG 2.4.4); the brand stamp is `translate="no"`. Tests match the model name by regex prefix, never exactly. | Two links read identically to a screen reader. | QA pass; D93b |
 | D91b | 2026-09-29 | `ProductCard` takes an optional `sizes` (default unchanged); each grid passes its own. The photo box is a padded wrapping flex row, so the brand stamp wraps below the badges instead of overlapping them; the image link is `absolute inset-0`, the same box as before. | `sizes` said 50vw where the results grid is 1-up (400–719), so phones fetched about half the pixels they paint; the `Currently unavailable` badge overlapped the stamp by up to 34.6px at 1100–1180. | QA pass WDG-06, NJR-6; D91b |
+| D132 | 2026-10-03 | The size selects narrow one another: `getFacets` takes the buyer's own size (`sizeChoice`, never a vehicle-lent one) and adds `sizeOptions`; the three per-field `select distinct` reads become one aggregate row (tires: width / profile / rim; wheels: diameter / width / bolt via `left join lateral unnest`), read as `text[]` and `Number`ed, and the chip-count read joins the first wave. Tires 6 facet queries in 2 waves → 4 in 1; wheels 5 in 2 → 3 in 1; accessories 4 in 2 → 4 in 1. `StorefrontFacets`, `TireSizeOptions` and `WheelSizeOptions` live in `queries.ts`, not `catalog-types.ts`. | After `width=205` the profile and rim lists still offered values no 205 tire has, and the buyer landed on `0 matches · N similar` (owner chose the fix, 2026-10-03). | Owner, D132 |
 | — | 2026-10-03 | *Derived* under D125, each vetoable: (1) a vendor price of `0` refuses the row, where a display price of `0` is stored blank, because a silent 0 → blank would hide a sheet's error; (2) an `extra_specs` pair with no `: `, an empty half, a label twice (case-insensitive), a label over 60, a value over 2,000 (raised from 500 by owner ruling, 2026-10-03, so the longest vendor `Fits wheel` lists load) or more than 40 pairs refuses the row rather than dropping the pair; (3) `lug_bolts` joins `lug_nuts` and `wheel_locks` in the D67 thread match, since a bolt states a thread too; (4) an unbranded accessory's slug is model + name + size part. | The validator reports, it does not repair (D113); D125 split lug bolts out of lug nuts. | Coordinator brief, D125 |
 
 Referenced: **D18** (routes, and the one-pair-of-constants derivation), **D19** (cut-outs normalised to

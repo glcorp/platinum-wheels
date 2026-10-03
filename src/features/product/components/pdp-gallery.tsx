@@ -2,7 +2,7 @@ import Image from "next/image";
 import { ViewTransition } from "react";
 
 import { ProductPhotoPlaceholder } from "@/features/catalog/components/product-photo-placeholder";
-import { productImageSrc } from "@/features/catalog/types";
+import { productImageSrc, type AccessoryType } from "@/features/catalog/types";
 
 import { Badge } from "@/components/ui/badge";
 import type { PdpBadge } from "@/features/product/types";
@@ -63,6 +63,8 @@ export interface PdpGalleryProps {
   slug: string;
   /** The product's photo (`Product.image`). Absent = the placeholder tile. */
   image?: string;
+  /** Printed in the placeholder tile when there is no brand (D133). */
+  accessoryType?: AccessoryType;
   /** Mobile-only badge overlay (`product.md` §3.1). Omit to render no
    *  overlay — the desktop caller never passes it (badges live in the buy
    *  panel there). */
@@ -74,6 +76,7 @@ export function PdpGallery({
   model,
   slug,
   image,
+  accessoryType,
   badges,
 }: PdpGalleryProps) {
   const photo = productImageSrc({ image });
@@ -102,7 +105,11 @@ export function PdpGallery({
                for the card and the gallery (`productImageSrc`), so a product
                cannot show a photo in the grid and a placeholder on its own
                page. */
-            <ProductPhotoPlaceholder brand={brand} context="gallery" />
+            <ProductPhotoPlaceholder
+              brand={brand}
+              accessoryType={accessoryType}
+              context="gallery"
+            />
           ) : (
             <Image
               src={photo}

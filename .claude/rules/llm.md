@@ -51,8 +51,8 @@ Referenced, not restated: **D5** (one accent per frame is *not* enforced — `ui
 
 ## Don't
 - Don't resolve a design conflict by editing `ui.md` to fit. Stop and ask the owner (root `llm.md:17-18`).
-- Don't apply the em-dash ban or the other taste copy rules to artboard copy — they apply **only to new
-  copy** we write for states the design doesn't show (`ui.md:49-51`).
+- Don't reintroduce an em dash in visible copy, artboard copy included: since **D130** (owner,
+  2026-10-03) the ban covers everything a visitor reads (`ui.md` "Copy"). Code comments are exempt.
 - Don't park notes, checklists or history in here. The file is injected on every UI edit
   (`HANDOFF.md` §4), so length is paid repeatedly; it is also not a log (root `llm.md:33-34`).
 - Don't demote a second accent to satisfy a taste rule — the artboards break the one-accent rule

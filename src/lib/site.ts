@@ -23,7 +23,7 @@ export const SITE = {
   city: "Brampton",
   province: "ON",
   email: "sales@platinumwheels.ca",
-  hours: "Every day: 9 am – 8 pm",
+  hours: "Every day, 9 am to 8 pm",
   hoursLabel: "Phone & inquiry hours",
   /**
    * Prices are per tire, before tax and install (DESIGN.md §3 Numerals).
@@ -52,6 +52,37 @@ export const SITE = {
  * on or off takes a redeploy.
  */
 export const PRICES_VISIBLE = process.env.NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED === "true";
+
+/**
+ * The two starting prices on the home hero (D134). Owner, 2026-10-03: "since
+ * now we are not displaying the prices on the front page, we just want to show
+ * this … Tires starting from $79.99 ea / Wheels starting from $249.99 ea".
+ *
+ * These are the owner's marketing lines, NOT catalogue prices: they ship
+ * whatever `PRICES_VISIBLE` says (D122(6) and D124 govern catalogue prices
+ * only), and they keep the owner's cents and `ea`, which the catalogue price
+ * format (`docs/decisions.md` §7: `from`, no cents) does not apply to. The
+ * words are split only so the hero can set them in different weights; read in
+ * order, `${label} ${lead} ${amount} ${unit}` is the owner's line verbatim.
+ * `category` is a `ROUTES` key: the hero builds the link from it, so this file
+ * keeps no imports. Change a price here and nowhere else.
+ */
+export const STARTING_PRICES = [
+  {
+    category: "tires",
+    label: "Tires",
+    lead: "starting from",
+    amount: "$79.99",
+    unit: "ea",
+  },
+  {
+    category: "wheels",
+    label: "Wheels",
+    lead: "starting from",
+    amount: "$249.99",
+    unit: "ea",
+  },
+] as const;
 
 /**
  * `SITE.hours` as data, for structured data only (D112). These are the hours

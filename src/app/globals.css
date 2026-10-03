@@ -1407,6 +1407,216 @@
   }
 }
 
+/* ===========================================================================
+   Brand marquee (D129) — BEGIN. Owned by
+   src/features/home/components/brand-strip.tsx; nothing else uses it.
+   The home brand band became a ticker of real brand logos (owner,
+   2026-10-03). One utility on the band root; its parts are reached by
+   `data-marquee` attributes, so no part depends on Tailwind emitting a second
+   custom utility (the D83 trap).
+     viewport  clips the track, fades both edges (a mask, not a painted
+               gradient: the band's own --surface-2 shows through)
+     track     both copies of the list side by side; slides -50%, exactly
+               one list, so the loop restarts on an identical frame
+     list      one copy; trailing padding = the gap, so both copies are the
+               same width and the seam spacing equals every other gap
+     copy      the second list, aria-hidden, nothing focusable in it
+     logo      a box sized from --logo-aspect / --logo-scale (inline, per
+               logo, brand-logos.ts) painted `currentColor` through the
+               logo file as a mask, so the colour is always a token
+     toggle    the WCAG 2.2.2 pause control: a native checkbox inside a
+               label; checked = paused. Works without JS.
+   Speed is constant at roughly 60-65px/s at every width: one list is about
+   3.6k / 4.5k / 5.2k px at the three base heights, so the loop runs 60s /
+   70s / 80s. Paused on hover (pointer devices only, D17), on focus inside
+   the band, and by the toggle. Reduced motion: no animation, no copy, no
+   fade, no toggle; the one list wraps flush-left into static rows.
+   =========================================================================== */
+@keyframes brand-marquee {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: -50% 0;
+  }
+}
+
+@utility brand-marquee {
+  /* Logo base height (a ~5:1 wordmark at scale 1) and the gap between logos:
+     26px / 40px phone, 32px / 64px from 720, 36px / 80px from 1100. */
+  --brand-logo-h: calc(var(--spacing) * 6.5);
+  --brand-gap: calc(var(--spacing) * 10);
+  --brand-fade: calc(var(--spacing) * 6);
+  --brand-loop: 60s;
+
+  display: flex;
+  align-items: center;
+  column-gap: calc(var(--spacing) * 3);
+
+  @media (min-width: 720px) {
+    --brand-logo-h: calc(var(--spacing) * 8);
+    --brand-gap: calc(var(--spacing) * 16);
+    --brand-fade: calc(var(--spacing) * 16);
+    --brand-loop: 70s;
+  }
+
+  @media (min-width: 1100px) {
+    --brand-logo-h: calc(var(--spacing) * 9);
+    --brand-gap: calc(var(--spacing) * 20);
+    --brand-fade: calc(var(--spacing) * 24);
+    --brand-loop: 80s;
+  }
+
+  & [data-marquee="viewport"] {
+    flex: 1 1 0%;
+    min-width: 0;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black var(--brand-fade),
+      black calc(100% - var(--brand-fade)),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black var(--brand-fade),
+      black calc(100% - var(--brand-fade)),
+      transparent
+    );
+  }
+
+  & [data-marquee="track"] {
+    display: flex;
+    width: max-content;
+    animation: brand-marquee var(--brand-loop) linear infinite;
+  }
+
+  & [data-marquee~="list"] {
+    display: flex;
+    flex: none;
+    align-items: center;
+    column-gap: var(--brand-gap);
+    padding-inline-end: var(--brand-gap);
+  }
+
+  & [data-marquee~="list"] > li {
+    flex: none;
+    transition: color var(--duration-feedback) var(--ease-card);
+  }
+
+  & [data-marquee="logo"] {
+    display: block;
+    height: calc(var(--brand-logo-h) * var(--logo-scale, 1));
+    width: calc(var(--brand-logo-h) * var(--logo-scale, 1) * var(--logo-aspect, 4));
+    background-color: currentColor;
+    -webkit-mask: var(--logo-src) center / contain no-repeat;
+    mask: var(--logo-src) center / contain no-repeat;
+  }
+
+  /* Pause: the toggle, focus anywhere in the band, a hovering pointer. */
+  &:has([data-marquee="toggle"]:checked) [data-marquee="track"],
+  &:focus-within [data-marquee="track"] {
+    animation-play-state: paused;
+  }
+
+  @media (hover: hover) {
+    &:hover [data-marquee="track"] {
+      animation-play-state: paused;
+    }
+  }
+
+  & [data-icon="play"] {
+    display: none;
+  }
+
+  &:has([data-marquee="toggle"]:checked) [data-icon="play"] {
+    display: block;
+  }
+
+  &:has([data-marquee="toggle"]:checked) [data-icon="pause"] {
+    display: none;
+  }
+
+  /* Static fallback: an intentional row, never a frozen half-loop. The
+     global reduced-motion kill alone would run the animation for 0.01ms and
+     park the track at -50%, showing the aria-hidden copy. */
+  @media (prefers-reduced-motion: reduce) {
+    /* Nineteen logos in rows: smaller on a phone so the band stays a band. */
+    --brand-logo-h: calc(var(--spacing) * 5);
+
+    @media (min-width: 720px) {
+      --brand-logo-h: calc(var(--spacing) * 7);
+    }
+
+    & [data-marquee="track"] {
+      width: auto;
+      animation: none;
+    }
+
+    & [data-marquee="viewport"] {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
+    & [data-marquee~="list"] {
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      column-gap: calc(var(--spacing) * 8);
+      row-gap: calc(var(--spacing) * 5);
+      padding-inline-end: 0;
+    }
+
+    & [data-marquee~="copy"],
+    & [data-marquee="pause"] {
+      display: none;
+    }
+  }
+
+  /* Paper: the same static row, logos in ink. The print block's
+     `background-color: transparent !important` would otherwise erase every
+     logo, since a logo is a background colour seen through a mask. */
+  @media print {
+    & [data-marquee="track"] {
+      width: auto;
+      animation: none;
+    }
+
+    & [data-marquee="viewport"] {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
+    & [data-marquee~="list"] {
+      flex-wrap: wrap;
+      row-gap: calc(var(--spacing) * 4);
+      padding-inline-end: 0;
+    }
+
+    & [data-marquee~="copy"],
+    & [data-marquee="pause"] {
+      display: none !important;
+    }
+
+    & [data-marquee="logo"] {
+      background-color: CanvasText !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
+  /* Forced colours replace every background with Canvas, which would blank
+     the logos; paint them in the user's own text colour instead. */
+  @media (forced-colors: active) {
+    & [data-marquee="logo"] {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
+  }
+}
+/* Brand marquee (D129) — END. */
+
 /* ---------------------------------------------------------------------------
    D91b — accessibility fixes from the QA pass (design/reports/qa.md). None of
    these moves a pixel in the measured rest state: each engages only under a
@@ -1524,4 +1734,96 @@ dialog:modal {
   [class~="md:filter-rail"] {
     display: none !important;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   D128 — the home finder above the fold, and its switchable CTA.
+   Owner, 2026-10-03: "no matter what the device is, before scrolling at the
+   end only find my tire should be there … You can move the above things if
+   needed". Everything in this block is the home hero and the hero finder;
+   nothing else uses it.
+
+   Three height variants, each from 500px up: below 500px is a landscape
+   phone, where a hero, a heading and a three-select panel cannot all share
+   one screen, and those are exempt (the page keeps its drawn sizes and
+   scrolls). Nested, not exclusive: where two match, the later one wins,
+   because custom variants emit in the order they are declared.
+     fold-short    < 820px  compact mobile finder, first type step
+     fold-cramped  < 680px  second type step
+     fold-minimal  < 600px  third type step (a 320x568 phone)
+   --------------------------------------------------------------------------- */
+@custom-variant fold-short (@media (min-height: 500px) and (max-height: 819.98px));
+@custom-variant fold-cramped (@media (min-height: 500px) and (max-height: 679.98px));
+@custom-variant fold-minimal (@media (min-height: 500px) and (max-height: 599.98px));
+
+/* The hero's minimum height: the drawn height (720 / 760 / 900, home.md:22,
+   DESIGN.md §8, home.md:21) where the screen is tall enough, otherwise
+   whatever leaves room for the finder below it. In `svh`, the viewport with
+   the mobile browser's bars showing, which is what a visitor sees before
+   touching anything (docs/decisions.md §5 asks for dynamic units; `dvh` would
+   resize the hero as the bars slide away).
+
+   The subtracted length is the finder's height BELOW the hero (panel height
+   minus its overlap), measured 2026-10-03; if the finder changes, re-measure:
+     mobile, stacked    341 - 72  = 269  (whole panel above the fold)
+     mobile, compact    260 - 72  = 188  (fold-short: Year + Make share a row)
+     tablet, 2x2        232 - 120 = 112  (whole panel above the fold)
+     desktop, one row   no subtraction: the hero is the viewport, so the CTA
+                        ends 12px above the fold and the panel's bottom
+                        padding runs past it. That is the drawn composition
+                        at 1440x900 exactly, which therefore does not move.
+   The hero copy stays in flow and bottom-anchored (D91b, KBD-2), so this is a
+   minimum: copy that needs more room still grows the hero. The `fold-*` type
+   steps on the h1 (hero.tsx) are what keep the copy inside it.
+   The plain `min-height` first is the fallback for an engine without `svh`. */
+@utility hero-fit {
+  min-height: 720px;
+  min-height: min(720px, calc(100svh - 269px));
+
+  @media (min-height: 500px) and (max-height: 819.98px) {
+    min-height: min(720px, calc(100svh - 188px));
+  }
+
+  @media (min-width: 720px) {
+    min-height: 760px;
+    min-height: min(760px, calc(100svh - 112px));
+  }
+
+  @media (min-width: 1100px) {
+    min-height: 900px;
+    min-height: min(900px, 100svh);
+  }
+}
+
+/* The switchable finder CTA (`finder-switch-submit.tsx`): all three labels
+   share one grid cell and only the chosen one is opaque, so a switch is a
+   crossfade, the leaving label on the exit timing and the arriving one on the
+   state timing. The reduced-motion `*` kill makes it a cut. */
+@utility finder-cta-label {
+  grid-area: 1 / 1;
+  justify-self: center;
+  opacity: 0;
+  transition: opacity var(--duration-exit) var(--ease-leave);
+
+  &[data-active] {
+    opacity: 1;
+    transition: opacity var(--duration-state) var(--ease-arrive);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   D134 — the hero's two starting-price tags (hero.tsx, `STARTING_PRICES` in
+   src/lib/site.ts). Owner, 2026-10-03: "add that this on the hero image or
+   you know make it attractive so that people can see".
+   The tag is a link and already eases its own fill, border and colour through
+   the D92b base rule. Its words are spans with their own colours (the lime
+   category word, the muted lead), and a span is not in that rule, so on hover
+   they would snap to the dark ink while the fill eased round them. This gives
+   them the same feedback timing. The reduced-motion `*` kill still makes it a
+   cut.
+   --------------------------------------------------------------------------- */
+@utility price-tag-ink {
+  transition-property: color;
+  transition-duration: var(--duration-feedback);
+  transition-timing-function: var(--ease-card);
 }

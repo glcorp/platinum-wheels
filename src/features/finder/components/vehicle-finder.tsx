@@ -1,9 +1,12 @@
 import { FieldLabel } from "@/components/ui/field-label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { FINDER_CATEGORIES, FINDER_FORM_ID } from "@/lib/finder-category";
 import { ROUTES } from "@/lib/routes";
+import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { FINDER_MAKES, finderYears } from "@/features/finder/data";
 import { FinderModelSync } from "@/features/finder/components/finder-model-sync";
+import { FinderSwitchSubmit } from "@/features/finder/components/finder-switch-submit";
 
 /**
  * The vehicle finder — Year / Make / Model native selects plus the primary
@@ -46,6 +49,13 @@ import { FinderModelSync } from "@/features/finder/components/finder-model-sync"
  *   Drops the overlap and the side margins/cap so the panel takes its
  *   parent's width; the padding, border, fields and CTA are identical.
  *   Only ever one finder per page, so the field `id`s stay unique.
+ *
+ * `switchable` (D128, home only): the header's Tires / Wheels / Accessories
+ * switch this finder instead of leaving `/`. The submit becomes the
+ * `FinderSwitchSubmit` leaf island, which reads the category the header set
+ * (`src/lib/finder-category.ts`) and swaps the CTA copy and the submit target;
+ * the form, its `action` and the three selects are unchanged, so the no-JS
+ * page is the page that shipped before D128.
  */
 export interface VehicleFinderProps {
   variant?: "hero" | "inline";
@@ -68,6 +78,32 @@ export interface VehicleFinderProps {
    * 2026-09-30). The home hero passes none. Plain markup: works with JS off.
    */
   carry?: ReadonlyArray<readonly [string, string]>;
+  /**
+   * The home hero's finder (D128): the header nav switches its category. Off
+   * everywhere else; `/tires`, `/wheels` and `/accessories` keep their fixed
+   * `action` + `cta`.
+   */
+  switchable?: boolean;
+}
+
+/** What `FinderSwitchSubmit` needs per category, read from the one table that
+ *  already holds it (D58): the route, the CTA, and the breadcrumb label in
+ *  lower case for the `Searching wheels` announcement. A category whose
+ *  `finder` is `null` would keep the default CTA; none is today. */
+function switchOptions(fallbackCta: string) {
+  return Object.fromEntries(
+    FINDER_CATEGORIES.map((id) => {
+      const config = CATEGORY_CONFIG[id];
+      return [
+        id,
+        {
+          route: config.route,
+          cta: config.finder?.cta ?? fallbackCta,
+          noun: config.crumb.toLowerCase(),
+        },
+      ];
+    }),
+  ) as Record<(typeof FINDER_CATEGORIES)[number], { route: string; cta: string; noun: string }>;
 }
 
 export function VehicleFinder({
@@ -75,9 +111,14 @@ export function VehicleFinder({
   action = ROUTES.tires,
   cta = "Find my tires",
   carry = [],
+  switchable = false,
 }: VehicleFinderProps) {
+  const hero = variant === "hero";
   return (
     <form
+      // The header's category links point `aria-controls` here on `/` (D128),
+      // and `FinderSwitchSubmit` scrolls it into view. One finder per page.
+      id={FINDER_FORM_ID}
       method="get"
       action={action}
       data-probe="finder"
@@ -90,7 +131,7 @@ export function VehicleFinder({
         // only matters above 1320px.
         // `inline` (D45): no overlap, no side margins, no cap — it sits inside
         // the results toolbar's disclosure and takes that width.
-        variant === "hero"
+        hero
           ? "relative z-10 -mt-18 sm:-mt-30 mx-4 sm:mx-8 md:mx-12 lg:mx-auto lg:max-w-content"
           : "w-full",
         // Padding 20px -> 32px (home.md:36-37); inner gap 12px -> 16px.
@@ -104,13 +145,26 @@ export function VehicleFinder({
         className={[
           // Mobile: stacked full-width fields (home.md:36 "flex-direction:column").
           "flex flex-col gap-3",
+          /* Short phones, hero only (D128): Year and Make share a row so the
+             whole panel, CTA included, fits above the fold. `fold-short` is
+             500-819px tall (globals.css D128 block); `max-sm:` keeps it off
+             the tablet and desktop grids, which already set their own tracks.
+             Model and the CTA span both columns. */
+          hero && "max-sm:fold-short:grid max-sm:fold-short:grid-cols-2",
           // Tablet: 2x2 grid (DESIGN.md §8 "Finder | ... | 2×2 grid").
           "sm:grid sm:grid-cols-2 sm:gap-4",
-          /* Desktop: 1fr 1.2fr 1.2fr 300px (home.md:154 `grid-template-columns`).
-             TOKEN MISSING: @utility finder-grid — see final report. Class does
-             not exist yet; the coordinator adds it to globals.css. */
-          "md:finder-grid md:gap-4 md:items-end",
-        ].join(" ")}
+          /* Bottom-aligned from `sm:`, not only `md:` (D128). The CTA carries
+             no label, so in the 2x2 grid's second row a top-aligned button sat
+             a label's height (19px at 1084) above the Model select beside it.
+             Aligning every cell to the row's end lines the CTA up with the
+             select it shares a row with, at the selects' own height. */
+          "sm:items-end",
+          /* Desktop: 1fr 1.2fr 1.2fr 300px (home.md:154 `grid-template-columns`),
+             `@utility finder-grid` in globals.css, which also aligns to end. */
+          "md:finder-grid md:gap-4",
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
         <div>
           <FieldLabel htmlFor="finder-year">Year</FieldLabel>
@@ -143,7 +197,7 @@ export function VehicleFinder({
           </Select>
         </div>
 
-        <div>
+        <div className={hero ? "max-sm:fold-short:col-span-2" : undefined}>
           <FieldLabel htmlFor="finder-model">Model</FieldLabel>
           {/* Every model of every make ships, grouped with <optgroup> per
               make, because the submit is a plain GET and must work with
@@ -172,17 +226,25 @@ export function VehicleFinder({
             rebuilding the options. */}
         <FinderModelSync makeId="finder-make" modelId="finder-model" />
 
-        <Button
-          type="submit"
-          variant="primary"
-          size="promo"
-          fullWidth
-          // `promo` = 52 mobile -> 56 desktop, 14px type, 12px icon gap
-          // (home.md:161,164). Mobile adds `margin-top:4px` (home.md:164).
-          className="mt-1 sm:mt-0"
-        >
-          {cta} <span aria-hidden="true">→</span>
-        </Button>
+        {/* `promo` = 52 mobile -> 56 desktop, 14px type, 12px icon gap
+            (home.md:161,164). Mobile adds `margin-top:4px` (home.md:164). */}
+        {switchable ? (
+          <FinderSwitchSubmit
+            options={switchOptions(cta)}
+            formId={FINDER_FORM_ID}
+            className={hero ? "mt-1 sm:mt-0 max-sm:fold-short:col-span-2" : "mt-1 sm:mt-0"}
+          />
+        ) : (
+          <Button
+            type="submit"
+            variant="primary"
+            size="promo"
+            fullWidth
+            className={hero ? "mt-1 sm:mt-0 max-sm:fold-short:col-span-2" : "mt-1 sm:mt-0"}
+          >
+            {cta} <span aria-hidden="true">→</span>
+          </Button>
+        )}
       </div>
     </form>
   );

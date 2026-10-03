@@ -17,10 +17,11 @@
    instead of reusing that primitive here. Deviation candidate — see the
    final report.
 
-   Steps data ships inline; copy is artboard-verbatim
-   (design/assets/home-desktop.html "02 — How it works" block). Title 03's
-   "&" is written as a plain "&" in the JSX string (source is `&amp;` only
-   because it sits in raw HTML).
+   Steps data ships inline. The copy was artboard-verbatim
+   (design/assets/home-desktop.html "02 — How it works" block) until the
+   owner's copy pass of 2026-10-03 (D130) rewrote it in plain words, with step
+   02 naming the cart (D122). No title is longer than the drawn one it
+   replaced, so no column wraps further.
 
    Mobile (home.md:231): wrapper `border-t border-border-strong`; each row
    `flex gap-3` with the numeral at `w-14` (56px exact — the
@@ -67,22 +68,22 @@ const STEPS: Step[] = [
   {
     n: "01",
     title: "Search your vehicle",
-    body: "Year, make, model. No tire codes to decipher.",
+    body: "Year, make and model. You don't need to know your tire size.",
   },
   {
     n: "02",
-    title: "Pick a match, send an inquiry",
-    body: "Best matches first, similar sizes below. Choose one and tell us how many.",
+    title: "Pick a match, ask for a quote",
+    body: "Best matches first, close sizes below. Add what you need to your cart.",
   },
   {
     n: "03",
-    title: "We confirm fitment & send a quote",
-    body: "A person checks your exact trim and stock, then emails a firm price.",
+    title: "We check the fit and quote you",
+    body: "One of us checks your exact trim and our stock, then emails you a firm price.",
   },
   {
     n: "04",
-    title: "Pay via secure link, collect from us",
-    body: "No payment on this site. Pay the quote, then pick up or book install.",
+    title: "Pay by secure link",
+    body: "No payment on this site. Pay the quote, then pick up or book an install.",
   },
 ];
 

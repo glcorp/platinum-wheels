@@ -33,11 +33,17 @@ import { BRANDS, CONTACTS, SITE } from "@/lib/site";
    and `CONTACTS` (already rendered by the home contact section and the header
    CTA). Both are shown here in the same treatment their existing call sites
    use, so neither asserts anything new.
+
+   2026-10-03 (D130), the owner's copy pass: plainer wording throughout. Two
+   facts moved with it: "How we work" names the cart (D122), and "Who we are"
+   no longer says the people you deal with "fit the parts", which nothing in
+   `SITE` supports (D112: no shop to walk into); it now says you talk to us,
+   which the two named `CONTACTS` do support.
    --------------------------------------------------------------------------- */
 
 export const metadata: Metadata = pageMetadata({
   title: "About",
-  description: `${SITE.legalName} is an online store based in ${SITE.city}, ${SITE.province}. Tires, wheels and accessories, quoted by people who confirm the fitment first.`,
+  description: `${SITE.legalName} is an online store based in ${SITE.city}, ${SITE.province}. We sell tires, wheels and accessories, and check the fitment before we quote.`,
   path: ROUTES.about,
 });
 
@@ -46,7 +52,7 @@ export default function AboutPage() {
     <ProsePage
       eyebrow={SITE.legalName}
       title="About"
-      lede={`Tires, wheels and accessories in ${SITE.city}, ${SITE.province}. You ask for a price, a person checks the fitment against your vehicle, and we come back with a firm number.`}
+      lede={`Tires, wheels and accessories in ${SITE.city}, ${SITE.province}. You ask for a price, one of us checks it fits your vehicle, and we get back to you with a firm number.`}
       meta={
         /* Three facts, each read straight out of `SITE`. A `<dl>` because they
            are term/value pairs; the wrapping `<div>`s are what the spec allows
@@ -79,20 +85,21 @@ export default function AboutPage() {
       <ProseSection title="Who we are">
         <p>
           {SITE.legalName} sells tires, wheels and accessories in {SITE.city},{" "}
-          {SITE.province}. You are dealing with the people who fit the parts,
-          not a call centre.
+          {SITE.province}. When you call or email, you talk to us, not a call
+          centre.
         </p>
       </ProseSection>
 
       <ProseSection title="How we work">
         <p>
-          This site quotes, it does not check out. You search by your vehicle or
-          by size, we confirm the fitment against what you drive, and we come
-          back with a firm price before anything is ordered.
+          There&apos;s no checkout on this site. You search by your vehicle or
+          by size, add what you need to your cart and ask for a quote. We check
+          it fits what you drive and get back to you with a firm price before
+          anything is ordered.
         </p>
         <p>
-          Every price shown is per item, in Canadian dollars, before tax and
-          installation. A quote is not an order, so nothing is committed until
+          Any price shown is per item, in Canadian dollars, before tax and
+          installation. A quote isn&apos;t an order, so nothing is final until
           you say so.
         </p>
       </ProseSection>
@@ -124,13 +131,13 @@ export default function AboutPage() {
         }
       >
         <p>
-          Three catalogues: tires, wheels and accessories. Each is searched the
-          same way, by your vehicle or by size, and each ends in the same place,
-          a quote from a person.
+          We sell tires, wheels and accessories. You search all three the same
+          way, by your vehicle or by size, and every search ends with a quote
+          from one of us.
         </p>
         <p>
-          Wheel sizes are quoted per wheel, tires per tire, accessories per
-          item. These are the brands we carry.
+          We quote wheels per wheel, tires per tire and accessories per item.
+          These are the brands we carry.
         </p>
       </ProseSection>
 

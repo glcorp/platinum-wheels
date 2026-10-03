@@ -59,7 +59,7 @@ export function QuoteSuccess({ role, tabIndex, ref }: QuoteSuccessProps) {
           (`docs/decisions.md` §7). No em dash (`.claude/rules/ui.md` "Copy"
           bans it in copy we author; artboard copy keeps its own). */}
       <p className="text-ink-muted text-15 leading-body sm:text-16">
-        {`We check fitment and stock, then reply by your preferred contact method within one business day. Need it sooner? Call ${PRIMARY_CONTACT.display}.`}
+        {`We'll check fitment and stock, then get back to you the way you asked, within one business day. Need it sooner? Call ${PRIMARY_CONTACT.display}.`}
       </p>
     </div>
   );

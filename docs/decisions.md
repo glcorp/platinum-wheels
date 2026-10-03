@@ -163,8 +163,9 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
   exported webp, hero ≤150KB at 375px.
 - No invented social proof: no ratings, review counts, testimonials or customer-count claims unless the
   client confirms them.
-- Brand names in the brand grid are text wordmarks unless the client supplies monochrome white logos and
-  confirms they stock those brands.
+- The home brand strip shows real brand logos in one muted colour, as a moving ticker, for brands the
+  loaded catalogue carries (amended 2026-10-03 by D129: owner, *"we have permission to add brand logos"*).
+  Elsewhere (`/about`) brand names stay text wordmarks.
 - Contact data lives in `src/lib/site.ts` as named constants, never hardcoded in components. The spec's
   canonical contact block resolves the two phone numbers: they are two named people, not a placeholder
   and a typo — Inderpal Singh 647-989-6178 and Harman Singh 365-998-0990.

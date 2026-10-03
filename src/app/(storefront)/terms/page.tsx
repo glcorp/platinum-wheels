@@ -37,6 +37,9 @@ import { SITE } from "@/lib/site";
        finder and the quote request;
      - availability is a boolean on `Product` and is not a stock count
        (`docs/decisions.md` §7 forbids displaying counts).
+
+   2026-10-03 (D130), the owner's copy pass: two sentences take contractions.
+   No clause changed meaning, scope or order.
    --------------------------------------------------------------------------- */
 
 export const metadata: Metadata = pageMetadata({
@@ -56,9 +59,9 @@ const SECTIONS: ReadonlyArray<{
     title: "Quotes, not orders",
     body: (
       <p>
-        Everything on this site is a quote request. Sending one does not place
-        an order and does not commit you to anything. Nothing is confirmed until
-        we reply and you accept.
+        Everything on this site is a quote request. Sending one doesn&apos;t
+        place an order or commit you to anything. Nothing is confirmed until we
+        reply and you accept.
       </p>
     ),
   },
@@ -86,8 +89,8 @@ const SECTIONS: ReadonlyArray<{
       <p>
         Sizes shown against a vehicle are a starting point, not a guarantee. We
         confirm the fitment against your actual vehicle before anything is
-        ordered. If what you selected does not fit, we will tell you and suggest
-        what does.
+        ordered. If what you selected doesn&apos;t fit, we&apos;ll tell you and
+        suggest what does.
       </p>
     ),
   },

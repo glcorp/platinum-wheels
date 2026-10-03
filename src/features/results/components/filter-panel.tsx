@@ -65,6 +65,7 @@ import {
   withPriceBounds,
 } from "@/features/results/query";
 import {
+  ALL_BRANDS,
   BRAND_WINDOW,
   DEFAULT_SORT,
   RESULTS_PARAM,
@@ -165,6 +166,16 @@ function GroupLabel({
    the 44px hit floor without changing a measured box (globals.css). */
 export const CLEAR_ALL_CLASS =
   "label tap-extend text-12 tracking-8 text-ink-muted underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0";
+
+/** Is the form's brand fold (`details[data-brand-fold]`, one per form) open
+ *  right now? Read at commit time so the next URL carries `brands=all`
+ *  exactly while the visitor has it open (D132). */
+function brandFoldOpen(form: HTMLFormElement): boolean {
+  return (
+    form.querySelector<HTMLDetailsElement>("details[data-brand-fold]")?.open ??
+    false
+  );
+}
 
 /* --- Tire size field ------------------------------------------------------ */
 
@@ -462,15 +473,18 @@ export function FilterPanel({
   /* The URL a form commits to. A range input always submits both handles, so
      the raw form pins `min`/`max` at the bounds on every commit; a bound that
      equals the seed's is no filter and stays out of the href, the same as the
-     server drops it (`withPriceBounds`, QA WDG-07). */
+     server drops it (`withPriceBounds`, QA WDG-07). `brands=all` follows the
+     fold as it is now, not as it was rendered: opening it and ticking a
+     filter keeps it open, closing it lets it close (D132). */
   const hrefFromForm = useCallback(
     (form: HTMLFormElement) =>
-      resultsHref(
-        withPriceBounds(parseResultsQuery(query.category, readForm(form)), {
+      resultsHref({
+        ...withPriceBounds(parseResultsQuery(query.category, readForm(form)), {
           min: priceFloor,
           max: priceCeiling,
         }),
-      ),
+        allBrands: brandFoldOpen(form),
+      }),
     [query.category, priceFloor, priceCeiling],
   );
 
@@ -545,13 +559,22 @@ export function FilterPanel({
     ? "flex flex-col gap-5 border-t border-border-strong pt-5"
     : "flex flex-col gap-4 py-4";
 
-  /* Brand rows. `facets.brands` arrives most-products-first. */
-  const primaryBrands = facets.brands.filter(
-    (option, index) => option.selected || index < BRAND_WINDOW,
-  );
+  /* Brand rows. `facets.brands` arrives most-products-first: the first
+     `BRAND_WINDOW` show, the rest fold A to Z (D108b). A ticked brand stays
+     where it is, in the fold if that is where it sits, and opens the fold
+     instead of jumping out of it (D132): the row the visitor just ticked is
+     still under the pointer when the re-mounted form arrives, and refocus by
+     `id` lands on it in place. */
+  const primaryBrands = facets.brands.slice(0, BRAND_WINDOW);
   const foldedBrands = facets.brands
-    .filter((option, index) => !option.selected && index >= BRAND_WINDOW)
+    .slice(BRAND_WINDOW)
     .sort((a, b) => a.label.localeCompare(b.label));
+  /* Open when the visitor had it open at their last change (`brands=all`,
+     carried by the URL), or when it holds a ticked brand, so a ticked box is
+     never hidden on arrival. Server-rendered either way, so it holds with no
+     JS and on a reload. */
+  const brandFoldOpenNow =
+    query.allBrands || foldedBrands.some((option) => option.selected);
   /* Rail: one column, `gap:2px`, rows 40px / `gap:12px`, name `flex:1`,
      count 13px tabular (results-desktop.html:137).
      Sheet: `grid-template-columns:1fr 1fr`, rows 44px / `gap:10px`, name
@@ -632,6 +655,12 @@ export function FilterPanel({
       ) : null}
       {query.sort !== DEFAULT_SORT ? (
         <input type="hidden" name={RESULTS_PARAM.sort} value={query.sort} />
+      ) : null}
+      {/* No-JS only in effect: a scripted commit replaces this with the fold's
+          live state (`hrefFromForm`). Without JS, a fold that arrived open by
+          `brands=all` stays open across the next submit. D132. */}
+      {query.allBrands ? (
+        <input type="hidden" name={RESULTS_PARAM.brands} value={ALL_BRANDS} />
       ) : null}
 
       {/* Rail header (results-desktop.html:122). The sheet's own header carries
@@ -796,14 +825,20 @@ export function FilterPanel({
           Brand
         </GroupLabel>
         {/* The catalogue carries up to 150 brands in a category, so the list
-            is the first `BRAND_WINDOW` by product count plus anything already
-            ticked, and the rest fold into a native `<details>` (D108b): no
-            state, no JS, and a box ticked inside a closed `<details>` still
-            submits with the form. The folded list reads A to Z, which is how a
-            long list is scanned. */}
+            is the first `BRAND_WINDOW` by product count and the rest fold into
+            a native `<details>` (D108b): no JS to open it, and a box ticked
+            inside a closed `<details>` still submits with the form. The folded
+            list reads A to Z, which is how a long list is scanned. Its `open`
+            comes from the server (`brandFoldOpenNow`, D132); the form re-mounts
+            on every URL change, so each arrival renders it afresh. */}
         <div className={brandList}>{primaryBrands.map(brandRow)}</div>
         {foldedBrands.length === 0 ? null : (
-          <details data-probe="brand-more" className="group">
+          <details
+            data-probe="brand-more"
+            data-brand-fold=""
+            open={brandFoldOpenNow}
+            className="group"
+          >
             <summary className="flex min-h-11 cursor-pointer list-none items-center font-sans text-12 leading-flat font-medium text-ink-muted underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0 md:text-13 [&::-webkit-details-marker]:hidden">
               <span className="group-open:hidden">Show all brands</span>
               <span className="hidden group-open:inline">Show fewer brands</span>
