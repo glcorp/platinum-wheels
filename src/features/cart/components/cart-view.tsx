@@ -142,8 +142,8 @@ export function CartSummary({
       {/* Owner's wording, 2026-10-04 (D140): replaces the quote band's drawn
           promise and the "No payment is taken here." lead-in. */}
       <p className="text-ink-muted text-15 leading-body sm:text-16">
-        We check the fitment and reply with a firm price and a secure payment
-        link within 1-2 business days.
+        We check the fitment, confirm stock, and reply within 1-2 business
+        days.
       </p>
       <div className="flex flex-col gap-2 sm:gap-2.5">
         <Button
