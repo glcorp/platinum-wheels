@@ -27,12 +27,13 @@ export interface PhotoStore {
   readonly client: AwsClient;
 }
 
-/** One year: a stored key is never reused (each carries a random id), so a
- *  file at a URL never changes. */
+/** One year: a stored key is never reused for a different picture (a staff
+ *  upload's key carries a random id, a catalogue photo's its content hash,
+ *  D139), so a file at a URL never changes. */
 export const PHOTO_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 /** The store from the environment, or `null` when it is not set up. */
-export function photoStore(env: NodeJS.ProcessEnv = process.env): PhotoStore | null {
+export function photoStore(env: Readonly<Record<string, string | undefined>> = process.env): PhotoStore | null {
   const accountId = env.R2_ACCOUNT_ID?.trim();
   const bucket = env.R2_BUCKET?.trim();
   const accessKeyId = env.R2_ACCESS_KEY_ID?.trim();
@@ -48,7 +49,7 @@ export function photoStore(env: NodeJS.ProcessEnv = process.env): PhotoStore | n
 
 /** The public origin alone, for code that only needs to recognise a photo
  *  URL and holds no keys (`PHOTOS_BASE_URL`, no trailing slash). */
-export function photosBaseUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+export function photosBaseUrl(env: Readonly<Record<string, string | undefined>> = process.env): string | null {
   return env.PHOTOS_BASE_URL?.trim().replace(/\/+$/, "") || null;
 }
 

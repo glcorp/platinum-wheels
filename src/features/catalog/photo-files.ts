@@ -36,6 +36,20 @@ export function photoKey(productId: string, stem: string, id: string, size: Phot
   return `products/${productId}/${stem}-${id}-${PHOTO_WIDTH[size]}.webp`;
 }
 
+/**
+ * Store key of one size of a shared catalogue photo (D139):
+ * `catalog/<category>/<hash>-<width>.webp`.
+ *
+ * The bulk load stores each vendor photo once and many products point at it
+ * (one wheel design across all its sizes). It lives outside every
+ * `products/<uuid>/` folder on purpose: the admin's Remove deletes only files
+ * under the product's own folder, so removing a shared photo from one product
+ * unlinks it there and never deletes it under the others.
+ */
+export function catalogPhotoKey(category: string, hash: string, size: PhotoSize): string {
+  return `catalog/${category}/${hash}-${PHOTO_WIDTH[size]}.webp`;
+}
+
 /** The folder every key of one product's photos starts with. */
 export function photoFolder(productId: string): string {
   return `products/${productId}/`;

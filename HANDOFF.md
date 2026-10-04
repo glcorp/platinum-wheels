@@ -1,5 +1,15 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-04 (the catalogue photo loader, D139, branch `catalog-photos`).** `npm run catalog:photos`
+loads the co-founder's photo hand-off (`~/Downloads/photos-for-cloudflare/`: 5,587 files, 40,246 photo rows on
+39,961 products) into the R2 bucket, one shared copy per file under `catalog/` plus its 480 card size, then links
+the rows after matching each by slug and vendor + vendor SKU.
+- **Checked:** `tsc`, `eslint`; dry run on the hand-off (0 problems); the card size on one photo per category
+  (480×480 WebP, about a third of the bytes).
+- **Not checked:** anything against R2 or production; it needs `todo.md` item 11 (keys, custom domain) first.
+- **Owed:** owner finishes item 11 and writes the settings file; then dry run with the bucket and database,
+  `--upload`, `--link` on the owner's go; redeploy; delete the Blob store; Neon password (item 9).
+
 **Last updated 2026-10-03 (three open PRs combined into one branch for a single `glcorp` merge, D138,
 branch `integrate/prs-27-28-29`).** The branch brings **#28** `Add to cart` adds one and the header cart is
 not a link on `/cart` (D127), **#29** the admin's new list filters, Go to page, per-category brands, `Full
