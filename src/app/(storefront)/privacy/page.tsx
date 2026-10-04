@@ -92,7 +92,7 @@ const SECTIONS: ReadonlyArray<{
     body: (
       <p>
         To prepare your quote, check the fitment against your vehicle and reply
-        to you. That&apos;s the only reason.
+        to you. We don&apos;t use it for anything else.
       </p>
     ),
   },

@@ -85,8 +85,7 @@ export default function AboutPage() {
       <ProseSection title="Who we are">
         <p>
           {SITE.legalName} sells tires, wheels and accessories in {SITE.city},{" "}
-          {SITE.province}. When you call or email, you talk to us, not a call
-          centre.
+          {SITE.province}. When you call or email, you talk to one of us.
         </p>
       </ProseSection>
 

@@ -169,7 +169,7 @@ export function Contact() {
             className="photo-caption-scrim absolute inset-0"
           />
           <span className="text-on-photo leading-relaxed text-15 absolute bottom-6 left-6 font-medium">
-            Call or text. We answer.
+            Call or text us.
           </span>
         </div>
       </div>

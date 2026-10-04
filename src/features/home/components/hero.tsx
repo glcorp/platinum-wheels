@@ -125,7 +125,7 @@ export function Hero() {
             "md:fold-short:text-display-88 md:fold-cramped:text-display-56",
           ].join(" ")}
         >
-          The right tires. Confirmed by people who know.
+          The right tires, checked to fit.
         </h1>
 
         <p

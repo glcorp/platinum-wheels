@@ -33,7 +33,7 @@ export interface SectionHeadingProps {
   eyebrow: string;
   /** Section number. Rendered zero-padded and em-dashed: `01 — Shop by category`. */
   index?: number;
-  /** Display-scale title, e.g. `Everything between you and the road.` */
+  /** Display-scale title, e.g. `Tires, wheels and accessories.` */
   title: string;
   /** Heading element. `h2` by default so a page keeps one `h1`. */
   as?: HeadingLevel;
@@ -62,12 +62,14 @@ export function SectionHeading({
   className,
 }: SectionHeadingProps) {
   const Heading = as;
-  /* `01 — Shop by category`: two-digit number, U+2014 with spaces either side,
-     verbatim from home-desktop.html:149. */
+  /* `01 · Shop by category`: two-digit number, then a middle dot. The
+     artboard draws an em dash here (home-desktop.html:149); D140 bans it from
+     visible copy. Only /styleguide passes an index (D94b dropped the home
+     numbers). */
   const eyebrowCopy =
     index === undefined
       ? eyebrow
-      : `${String(index).padStart(2, "0")} — ${eyebrow}`;
+      : `${String(index).padStart(2, "0")} · ${eyebrow}`;
 
   return (
     <div

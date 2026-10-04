@@ -105,8 +105,8 @@ export function WinterPromo() {
           data-probe="promo-body"
           className="text-ink-muted text-15 leading-body sm:text-17 sm:max-w-promo-body"
         >
-          Ontario roads sit below 7 °C from November to March. All-seasons
-          harden and lose grip. A proper winter compound doesn&apos;t.
+          From November to March, Ontario roads stay below 7 °C. In that cold,
+          all-season tires go hard and lose grip. Winter tires stay soft.
         </p>
 
         {/* Spec chips — 36px tall, 1px `--text-muted` border, radius 0
