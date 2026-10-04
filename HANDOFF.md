@@ -1,5 +1,39 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-04 (the two open PRs combined into one branch for a single `glcorp` merge, D143,
+branch `integrate/prs-39-42`).** The branch brings **#39** the catalogue photo loader (D139b) and **#42** part
+number and M+S as columns, tire part numbers dropped (D142). The two touch no common code; the only
+conflict was this file. Both blocks below stand as written.
+- **After the merge:** the deploy runs migration `0005` (D142). The photo loader changes nothing until
+  the owner runs it (`todo.md` item 11 first); it matches products by slug and vendor SKU, which `0005`
+  leaves alone.
+- **Owed next:** `glcorp` merges with **Create a merge commit**; `todo.md` item 13; then item 11 and the
+  photo load.
+
+**Last updated 2026-10-04 (part number and M+S get their own columns, D142, branch `part-number-mud-snow`).**
+Migration `0005` moves a wheel's or accessory's `Part number` out of extra specs into
+`products.part_number`, turns a tire's `Mud & snow: yes` into `tire_specs.mud_snow`, and drops the 958 tire
+part numbers (size codes and store codes, owner ruling). The admin form gains a `Part number` field
+(wheels, accessories) and an `M+S` box (tires); the builder writes the two columns.
+- **After the merge:** the deploy runs `0005`, which rewrites `extra_specs` on about 3,300 products in one
+  migration. For the minute between migrate and deploy, the old code finds neither fact; the site is not
+  live. The storefront looks the same: the M+S badge and the `Part number` row read the columns.
+- **Checked:** `npm run check`, `db:check`, `next build`; on PGlite, today's `catalogue.csv` loaded with the
+  old code and then migrated, product by product (root `llm.md` D142); the builder and importer on the
+  real vendor workbooks.
+- **Not checked:** on Neon or Vercel; the admin form in a browser.
+- **Owed next:** `glcorp` merges with **Create a merge commit**; `todo.md` item 13.
+
+**Last updated 2026-10-04 (the catalogue photo loader, D139b, branch `catalog-photos`).** `npm run catalog:photos`
+loads the co-founder's photo hand-off (`~/Downloads/photos-for-cloudflare/`: 5,587 files, 40,246 photo rows on
+39,961 products) into the R2 bucket, one shared copy per file under `catalog/` plus its 480 card size, then links
+the rows after matching each by slug and vendor + vendor SKU.
+- **Checked:** `tsc`, `eslint`; dry run on the hand-off (0 problems); the card size on one photo per category
+  (480×480 WebP, about a third of the bytes).
+- **Not checked:** anything against R2 or production; it needs `todo.md` item 11 (keys, custom domain) first.
+- **Owed:** owner finishes item 11 and writes the settings file; then dry run with the bucket and database,
+  `--upload`, `--link` on the owner's go; redeploy; delete the Blob store; Neon password (item 9).
+
 **Last updated 2026-10-03 (three open PRs combined into one branch for a single `glcorp` merge, D138,
 branch `integrate/prs-27-28-29`).** The branch brings **#28** `Add to cart` adds one and the header cart is
 not a link on `/cart` (D127), **#29** the admin's new list filters, Go to page, per-category brands, `Full

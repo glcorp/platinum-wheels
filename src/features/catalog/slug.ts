@@ -1,8 +1,8 @@
 /**
  * Product slugs: brand + model + size, e.g. `pirelli-p-zero-235-45r18-98y`.
  * An accessory is brand + name + part number (owner 2026-10-03, data QA): its
- * name no longer carries the vendor SKU, and the Part number spec tells two
- * accessories with one name apart. One with no brand (D125) has none to lead.
+ * name no longer carries the vendor SKU, and the part number (its own column
+ * since D142) tells two accessories with one name apart. One with no brand (D125) has none to lead.
  * Pure. The store appends `-2`, `-3` … when two products would share one.
  *
  * A slug is written once, when the product is created, and never rewritten:
@@ -42,11 +42,6 @@ function sizePart(input: ProductInput): string {
   }
 }
 
-/** The accessory's Part number spec, which tells same-named accessories apart. */
-function partNumber(input: ProductInput): string {
-  return input.extraSpecs.find((spec) => spec.label.toLowerCase() === "part number")?.value ?? "";
-}
-
 export function buildProductSlug(input: ProductInput): string {
   const brand = input.brand ?? "";
   const model = input.model ?? "";
@@ -56,7 +51,7 @@ export function buildProductSlug(input: ProductInput): string {
   // with the brand drops that copy, so the slug never reads `gorilla-gorilla-`.
   const parts =
     input.category === "accessories"
-      ? [brand, stripBrandPrefix(brand, input.name), partNumber(input)]
+      ? [brand, stripBrandPrefix(brand, input.name), input.partNumber ?? ""]
       : [brand, model, sizePart(input)];
   const slug = slugify(parts.join(" ")).slice(0, SLUG_MAX_LENGTH);
   // The CHECK refuses a leading or trailing hyphen. `slugify` strips both,

@@ -139,6 +139,12 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       tire's edit page the Brand list holds tire brands only, and the line under **Full name** reads the
       brand and model the storefront shows.
 
+13. **Check the D142 move on production once its PR merges.**
+    - **Why:** migration `0005` was run on a scratch copy of the catalogue, never on Neon.
+    - **Check:** an accessory's product page still shows its `Part number` row; a tire that showed `M+S`
+      still does; a tire's page has no `Part number` row; in the admin, an accessory's edit page fills the
+      `Part number` field and an M+S tire has the `M+S` box ticked.
+
 ## Owner — photo bucket (D126b)
 
 11. **Finish the Cloudflare R2 photo bucket and its five Vercel settings.** The code is merged without them
@@ -146,10 +152,12 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
     - **Why:** product photos live in R2 since D126b. Until all five settings exist and the site is
       redeployed, the admin says "Photo uploads are not set up on this deployment" and the bulk photo
       load cannot run.
-    - **Where it stands, 2026-10-03:** step 2 is done (bucket `platinum-wheels-photos`, created 16:00 UTC)
-      and Vercel holds `R2_BUCKET` and `PHOTOS_BASE_URL` (Production and Preview). Still missing:
-      `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `photos.platinumwheels.ca` does not
-      resolve yet (step 3). Steps 4–6 could not be checked from here (no connector tool reads them).
+    - **Where it stands, 2026-10-04:** steps 1–5 done by the coordinator on the owner's instruction
+      (bucket; `photos.platinumwheels.ca` connected, status Active; CORS for `https://admin.platinumwheels.ca`
+      PUT + Content-Type; lifecycle rule "Clear abandoned admin uploads", `uploads/`, 1 day), plus an R2
+      budget alert at **$1 USD** to `platinumwheelsca@gmail.com` (owner, 2026-10-04). Vercel holds
+      `R2_ACCOUNT_ID`, `R2_BUCKET` and `PHOTOS_BASE_URL`. **Still the owner's:** step 6 (the API token)
+      and the two Sensitive keys in step 7, then the redeploy.
     - **How** (Cloudflare dashboard, the account that holds `platinumwheels.ca`):
       1. **R2 Object Storage → turn R2 on.** Cloudflare asks for a payment method even on the free tier
          (10 GB, 1M writes and 10M reads a month, no charge for downloads). Owner only.
@@ -183,6 +191,11 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
     - **Done when:** a photo added on a product's admin edit page shows on its storefront card and page,
       and `curl -sI https://photos.platinumwheels.ca/<a stored key>` answers `200` with
       `cache-control: public, max-age=31536000, immutable`.
+    - **Then the catalogue photos (D139b):** the owner writes a settings file outside the repo
+      (`chmod 600`), holding the five R2 settings and `IMPORT_DATABASE_URL` (direct Neon address), one
+      `KEY=value` per line. The coordinator runs `npm run catalog:photos -- ~/Downloads/photos-for-cloudflare
+      --env <that file>`: dry run, then `--upload`, then `--link`, each only on the owner's go, then a
+      redeploy so cached listings show the photos. Delete the file afterwards and do item 9 (Neon password).
     - **After the bulk load is proven:** delete the empty Vercel Blob store `platninum-wheels`
       (Vercel → Storage); its `BLOB_*` settings go with it. Nothing reads them since D126b.
 

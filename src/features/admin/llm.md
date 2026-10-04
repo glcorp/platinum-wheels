@@ -62,7 +62,8 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   categories, brand and vendor dropdowns, source rows. Remounts its fields after every answer. D125: an
   accessory's brand select opens on `No brand` (empty value) and is not required; wheels gain Finish
   family / Colour / Lug count, accessories Part type / Weight (lb); every category ends with an `Extra
-  specs` textarea (`extra_specs`, one `Label: value` per line); the edit page passes the saved
+  specs` textarea (`extra_specs`, one `Label: value` per line); D142: wheels and accessories get a `Part
+  number` field under Barcode and tires an `M+S (mud and snow)` box beside 3PMSF; the edit page passes the saved
   `lowestVendorPrice` for the sources block. D127b: the brand list is the product's category's; the name
   field is `Full name`, with a live "On the site this reads" line (brand + model, or the name when the model
   is blank, through `productName()`).
@@ -143,6 +144,9 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   value it cannot read) and `filterConditions()` in `catalog/store.ts`, in the same change.
 - **A vendor's price is staff only** (D125): typed and shown here, cents kept (`vendorPriceLabel`), never
   with `Price`, and never passed to anything on the storefront.
+- **Removing a shared catalogue photo unlinks it and keeps the file** (D139b): the bulk load's photos live
+  under `catalog/`, used by many products, and `removePhoto` deletes files only under the product's own
+  `products/<uuid>/` folder (it logs the rest). Staff uploads stay per product and are deleted as before.
 - **A removed photo's URL can outlive it briefly** (D126b): the files are deleted at once, but they are
   marked immutable, so a copy Cloudflare or a browser cached may answer the (unlinked) URL until it
   expires.

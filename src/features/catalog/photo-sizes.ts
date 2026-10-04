@@ -2,9 +2,10 @@
  * Makes a product photo's two stored sizes (D126b). Server and laptop only:
  * `sharp` is a native module.
  *
- * The admin upload (`src/features/admin/photo-actions.ts`) calls this, and the
- * bulk photo load (not built yet) is to call it too, so a photo looks the same
- * however it arrived.
+ * The admin upload (`src/features/admin/photo-actions.ts`) makes both sizes
+ * here; the catalogue photo load (`scripts/catalog-photos.ts`, D139b) keeps the
+ * vendor's 1000px file and makes only the card size, with the same settings,
+ * so a photo looks the same however it arrived.
  *
  * Each size is fitted inside a square of its width, keeping its proportions:
  * never cropped (D117 draws photos whole) and never enlarged. The camera's
@@ -32,6 +33,12 @@ export async function makePhotoSizes(original: Uint8Array): Promise<PhotoFiles> 
     fitted(original, PHOTO_WIDTH.full),
   ]);
   return { card, full };
+}
+
+/** One size alone, for a caller that already holds the other (the bulk
+ *  catalogue load keeps the vendor's 1000px file as it is, D139b). */
+export function makePhotoSize(original: Uint8Array, size: PhotoSize): Promise<Buffer> {
+  return fitted(original, PHOTO_WIDTH[size]);
 }
 
 /** One pass per size, straight from the original: rotate, fit, encode. */

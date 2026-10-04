@@ -53,3 +53,6 @@ next-env.d.ts
 
 # catalogue import reports: they hold the vendor data, row by row
 /import-report/
+
+# catalogue photo load reports (D139b)
+/photo-report/

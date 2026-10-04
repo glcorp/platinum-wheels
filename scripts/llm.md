@@ -34,6 +34,14 @@ from `design/assets/`, and parity becomes eyeballing — which
   valid rows into an **empty** catalogue, in batches over parallel connections. The database is
   `IMPORT_DATABASE_URL`. The thinking is in `src/features/catalog/import-plan.ts`, the column layout in
   `import-mapping.ts`, and the suggested file layout in `docs/catalogue-csv.md`.
+- [`catalog-photos.ts`](catalog-photos.ts) — `npm run catalog:photos -- <folder> --env <file>` (D139b). Takes
+  the co-founder's photo hand-off (`product-images.csv` + `images/`), checks the sheet, and with
+  `--upload` stores each vendor file once in the R2 photo bucket (`catalog/<category>/<hash>-1000.webp`
+  as given, plus the `-480` card size), then with `--link` writes the `product_images` rows after matching
+  every row by slug **and** vendor + vendor SKU. Dry run by default; typed `yes` before each write; creates
+  only; skips stored files and products that already have photos, so a rerun adds nothing twice. Reports
+  go to `photo-report/` (gitignored). Settings (the five R2 ones, `IMPORT_DATABASE_URL`) come only from
+  the `--env` file.
 - [`catalog-csv-build.ts`](catalog-csv-build.ts) — `npm run catalog:build-csv -- --share <dir> --final
   <dir> --out <dir>` (D125). Turns the co-founder's merged vendor workbooks (`share/`: one row per vendor
   listing; `final/`: one sheet per vendor, read only for `vendor_price`) into the one `catalogue.csv`
@@ -48,6 +56,9 @@ from `design/assets/`, and parity becomes eyeballing — which
   sees, Part number included), `MODEL_ALIASES` folds model spellings (M4), accessory SKUs move to a
   `Part number` spec (M5), and M6–M9 tidy models, pack sizes, P3 values and descriptions. It also writes
   `changes-review.csv`: one row per data edit or merge decision, for the owner to review before a load.
+  **Since D142** Part number and Mud & snow still travel through the merge as extras (so M3 and the
+  vendor-own-code rule see them as before) and leave at output for the `part_number` and `mud_snow`
+  columns. A tire's Part number is dropped, and M3 no longer counts it as a visible difference.
 
 ## Rules
 - **`client-assets/` is where client material supplied AFTER the design export goes** (D63).
@@ -58,6 +69,9 @@ from `design/assets/`, and parity becomes eyeballing — which
   (D63). Chrome highlights are as bright as the background, so a global threshold punches holes through
   the product; the flood-fill only removes background connected to the image edge. The 215 threshold is
   measured, not guessed — see the block comment above `keyBackground()`.
+- **`catalog-photos.ts` reads its secrets from the `--env` file only** (D139b). Never pass a key or a
+  connection string as an argument or paste one into a chat; the owner writes the file (mode 600,
+  outside the repo).
 - **`catalog-import.ts` is a TypeScript script** (D114). It must run the app's own validator
   and store, so `tsx` runs it and `npm run check` type-checks it. It is `.ts`, not `.mts`: the repo has
   no `"type": "module"`, and an ES-module script cannot see what `src/db/schema.ts` re-exports.
@@ -74,7 +88,7 @@ from `design/assets/`, and parity becomes eyeballing — which
 - **It is the second TypeScript script, for the same reason as the import:** it runs the importer's own
   `planImport()` and `IMPORT_MAPPING`, so the CSV it writes is one the import accepts by construction.
   Its outputs hold vendor prices and go outside the repo (`--out`), never into it.
-- **Plain Node, not application source** (all scripts but `catalog-import.ts` and `catalog-csv-build.ts`). `.mjs` and `.js` are outside tsc's scope — `tsconfig.json:25-32`
+- **Plain Node, not application source** (all scripts but `catalog-import.ts`, `catalog-csv-build.ts` and `catalog-photos.ts`). `.mjs` and `.js` are outside tsc's scope — `tsconfig.json:25-32`
   includes `**/*.ts`, `**/*.tsx` and `**/*.mts` only, so `npm run typecheck` never sees these files.
   `eslint .` (`package.json:10`) *does* lint them: `scripts/` is not in the ignore list
   (`eslint.config.mjs:9-19`).

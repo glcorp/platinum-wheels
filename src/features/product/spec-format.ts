@@ -35,21 +35,6 @@ export interface ExtraPair {
   value: string;
 }
 
-/** `Mud & snow` as a vendor writes it. The M+S badge reads this fact, so the
- *  table never prints it as a row too. */
-function isMudAndSnow(label: string): boolean {
-  const key = label.trim().toLowerCase().replace(/\s+/g, " ");
-  return key === "mud & snow" || key === "mud and snow";
-}
-
-/** `true` when the vendor itself says the tire is M+S, whatever its season. */
-export function hasMudAndSnow(extras: readonly ExtraPair[]): boolean {
-  return extras.some(
-    (extra) =>
-      isMudAndSnow(extra.label) && extra.value.trim().toLowerCase() === "yes",
-  );
-}
-
 /** Tire sidewall codes, spelled out. Anything not listed is shown as given. */
 const SIDEWALL: Readonly<Record<string, string>> = {
   BSW: "Black sidewall",
@@ -88,7 +73,6 @@ const UNIT_LABEL = /^(.*\S)\s*\(([A-Za-z°"'µ²³/.%]{1,6})\)$/;
  * One vendor fact, tidied for display, or `null` when it should not show.
  *
  * - a blank label or value is dropped;
- * - `Mud & snow` is dropped (the badge carries it);
  * - on an accessory, `Model` reads `Style`: the values are `BOLT`, `BLACK`,
  *   `CLOSE END`, and the real model is its own row;
  * - on a tire, `Sidewall` codes are spelled out;
@@ -104,7 +88,6 @@ export function tidyExtra(
   let label = extra.label.trim();
   let value = extra.value.trim();
   if (label === "" || value === "") return null;
-  if (category === "tires" && isMudAndSnow(label)) return null;
 
   if (category === "accessories" && label.toLowerCase() === "model") {
     label = "Style";
