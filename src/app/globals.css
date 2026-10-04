@@ -550,13 +550,21 @@
    `box-sizing:border-box` the content box stays exactly 280px at the same x.
    Deliberately NOT `hide-scrollbar`: the bug was that people could not tell
    there was more panel, and hiding the bar reproduces that one level down.
-   D68. */
+   D68.
+   The right-hand bleed is 16px, not 2: macOS draws an overlay scrollbar
+   (about 15px wide once hovered) on top of the content, so with only 2px the
+   bar sat over the facet counts, which are flush right ("1,545" under the
+   track). 16px of padding with a matching negative margin moves the bar into
+   the 48px `results-grid` gap; the content box is still exactly 280px at the
+   same x. A classic scrollbar (Windows, or macOS set to always show) already
+   takes its own width out of the box, so there the content measures what it
+   did before. */
 @utility filter-rail {
   max-height: calc(100dvh - 96px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-inline: 2px;
-  margin-inline: -2px;
+  padding-inline: 2px 16px;
+  margin-inline: -2px -16px;
 }
 
 @utility featured-card-3 {

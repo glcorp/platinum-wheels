@@ -90,6 +90,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   Since **D68** it is also its own scroll region, via `md:filter-rail` (globals.css): sticky alone left
   the panel's lower groups below the fold once it outgrew the space under the sticky offset — 735px
   against 604px at 1440×700 — with the page scrolling underneath them. Inert where the panel fits.
+  Its scrollbar sits in the grid gap (16px right bleed), so a macOS overlay bar never covers the counts.
 - [`components/filter-sheet.tsx`](components/filter-sheet.tsx) — `"use client"`. `FilterSheet({ view })`:
   the `Filters (n)` trigger (`Filters` at 0) and its `<dialog>` — `sheet-panel` height, `::backdrop`
   `--scrim-mid` over the header too (D47(3)), Esc / ✕ / backdrop close, body scroll lock, closes at
