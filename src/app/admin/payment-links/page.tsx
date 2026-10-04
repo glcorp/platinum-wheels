@@ -74,42 +74,54 @@ export default async function PaymentLinksPage() {
         tabIndex={-1}
         className="w-full flex-1 px-4 pt-10 pb-20 sm:px-8 sm:pt-14 sm:pb-30 md:px-12 lg:mx-auto lg:max-w-content"
       >
-        {/* The form column is held to the same 420px measure as the sign-in
-            page. Two short fields stretched across an iPad or a laptop would
-            put the label and its box absurdly far apart; a measured column
-            keeps the form the same shape on every device he uses. */}
-        <div className="w-full max-w-measure">
-          <h1 className="display text-ink text-display-40 sm:text-display-56">
-            New payment link
-          </h1>
+        {/* D141: from `md:` (1100px) the builder and the recent links sit side
+            by side, so the list is in view without scrolling past the form.
+            A 12-column grid split 5 / 7 with the cart's 64px gutter
+            (`cart-view.tsx`, `cart-grid`), top-aligned. Below `md:` it is the
+            single-column stack it always was. */}
+        <div className="md:grid md:grid-cols-12 md:items-start md:gap-x-16">
+          {/* The form column is held to the same 420px measure as the sign-in
+              page. Two short fields stretched across an iPad or a laptop would
+              put the label and its box absurdly far apart; a measured column
+              keeps the form the same shape on every device he uses. */}
+          <div className="w-full max-w-measure md:col-span-5">
+            <h1 className="display text-ink text-display-40 sm:text-display-56">
+              New payment link
+            </h1>
 
-          {/* New copy (`.claude/rules/ui.md` "Copy"). It states the one thing
-              that is easy to get wrong: the amount is whatever he types, and
-              nothing here works out tax or totals for him. */}
-          <p className="text-ink-muted mt-3 text-15 leading-body sm:text-16">
-            Enter the total the customer pays, including tax. Send the link by
-            email once it is generated.
-          </p>
+            {/* New copy (`.claude/rules/ui.md` "Copy"). It states the one thing
+                that is easy to get wrong: the amount is whatever he types, and
+                nothing here works out tax or totals for him. */}
+            <p className="text-ink-muted mt-3 text-15 leading-body sm:text-16">
+              Enter the total the customer pays, including tax. Send the link by
+              email once it is generated.
+            </p>
 
-          <div className="mt-10 sm:mt-12">
-            <PaymentLinkForm csrfToken={csrfToken} idempotencyKey={randomUUID()} />
+            <div className="mt-10 sm:mt-12">
+              <PaymentLinkForm csrfToken={csrfToken} idempotencyKey={randomUUID()} />
+            </div>
           </div>
+
+          {/* The list drops the measure beside the form and takes the rest of
+              the row (D141). */}
+          <section
+            aria-labelledby="links-heading"
+            className="mt-16 w-full max-w-measure sm:mt-20 md:col-span-7 md:mt-0 md:max-w-none"
+          >
+            <h2 id="links-heading" className="display text-ink text-display-28 sm:text-display-40">
+              Recent links
+            </h2>
+            <div className="mt-6">
+              {links ? (
+                <PaymentLinkList links={links} origin={origin} csrfToken={csrfToken} />
+              ) : (
+                <p role="alert" className="text-ink text-15 leading-body">
+                  The links list could not be loaded. Refresh in a minute.
+                </p>
+              )}
+            </div>
+          </section>
         </div>
-
-        <section aria-labelledby="links-heading" className="mt-16 w-full max-w-measure sm:mt-20">
-          <h2 id="links-heading" className="display text-ink text-display-28 sm:text-display-40">
-            Recent links
-          </h2>
-          <div className="mt-6">
-            {links ? (
-              <PaymentLinkList links={links} origin={origin} csrfToken={csrfToken} />
-            ) : (
-              <p role="alert" className="text-ink text-15 leading-body">
-                The links list could not be loaded. Refresh in a minute.
-              </p>
-            )}
-          </div>
-        </section>
       </main>
     </>
   );

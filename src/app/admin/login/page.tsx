@@ -83,7 +83,7 @@ export default async function AdminLoginPage() {
             for the shop, by the owner's decision, with more added by hand if
             they are ever needed. */}
         <p className="text-ink-muted mt-3 text-15 leading-body sm:text-16">
-          Sign in with the shop account to manage payment links.
+          Sign in with the shop account to manage payment links and products.
         </p>
 
         <div className="mt-10 sm:mt-12">
