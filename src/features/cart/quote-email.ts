@@ -207,7 +207,7 @@ function autoReplyText(lines: QuoteLine[], shopAddress: string): string {
     ...items,
     "",
     // Same promise as the on-page success panel (`quote-success.tsx`).
-    "We'll check fitment and stock, then get back to you the way you asked, within one business day.",
+    "We'll check fitment and stock, then get back to you the way you asked, within 1-2 business days.",
     `Need it sooner? Call us at ${PRIMARY_CONTACT.display}.`,
     "",
     SITE.legalName,
