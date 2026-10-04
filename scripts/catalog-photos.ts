@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------------
    catalog-photos — put the catalogue's product photos in the R2 photo bucket
-   and link them to the products (D139).
+   and link them to the products (D139b).
 
      npm run catalog:photos -- <folder> --env <file>            dry run
      npm run catalog:photos -- <folder> --env <file> --upload   store the files

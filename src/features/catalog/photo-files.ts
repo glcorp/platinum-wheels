@@ -37,7 +37,7 @@ export function photoKey(productId: string, stem: string, id: string, size: Phot
 }
 
 /**
- * Store key of one size of a shared catalogue photo (D139):
+ * Store key of one size of a shared catalogue photo (D139b):
  * `catalog/<category>/<hash>-<width>.webp`.
  *
  * The bulk load stores each vendor photo once and many products point at it

@@ -1,6 +1,6 @@
 # Platinum Wheels — session handoff
 
-**Last updated 2026-10-04 (the catalogue photo loader, D139, branch `catalog-photos`).** `npm run catalog:photos`
+**Last updated 2026-10-04 (the catalogue photo loader, D139b, branch `catalog-photos`).** `npm run catalog:photos`
 loads the co-founder's photo hand-off (`~/Downloads/photos-for-cloudflare/`: 5,587 files, 40,246 photo rows on
 39,961 products) into the R2 bucket, one shared copy per file under `catalog/` plus its 480 card size, then links
 the rows after matching each by slug and vendor + vendor SKU.

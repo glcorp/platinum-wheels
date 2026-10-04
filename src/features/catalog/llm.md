@@ -115,10 +115,10 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 - **Product photo files (D126b).** Shared by the admin upload, the storefront, the link-preview card and the
   bulk photo load.
   - [`photo-files.ts`](photo-files.ts) — the two sizes (`PHOTO_WIDTH`: `card` 480, `full` 1000), the key
-    layout (`photoKey`, `photoFolder`; `catalogPhotoKey` for the shared catalogue photos under `catalog/`, D139), `photoSized()` (one size's name from the other's) and
+    layout (`photoKey`, `photoFolder`; `catalogPhotoKey` for the shared catalogue photos under `catalog/`, D139b), `photoSized()` (one size's name from the other's) and
     `photoSource()`, which every `next/image` of a product photo spreads: a stored photo comes back at the
     asked size and `unoptimized`. Zero imports; client-safe.
-  - [`photo-sizes.ts`](photo-sizes.ts) — `makePhotoSizes()` (and `makePhotoSize()` for one size, D139): upright, fitted inside the square, never
+  - [`photo-sizes.ts`](photo-sizes.ts) — `makePhotoSizes()` (and `makePhotoSize()` for one size, D139b): upright, fitted inside the square, never
     enlarged, WebP 82, one pass per size; refuses a canvas over 100 megapixels. `sharp`; server and laptop only.
   - [`photo-store.ts`](photo-store.ts) — the R2 bucket over its S3 API (`aws4fetch`): `photoStore()` from
     the five settings (`null` until all are set), `presignPut`, `headObject`, `getObject`, `putObject`

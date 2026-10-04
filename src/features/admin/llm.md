@@ -143,7 +143,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   value it cannot read) and `filterConditions()` in `catalog/store.ts`, in the same change.
 - **A vendor's price is staff only** (D125): typed and shown here, cents kept (`vendorPriceLabel`), never
   with `Price`, and never passed to anything on the storefront.
-- **Removing a shared catalogue photo unlinks it and keeps the file** (D139): the bulk load's photos live
+- **Removing a shared catalogue photo unlinks it and keeps the file** (D139b): the bulk load's photos live
   under `catalog/`, used by many products, and `removePhoto` deletes files only under the product's own
   `products/<uuid>/` folder (it logs the rest). Staff uploads stay per product and are deleted as before.
 - **A removed photo's URL can outlive it briefly** (D126b): the files are deleted at once, but they are

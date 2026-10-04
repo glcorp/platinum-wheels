@@ -185,7 +185,7 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
     - **Done when:** a photo added on a product's admin edit page shows on its storefront card and page,
       and `curl -sI https://photos.platinumwheels.ca/<a stored key>` answers `200` with
       `cache-control: public, max-age=31536000, immutable`.
-    - **Then the catalogue photos (D139):** the owner writes a settings file outside the repo
+    - **Then the catalogue photos (D139b):** the owner writes a settings file outside the repo
       (`chmod 600`), holding the five R2 settings and `IMPORT_DATABASE_URL` (direct Neon address), one
       `KEY=value` per line. The coordinator runs `npm run catalog:photos -- ~/Downloads/photos-for-cloudflare
       --env <that file>`: dry run, then `--upload`, then `--link`, each only on the owner's go, then a

@@ -29,7 +29,7 @@ export interface PhotoStore {
 
 /** One year: a stored key is never reused for a different picture (a staff
  *  upload's key carries a random id, a catalogue photo's its content hash,
- *  D139), so a file at a URL never changes. */
+ *  D139b), so a file at a URL never changes. */
 export const PHOTO_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 /** The store from the environment, or `null` when it is not set up. */

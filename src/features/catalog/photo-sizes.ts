@@ -3,7 +3,7 @@
  * `sharp` is a native module.
  *
  * The admin upload (`src/features/admin/photo-actions.ts`) makes both sizes
- * here; the catalogue photo load (`scripts/catalog-photos.ts`, D139) keeps the
+ * here; the catalogue photo load (`scripts/catalog-photos.ts`, D139b) keeps the
  * vendor's 1000px file and makes only the card size, with the same settings,
  * so a photo looks the same however it arrived.
  *
@@ -36,7 +36,7 @@ export async function makePhotoSizes(original: Uint8Array): Promise<PhotoFiles> 
 }
 
 /** One size alone, for a caller that already holds the other (the bulk
- *  catalogue load keeps the vendor's 1000px file as it is, D139). */
+ *  catalogue load keeps the vendor's 1000px file as it is, D139b). */
 export function makePhotoSize(original: Uint8Array, size: PhotoSize): Promise<Buffer> {
   return fitted(original, PHOTO_WIDTH[size]);
 }
