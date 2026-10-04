@@ -53,7 +53,9 @@ differing from the design.
 No em dash (and no en dash or ` - ` used as a dash) anywhere a visitor can read, artboard copy included:
 owner, 2026-10-03, D130, *"no ai slop human tone no emdashes"* over the whole storefront. Artboard copy
 otherwise keeps its wording, case and punctuation unless a ruling rewrites it. Plain human tone; none of
-the AI-slop words or shapes ("seamless", forced triplets, "not just X, it's Y").
+the AI-slop words or shapes ("seamless", forced triplets, "not just X, it's Y", "X, not Y").
+No taglines or slogan punchlines ("Confirmed by people who know", "Everything between you and the road",
+"We answer."): say what the thing is or does. Since D140 (owner, 2026-10-04) this covers the admin too.
 Short, declarative, specific: brand and size over adjectives. CTAs ≤2 words. "You" for the customer, "we"
 for the shop. No exclamation marks, no emoji.
 

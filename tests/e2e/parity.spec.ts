@@ -146,7 +146,7 @@ const BOARDS: Board[] = [
         app: css('[data-probe="hero-eyebrow"]'),
         props: ["font-size", "font-weight", "letter-spacing", "color", "text-transform", "x", "y"],
       },
-      { label: "h1", design: t(HOME_H1), props: [...TYPE, "x", "y", "w", "h"] },
+      { label: "h1", design: t(HOME_H1), app: css('[data-probe="hero-h1"]'), props: [...TYPE, "x", "y"], cite: "DEVIATIONS #113 / D140 (copy rewritten; width and wrap follow the new words)" },
       {
         label: "hero lede",
         design: t("Search by your vehicle", { prefix: true }),
@@ -178,7 +178,7 @@ const BOARDS: Board[] = [
         design: t("Find my tires", { prefix: true }),
         props: ["h", "w", "font-size", "font-weight", "letter-spacing", "background-color", "color"],
       },
-      { label: "tiles h2", design: t("Everything between you and the road."), props: [...TYPE, "x", "y", "w"] },
+      { label: "tiles h2", design: t("Everything between you and the road."), app: t("Tires, wheels and accessories."), props: [...TYPE, "x", "y"], cite: "DEVIATIONS #113 / D140 (copy rewritten; width and wrap follow the new words)" },
       { label: "promo h2", design: t("Book your winter set before the first snow."), props: [...TYPE, "x", "y", "w"] },
       {
         label: "promo copy panel",
@@ -245,7 +245,7 @@ const BOARDS: Board[] = [
         app: css('[data-probe="hero-eyebrow"]'),
         props: ["font-size", "font-weight", "line-height", "letter-spacing", "color", "x", "y"],
       },
-      { label: "h1", design: t(HOME_H1), props: [...TYPE, "x", "y", "w", "h"] },
+      { label: "h1", design: t(HOME_H1), app: css('[data-probe="hero-h1"]'), props: [...TYPE, "x", "y"], cite: "DEVIATIONS #113 / D140 (copy rewritten; width and wrap follow the new words)" },
       {
         label: "hero lede",
         design: t("Search by your vehicle", { prefix: true }),
@@ -266,7 +266,7 @@ const BOARDS: Board[] = [
         design: t("Find my tires", { prefix: true }),
         props: ["h", "w", "x", "y", "font-size", "letter-spacing", "background-color"],
       },
-      { label: "tiles h2", design: t("Everything between you and the road."), props: [...TYPE, "y", "w"] },
+      { label: "tiles h2", design: t("Everything between you and the road."), app: t("Tires, wheels and accessories."), props: [...TYPE, "y"], cite: "DEVIATIONS #113 / D140 (copy rewritten; width and wrap follow the new words)" },
       {
         label: "tile Tires",
         design: t("Tires", { nth: 0, up: 2 }),
