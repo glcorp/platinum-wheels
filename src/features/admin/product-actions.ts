@@ -23,6 +23,7 @@ import { updateTag } from "next/cache";
 
 import { CATALOGUE_TAG } from "@/features/catalog/cache-tag";
 import {
+  ACCESSORY_KINDS,
   PRODUCT_CATEGORIES,
   PRODUCT_STATUSES,
   type AdminProductFilter,
@@ -128,16 +129,17 @@ function fromWriteResult(
 /**
  * Brands and vendors are chosen from the catalogue's own, never typed new
  * (owner, 2026-10-01; D116). The dropdowns only offer existing spellings, and
- * this holds the same line for a hand-made POST. On an edit the product's own
- * brand is in the catalogue, so a product is never stuck on save. An
- * accessory may have no brand at all (D125).
+ * this holds the same line for a hand-made POST. A brand must already be on a
+ * product of the same category (D127b), as the dropdown offers. On an edit the
+ * product's own brand is on the product itself, so a product is never stuck on
+ * save. An accessory may have no brand at all (D125).
  */
 async function unknownNames(input: ProductInput): Promise<ProductFieldErrors> {
   const errors: ProductFieldErrors = {};
   // No brand is legal on an accessory only (D125), and the validator has
   // already refused it on a tire or wheel, so a `null` here has nothing to look
   // up.
-  if (input.brand !== null && !(await brandExists(input.brand))) {
+  if (input.brand !== null && !(await brandExists(input.brand, input.category))) {
     errors.brand = "Choose a brand from the list.";
   }
   const vendors = [...new Set(input.sources.map((source) => source.vendor))];
@@ -223,15 +225,30 @@ export async function setProductStatusAction(
 function readFilter(formData: FormData): AdminProductFilter | null {
   const rawCategory = readString(formData, PRODUCT_STATUS_FIELD.filterCategory);
   const rawStatus = readString(formData, PRODUCT_STATUS_FIELD.filterStatus);
+  const rawType = readString(formData, PRODUCT_STATUS_FIELD.filterAccessoryType);
+  const rawRim = readString(formData, PRODUCT_STATUS_FIELD.filterRim);
+  const rawNoPhoto = readString(formData, PRODUCT_STATUS_FIELD.filterNoPhoto);
   const category = PRODUCT_CATEGORIES.find((value) => value === rawCategory);
   const status = PRODUCT_STATUSES.find((value) => value === rawStatus);
+  const accessoryType = ACCESSORY_KINDS.find((value) => value === rawType);
+  const rim = rawRim === "" ? undefined : Number(rawRim);
   if (rawCategory !== "" && category === undefined) return null;
   if (rawStatus !== "" && status === undefined) return null;
+  if (rawType !== "" && accessoryType === undefined) return null;
+  // The list shows a type only with the accessories category (the page drops
+  // it otherwise), so a type without it is a filter no list showed.
+  if (accessoryType !== undefined && category !== "accessories") return null;
+  if (rim !== undefined && !(Number.isFinite(rim) && rim > 0)) return null;
+  if (rawNoPhoto !== "" && rawNoPhoto !== "1") return null;
   return {
     search: readString(formData, PRODUCT_STATUS_FIELD.filterSearch) || undefined,
     brand: readString(formData, PRODUCT_STATUS_FIELD.filterBrand) || undefined,
+    vendor: readString(formData, PRODUCT_STATUS_FIELD.filterVendor) || undefined,
     category,
     status,
+    accessoryType,
+    rim,
+    noPhoto: rawNoPhoto === "1" ? true : undefined,
   };
 }
 

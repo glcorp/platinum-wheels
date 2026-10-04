@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import type { CatalogProduct } from "@/features/catalog/catalog-types";
+import { photoSource } from "@/features/catalog/photo-files";
 import { SHOP_DATE_TIME } from "@/lib/time";
 
 import { CATEGORY_LABEL, displayPrice, productSpecLine } from "../product-display";
@@ -56,7 +57,7 @@ export function AdminProductCard({
         >
           {product.image ? (
             <Image
-              src={product.image.url}
+              {...photoSource(product.image.url, "card")}
               alt=""
               fill
               sizes="(min-width: 720px) 96px, 80px"

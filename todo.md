@@ -132,6 +132,60 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       is simply not shown. The admin lives on its own host, so the link cannot be relative.
     - **Check:** open a published product in the admin; **View on site** opens its storefront page.
 
+12. **Check the D127b admin changes on production once its PR merges.**
+    - **Why:** they were checked on a scratch database, never on the real catalogue (D127b).
+    - **Check:** on `/products`, filter by a vendor, by Accessories → a type, by a rim size and by
+      **Only products with no photo**; each count looks right, and **Go to page** keeps the filter. On a
+      tire's edit page the Brand list holds tire brands only, and the line under **Full name** reads the
+      brand and model the storefront shows.
+
+## Owner — photo bucket (D126b)
+
+11. **Finish the Cloudflare R2 photo bucket and its five Vercel settings.** The code is merged without them
+    (owner, 2026-10-03, D138).
+    - **Why:** product photos live in R2 since D126b. Until all five settings exist and the site is
+      redeployed, the admin says "Photo uploads are not set up on this deployment" and the bulk photo
+      load cannot run.
+    - **Where it stands, 2026-10-03:** step 2 is done (bucket `platinum-wheels-photos`, created 16:00 UTC)
+      and Vercel holds `R2_BUCKET` and `PHOTOS_BASE_URL` (Production and Preview). Still missing:
+      `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `photos.platinumwheels.ca` does not
+      resolve yet (step 3). Steps 4–6 could not be checked from here (no connector tool reads them).
+    - **How** (Cloudflare dashboard, the account that holds `platinumwheels.ca`):
+      1. **R2 Object Storage → turn R2 on.** Cloudflare asks for a payment method even on the free tier
+         (10 GB, 1M writes and 10M reads a month, no charge for downloads). Owner only.
+      2. **Create bucket** `platinum-wheels-photos` (the coordinator can do this through the Cloudflare
+         connector once R2 is on).
+      3. Bucket → **Settings → Custom Domains → Add** `photos.platinumwheels.ca` → **Connect Domain**.
+         Cloudflare adds the DNS record itself. Leave the `r2.dev` URL **off**: it is rate-limited.
+      4. Bucket → **Settings → CORS Policy → Add CORS policy**, JSON tab:
+         ```json
+         [
+           {
+             "AllowedOrigins": ["https://admin.platinumwheels.ca"],
+             "AllowedMethods": ["PUT"],
+             "AllowedHeaders": ["Content-Type"],
+             "MaxAgeSeconds": 3600
+           }
+         ]
+         ```
+         Without it the admin's browser upload is refused.
+      5. Bucket → **Settings → Object lifecycle rules → Add rule**: prefix `uploads/`, delete objects
+         **1 day** after upload. It clears originals whose upload tab was closed halfway.
+      6. **R2 → Manage API tokens → Create API token**: permission **Object Read & Write**, applied to
+         **`platinum-wheels-photos` only**, no expiry. Copy the **Access Key ID** and **Secret Access
+         Key** (the secret is shown once). Note the **Account ID** shown on the R2 overview page.
+      7. **Vercel → platinum-wheels → Settings → Environment Variables**, Production and Preview:
+         `R2_ACCOUNT_ID`, `R2_BUCKET` = `platinum-wheels-photos` and `PHOTOS_BASE_URL` =
+         `https://photos.platinumwheels.ca` as plain values (the coordinator may add these three);
+         `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` as **Sensitive**, typed by the owner only, never
+         pasted into a chat.
+      8. **Redeploy** production once the last setting is in (settings are read at deploy time).
+    - **Done when:** a photo added on a product's admin edit page shows on its storefront card and page,
+      and `curl -sI https://photos.platinumwheels.ca/<a stored key>` answers `200` with
+      `cache-control: public, max-age=31536000, immutable`.
+    - **After the bulk load is proven:** delete the empty Vercel Blob store `platninum-wheels`
+      (Vercel → Storage); its `BLOB_*` settings go with it. Nothing reads them since D126b.
+
 ## Owner — cart and prices (D122)
 
 C1. **Prices stay off for launch; turning them on is one variable and a redeploy.**

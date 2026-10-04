@@ -27,15 +27,14 @@ const PAY_SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
-  /* Product photos come from the database as full URLs once staff can upload
-     them (Vercel Blob). `next/image` refuses a host that is not listed, so the
-     Blob host is allowed here ahead of that work; a path from the site root
-     (`/images/...`) needs no entry. */
-  images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
-    ],
-  },
+  /* No `images.remotePatterns`, on purpose (D126b). Product photos are full
+     URLs on the R2 photo bucket, stored already sized, and every page draws
+     them `unoptimized` through `photoSource()`
+     (`src/features/catalog/photo-files.ts`), so Vercel's resizer (5,000 a
+     month on Hobby) is never asked for one. With no host listed, a remote
+     photo that skipped `photoSource()` breaks visibly (an error in dev, a
+     broken image in production) instead of quietly spending that allowance. Paths from the site root (`/images/...`) are
+     still resized as before. */
   /* The product link-preview route reads a photo stored as a site-root path
      (`/images/products/x.webp`) from `public/` on disk, and Vercel serves
      `public/` from its CDN, not from the function. This puts the product

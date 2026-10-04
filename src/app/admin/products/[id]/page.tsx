@@ -59,7 +59,8 @@ export default async function EditProductPage({
   if (!product) notFound();
 
   const [brands, vendors, photos, query] = await Promise.all([
-    adminListBrands(),
+    // This category's brands only (D127b); the product's own is among them.
+    adminListBrands(product.category),
     adminListVendors(),
     adminListPhotos(product.id),
     searchParams,

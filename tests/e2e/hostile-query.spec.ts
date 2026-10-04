@@ -222,24 +222,24 @@ for (const category of Object.keys(ROUTE) as Category[]) {
 const CELL_VALUE: Record<string, string> = { "1": "1", "2": "2", "4": "4", Custom: "custom" };
 
 const PDP_CASES: ReadonlyArray<{ q: string; qty: string }> = [
-  { q: "qty=0", qty: "4" },
-  { q: "qty=-1", qty: "4" },
-  { q: "qty=99999", qty: "4" },
+  { q: "qty=0", qty: "1" },
+  { q: "qty=-1", qty: "1" },
+  { q: "qty=99999", qty: "1" },
   { q: "qty=custom&qty=2", qty: "custom" },
   { q: "qty=2&qty=custom", qty: "2" },
-  { q: "qty=%3Cscript%3Ealert(1)%3C%2Fscript%3E", qty: "4" },
-  { q: "qty=%00", qty: "4" },
-  { q: "qty=", qty: "4" },
+  { q: "qty=%3Cscript%3Ealert(1)%3C%2Fscript%3E", qty: "1" },
+  { q: "qty=%00", qty: "1" },
+  { q: "qty=", qty: "1" },
   { q: "qty=1&qty=1", qty: "1" },
-  { q: "width=abc&brand=Nope&min=NaN&sort=evil", qty: "4" },
-  { q: "year=1900&make=Honda&model=Civic", qty: "4" },
-  { q: "year=2021&make=Honda", qty: "4" },
-  { q: "year=2021&make=Honda&model=%3Cscript%3Ealert(1)%3C%2Fscript%3E", qty: "4" },
-  { q: "make=%00", qty: "4" },
+  { q: "width=abc&brand=Nope&min=NaN&sort=evil", qty: "1" },
+  { q: "year=1900&make=Honda&model=Civic", qty: "1" },
+  { q: "year=2021&make=Honda", qty: "1" },
+  { q: "year=2021&make=Honda&model=%3Cscript%3Ealert(1)%3C%2Fscript%3E", qty: "1" },
+  { q: "make=%00", qty: "1" },
   { q: `brand=${"a".repeat(3000)}&qty=2`, qty: "2" },
-  { q: "x=%E0%A4%A", qty: "4" },
-  { q: "__proto__=1&constructor=x", qty: "4" },
-  { q: "qty[]=2", qty: "4" },
+  { q: "x=%E0%A4%A", qty: "1" },
+  { q: "__proto__=1&constructor=x", qty: "1" },
+  { q: "qty[]=2", qty: "1" },
 ];
 
 for (const { q, qty } of PDP_CASES) {

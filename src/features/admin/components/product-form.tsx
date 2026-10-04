@@ -28,6 +28,13 @@
    accessory part type and weight; a vendor price on each source row (staff
    only, cents kept, never shown on the storefront); and `Extra specs`, the
    vendor facts with no column of their own, one `Label: value` per line.
+
+   **D127b.** The brand list is the product's own category's (the page passes
+   it). The name field is `Full name`: the storefront's title is brand +
+   model, and reads the name only when the model is blank
+   (`src/features/catalog/adapter.ts` `model ?? name`). A live line under the
+   name shows the title as the site will read it, from `productName()`, the
+   one function the storefront joins them with.
    --------------------------------------------------------------------------- */
 
 import { useRouter } from "next/navigation";
@@ -38,6 +45,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError, FieldLabel } from "@/components/ui/field-label";
 import { Input, Textarea } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { productName } from "@/lib/product-name";
 import {
   ACCESSORY_KINDS,
   TIRE_SEASONS,
@@ -53,6 +61,7 @@ import {
 import { createProductAction, updateProductAction } from "../product-actions";
 import {
   CATEGORY_LABEL,
+  CATEGORY_PLURAL,
   SEASON_LABEL,
   accessoryKindLabel,
 } from "../product-display";
@@ -559,6 +568,10 @@ export function ProductForm({
   );
   const savedRef = useRef<HTMLParagraphElement>(null);
   const formErrorRef = useRef<HTMLParagraphElement>(null);
+  /** Brand, model and name as typed, for the title preview. Tagged with the
+   *  answer it was typed against: once the fields remount on a new answer,
+   *  a stale copy is ignored and the preview reads the new values again. */
+  const [typed, setTyped] = useState<{ version: number; brand: string; model: string; name: string } | null>(null);
 
   const values: Values = state.status === "invalid" ? state.values : initialValues;
   const errors: ProductFieldErrors = state.status === "invalid" ? state.errors : {};
@@ -588,8 +601,31 @@ export function ProductForm({
   const brandOptional = category === "accessories";
   const errorCount = Object.keys(errors).length;
 
+  const titleParts =
+    typed !== null && typed.version === state.version
+      ? typed
+      : { brand: brandValue, model: first(values, F.model), name: first(values, F.name) };
+  // The storefront's own rule: brand + (model, or the name when there is no
+  // model). `adapter.ts` `model ?? name`, joined by `productName()`.
+  const siteTitle = productName(titleParts.brand || null, titleParts.model || titleParts.name);
+
   return (
-    <form action={formAction} className="flex flex-col gap-10 sm:gap-12" noValidate>
+    <form
+      action={formAction}
+      className="flex flex-col gap-10 sm:gap-12"
+      noValidate
+      onChange={(event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) return;
+        if (target.name !== F.brand && target.name !== F.model && target.name !== F.name) return;
+        const form = event.currentTarget;
+        const read = (name: string) => {
+          const field = form.elements.namedItem(name);
+          return field instanceof HTMLInputElement || field instanceof HTMLSelectElement ? field.value.trim() : "";
+        };
+        setTyped({ version: state.version, brand: read(F.brand), model: read(F.model), name: read(F.name) });
+      }}
+    >
       <input type="hidden" name={ADMIN_CSRF_FIELD} value={csrfToken} />
       <input type="hidden" name={F.category} value={category} />
       {productId ? <input type="hidden" name={PRODUCT_ID_FIELD} value={productId} /> : null}
@@ -622,7 +658,7 @@ export function ProductForm({
               brandOptional
                 ? "Leave as No brand when the vendor sells it unbranded."
                 : mode === "create"
-                  ? "Only brands already in the catalogue."
+                  ? `Only brands the catalogue already has for ${CATEGORY_PLURAL[category].toLowerCase()}.`
                   : undefined
             }
           />
@@ -637,14 +673,20 @@ export function ProductForm({
           />
           <TextField
             fieldKey="name"
-            label="Product name"
+            label="Full name"
             required
             values={values}
             errors={errors}
             maxLength={PRODUCT_LIMITS.name}
             spellCheck
-            hint="As it reads on the card and the product page."
+            hint="The site shows it only when Model is blank. It is also this product's title in the admin list."
           />
+          {siteTitle ? (
+            <p className="text-ink-muted -mt-2 text-14 leading-body">
+              {"On the site this reads: "}
+              <span className="text-ink font-bold">{siteTitle}</span>
+            </p>
+          ) : null}
           <div>
             <FieldLabel htmlFor={`product-${F.description}`} optional>
               Description
