@@ -17,7 +17,8 @@ URLs below are the admin host's.
 - [`login/page.tsx`](login/page.tsx) — `/login`. Redirects home if a session already exists.
 - [`payment-links/page.tsx`](payment-links/page.tsx) — `/payment-links`, the payment-link builder and the
   recent-links list (D106), moved unchanged from the root by D118. Mints the form's idempotency key, and
-  renders if the links list fails.
+  renders if the links list fails. Two columns from `md:` since D141 (form left, recent links right); one
+  stacked column below 1100.
 - [`products/page.tsx`](products/page.tsx) — `/products`, the product list (D116): filters in the URL,
   bulk status, pagination. D127b: vendor, accessory type (read only with the accessories category, so the
   filter applied is the one on screen), rim size and no-photo filters; a Go to page box; a page past the

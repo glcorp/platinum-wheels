@@ -35,7 +35,7 @@ export function CallCtaPanel() {
           apostrophe (`results-mobile.html:301`). Written as an expression so
           `react/no-unescaped-entities` does not force a typographic quote. */}
       <span className="text-ink-muted text-14 leading-body">
-        {"Call the shop. We'll check your size and quote in minutes."}
+        {"Call us. We'll check your size and give you a price."}
       </span>
       {/* `height:52px; border:1px solid var(--accent); color:var(--text);
           border-radius:var(--radius-ctl); font:700 16px/1 var(--font-body);

@@ -130,7 +130,7 @@ function EmptyActions({ clearHref }: { clearHref: string }) {
 const EMPTY_HEADING = "No matches";
 
 /** The empty state's default body line, shared for the same reason. */
-const EMPTY_BODY = "Nothing fits those filters yet. Clear them, or call us.";
+const EMPTY_BODY = "Nothing matches these filters. Clear them, or call us.";
 
 function CardGrid({
   products,

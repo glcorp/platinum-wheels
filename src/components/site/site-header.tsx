@@ -83,22 +83,28 @@ export function SiteHeader({
          style because Tailwind has no utility for the property and an
          arbitrary value is banned (.claude/rules/ui.md "Tokens only"). */
       style={{ viewTransitionName: "site-header" }}
+      /* px-4 (16px) → px-8 (32px tablet, DESIGN.md §8 page padding) → px-12
+         (48px desktop, home-desktop.html:95). The side padding sits on the bar,
+         not the nav (D141), so the background and hairline stay full-bleed
+         while the nav below takes the page's 1344px frame. */
       className={
         variant === "over-hero"
           ? /* absolute inset-x-0 top-0 z-10 — design/manifest.md:44 (not sticky) */
-            "bg-scrim-strong border-border absolute inset-x-0 top-0 z-10 h-17 border-b sm:h-22"
+            "bg-scrim-strong border-border absolute inset-x-0 top-0 z-10 h-17 border-b px-4 sm:h-22 sm:px-8 md:px-12"
           : /* solid: static bar, same background as measured on the artboards
                (results-desktop.html:86) — see deviation note above. */
-            "bg-scrim-strong border-border h-17 border-b sm:h-22"
+            "bg-scrim-strong border-border h-17 border-b px-4 sm:h-22 sm:px-8 md:px-12"
       }
     >
       <nav
         aria-label="Primary"
         /* h-17 (68px) → h-22 (88px) from sm: — design/inventory/home.md:28-29;
-           DESIGN.md §8 gives 88px at tablet too (~line 297). px-4 (16px) →
-           px-8 (32px tablet, DESIGN.md §8 page padding) → px-12 (48px desktop,
-           home-desktop.html:95). */
-        className="flex h-full items-center justify-between px-4 sm:px-8 md:px-12"
+           DESIGN.md §8 gives 88px at tablet too (~line 297). D141: from lg:
+           the row is capped at the 1344px content frame and centred, the
+           `lg:mx-auto lg:max-w-content` idiom every page uses, so above 1440
+           the logo and the cart/menu line up with the page edges. At 1440 the
+           bar's content box is already 1440 − 2×48 = 1344, so nothing moves. */
+        className="flex h-full items-center justify-between lg:mx-auto lg:max-w-content"
       >
         {/* Logo — 512x507 intrinsic (public/images/logo/platinum-wheels-logo-transparent.webp).
             52px mobile → 64px desktop: h-13 (52px, home-mobile.html:79) →

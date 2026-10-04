@@ -124,7 +124,11 @@ export function QuoteForm({ getLines, copy, openedAt, onSuccess }: QuoteFormProp
       /* `noValidate` so the authored validation is the one people meet
          (D65, craft audit P1 #3); `actions.ts` is the validator. */
       noValidate
-      className="flex flex-col gap-8"
+      /* `relative` (D141): the honeypot below is `sr-only`, which is
+         `position:absolute`. Without a positioned form its box escaped the
+         sheet's scroller and hung below the panel, so on a landscape phone the
+         dialog itself scrolled 43px and cut the title off the top. */
+      className="relative flex flex-col gap-8"
     >
       {/* Honeypot (D104): out of flow, out of the tab order, hidden from
           assistive technology, so only a bot filling every input sets it. */}

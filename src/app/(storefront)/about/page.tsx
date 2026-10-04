@@ -74,7 +74,9 @@ export default function AboutPage() {
           <div className="flex flex-col gap-1.5">
             <dt className={CAPTION}>Email</dt>
             <dd className="leading-relaxed text-15 sm:text-16">
-              <a href={`mailto:${SITE.email}`} className={PROSE_LINK}>
+              {/* Standalone, not inside running text, so WCAG 2.5.8's inline
+                  exception does not cover its 18px line: `tap-extend` (D141). */}
+              <a href={`mailto:${SITE.email}`} className={`tap-extend ${PROSE_LINK}`}>
                 {SITE.email}
               </a>
             </dd>
@@ -85,8 +87,7 @@ export default function AboutPage() {
       <ProseSection title="Who we are">
         <p>
           {SITE.legalName} sells tires, wheels and accessories in {SITE.city},{" "}
-          {SITE.province}. When you call or email, you talk to us, not a call
-          centre.
+          {SITE.province}. When you call or email, you talk to one of us.
         </p>
       </ProseSection>
 

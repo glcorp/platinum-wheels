@@ -3,8 +3,10 @@
 
    Owner, 2026-10-01: the admin home is a welcome "like welcome {back} back is
    dynamic how its there in claude code where its always some personalised
-   message according to time". Rotating lines per time band, chosen fresh on
-   every visit; no name, because the sign-in is one shared account (D95).
+   message according to time". One line per time band since D140 (owner,
+   2026-10-04, "Plain greetings"), which replaced the rotating lines; the
+   picker still takes a list, so a band can hold more than one again. No
+   name, because the sign-in is one shared account (D95).
 
    The band is read in Brampton time (`@/lib/time`), never the server's UTC.
    New copy under `.claude/rules/ui.md` "Copy": short, declarative, no
@@ -17,30 +19,10 @@ import { shopHour } from "@/lib/time";
 type Band = "morning" | "afternoon" | "evening" | "night";
 
 const LINES: Record<Band, readonly string[]> = {
-  morning: [
-    "Good morning.",
-    "Morning. Coffee first?",
-    "Morning. Let's get the day moving.",
-    "Welcome back. Early start today.",
-  ],
-  afternoon: [
-    "Good afternoon.",
-    "Welcome back.",
-    "Afternoon. How's the day going?",
-    "Back at it.",
-  ],
-  evening: [
-    "Good evening.",
-    "Evening. Wrapping up the day?",
-    "Welcome back.",
-    "Evening shift.",
-  ],
-  night: [
-    "Working late.",
-    "Burning the midnight oil.",
-    "Late one tonight.",
-    "Still at it. Don't stay up too late.",
-  ],
+  morning: ["Good morning."],
+  afternoon: ["Good afternoon."],
+  evening: ["Good evening."],
+  night: ["Working late."],
 };
 
 function bandFor(hour: number): Band {

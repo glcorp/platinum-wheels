@@ -37,10 +37,9 @@ the next session guesses which of the two phone numbers is real.
     so this string is the only place the site states its currency — it may not be removed, shortened
     past `CAD`, or hidden at any width. `as const`.
   - `CONTACTS` — the two people, each `{ name, display, tel }`. `display` is the verbatim human-readable
-    string and `tel` is E.164 for the `href`. **The two rows use two different display conventions**
-    since **D76** (2026-09-22): `CONTACTS[0]` is the owner's `+1 (437) 882-5000` (country code,
-    parentheses) and `CONTACTS[1]` is still the artboards' bare-dash `365-998-0990`. Recorded, not an
-    oversight — `design/DEVIATIONS.md` #66.
+    string and `tel` is E.164 for the `href`. Both rows use the owner's format (country code,
+    parentheses): `CONTACTS[0]` `+1 (437) 882-5000` since **D76**, `CONTACTS[1]` `+1 (365) 998-0990`
+    since **D139** (2026-10-04), so the two-format split `design/DEVIATIONS.md` #66 recorded is gone.
   - `PRIMARY_CONTACT` — `CONTACTS[0]`, Inderpal Singh. The number used by the header CTA and the mobile
     call button (`site.ts:32-33`).
   - `BRANDS` — twelve wordmarks in a deliberate order: house brands first (`Zeta`, `ZMAX`, `Mazzini`,
@@ -86,8 +85,9 @@ the next session guesses which of the two phone numbers is real.
   Harman Singh. The canonical contact block settles it (`docs/decisions.md:130-131`, `site.ts:4-7`),
   closing what was `design/DEVIATIONS.md` open item B. **D76** (2026-09-22) repointed Inderpal Singh's
   number to `+1 (437) 882-5000` on the owner's instruction *"change number to +1 (437) 882-5000
-  everywhere"*; Harman Singh's `365-998-0990` was deliberately **not** changed, because the instruction
-  gave one number and the two rows are two people. Whether the second row should also move, or be
+  everywhere"*; Harman Singh's number was deliberately **not** changed, because the instruction
+  gave one number and the two rows are two people. **D139** (2026-10-04) kept his number and gave it
+  the same `+1 (…)` format. Whether the second row should also move, or be
   removed, is Open #3 below.
 - **`BRANDS` renders as text wordmarks** on `/about`. The home strip's logos (D129) live in
   `src/features/home/brand-logos.ts` and `public/images/brands/`, not here.
@@ -150,4 +150,5 @@ constants).
    which is what the canonical contact block describes; (b) point both rows at the new number — then the
    two contact cards show one number twice, which reads as a bug; (c) drop `CONTACTS[1]` — then the
    contact grid goes from two cards to one and `design/reports/home.md` rows 58 and 102 change shape, not
-   just width. Owner.
+   just width. **The second half is settled by D139 (2026-10-04): exit (a)**, Harman Singh keeps his own
+   number, now written `+1 (365) 998-0990`. Who receives the header and mobile call taps is still open. Owner.

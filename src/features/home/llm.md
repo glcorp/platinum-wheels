@@ -50,6 +50,7 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D141 | 2026-10-04 | The hero copy stack sits in a wrapper capped at `max-w-content` and centred from `lg:` (the stack keeps its 1100px `max-w-hero`), so above 1440 it starts on the header logo's and finder panel's edge; photo and scrim stay full-bleed. No height or vertical spacing changes; identical at ≤1440. | At 1920 the copy sat at x=48 while the header and finder sat at x=288. | Owner, 2026-10-04 ("symmetry should be maintained"); DEVIATIONS #114 |
 | D134 | 2026-10-03 | Two starting-price tags under the hero lede: `Tires starting from $79.99 ea`, `Wheels starting from $249.99 ea`, the owner's lines verbatim (case, cents, `ea`) from `STARTING_PRICES` in `src/lib/site.ts`. Each is a link to its category (`ROUTES[category]`, typed `nav-forward`), drawn in the header phone CTA's vocabulary: 1px `--accent` outline on a `--scrim-strong` ground, filling lime on hover with every word easing to `--on-accent` (`price-tag-ink`, `globals.css` D134 block); the amount is `numeral` in `--text`, never lime. Screen readers hear `each` for the visible `ea`. Not behind `PRICES_VISIBLE`: marketing lines, not catalogue prices. On `fold-minimal` phones the copy stack gap closes 16 -> 8px and the tag tightens to 44px, so at 320x568 the finder panel ends at the fold exactly as before. | Owner, 2026-10-03: *"since now we are not displaying the prices on the front page, we just want to show this. So add that this on the hero image or you know make it attractive so that people can see."* | D134 (root row owed); DEVIATIONS row owed |
 | D129 | 2026-10-03 | The brand strip becomes a right-to-left ticker of nineteen famous tire and wheel brands' real logos, one muted ink (`text-ink-dim`) brightening to `text-ink` on hover, painted through CSS masks so no brand colour shows. Supersedes D91b's brand-strip columns and the drawn text-wordmark grid; the band itself is unchanged. | Owner, 2026-10-03: *"get the actual brand logo and add it there … it could be a moving strip … like a ticker"*, then chose "Famous tire + wheel brands", muted, brighter on hover; owner states the shop has permission to show the logos. | D129; `design/ASSET-CREDITS.md` |
 | D93b | 2026-09-30 | The featured arrows are named "Previous featured tire" / "Next featured tire", carry `aria-controls="featured-track"` and a hover state; the brand-strip `<li>` is `translate="no"`. | Unnamed controls that scroll an unnamed region; browser translation mangled brand marks. | QA pass WDG-13, WDG-15; DEVIATIONS #83; D93b |
@@ -69,8 +70,9 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
 - Don't give a brand logo its own colour, an `<img>`, or a link. The ticker paints every logo `currentColor` through a mask so the
   colour is a token (D129); the owner did not ask for links. A new logo needs a row in `design/ASSET-CREDITS.md`, its measured
   `aspect`, and a `scale` tuned on a rendered strip.
-- Don't drop the brand ticker's pause control or its reduced-motion fallback: moving content longer than 5s needs a pause
-  (WCAG 2.2.2), and the global reduced-motion kill alone would park the track on the hidden copy.
+- Don't drop the brand ticker's reduced-motion fallback: the global reduced-motion kill alone would park the track on the
+  hidden copy. Its pause button was removed by owner ruling (**D139**, 2026-10-04), which leaves no pause for keyboard or
+  touch users, a known WCAG 2.2.2 gap; putting one back is the owner's call.
 
 ## Open
 - Parity table: `design/reports/home.md`.

@@ -318,7 +318,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         many: "tires",
       },
       copy: {
-        empty: "Nothing fits those filters yet. Clear them, or call us.",
+        empty: "Nothing matches these filters. Clear them, or call us.",
         nearMiss: "size",
         /* Artboard wording, both PDP exports, with its em dash made a colon
            (owner copy pass, 2026-10-03, D130). */
@@ -345,7 +345,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         many: "wheels",
       },
       copy: {
-        empty: "Nothing fits those filters yet. Clear them, or call us.",
+        empty: "Nothing matches these filters. Clear them, or call us.",
         nearMiss: "fitment",
         quotePlaceholder:
           "Anything we should know: current setup, storage, install timing…",
@@ -373,7 +373,7 @@ export const CATEGORY_CONFIG: Readonly<Record<ProductCategory, CategoryConfig>> 
         many: "items",
       },
       copy: {
-        empty: "Nothing fits those filters yet. Clear them, or call us.",
+        empty: "Nothing matches these filters. Clear them, or call us.",
         /* An accessory derives no SIZE from a vehicle, but since D67 it does
            derive a fit — thread pitch and TPMS frequency — so the line does
            render here. `fitment` rather than `fit`: the sentence pluralises

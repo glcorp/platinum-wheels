@@ -56,8 +56,8 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   Since D125 also `vendorPriceLabel()` (`$388.12`, cents always), `lowestVendorPrice()` and
   `extraSpecsText()` (one `Label: value` per line). Client-safe.
 - [`storefront-link.ts`](storefront-link.ts) — the View on site URL from env `STOREFRONT_URL` (D116).
-- [`greeting.ts`](greeting.ts) — the home's rotating lines per Brampton-time band (D118). Copy the owner may
-  rewrite.
+- [`greeting.ts`](greeting.ts) — the home's greeting, one plain line per Brampton-time band (D118; the
+  rotating lines were cut to one by D140). Copy the owner may rewrite.
 - [`components/product-form.tsx`](components/product-form.tsx) — client island, create and edit, all three
   categories, brand and vendor dropdowns, source rows. Remounts its fields after every answer. D125: an
   accessory's brand select opens on `No brand` (empty value) and is not required; wheels gain Finish

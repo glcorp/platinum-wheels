@@ -80,7 +80,7 @@ export function CategoryTiles() {
             Shop by category
           </p>
           <h2 className="display text-ink text-display-40 md:text-display-56">
-            Everything between you and the road.
+            Tires, wheels and accessories.
           </h2>
         </div>
 

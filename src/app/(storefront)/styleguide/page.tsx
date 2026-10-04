@@ -50,9 +50,9 @@ const GROUND = [
   { name: "--surface-2", hex: "#1F1F24", util: "bg-surface-2", role: "Inputs, nested fills, row hover" },
   { name: "--border", hex: "#1F1F24", util: "bg-border", role: "Hairlines on --surface" },
   { name: "--border-strong", hex: "#35353B", util: "bg-border-strong", role: "Panel edges, dividers, card hairlines" },
-  { name: "--border-control", hex: "#69696F", util: "bg-border-control", role: "Field borders only — 3:1 per WCAG 1.4.11" },
-  { name: "--winter", hex: "#8FC9F2", util: "bg-winter", role: "Seasonal ink — spec tables only" },
-  { name: "--all-season", hex: "#D9C29A", util: "bg-all-season", role: "Seasonal ink — spec tables only" },
+  { name: "--border-control", hex: "#69696F", util: "bg-border-control", role: "Field borders only, 3:1 per WCAG 1.4.11" },
+  { name: "--winter", hex: "#8FC9F2", util: "bg-winter", role: "Seasonal ink, spec tables only" },
+  { name: "--all-season", hex: "#D9C29A", util: "bg-all-season", role: "Seasonal ink, spec tables only" },
 ];
 
 /* Seed products transcribed from the artboards — brand, model, size, price and
@@ -328,7 +328,7 @@ export default function StyleguidePage() {
           <p className="text-14 leading-body text-ink-muted max-w-measure mt-6">
             Every text token clears WCAG AA (4.5:1) on all three grounds. The focus
             ring is <span className="text-ink">15.21:1</span>. Control boundaries
-            needed one added token — see Controls below.
+            needed one added token, shown under Controls below.
           </p>
         </Block>
 
@@ -345,8 +345,7 @@ export default function StyleguidePage() {
           </div>
           <Row label="Body · Barlow 400">
             <p className="text-16 leading-body text-ink-muted max-w-measure">
-              Search by your vehicle. We match, confirm fitment and quote — you just
-              drive.
+              Search by your vehicle. We find the match, check the fit and quote you.
             </p>
           </Row>
           <Row label="Labels · Barlow 500">
@@ -398,8 +397,8 @@ export default function StyleguidePage() {
             </div>
           </Row>
           <p className="text-14 leading-body text-ink-dim mt-4">
-            Hover is an instant fill swap — the artboards declare no transition on
-            any button. Tab to a control to see the focus ring: white on primary,
+            Hover eases the fill over 120ms and a press nudges the button down 1px
+            (D92b). Tab to a control to see the focus ring: white on primary,
             accent elsewhere, no offset.
           </p>
         </Block>
@@ -429,7 +428,7 @@ export default function StyleguidePage() {
           </Row>
           <p className="text-14 leading-body text-ink-dim mt-4">
             Radius 0, not 2px. The artboards draw square chips beside 2px selects
-            and buttons — deliberate, and radius is an exact-match parity property.
+            and buttons on purpose, and radius is an exact-match parity property.
           </p>
         </Block>
 
@@ -489,7 +488,7 @@ export default function StyleguidePage() {
               any time.
             </Checkbox>
             <p className="text-14 leading-body text-ink-dim mt-3">
-              CASL consent renders unticked, always — it is never pre-checked.
+              CASL consent always renders unticked. It is never pre-checked.
             </p>
           </div>
 
@@ -497,7 +496,7 @@ export default function StyleguidePage() {
             <p className="label text-11 tracking-12 text-accent">Resolved</p>
             <p className="text-14 leading-body text-ink-muted max-w-measure mt-3">
               WCAG 1.4.11 wants a control boundary at 3:1 against every{" "}
-              <em className="text-ink">adjacent</em> colour — for a field that means
+              <em className="text-ink">adjacent</em> colour. For a field that means
               the fill it encloses as well as the panel behind it.{" "}
               <code className="text-ink">--border-strong</code> manages 1.35:1
               against the fill, and the fill is itself only 1.10:1 against the
@@ -505,12 +504,12 @@ export default function StyleguidePage() {
               <code className="text-ink">--border-control</code>{" "}
               <span className="numeral text-ink">#69696F</span> is the lowest value
               clearing 3:1 on all three (3.01 / 3.31 / 3.61). It is applied to
-              fields only — card edges and dividers are decoration, not controls,
+              fields only. Card edges and dividers are decoration, not controls,
               and stay exactly as drawn.
             </p>
             <div className="mt-6 grid gap-6 sm:grid-cols-2">
               <div className="bg-surface border-border border p-6">
-                <p className="label text-11 tracking-12 text-ink-dim">Card edge — as drawn, 1.35:1</p>
+                <p className="label text-11 tracking-12 text-ink-dim">Card edge · as drawn, 1.35:1</p>
                 <div className="mt-3">
                   <Input
                     id="sg-contrast-a"
@@ -520,7 +519,7 @@ export default function StyleguidePage() {
                 </div>
               </div>
               <div className="bg-surface border-border border p-6">
-                <p className="label text-11 tracking-12 text-ink-dim">Field — shipped, 3.01:1</p>
+                <p className="label text-11 tracking-12 text-ink-dim">Field · shipped, 3.01:1</p>
                 <div className="mt-3">
                   <Input id="sg-contrast-b" placeholder="Search by size" />
                 </div>
@@ -557,7 +556,7 @@ export default function StyleguidePage() {
             Winter · all-season · unavailable · two-badge cap. Cards are equal
             height from the grid track, never a fixed height. Hover one: the border
             goes to <code className="text-ink">--accent-hover</code> and it lifts
-            2px over 150ms — the photo does not zoom. On a results page the photo
+            2px over 150ms. The photo does not zoom. On a results page the photo
             is also the shared element that morphs into the product page&rsquo;s
             gallery (§12).
           </p>
@@ -607,7 +606,7 @@ export default function StyleguidePage() {
           <p className="text-16 leading-body text-ink-muted max-w-measure mt-6">
             The seven exports contain no <code className="text-ink">:focus</code>,{" "}
             <code className="text-ink">:active</code> or{" "}
-            <code className="text-ink">:disabled</code> rule — only{" "}
+            <code className="text-ink">:disabled</code> rule, only{" "}
             <code className="text-ink">:hover</code>. Focus, active and disabled are
             authored above from DESIGN.md §4. Form success and form error are
             authored below with the PDP quote band (D51, D57), together with the

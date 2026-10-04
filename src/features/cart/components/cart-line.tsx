@@ -112,7 +112,13 @@ export function CartLineRow({ line, onQuantity, onRemove }: CartLineRowProps) {
           ) : null}
           {item.available ? null : (
             <span className="pt-1">
-              <Badge variant="unavailable">Unavailable, we&apos;ll check restock</Badge>
+              {/* `h-auto! min-h-6` (D141): the badge's fixed 24px box could not
+                  hold this line on a 320px phone, where it wrapped through its
+                  own border. One line is still the drawn 24px (22px leading +
+                  two 1px borders); a second line grows the box with it. */}
+              <Badge variant="unavailable" className="h-auto! min-h-6">
+                Unavailable, we&apos;ll check restock
+              </Badge>
             </span>
           )}
         </div>
