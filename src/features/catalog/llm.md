@@ -99,7 +99,9 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     validator every writer goes through. Pure. Since D125 it also reads `extra_specs` (`Label: value`
     pairs, ` | ` or one per line, split on the first `: `), each source's `source_price`, the wheel
     `finish_family` / `color` / `lug_count` and the accessory `part_type` / `weight_lb`; brand is
-    optional on an accessory only.
+    optional on an accessory only. Since D142 also `part_number` (wheels and accessories; refused on a
+    tire) and the tire's `mud_snow` box, and it refuses a `Part number:` or `Mud & snow:` line in
+    `extra_specs`, so each fact lives in one place.
   - [`size.ts`](size.ts) — `parseTireSizeSpec()` (metric and flotation) and the bolt-pattern
     normalisers. Pure. [`slug.ts`](slug.ts) — `buildProductSlug()`, and `nextFreeSlug()`, the one
     `-2`, `-3` rule a single create and a bulk load share. Pure.
@@ -136,7 +138,8 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 
 ## Rules
 - **One product per real item for the shopper, every vendor listing a source for the admin (D135).**
-  The builder merges; nothing here de-duplicates. An accessory slug is brand + name + Part number, the
+  The builder merges; nothing here de-duplicates. An accessory slug is brand + name + part number (the
+  `part_number` column since D142), the
   brand dropped from the name when it already leads (`slug.ts`, `stripBrandPrefix`); a product may carry
   20 sources. Wheel `getOtherSizes` keeps only wheels sharing a bolt pattern (D137). A wheel's size
   line carries offset and finish (`adapter.ts`, D136).

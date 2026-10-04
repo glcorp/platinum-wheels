@@ -62,7 +62,8 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   categories, brand and vendor dropdowns, source rows. Remounts its fields after every answer. D125: an
   accessory's brand select opens on `No brand` (empty value) and is not required; wheels gain Finish
   family / Colour / Lug count, accessories Part type / Weight (lb); every category ends with an `Extra
-  specs` textarea (`extra_specs`, one `Label: value` per line); the edit page passes the saved
+  specs` textarea (`extra_specs`, one `Label: value` per line); D142: wheels and accessories get a `Part
+  number` field under Barcode and tires an `M+S (mud and snow)` box beside 3PMSF; the edit page passes the saved
   `lowestVendorPrice` for the sources block. D127b: the brand list is the product's category's; the name
   field is `Full name`, with a live "On the site this reads" line (brand + model, or the name when the model
   is blank, through `productName()`).

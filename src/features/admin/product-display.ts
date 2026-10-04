@@ -155,6 +155,7 @@ export function productFormValues(product: AdminProduct): Values {
   put(values, f.description, product.description);
   if (product.price !== null) values[f.price] = [product.price.toFixed(2)];
   put(values, f.gtin, product.gtin);
+  put(values, f.partNumber, product.partNumber);
   put(values, f.extraSpecs, extraSpecsText(product.extraSpecs));
 
   if (product.sources.length > 0) {
@@ -181,6 +182,7 @@ export function productFormValues(product: AdminProduct): Values {
       put(values, f.utqg, specs.utqg);
       flag(values, f.isXl, specs.isXl);
       flag(values, f.winterApproved, specs.winterApproved);
+      flag(values, f.mudSnow, specs.mudSnow);
       flag(values, f.studdable, specs.studdable);
       flag(values, f.runFlat, specs.runFlat);
       break;

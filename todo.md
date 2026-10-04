@@ -139,6 +139,12 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       tire's edit page the Brand list holds tire brands only, and the line under **Full name** reads the
       brand and model the storefront shows.
 
+13. **Check the D142 move on production once its PR merges.**
+    - **Why:** migration `0005` was run on a scratch copy of the catalogue, never on Neon.
+    - **Check:** an accessory's product page still shows its `Part number` row; a tire that showed `M+S`
+      still does; a tire's page has no `Part number` row; in the admin, an accessory's edit page fills the
+      `Part number` field and an M+S tire has the `M+S` box ticked.
+
 ## Owner — photo bucket (D126b)
 
 11. **Finish the Cloudflare R2 photo bucket and its five Vercel settings.** The code is merged without them

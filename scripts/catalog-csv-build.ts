@@ -315,9 +315,9 @@ const NOT_WRITTEN: Record<Category, Record<string, string>> = {
     overall_diameter_in: "not written: the importer re-derives it from tire_size",
     section_width_in: "not written: the importer re-derives it from tire_size",
     zr: "written in extra_specs as ZR",
-    mud_snow: "written in extra_specs as Mud & snow",
+    mud_snow: "written as mud_snow (D142)",
     sidewall: "written in extra_specs as Sidewall",
-    part_number: "written in extra_specs as Part number",
+    part_number: "not written: a tire carries no part number (D142)",
     manufacturer_code: "written in extra_specs as Manufacturer code",
     needs_review: "not written: listed in needs-review.csv",
   },
@@ -343,7 +343,7 @@ const NOT_WRITTEN: Record<Category, Record<string, string>> = {
     side: "written in extra_specs as Side, and appended to name",
     fitment: "written in extra_specs as Fitment",
     new: "written in extra_specs as New",
-    part_number: "written in extra_specs as Part number",
+    part_number: "written as part_number (D142)",
     specs: "Material written as material; every other item in extra_specs",
     discontinued: "not written: every product loads published (rule 1)",
     needs_review: "not written: listed in needs-review.csv",
@@ -1434,11 +1434,15 @@ function cleanDescription(listing: Listing): void {
  * visible to the shopper, so two listings that differ in it are different
  * parts and are NOT identical (coordinator correction, owner 2026-10-03, data
  * QA). Run after M5. M2 (one SKU across vendors) is the same part and is
- * unaffected.
+ * unaffected. A TIRE's Part number is left out since D142: tires carry none
+ * on the site, so two tires that differ only in it look identical.
  */
 function identity(listing: Listing): string {
   const fields = Object.entries(listing.fields).sort(([a], [b]) => (a < b ? -1 : 1));
-  const extra = listing.extra.map(([label, value]) => `${label}\u0001${value}`).sort();
+  const extra = listing.extra
+    .filter(([label]) => listing.category !== "tires" || label !== "Part number")
+    .map(([label, value]) => `${label}\u0001${value}`)
+    .sort();
   return JSON.stringify([listing.primary.source, fields, extra]);
 }
 
@@ -1985,10 +1989,12 @@ function productOf(listings: Listing[], viaBlank: boolean, mayMergeAcrossVendors
 
 /* --- Output ------------------------------------------------------------------------ */
 
-const SHARED_COLUMNS = [F.category, F.brand, F.model, F.name, F.description, F.gtin, F.extraSpecs];
+const SHARED_COLUMNS = [
+  F.category, F.brand, F.model, F.name, F.description, F.gtin, F.partNumber, F.extraSpecs,
+];
 const TIRE_COLUMNS = [
   F.tireSize, F.serviceType, F.loadIndex, F.speedRating, F.loadRange, F.plyRating, F.utqg,
-  F.season, F.isXl, F.winterApproved, F.studdable, F.runFlat,
+  F.season, F.isXl, F.winterApproved, F.mudSnow, F.studdable, F.runFlat,
 ];
 const WHEEL_COLUMNS = [
   F.wheelDiameter, F.wheelWidth, F.boltPatterns, F.offsetMm, F.centerBoreMm, F.backspacing,
@@ -2033,7 +2039,22 @@ function productRecord(product: Product): Record<string, string> {
   const winner = product.listings[0]!;
   const record: Record<string, string> = { ...(product.fields ?? winner.fields) };
   record[F.gtin] = "";
-  record[F.extraSpecs] = (product.extra ?? winner.extra).map(([label, value]) => `${label}: ${value}`).join(" | ");
+  // D142: Part number and Mud & snow ride through the merge as extras, so
+  // M3's identity and the vendor-own-code rule above see them as before, and
+  // leave here for columns of their own. A tire's Part number is dropped
+  // (owner, 2026-10-04: "yes drop the tire ones"); Mud & snow is always `yes`
+  // when present (`yesExtra`).
+  const extra: [string, string][] = [];
+  for (const [label, value] of product.extra ?? winner.extra) {
+    if (label === "Part number") {
+      if (product.category !== "tires") record[F.partNumber] = value;
+    } else if (label === "Mud & snow") {
+      if (product.category === "tires") record[F.mudSnow] = value;
+    } else {
+      extra.push([label, value]);
+    }
+  }
+  record[F.extraSpecs] = extra.map(([label, value]) => `${label}: ${value}`).join(" | ");
   product.listings.forEach((listing, index) => {
     const n = index + 1;
     const row = listing.primary;

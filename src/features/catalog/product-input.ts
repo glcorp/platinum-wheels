@@ -44,6 +44,8 @@ export const PRODUCT_FIELD = {
   price: "price",
   status: "status",
   gtin: "gtin",
+  /** Wheels and accessories only (D142). */
+  partNumber: "part_number",
   /** `Label: value | Label: value`, one fact per pair (D125). The admin form
    *  posts one per line; both separators are read. */
   extraSpecs: "extra_specs",
@@ -58,6 +60,7 @@ export const PRODUCT_FIELD = {
   isXl: "is_xl",
   season: "season",
   winterApproved: "winter_approved",
+  mudSnow: "mud_snow",
   studdable: "studdable",
   runFlat: "run_flat",
   utqg: "utqg",
@@ -110,6 +113,8 @@ export const PRODUCT_LIMITS = {
   name: 200,
   description: 5000,
   shortText: 60,
+  /** Mirrors `products_part_number_length`. */
+  partNumber: 70,
   url: 500,
   price: 99_999_999.99,
   sources: 20,
@@ -320,13 +325,39 @@ function parseSourcePrice(fields: Fields, raw: string): number | null {
 }
 
 /**
+ * Facts with a field of their own since D142, refused as extra specs so each
+ * lives in one place. Matched on the label lower-cased, spaces collapsed; the
+ * message depends on whether the category has the field at all.
+ */
+function hasOwnField(
+  label: string,
+  category: ProductCategory | null,
+): string | null {
+  const key = label.toLowerCase().replace(/\s+/g, " ");
+  if (key === "part number") {
+    return category === "tires"
+      ? "Tires don't carry a part number."
+      : "Part number has its own field.";
+  }
+  if (key === "mud & snow" || key === "mud and snow") {
+    return category === "tires"
+      ? "M+S has its own box."
+      : "Only tires carry M+S.";
+  }
+  return null;
+}
+
+/**
  * `Label: value | Label: value`, or one pair per line (D125). A pair splits
  * on its FIRST `: `, so a value may hold colons of its own
  * (`Fitment: Audi:2025:A4`). Blank pairs are skipped; anything else that is
  * not a pair refuses the field, because guessing which half is the label
  * would put a wrong fact on the product page.
  */
-function parseExtraSpecs(fields: Fields): ExtraSpec[] {
+function parseExtraSpecs(
+  fields: Fields,
+  category: ProductCategory | null,
+): ExtraSpec[] {
   const raw = fields.raw("extraSpecs");
   if (raw === "") return [];
   const limits = PRODUCT_LIMITS;
@@ -364,6 +395,11 @@ function parseExtraSpecs(fields: Fields): ExtraSpec[] {
       return [];
     }
     const id = label.toLowerCase();
+    const hasField = hasOwnField(label, category);
+    if (hasField !== null) {
+      fields.fail("extraSpecs", hasField);
+      return [];
+    }
     if (seen.has(id)) {
       fields.fail("extraSpecs", `The extra spec "${label}" is listed twice.`);
       return [];
@@ -466,6 +502,7 @@ function parseTireSpecs(fields: Fields): TireSpecsInput | null {
     isXl: fields.flag("isXl"),
     season,
     winterApproved: fields.flag("winterApproved"),
+    mudSnow: fields.flag("mudSnow"),
     studdable: fields.flag("studdable"),
     runFlat: fields.flag("runFlat"),
     utqg: fields.text("utqg", "UTQG", short),
@@ -592,6 +629,24 @@ function parseAccessorySpecs(fields: Fields): AccessorySpecsInput | null {
   return { accessoryType, ...rest };
 }
 
+/**
+ * A wheel's or accessory's part number (D142). A tire has none: the vendors'
+ * tire codes were size codes and store codes, and the owner dropped them, so
+ * one posted on a tire is refused rather than quietly thrown away.
+ */
+function parsePartNumber(
+  fields: Fields,
+  category: ProductCategory | null,
+): string | null {
+  if (category === "tires") {
+    if (fields.raw("partNumber") !== "") {
+      fields.fail("partNumber", "Tires don't carry a part number. Leave it blank.");
+    }
+    return null;
+  }
+  return fields.text("partNumber", "part number", PRODUCT_LIMITS.partNumber);
+}
+
 /* --- Entry point --------------------------------------------------------- */
 
 export function parseProductInput(reader: FieldReader): ParseProductResult {
@@ -632,7 +687,8 @@ export function parseProductInput(reader: FieldReader): ParseProductResult {
     ),
     price: parsePrice(fields),
     gtin: fields.text("gtin", "barcode", PRODUCT_LIMITS.shortText),
-    extraSpecs: parseExtraSpecs(fields),
+    partNumber: parsePartNumber(fields, category),
+    extraSpecs: parseExtraSpecs(fields, category),
     sources: parseSources(fields),
   };
 
