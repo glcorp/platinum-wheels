@@ -1,5 +1,19 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-04 (part number and M+S get their own columns, D142, branch `part-number-mud-snow`).**
+Migration `0005` moves a wheel's or accessory's `Part number` out of extra specs into
+`products.part_number`, turns a tire's `Mud & snow: yes` into `tire_specs.mud_snow`, and drops the 958 tire
+part numbers (size codes and store codes, owner ruling). The admin form gains a `Part number` field
+(wheels, accessories) and an `M+S` box (tires); the builder writes the two columns.
+- **After the merge:** the deploy runs `0005`, which rewrites `extra_specs` on about 3,300 products in one
+  migration. For the minute between migrate and deploy, the old code finds neither fact; the site is not
+  live. The storefront looks the same: the M+S badge and the `Part number` row read the columns.
+- **Checked:** `npm run check`, `db:check`, `next build`; on PGlite, today's `catalogue.csv` loaded with the
+  old code and then migrated, product by product (root `llm.md` D142); the builder and importer on the
+  real vendor workbooks.
+- **Not checked:** on Neon or Vercel; the admin form in a browser.
+- **Owed next:** `glcorp` merges with **Create a merge commit**; `todo.md` item 13.
+
 **Last updated 2026-10-03 (three open PRs combined into one branch for a single `glcorp` merge, D138,
 branch `integrate/prs-27-28-29`).** The branch brings **#28** `Add to cart` adds one and the header cart is
 not a link on `/cart` (D127), **#29** the admin's new list filters, Go to page, per-category brands, `Full

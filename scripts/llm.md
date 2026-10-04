@@ -48,6 +48,9 @@ from `design/assets/`, and parity becomes eyeballing — which
   sees, Part number included), `MODEL_ALIASES` folds model spellings (M4), accessory SKUs move to a
   `Part number` spec (M5), and M6–M9 tidy models, pack sizes, P3 values and descriptions. It also writes
   `changes-review.csv`: one row per data edit or merge decision, for the owner to review before a load.
+  **Since D142** Part number and Mud & snow still travel through the merge as extras (so M3 and the
+  vendor-own-code rule see them as before) and leave at output for the `part_number` and `mud_snow`
+  columns. A tire's Part number is dropped, and M3 no longer counts it as a visible difference.
 
 ## Rules
 - **`client-assets/` is where client material supplied AFTER the design export goes** (D63).

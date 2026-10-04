@@ -16,16 +16,17 @@ Action, its emails and its two authored states moved there.
   category, D127) is read by `view.ts`'s `parseQuantity`; it is the one a card's `Add to cart` adds, so a
   card and its PDP agree. `vehicleLabel(view)` is the checked
   vehicle string `Add to cart` saves on a cart line (D122).
-- `spec-format.ts` — pure spec-row formatters (D136): `tidyExtra`, `sidewall`, `hasMudAndSnow`,
-  `loadRating`, `backspacing`, `offsetMm`. No imports.
+- `spec-format.ts` — pure spec-row formatters (D136): `tidyExtra`, `sidewall`, `loadRating`,
+  `backspacing`, `offsetMm`. No imports. (`hasMudAndSnow` went with D142: M+S is a column.)
 - `view.ts` — `productView(detail, searchParams, rows)`, pure. Since D136: 3PMSF row only when true,
-  M+S from the vendor value, a `Studdable` row off-winter, `description` passed to `Specifications`. The only place any PDP value is computed.
+  M+S from the vendor value (the tire's `mud_snow` column since D142), a `Studdable` row off-winter, `description` passed to `Specifications`. The only place any PDP value is computed.
   Since D108b it takes `CatalogProductDetail` plus the two rows and makes the card-shaped `Product` with
   `toProduct()`. Per category (D58): a **tire** builds the six drawn spec rows first, then Load range /
   Ply rating / Run-flat / UTQG when given; a **wheel** Brand / Model / Size / Bolt pattern / Offset /
   Finish, then Finish family / Colour / Lug count (D125), Centre bore, Backspacing, Material, Seat type,
   Load rating, TPMS, Winter use; an **accessory** Brand / Model / Type, then Part type (D125), Thread
-  size, Seat type, Finish, Pack quantity, diameters and Weight (`2.5 lb`, D125). **Every category then
+  size, Seat type, Finish, Pack quantity, diameters and Weight (`2.5 lb`, D125). A wheel or accessory
+  then shows `Part number` (its column since D142), ahead of the vendor facts. **Every category then
   appends the product's `extraSpecs`** (D125), the vendor facts with no column, in vendor order, label
   and value as stored. **A row with no value is dropped** (D53(1), D109(6)), which is also how an
   unbranded accessory loses its `Brand` row. `fullName` is `productName()` (`src/lib/product-name.ts`),

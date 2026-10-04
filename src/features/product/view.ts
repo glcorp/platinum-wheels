@@ -33,7 +33,6 @@ import { productName, stripBrandPrefix } from "@/lib/product-name";
 
 import {
   backspacing,
-  hasMudAndSnow,
   loadRating,
   offsetMm,
   tidyExtra,
@@ -132,7 +131,7 @@ function seasonLabel(season: TireSeason | null, studdable: boolean): string {
  * The vendor facts that have no column (D125), after every column row, in the
  * order the vendor gave them. Label and value are the vendor's own, tidied for
  * reading by `spec-format.ts` `tidyExtra()` (D135: `yes` is `Yes`, a unit in a
- * label moves to the value, `Mud & snow` is left to the badge). A pair with a
+ * label moves to the value). Part number and M+S are columns since D142. A pair with a
  * blank half is dropped, the same rule as every other row (D109(6)). Never a
  * price: the importer keeps prices out of `extraSpecs`, and a vendor's own
  * price lives on its staff-only source row.
@@ -219,6 +218,9 @@ function buildSpecs(
       ["Load rating", loadRating(specs?.loadRatingLbs ?? null)],
       ["TPMS compatible", yesNo(specs?.tpmsCompatible ?? null)],
       ["Winter use", yesNo(specs?.winterCompatible ?? null)],
+      /* Its own column since D142, first of the vendor's facts, where it
+         read as an extra spec before. */
+      ["Part number", detail.partNumber],
       ...extraRows(detail),
     ]);
   }
@@ -242,6 +244,7 @@ function buildSpecs(
     ["Outer diameter", measure(specs?.outerDiameterMm ?? null, "mm")],
     ["Inner diameter", measure(specs?.innerDiameterMm ?? null, "mm")],
     ["Weight", measure(specs?.weightLb ?? null, "lb")],
+    ["Part number", detail.partNumber],
     ...extraRows(detail),
   ]);
 }
@@ -268,8 +271,9 @@ const SEASON_BADGE: Readonly<Record<Season, string>> = {
 /* --- Badge row ----------------------------------------------------------
    Never more than three (`product.md` §3.1): the season badge, `3PMSF` when
    the product carries the mark, `M+S` when the vendor itself says the tire is
-   mud and snow rated (its `Mud & snow` fact is `yes`), whatever the season
-   (D135; the winter-implies-M+S rule of D53(3) was a sample-era stand-in).
+   mud and snow rated (the tire's `mud_snow` column, D142; its `Mud & snow`
+   fact before that), whatever the season (D135; the winter-implies-M+S rule
+   of D53(3) was a sample-era stand-in).
 
    Wheels and accessories (D58) draw no badges at all: no wheel or accessory
    artboard exists to draw one, so none is invented here — the same D7
@@ -403,7 +407,7 @@ export function productView(
       product,
       config,
       season,
-      detail.category === "tires" && hasMudAndSnow(detail.extraSpecs),
+      detail.category === "tires" && detail.specs?.mudSnow === true,
     ),
     description: detail.description?.trim() || null,
     quantity: parseQuantity(searchParams),

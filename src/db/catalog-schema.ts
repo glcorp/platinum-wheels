@@ -160,6 +160,12 @@ export const products = pgTable(
 
     /** Barcode (GTIN / UPC / EAN), when the vendor gives one. */
     gtin: text("gtin"),
+    /** The part number of a wheel or accessory, as its vendor gives it
+     *  (D142). The vendor's own code, not necessarily the maker's (MPN), so
+     *  no structured data claims it. Part of an accessory's slug. A tire
+     *  never has one: the vendors' tire "part numbers" were size codes and
+     *  store codes, and were dropped. */
+    partNumber: text("part_number"),
 
     /** Vendor facts too sparse for a column of their own (D125), shown in the
      *  product page's specifications after the columns. */
@@ -216,6 +222,14 @@ export const products = pgTable(
     check(
       "products_extra_specs_array",
       sql`jsonb_typeof(${t.extraSpecs}) = 'array'`,
+    ),
+    check(
+      "products_part_number_length",
+      sql`${t.partNumber} is null or char_length(btrim(${t.partNumber})) between 1 and 70`,
+    ),
+    check(
+      "products_part_number_not_tire",
+      sql`${t.partNumber} is null or ${t.category} <> 'tires'`,
     ),
     check(
       "products_name_length",
@@ -280,6 +294,9 @@ export const tireSpecs = pgTable(
     season: tireSeason("season"),
     /** Three-peak mountain snowflake (3PMSF). */
     winterApproved: boolean("winter_approved").notNull().default(false),
+    /** M+S, the maker's mud-and-snow marking (D142). Not a winter rating;
+     *  only 3PMSF is. `false` = no or not stated, as with `winter_approved`. */
+    mudSnow: boolean("mud_snow").notNull().default(false),
     studdable: boolean("studdable").notNull().default(false),
     runFlat: boolean("run_flat").notNull().default(false),
 

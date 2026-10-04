@@ -445,6 +445,7 @@ export async function createProduct(
             price: input.price,
             status: input.status ?? "hidden",
             gtin: input.gtin,
+            partNumber: input.partNumber,
             extraSpecs: [...input.extraSpecs],
           })
           .returning({ id: products.id });
@@ -505,6 +506,7 @@ export async function createProductsBatch(
       price: input.price,
       status: input.status ?? "hidden",
       gtin: input.gtin,
+      partNumber: input.partNumber,
       extraSpecs: [...input.extraSpecs],
     })),
   );
@@ -572,6 +574,7 @@ export async function updateProduct(
           description: input.description,
           price: input.price,
           gtin: input.gtin,
+          partNumber: input.partNumber,
           extraSpecs: [...input.extraSpecs],
           ...(input.status === null ? {} : { status: input.status }),
         })

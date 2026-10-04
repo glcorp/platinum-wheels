@@ -29,6 +29,11 @@ Since D105b it also holds the catalogue: products, their specs, images and vendo
 - **`products.brand` is empty only on an accessory** (D125), made true by `products_brand_required`.
   **`products.extra_specs`** is a jsonb array of `{label, value}` pairs for vendor facts too sparse for
   a column; a fact most rows carry gets a column instead (owner, 2026-10-03).
+- **`products.part_number` and `tire_specs.mud_snow` (D142, migration `0005`)** hold two facts that
+  were extra specs. A part number is a wheel's or accessory's vendor code, at most 70 characters
+  (`products_part_number_length`); a tire never has one (`products_part_number_not_tire`). `mud_snow` is
+  the M+S marking, `false` for both "no" and "not stated", the shape of `winter_approved`. `0005` moved
+  the values itself and left `slug` and `updated_at` alone.
 - **A spec row's category is pinned by the database.** Each spec table carries a `category` column with a
   CHECK and a composite foreign key to `products (id, category)`. Don't drop either half.
 - **A uniqueness that a foreign key points at is a table `unique()`, not a `uniqueIndex()`.** drizzle-kit

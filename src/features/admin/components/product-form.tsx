@@ -93,6 +93,7 @@ const FIELD_ORDER: readonly ProductFieldKey[] = [
   "description",
   "price",
   "gtin",
+  "partNumber",
   "tireSize",
   "season",
   "loadIndex",
@@ -269,12 +270,35 @@ const YES_NO = [
   { value: "no", label: "No" },
 ] as const;
 
-function FlagField({ fieldKey, label, values }: { fieldKey: ProductFieldKey; label: string; values: Values }) {
+function FlagField({
+  fieldKey,
+  label,
+  values,
+  hint,
+}: {
+  fieldKey: ProductFieldKey;
+  label: string;
+  values: Values;
+  hint?: string;
+}) {
   const name = F[fieldKey];
-  return (
-    <Checkbox id={`product-${name}`} name={name} value="on" defaultChecked={first(values, name) === "on"}>
+  const box = (
+    <Checkbox
+      id={`product-${name}`}
+      name={name}
+      value="on"
+      defaultChecked={first(values, name) === "on"}
+      aria-describedby={hint ? `product-${name}-hint` : undefined}
+    >
       {label}
     </Checkbox>
+  );
+  if (!hint) return box;
+  return (
+    <div>
+      {box}
+      <Hint fieldKey={fieldKey}>{hint}</Hint>
+    </div>
   );
 }
 
@@ -417,6 +441,12 @@ function TireFields({ values, errors }: { values: Values; errors: ProductFieldEr
       </Pair>
       <div className="flex flex-col gap-1">
         <FlagField fieldKey="winterApproved" label="Winter approved (3PMSF)" values={values} />
+        <FlagField
+          fieldKey="mudSnow"
+          label="M+S (mud and snow)"
+          values={values}
+          hint="The maker's own marking. Only 3PMSF means winter-rated."
+        />
         <FlagField fieldKey="studdable" label="Studdable" values={values} />
         <FlagField fieldKey="isXl" label="Extra load (XL)" values={values} />
         <FlagField fieldKey="runFlat" label="Run-flat" values={values} />
@@ -720,6 +750,24 @@ export function ProductForm({
               maxLength={PRODUCT_LIMITS.shortText}
             />
           </Pair>
+          {/* Tires carry none: the vendors' tire codes were size and store
+              codes (D142). */}
+          {category === "tires" ? null : (
+            <Pair>
+              <TextField
+                fieldKey="partNumber"
+                label="Part number"
+                values={values}
+                errors={errors}
+                maxLength={PRODUCT_LIMITS.partNumber}
+                hint={
+                  category === "accessories"
+                    ? "Goes into this accessory's web address when it's created, and can't change after. Leave blank if it has none."
+                    : "The vendor's code for this wheel. Leave blank if it has none."
+                }
+              />
+            </Pair>
+          )}
         </Section>
 
         {category === "tires" ? <TireFields values={values} errors={errors} /> : null}

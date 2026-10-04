@@ -99,6 +99,9 @@ export type CatalogProduct = {
   price: number | null;
   status: ProductStatus;
   gtin: string | null;
+  /** A wheel's or accessory's vendor part number (D142). Always `null` on a
+   *  tire. Not necessarily the maker's MPN. */
+  partNumber: string | null;
   /** Vendor facts with no column, in vendor order (D125). Never a price. */
   extraSpecs: readonly ExtraSpec[];
   updatedAt: Date;
@@ -301,6 +304,9 @@ export type ProductInput = {
    */
   status: ProductStatus | null;
   gtin: string | null;
+  /** `null` on every tire: the validator refuses one, and so does
+   *  `products_part_number_not_tire` (D142). */
+  partNumber: string | null;
   extraSpecs: readonly ExtraSpec[];
   sources: readonly ProductSource[];
 } & (
