@@ -46,10 +46,20 @@ export interface SimilarProductsProps {
 const SECTION =
   "flex flex-col gap-5 overflow-hidden pt-14 pl-4 md:gap-10 md:overflow-visible md:px-12 md:pt-30";
 
+/* D141: heading and track take the page's 1344px frame from lg:, centred,
+   so above 1440 they line up with the buy panel and specifications above
+   (`lg:mx-auto lg:max-w-content` in products/[slug]/page.tsx) and with the
+   header and footer. `w-full` because auto margins on a column-flex item
+   cancel the stretch. Below lg: none of it applies, so the mobile and tablet
+   scroller still bleeds right exactly as before; from 1320 to 1440 the
+   section's content box (W − 96) is at most 1344, so the cap is inert and
+   nothing moves up to 1440. */
+const FRAME = "lg:mx-auto lg:w-full lg:max-w-content";
+
 /* `display` utility carries family/weight/leading/tracking/transform; size
    stays an explicit token. 40px M (`product-mobile.html:126`) → 56px D
    (`product-desktop.html:161`). */
-const HEADING = "display text-ink text-display-40 sm:text-display-56";
+const HEADING = `display text-ink text-display-40 sm:text-display-56 ${FRAME}`;
 
 /* `similar-track` (mobile, fixed `repeat(4,260px)` scroller with snap) /
    `md:similar-grid` (fluid 4-up) — both declared in `src/app/globals.css`.
@@ -64,15 +74,17 @@ const HEADING = "display text-ink text-display-40 sm:text-display-56";
    ships scrollable here on the D30 precedent, cited for the PDP row as
    D53(5). No arrows, no dots: unlike the home row, neither PDP artboard
    draws any (`product.md` §2.7). */
-const TRACK = "similar-track hide-scrollbar md:similar-grid gap-3 md:gap-4";
+const TRACK = `similar-track hide-scrollbar md:similar-grid gap-3 md:gap-4 ${FRAME}`;
 
 /* The card photo's `sizes`, crossing where `TRACK` does (D91b, WDG-06):
    below 1100 each column of `similar-track` is a fixed 260px; from 1100
    `similar-grid` is 4-up across the viewport less the section's 48px side
-   padding and three 16px gaps, with no container cap — measured 239px at
-   1100, 324 at 1440, 444 at 1920, 604 at 2560 — so the value is that
-   formula, not a fixed width. */
-const CARD_SIZES = "(min-width: 1100px) calc((100vw - 144px) / 4), 260px";
+   padding and three 16px gaps — measured 239px at 1100, 324 at 1440 — so
+   the value is that formula, not a fixed width. Since D141 the grid stops at
+   the 1344px frame, so from 1440 a column is a fixed 324px
+   ((1344 − 48) / 4), the formula's own value at 1440. */
+const CARD_SIZES =
+  "(min-width: 1440px) 324px, (min-width: 1100px) calc((100vw - 144px) / 4), 260px";
 
 export function SimilarProducts({
   products,

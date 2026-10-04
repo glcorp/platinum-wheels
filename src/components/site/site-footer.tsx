@@ -55,7 +55,12 @@ export function SiteFooter() {
       {/* Top grid: 1 col mobile, 1.2fr/1fr from sm: — sm:grid-cols-11 with
           6/5 split (6:5 = 1.2:1 exactly, home.md:341/346). gap 40px mobile
           (home-mobile.html:337) → 24px desktop (home-desktop.html:382). */}
-      <div className="grid grid-cols-1 gap-10 sm:grid-cols-11 sm:gap-6">
+      {/* D141: both rows take the page's 1344px frame from lg:, centred
+          (`lg:mx-auto lg:max-w-content`), so above 1440 the logo and the last
+          column end on the content edges; the background and top border stay
+          full-bleed on the <footer>. At 1440 the content box is already
+          1440 − 2×48 = 1344, so nothing moves. */}
+      <div className="grid grid-cols-1 gap-10 sm:grid-cols-11 sm:gap-6 lg:mx-auto lg:max-w-content">
         <div className="flex flex-col items-start gap-4 sm:col-span-6">
           {/* Logo — 120px at every width, home.md:343/85. Same file as the
               header; 512x507 intrinsic. */}
@@ -115,7 +120,7 @@ export function SiteFooter() {
 
       {/* Bottom bar — mt-12 pt-6 (48px/24px, home-desktop.html:428) border-t
           border-border. Byte-identical on both artboards. */}
-      <div className="border-border mt-12 flex flex-wrap justify-between gap-3 border-t pt-6">
+      <div className="border-border mt-12 flex flex-wrap justify-between gap-3 border-t pt-6 lg:mx-auto lg:max-w-content">
         <span className="text-13 leading-relaxed text-ink-dim">
           {/* Artboard reads "© 2026 Platinum Wheels and Tire Solutions Inc."
               (home-desktop.html:429); SITE.legalName is "Platinum Wheels and
