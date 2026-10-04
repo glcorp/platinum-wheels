@@ -69,8 +69,9 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
 - Don't give a brand logo its own colour, an `<img>`, or a link. The ticker paints every logo `currentColor` through a mask so the
   colour is a token (D129); the owner did not ask for links. A new logo needs a row in `design/ASSET-CREDITS.md`, its measured
   `aspect`, and a `scale` tuned on a rendered strip.
-- Don't drop the brand ticker's pause control or its reduced-motion fallback: moving content longer than 5s needs a pause
-  (WCAG 2.2.2), and the global reduced-motion kill alone would park the track on the hidden copy.
+- Don't drop the brand ticker's reduced-motion fallback: the global reduced-motion kill alone would park the track on the
+  hidden copy. Its pause button was removed by owner ruling (**D139**, 2026-10-04), which leaves no pause for keyboard or
+  touch users, a known WCAG 2.2.2 gap; putting one back is the owner's call.
 
 ## Open
 - Parity table: `design/reports/home.md`.

@@ -108,10 +108,9 @@ export const CONTACT_HOURS = {
  * Two named contacts, both canonical. `tel` is E.164 for the href; `display` is
  * the human-readable string.
  *
- * The two rows now use two different display conventions: `CONTACTS[0]` carries
- * the owner's `+1 (437) 882-5000` (D76, verbatim per the instruction) and
- * `CONTACTS[1]` still carries the artboards' bare-dash `365-998-0990`. That is
- * a recorded inconsistency, not an oversight — see `design/DEVIATIONS.md` #66.
+ * Both rows use the owner's format, country code and parentheses: `CONTACTS[0]`
+ * since D76, `CONTACTS[1]` since D139 (owner, 2026-10-04: "add +1 to harman's
+ * number"), which retires the two-format inconsistency DEVIATIONS #66 recorded.
  */
 export const CONTACTS = [
   /* Owner instruction 2026-09-22 (D76): "change number to +1 (437) 882-5000
@@ -132,7 +131,12 @@ export const CONTACTS = [
     display: "+1\u00a0(437)\u00a0882-\u20605000",
     tel: "+14378825000",
   },
-  { name: "Harman Singh", display: "365-998-0990", tel: "+13659980990" },
+  /* D139: same format and the same WDG-15 no-break code points as above. */
+  {
+    name: "Harman Singh",
+    display: "+1\u00a0(365)\u00a0998-\u20600990",
+    tel: "+13659980990",
+  },
 ] as const;
 
 /** The number used by the header CTA and the mobile call button. */

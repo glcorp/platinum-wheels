@@ -19,9 +19,11 @@
    Mechanics live in the `brand-marquee` utility (`globals.css`, "Brand
    marquee (D129)"): the track holds the list twice and slides exactly one
    list, so the loop has no seam; the second copy is `aria-hidden` and holds
-   nothing focusable. WCAG 2.2.2: a visible pause control (native checkbox in
-   a label, ≥24px target, no JS) plus pause on hover and on focus. Reduced
-   motion gets one static, wrapping, flush-left row and no control.
+   nothing focusable. It pauses on hover (pointer devices). The visible pause
+   button is gone (D139, owner 2026-10-04: *"remove pause buttoon"*), which
+   leaves no pause for keyboard or touch users: a known WCAG 2.2.2 gap, taken
+   on the owner's ruling. Reduced motion gets one static, wrapping, flush-left
+   row.
 
    Logos are not links (not asked for). Each `<li>` carries the brand's name as
    `sr-only` text with `translate="no"` (WDG-15); the painted logo is
@@ -74,26 +76,6 @@ export function BrandStrip() {
           </ul>
         </div>
       </div>
-
-      <label
-        data-marquee="pause"
-        className="border-border-strong text-ink-dim rounded-ctl has-focus-visible:outline-accent hover:text-ink grid size-8 flex-none cursor-pointer place-items-center border has-focus-visible:outline-2 has-focus-visible:outline-offset-0"
-      >
-        <input
-          type="checkbox"
-          data-marquee="toggle"
-          aria-label="Pause brand logos"
-          className="sr-only"
-        />
-        {/* Pause: two bars. Play: a triangle. Swapped by the utility. */}
-        <svg aria-hidden="true" data-icon="pause" viewBox="0 0 12 12" className="size-3 fill-current">
-          <rect x="2" y="1" width="3" height="10" />
-          <rect x="7" y="1" width="3" height="10" />
-        </svg>
-        <svg aria-hidden="true" data-icon="play" viewBox="0 0 12 12" className="size-3 fill-current">
-          <path d="M3 1 11 6 3 11Z" />
-        </svg>
-      </label>
     </div>
   );
 }

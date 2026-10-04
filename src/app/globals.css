@@ -1432,13 +1432,12 @@
      logo      a box sized from --logo-aspect / --logo-scale (inline, per
                logo, brand-logos.ts) painted `currentColor` through the
                logo file as a mask, so the colour is always a token
-     toggle    the WCAG 2.2.2 pause control: a native checkbox inside a
-               label; checked = paused. Works without JS.
    Speed is constant at roughly 60-65px/s at every width: one list is about
    3.6k / 4.5k / 5.2k px at the three base heights, so the loop runs 60s /
-   70s / 80s. Paused on hover (pointer devices only, D17), on focus inside
-   the band, and by the toggle. Reduced motion: no animation, no copy, no
-   fade, no toggle; the one list wraps flush-left into static rows.
+   70s / 80s. Paused on hover (pointer devices only, D17). The pause toggle
+   was removed by owner ruling (D139), so keyboard and touch users have no
+   pause: a known WCAG 2.2.2 gap. Reduced motion: no animation, no copy, no
+   fade; the one list wraps flush-left into static rows.
    =========================================================================== */
 @keyframes brand-marquee {
   from {
@@ -1459,7 +1458,6 @@
 
   display: flex;
   align-items: center;
-  column-gap: calc(var(--spacing) * 3);
 
   @media (min-width: 720px) {
     --brand-logo-h: calc(var(--spacing) * 8);
@@ -1523,28 +1521,11 @@
     mask: var(--logo-src) center / contain no-repeat;
   }
 
-  /* Pause: the toggle, focus anywhere in the band, a hovering pointer. */
-  &:has([data-marquee="toggle"]:checked) [data-marquee="track"],
-  &:focus-within [data-marquee="track"] {
-    animation-play-state: paused;
-  }
-
+  /* Pause: a hovering pointer. */
   @media (hover: hover) {
     &:hover [data-marquee="track"] {
       animation-play-state: paused;
     }
-  }
-
-  & [data-icon="play"] {
-    display: none;
-  }
-
-  &:has([data-marquee="toggle"]:checked) [data-icon="play"] {
-    display: block;
-  }
-
-  &:has([data-marquee="toggle"]:checked) [data-icon="pause"] {
-    display: none;
   }
 
   /* Static fallback: an intentional row, never a frozen half-loop. The
@@ -1576,8 +1557,7 @@
       padding-inline-end: 0;
     }
 
-    & [data-marquee~="copy"],
-    & [data-marquee="pause"] {
+    & [data-marquee~="copy"] {
       display: none;
     }
   }
@@ -1602,8 +1582,7 @@
       padding-inline-end: 0;
     }
 
-    & [data-marquee~="copy"],
-    & [data-marquee="pause"] {
+    & [data-marquee~="copy"] {
       display: none !important;
     }
 
