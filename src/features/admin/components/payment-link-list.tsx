@@ -45,7 +45,7 @@ export function PaymentLinkList({
   return (
     <ul className="flex flex-col gap-3">
       {links.map(({ link, state, approved, pendingAttempts, duplicateAttempts }) => (
-        <li key={link.id} className="bg-surface border-border-strong flex flex-col gap-3 border p-4 sm:p-5">
+        <li key={link.id} className="bg-surface border-border-strong flex min-w-0 flex-col gap-3 border p-4 sm:p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <span className="numeral text-ink text-20 leading-flat">{`${displayCents(link.amountCents)} CAD`}</span>
             <span
@@ -55,7 +55,9 @@ export function PaymentLinkList({
             </span>
           </div>
 
-          <p className="text-ink text-15 leading-body">{link.description}</p>
+          {/* Staff text with no guaranteed break point: `wrap-anywhere` keeps one
+              long word inside the card (D145 audit, UI-ADMIN). */}
+          <p className="text-ink min-w-0 text-15 leading-body wrap-anywhere">{link.description}</p>
 
           <dl className="text-ink-muted text-13 leading-body flex flex-col gap-0.5">
             <div className="flex flex-wrap gap-2">

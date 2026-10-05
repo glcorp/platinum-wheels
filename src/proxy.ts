@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { decideHostRouting } from "@/features/admin/host-routing";
+import {
+  ADMIN_FOLDER,
+  PAY_HOST,
+  PAY_NOT_FOUND_PATH,
+  decideHostRouting,
+  isAdminHost,
+  normalizeHost,
+} from "@/features/admin/host-routing";
 
 /* ---------------------------------------------------------------------------
    Request proxy — host routing for the admin (D97, D115) and payments (D105)
@@ -25,6 +32,20 @@ import { decideHostRouting } from "@/features/admin/host-routing";
    `/admin` and `/pay` paths on any host, and on every non-asset path on the
    admin and pay hosts, and never on ordinary storefront traffic.
 
+   **Undecodable paths (launch audit D145, SEC-EDGE; D151).** A path
+   whose percent-encoding is malformed (`/products/%FF`, `/products/abc%`)
+   makes Next throw "failed to decode param" while matching a dynamic
+   segment: an unbranded 500 (or a dropped HTTP/2 stream) instead of a 404.
+   Proxy answers it first with the branded 404. It can only do that where it
+   runs, so the matcher takes two more entries: the storefront's dynamic
+   routes `/products/**` and `/sitemaps/**`, where the audit measured the
+   failure (both read the database per request already, so one edge hop more
+   costs little), and any path that contains a `%` at all, which no page on
+   this site has (slugs are `[a-z0-9-]`, D107b), so ordinary storefront
+   traffic, and the static pages the LCP note above protects, still never
+   reach proxy. If a platform ever decodes the path before testing the
+   matcher, that second entry simply matches nothing; the first still holds.
+
    Server Actions are POSTs to the page's own URL, so an admin form posted to
    `/products` is rewritten to `/admin/products` like the page itself was
    (Next's proxy docs: "Server Functions … are handled as POST requests to the
@@ -37,7 +58,34 @@ import { decideHostRouting } from "@/features/admin/host-routing";
  *  advertise where the admin actually lives. */
 const NOT_FOUND_PATH = "/_admin-not-served-on-this-host";
 
+/** `true` when the path cannot be percent-decoded. `nextUrl.pathname` is
+ *  still encoded (WHATWG URL parsing never decodes), so this is the same
+ *  decode Next's route matcher will attempt, run first. */
+function isUndecodable(pathname: string): boolean {
+  try {
+    decodeURIComponent(pathname);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 export function proxy(request: NextRequest) {
+  if (isUndecodable(request.nextUrl.pathname)) {
+    const host = request.headers.get("host");
+    const isProduction = process.env.VERCEL_ENV === "production";
+    // Each host's own 404: the admin's catch-all (`src/app/admin/[...missing]`)
+    // on the admin host, the pay 404 on the pay host in production (the same
+    // target `decideHostRouting` uses for a stray path there), the
+    // storefront's everywhere else. No target carries the bad bytes.
+    const target = isAdminHost(host, isProduction)
+      ? `${ADMIN_FOLDER}/_undecodable`
+      : isProduction && normalizeHost(host) === PAY_HOST
+        ? PAY_NOT_FOUND_PATH
+        : NOT_FOUND_PATH;
+    return NextResponse.rewrite(new URL(target, request.url));
+  }
+
   const decision = decideHostRouting({
     host: request.headers.get("host"),
     pathname: request.nextUrl.pathname,
@@ -87,6 +135,12 @@ export const config = {
     // pay host, and every non-asset path on the pay host.
     "/pay",
     "/pay/:path*",
+    // The undecodable-path 404 only (D145): the storefront's two dynamic
+    // routes, and any path with a `%` in it. `decideHostRouting` passes every
+    // decodable one straight through.
+    "/products/:path*",
+    "/sitemaps/:path*",
+    "/:path(.*%.*)",
     {
       source: "/((?!_next/|.*\\..*).*)",
       has: [{ type: "header", key: "host", value: "pay\\.platinumwheels\\.ca" }],

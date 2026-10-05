@@ -19,6 +19,7 @@
  */
 
 import type { Product, ProductCategory } from "@/features/catalog/types";
+import type { PartialVehicle } from "@/features/finder/data";
 import { PRICES_VISIBLE } from "@/lib/site";
 
 /* --- Sort --------------------------------------------------------------- */
@@ -83,6 +84,15 @@ export interface ResultsQuery {
    *  the title, and — via the placeholder fitment map — the best/similar
    *  split (D48). */
   vehicle: Vehicle | null;
+  /**
+   * A part-filled finder submit (Year and Make without a Model, say), when
+   * `vehicle` is `null` (LA-05 P2, D145 audit). The toolbar opens its finder
+   * with these kept and a prompt for the rest instead of dropping them
+   * silently. Never serialised, never a filter, and only ever the finder
+   * list's own strings (`finder/data.ts` `partialVehicle`). Optional so a
+   * query built by hand (`clearFilters`) need not name it.
+   */
+  partialVehicle?: PartialVehicle | null;
   /**
    * The three size selects, keyed by the category's own param names:
    * tires `width` / `profile` / `rim`, wheels `diameter` / `width` / `bolt`.

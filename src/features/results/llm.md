@@ -26,12 +26,15 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   Server. The **entire** composition, so the three routes share it (D58); each `page.tsx` is an export, a
   `metadata` object and one call.
 - [`query.ts`](query.ts) — pure, client-safe: `parseResultsQuery()`, `resultsHref()`, `clearFilters()`;
-  param names double as form field names so a no-JS GET submit produces the same URL.
+  param names double as form field names so a no-JS GET submit produces the same URL. Also sets
+  `partialVehicle` (LA-05 P2) when the URL names part of a vehicle; the toolbar then opens its finder
+  with the known fields kept and a prompt for the rest.
 - [`search.ts`](search.ts) — server only and **async** since D108b: `searchResults()` asks the catalogue
   (`catalog/queries.ts`) for one page of best matches, the similar row and the facets, and maps them into
   a `ResultsView`. Reads the database; never imported by a client file. An explicit URL size wins,
-  otherwise a vehicle borrows one from the placeholder `FITMENT` map in `src/features/finder/data.ts`
-  (D48(4)) — `query` is never mutated and `facets.activeGroups` is unchanged, because a derived fitment is
+  otherwise a vehicle borrows one from `src/features/finder/fitment.ts` `findFitment(year, make, model)`
+  (LA-05): the D48(4) placeholder tire size on tires, the real ANKUSI bolt pattern for that model year
+  on wheels (placeholder where the year has none) — `query` is never mutated and `facets.activeGroups` is unchanged, because a derived fitment is
   not a user filter. **Fitment is per category (D58, D67):** tires borrow `width`/`profile`/`rim`, wheels
   `bolt` only, and accessories, which have no size group, narrow on the vehicle's lug thread: a lug nut or
   wheel lock that states a different thread is `similar`, and stating none stays best
@@ -101,6 +104,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   renders `null` (D133): records the `a[data-load-more]` press and, on the next `show` change, scrolls
   instantly to the first new card and focuses its `data-card-link`. Cards carry position ids
   `result-N` / `similar-N`; the `Load more` href ends in the first new card's id; `scroll={false}` stays (D68).
+- Only the **first** best-match card is eager with `fetchPriority="high"` (`priorityCount={1}`, D153, launch audit mobile LCP): three marked high at once on a one-column phone made two compete with the one that is the LCP. The home featured row passes no priority (below the fold; the hero owns it).
 - [`components/results-grid.tsx`](components/results-grid.tsx) — `ResultsGrid({ view })` and
   `ResultsEmpty({ clearHref, as?, body? })`, Server. `body` defaults to the category copy so the
   `/styleguide` call site stays untouched (one sentence for all three today, D73). `Best matches` is the
@@ -168,6 +172,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 | D93b | 2026-09-30 | `query.ts`, `search.ts` and `filter-panel.tsx` harden hostile URLs: a JS commit no longer pins min/max at the price bounds (WDG-07); unknown size values and brands do not count as filters, so the badge and the visible controls agree (WDG-08); an empty category renders no `$Infinity` (WDG-18). Proven by `tests/e2e/hostile-query.spec.ts`. | A shareable URL (D44) could put the page in a state its controls could not show. | QA pass WDG-07/08/18; D93b |
 | D91b | 2026-09-29 | (1) `query.ts` accepts a vehicle only via `isFinderVehicle` (a new import of `finder/data`, a few KB in the islands' bundle); (2) the toolbar's vehicle row wraps and the chip truncates (`min-w-0`), so a long real vehicle no longer widens the page at 320 (was 333px); (3) the crumb wrapper is `text-11 leading-none md:text-12`, restoring the drawn 11px row (the mobile toolbar had sat 13px low); (4) `filter-sort-bar` carries `data-sticky-filter-bar`, the hook for the `globals.css` scroll padding that keeps keyboard focus out from under it (WCAG 2.4.11); (5) `results-grid` passes a `sizes` matching its 1/2/3-up grid; (6) the price fill carries `data-price-fill` for forced colours. | QA pass WDG-03, NJR-9, VPE-4, AXE-1, WDG-06, KBD-3 (`design/reports/qa.md`). | D91b |
 | D91b | 2026-09-30 | `filter-panel` attaches its native `change` listener (and the refocus/close-on-arrival step) in `useLayoutEffect`, not `useEffect`: the form is keyed on `href`, and a click landing between the commit that re-mounts it and a passive effect toggled a control with no listener, so the change never reached the URL. `sort-select` has no such gap (React's delegated `onChange`). | QA pass FIN-2: 22 of 36 rapid chip/brand sequences dropped a click before the fix, 36/36 after (`results.spec.ts` › rapid filter changes). | D91b |
+| D149, D151 | 2026-10-04 | The vehicle lookup takes the model year (`finder/fitment.ts`, server only); a part-filled finder submit sets `query.partialVehicle` and opens the toolbar's `Change vehicle` disclosure (`open`, server-rendered, so it works without JS) with Year/Make kept, a one-line prompt and the missing field focused. | LA-05 and the "finder silently discards a partly filled vehicle" P2 of the D145 audit. | Owner, 2026-10-04 (finder llm.md D149) |
+| D151 | 2026-10-04 | Range thumbs (price, wheel offset) are 24×24 hit boxes whose drawn 16×16 handle is the content box (`background-clip: content-box`, 4px transparent padding, `range-input` in globals.css); the travel box in `RangeGroup` hangs 12px past each track edge and is 24px tall (`-inset-x-3 -top-0.5 h-6`) so D69's alignment holds for a 24px border-box. The box and the utility change together or the handles drift 4px. Not a transparent border: the arithmetic is redone, not dodged. | WCAG 2.5.8: the inputs measured 20px tall and the real target, the thumb, 16px (launch audit, D145, A11Y-AUTO). | Owner, 2026-10-04: "Apply all code items" |
 | — | — | None folder-scoped. | Governing rows: **D42–D49**, **D58**, **D59** (root `llm.md` §5b), D37, D39, D41. | — |
 
 ## Connects to

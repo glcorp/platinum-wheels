@@ -51,6 +51,7 @@ export function PaymentLinkForm({ csrfToken, idempotencyKey }: { csrfToken: stri
   const amountRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const expiryRef = useRef<HTMLSelectElement>(null);
+  const reusedRef = useRef<HTMLDivElement>(null);
 
   // Move focus to the confirmation once it replaces the form, so a screen
   // reader (and a sighted keyboard user) lands on the thing that changed —
@@ -60,6 +61,14 @@ export function PaymentLinkForm({ csrfToken, idempotencyKey }: { csrfToken: stri
       successRef.current?.focus();
     }
   }, [state.status]);
+
+  // A refused repeat submit (`reused`) is not a field error: focus the
+  // message, so keyboard and screen-reader users land on why nothing happened.
+  useEffect(() => {
+    if (state.status === "reused") {
+      reusedRef.current?.focus();
+    }
+  }, [state]);
 
   // Focus the first field that actually failed validation, in drawn field
   // order, rather than leaving focus on <body> — same pattern as
@@ -115,7 +124,10 @@ export function PaymentLinkForm({ csrfToken, idempotencyKey }: { csrfToken: stri
     );
   }
 
-  const values = state.status === "invalid" || state.status === "unavailable" ? state.values : undefined;
+  const values =
+    state.status === "invalid" || state.status === "unavailable" || state.status === "reused"
+      ? state.values
+      : undefined;
   const errors = state.status === "invalid" ? state.errors : undefined;
 
   return (
@@ -220,6 +232,27 @@ export function PaymentLinkForm({ csrfToken, idempotencyKey }: { csrfToken: stri
         <p role="alert" className="text-ink text-14 leading-body">
           The link could not be saved. Nothing was created. Try again in a minute.
         </p>
+      ) : null}
+
+      {/* The page's idempotency key already made a link with other values
+          (D145 audit, SEC-AUTH). The key changes only on a reload, so a
+          resubmit here would be refused again: the message says so and the
+          button reloads, like `Start another link` on the success panel. */}
+      {state.status === "reused" ? (
+        <div
+          ref={reusedRef}
+          role="alert"
+          tabIndex={-1}
+          className="border-accent bg-accent-subtle flex flex-col items-start gap-3 border p-3.5 sm:p-4"
+        >
+          <p className="text-ink text-14 leading-body">
+            This form already made link {state.reference}, with a different amount or description. Nothing new was
+            created. Reload the page to make another link, or check {state.reference} in the list.
+          </p>
+          <Button type="button" variant="secondary" size="compact" onClick={() => window.location.reload()}>
+            Reload the form
+          </Button>
+        </div>
       ) : null}
 
       <Button

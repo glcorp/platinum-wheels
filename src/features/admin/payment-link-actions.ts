@@ -47,7 +47,7 @@ import {
   type PaymentLinkState,
 } from "@/features/admin/types";
 import { payLinkUrl, publicPayOrigin } from "@/features/payments/config";
-import { parseAmountToCents } from "@/features/payments/money";
+import { formatCents, parseAmountToCents } from "@/features/payments/money";
 import { cancelLink, createLink } from "@/features/payments/service";
 import { SHOP_DATE_TIME } from "@/lib/time";
 
@@ -211,12 +211,25 @@ export async function createPaymentLink(
     return { status: "unavailable", values };
   }
 
+  // `createLink` is idempotent on the key: a key that already made a link
+  // returns THAT link, whatever was submitted this time. The key is minted per
+  // page render, so this happens when a submit is repeated without a reload,
+  // for example after an `unavailable` answer whose insert had in fact
+  // committed. If the owner changed the amount or description in between,
+  // showing the new values beside the old link's URL would put a wrong amount
+  // in a customer email (D145 audit, SEC-AUTH). So a changed submit is refused
+  // and names the link that exists; an identical one shows that link, with
+  // every value read back from the stored row, never from the form.
+  if (link.amountCents !== amountCents || link.description !== rawDescription) {
+    return { status: "reused", reference: link.reference, values };
+  }
+
   revalidatePath(BUILDER_FOLDER_PATH);
   return {
     status: "success",
     url: payLinkUrl(publicPayOrigin(await requestOrigin()), link.publicToken),
     reference: link.reference,
-    amount: normalizedAmount,
+    amount: formatCents(link.amountCents),
     description: link.description,
     expiresLabel: EXPIRY_FORMAT.format(link.expiresAt),
     testMode: process.env.CONVERGE_ENV !== "production",

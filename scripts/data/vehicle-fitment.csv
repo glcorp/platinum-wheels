@@ -1,0 +1,1225 @@
+make,model,year,bolt_pattern,centre_bore_mm,lug_count,oe_wheel_diameter,oe_wheel_width,oe_offset_mm,source_model
+Acura,Integra,2023,5x114.3,64.1,5,17,7.0,45,Acura Integra
+Acura,Integra,2024,5x114.3,64.1,5,17,7.0,45,Acura Integra
+Acura,Integra,2025,5x114.3,64.1,5,17,7.0,45,Acura Integra
+Acura,MDX,2022,5x120,64.1,5,20,9.0,55,Acura MDX
+Acura,MDX,2023,5x120,64.1,5,20,9.0,55,Acura MDX
+Acura,MDX,2024,5x120,64.1,5,20,9.0,55,Acura MDX
+Acura,MDX,2025,5x120,64.1,5,20,9.0,55,Acura MDX
+Acura,NSX,2016,5x120,70.1,5,,,,Acura NSX
+Acura,NSX,2017,5x120,70.1,5,,,,Acura NSX
+Acura,NSX,2018,5x120,70.1,5,,,,Acura NSX
+Acura,NSX,2019,5x120,70.1,5,,,,Acura NSX
+Acura,NSX,2020,5x120,70.1,5,,,,Acura NSX
+Acura,NSX,2021,5x120,70.1,5,,,,Acura NSX
+Acura,NSX,2022,5x120,70.1,5,,,,Acura NSX
+Acura,RDX,2019,5x114.3,64.1,5,20,8.0,50,Acura RDX
+Acura,RDX,2020,5x114.3,64.1,5,20,8.0,50,Acura RDX
+Acura,RDX,2021,5x114.3,64.1,5,20,8.0,50,Acura RDX
+Acura,RDX,2022,5x114.3,64.1,5,20,8.0,50,Acura RDX
+Acura,RDX,2023,5x114.3,64.1,5,20,8.0,50,Acura RDX
+Acura,RDX,2024,5x114.3,64.1,5,20,8.0,50,Acura RDX
+Acura,RDX,2025,5x114.3,64.1,5,20,8.0,50,Acura RDX
+Acura,RSX,2005,5x114.3,64.1,5,,,,Acura RSX
+Acura,RSX,2006,5x114.3,64.1,5,,,,Acura RSX
+Acura,TLX,2021,5x120,64.1,5,18,8.0,50,Acura TLX
+Acura,TLX,2022,5x120,64.1,5,18,8.0,50,Acura TLX
+Acura,TLX,2023,5x120,64.1,5,18,8.0,50,Acura TLX
+Acura,TLX,2024,5x120,64.1,5,18,8.0,50,Acura TLX
+Acura,TLX,2025,5x120,64.1,5,18,8.0,50,Acura TLX
+Acura,TSX,2005,5x114.3,64.1,5,,,,Acura TSX
+Acura,TSX,2006,5x114.3,64.1,5,,,,Acura TSX
+Acura,TSX,2007,5x114.3,64.1,5,,,,Acura TSX
+Acura,TSX,2008,5x114.3,64.1,5,,,,Acura TSX
+Acura,TSX,2009,5x114.3,64.1,5,,,,Acura TSX
+Acura,TSX,2010,5x114.3,64.1,5,,,,Acura TSX
+Acura,TSX,2011,5x114.3,64.1,5,,,,Acura TSX
+Acura,TSX,2012,5x114.3,64.1,5,,,,Acura TSX
+Acura,TSX,2013,5x114.3,64.1,5,,,,Acura TSX
+Acura,TSX,2014,5x114.3,64.1,5,,,,Acura TSX
+Acura,ZDX,2024,6x132,74.5,6,20,9.0,40,Acura ZDX
+Acura,ZDX,2025,6x132,74.5,6,20,9.0,40,Acura ZDX
+Alfa Romeo,4C,2014,5x98,58.1,5,,,,Alfa Romeo 4C
+Alfa Romeo,4C,2015,5x98,58.1,5,,,,Alfa Romeo 4C Coupe [US]
+Alfa Romeo,Giulia,2016,5x110,65.1,5,16,7.0,,Alfa Romeo Giulia
+Alfa Romeo,Giulia,2020,5x110,65.1,5,17,7.5,,Alfa Romeo Giulia
+Alfa Romeo,Giulia,2023,5x110,65.1,5,18,8.0,,Alfa Romeo Giulia
+Alfa Romeo,Stelvio,2018,5x110,65.1,5,18,8.0,,Alfa Romeo Stelvio
+Alfa Romeo,Stelvio,2020,5x110,65.1,5,18,8.0,,Alfa Romeo Stelvio
+Alfa Romeo,Stelvio,2023,5x110,65.1,5,19,8.0,,Alfa Romeo Stelvio
+Audi,A3,2008,5x112,57.1,5,17,7.5,,Audi A3 [US]
+Audi,A3,2017,5x112,57.1,5,17,7.5,,Audi A3
+Audi,A3,2025,5x112,57.1,5,17,7.5,,Audi A3 Sedan
+Audi,A4,2020,5x112,66.5,5,18,8.0,,Audi A4
+Audi,A5,2020,5x112,66.5,5,18,8.0,,Audi A5 Coupe
+Audi,A5,2025,5x112,66.5,5,18,8.0,,Audi A5 Sedan [US]
+Audi,A6,2012,5x112,66.5,5,18,8.0,,Audi A6 Hybrid
+Audi,A6,2013,5x112,66.5,5,20,8.5,,Audi A6 Black Edition
+Audi,A6,2019,5x112,66.5,5,18,8.0,,Audi A6
+Audi,A6,2026,5x112,66.5,5,19,8.5,,Audi A6 Sedan
+Audi,A8,2013,5x112,66.5,5,19,8.5,,Audi A8 Hybrid
+Audi,A8 L,2022,5x112,66.5,5,20,9.0,,Audi A8 L [US]
+Audi,Q3,2026,5x112,57.1,5,19,8.5,,Audi Q3
+Audi,Q5,2025,5x112,66.5,5,19,8.0,,Audi Q5 [US]
+Audi,Q7,2025,5x112,66.5,5,21,9.5,,Audi Q7 [US]
+Audi,Q7,2027,5x112,66.5,5,20,9.0,,Audi Q7
+Audi,Q8,2024,5x112,66.5,5,21,10.0,,Audi Q8
+Audi,R8,2011,5x112,57.1,5,,,,Audi R8 GT
+Audi,R8,2022,5x112,57.1,5,,,,Audi R8 Coupe [US]
+Audi,RS 3,2022,5x112,57.1,5,,,,Audi RS3
+Audi,RS 4,2008,5x112,57.1,5,19,9.0,,Audi RS4
+Audi,RS e-tron GT,2025,5x130,71.6,5,,,,Audi RS e-tron GT performance [US]
+Audi,RS Q8,2025,5x112,66.5,5,22,10.0,,Audi RS Q8
+Audi,S e-tron GT,2025,5x130,71.6,5,,,,Audi S e-tron GT
+Audi,S3,2017,5x112,57.1,5,18,8.0,,Audi S3
+Audi,S3,2025,5x112,57.1,5,18,8.0,,Audi S3 Sedan [US]
+Audi,S5,2012,5x112,66.5,5,19,8.5,,Audi S5
+Audi,S5,2017,5x112,66.5,5,19,8.5,,Audi S5 Coupe
+Audi,S5,2025,5x112,66.5,5,19,8.5,35,S5 Sedan [US]
+Audi,S6,2015,5x112,66.5,5,20,8.5,,Audi S6
+Audi,S8,2022,5x112,66.5,5,21,9.0,,Audi S8 [US]
+Audi,SQ5,2025,5x112,66.5,5,20,8.5,,Audi SQ5 [US]
+Audi,SQ7,2025,5x112,66.5,5,21,9.5,,Audi SQ7 [US]
+Audi,SQ7,2027,5x112,66.5,5,21,9.5,,Audi SQ7
+Audi,SQ8,2024,5x112,66.5,5,21,10.0,,Audi SQ8
+Audi,TT,2019,5x112,57.1,5,19,9.0,,Audi TT Coupe
+Audi,TTS,2019,5x112,57.1,5,19,9.0,,Audi TTS Coupe
+Buick,Cascada,2016,5x115,70.3,5,20,8.5,,Buick Cascada
+Buick,Cascada,2017,5x115,70.3,5,20,8.5,,Buick Cascada
+Buick,Cascada,2018,5x115,70.3,5,20,8.5,,Buick Cascada
+Buick,Cascada,2019,5x115,70.3,5,20,8.5,,Buick Cascada
+Buick,Encore GX,2020,5x115,70.3,5,18,7.5,,Buick Encore GX
+Buick,Encore GX,2021,5x115,70.3,5,18,7.5,,Buick Encore GX
+Buick,Encore GX,2022,5x115,70.3,5,18,7.5,,Buick Encore GX
+Buick,Encore GX,2023,5x115,70.3,5,18,7.5,,Buick Encore GX
+Buick,Envista,2024,5x115,70.3,5,19,8.0,,Buick Envista
+Buick,Envista,2025,5x115,70.3,5,19,8.0,,Buick Envista
+Buick,Envista,2026,5x115,70.3,5,19,8.0,,Buick Envista
+Buick,Lucerne,2006,5x115,70.3,5,17,7.0,,Buick Lucerne
+Buick,Lucerne,2007,5x115,70.3,5,17,7.0,,Buick Lucerne
+Buick,Lucerne,2008,5x115,70.3,5,17,7.0,,Buick Lucerne
+Buick,Lucerne,2009,5x115,70.3,5,17,7.0,,Buick Lucerne
+Buick,Lucerne,2010,5x115,70.3,5,17,7.0,,Buick Lucerne
+Buick,Lucerne,2011,5x115,70.3,5,17,7.0,,Buick Lucerne
+Buick,Rainier,2005,6x127,78.3,6,17,7.0,,Buick Rainier
+Buick,Rainier,2006,6x127,78.3,6,17,7.0,,Buick Rainier
+Buick,Rainier,2007,6x127,78.3,6,17,7.0,,Buick Rainier
+Buick,Regal TourX,2018,5x115,70.3,5,18,8.0,,Buick Regal TourX
+Buick,Regal TourX,2019,5x115,70.3,5,18,8.0,,Buick Regal TourX
+Buick,Regal TourX,2020,5x115,70.3,5,18,8.0,,Buick Regal TourX
+Buick,Rendezvous,2005,5x115,70.3,5,16,6.5,,Buick Rendezvous
+Buick,Rendezvous,2006,5x115,70.3,5,17,6.5,,Buick Rendezvous
+Buick,Rendezvous,2007,5x115,70.3,5,17,6.5,,Buick Rendezvous
+Buick,Terraza,2005,5x115,70.3,5,17,6.5,,Buick Terraza
+Cadillac,ATS,2013,5x115,70.3,5,17,8.0,,Cadillac ATS
+Cadillac,ATS,2015,5x115,70.3,5,18,8.0,,Cadillac ATS Coupe
+Cadillac,CT4,2020,5x115,70.3,5,17,8.0,,Cadillac CT4
+Cadillac,CT5,2020,5x120,66.9,5,18,8.0,,Cadillac CT5
+Cadillac,CT5,2025,5x120,66.9,5,19,8.5,,Cadillac CT5
+Cadillac,CT6,2016,5x120,66.9,5,19,8.5,,Cadillac CT6
+Cadillac,CT6,2017,5x120,66.9,5,18,8.0,,Cadillac CT6 Plug-In Hybrid
+Cadillac,CTS,2006,5x115,70.3,5,16,7.0,,Cadillac CTS
+Cadillac,CTS,2008,5x120,66.9,5,17,8.0,,Cadillac CTS
+Cadillac,CTS,2010,5x120,66.9,5,17,8.0,,Cadillac CTS Sport Wagon
+Cadillac,CTS,2011,5x120,66.9,5,18,8.5,,Cadillac CTS Coupe
+Cadillac,CTS,2014,5x120,66.9,5,18,8.5,,Cadillac CTS
+Cadillac,DTS,2006,5x115,70.3,5,17,7.0,,Cadillac DTS
+Cadillac,ELR,2014,5x115,70.3,5,20,8.5,,Cadillac ELR
+Cadillac,ELR,2016,5x115,70.3,5,20,8.5,,Cadillac ELR
+Cadillac,Escalade,2008,6x139.7,78.1,6,22,9.0,,Cadillac Escalade Platinum
+Cadillac,Escalade,2009,6x139.7,78.1,6,22,9.0,,Cadillac Escalade Hybrid
+Cadillac,Escalade,2015,6x139.7,78.1,6,22,9.0,,Cadillac Escalade
+Cadillac,Escalade,2021,6x139.7,78.1,6,22,9.0,,Cadillac Escalade
+Cadillac,Escalade,2025,6x139.7,78.1,6,22,9.0,,Cadillac Escalade
+Cadillac,Escalade IQ,2025,8x165.1,116.7,8,24,9.5,,Cadillac Escalade IQ
+Cadillac,Escalade IQL,2026,8x165.1,116.7,8,24,9.5,,Cadillac Escalade IQL
+Cadillac,Lyriq,2023,6x132,74.5,6,20,8.5,,Cadillac Lyriq
+Cadillac,Optiq,2025,6x120,66.9,6,20,8.5,,Cadillac Optiq
+Cadillac,SRX,2006,6x115,70.3,6,17,7.5,,Cadillac SRX
+Cadillac,SRX,2010,6x120,66.9,6,18,8.0,,Cadillac SRX
+Cadillac,SRX,2012,6x120,66.9,6,18,8.0,,Cadillac SRX
+Cadillac,STS,2005,5x115,70.3,5,17,8.0,,Cadillac STS
+Cadillac,STS,2008,5x115,70.3,5,17,8.0,,Cadillac STS
+Cadillac,Vistiq,2026,6x132,74.5,6,21,9.0,,Cadillac Vistiq
+Cadillac,XT4,2019,5x120,66.9,5,18,8.0,,Cadillac XT4
+Cadillac,XT4,2024,5x120,66.9,5,18,8.0,,Cadillac XT4
+Cadillac,XT5,2017,6x120,66.9,6,18,8.0,,Cadillac XT5
+Cadillac,XT5,2020,6x120,66.9,6,18,8.0,,Cadillac XT5
+Cadillac,XT6,2020,6x120,66.9,6,20,8.0,,Cadillac XT6
+Cadillac,XTS,2013,5x120,66.9,5,19,8.5,,Cadillac XTS
+Cadillac,XTS,2018,5x120,66.9,5,19,8.5,,Cadillac XTS
+Chevrolet,Aveo,2006,4x100,56.6,4,14,5.0,45,Chevrolet Aveo Sedan
+Chevrolet,Aveo,2008,4x100,56.6,4,15,5.5,45,Chevrolet Aveo
+Chevrolet,Aveo,2011,4x100,56.6,4,15,6.0,45,Chevrolet Aveo
+Chevrolet,Aveo,2012,4x100,56.6,4,15,6.0,45,Chevrolet Aveo Sedan
+Chevrolet,Blazer,2019,6x120,66.9,6,20,8.0,50,Chevrolet Blazer
+Chevrolet,Blazer,2023,6x120,66.9,6,20,8.0,50,Chevrolet Blazer
+Chevrolet,Bolt,2027,5x105,56.6,5,17,7.0,44,Chevrolet Bolt
+Chevrolet,Bolt EUV,2022,5x105,56.6,5,17,6.5,,Chevrolet Bolt EUV
+Chevrolet,Bolt EV,2017,5x105,56.6,5,17,6.5,44,Chevrolet Bolt EV
+Chevrolet,Bolt EV,2022,5x105,56.6,5,17,6.5,44,Chevrolet Bolt EV
+Chevrolet,Camaro,2010,5x120,66.9,5,18,7.5,38,Chevrolet Camaro
+Chevrolet,Camaro,2011,5x120,66.9,5,18,7.5,38,Chevrolet Camaro Convertible
+Chevrolet,Camaro,2014,5x120,66.9,5,18,7.5,38,Chevrolet Camaro
+Chevrolet,Camaro,2016,5x120,66.9,5,,,,Chevrolet Camaro
+Chevrolet,Camaro,2019,5x120,66.9,5,,,,Chevrolet Camaro
+Chevrolet,Colorado,2012,6x139.7,100.3,6,16,7.0,33,Chevrolet Colorado
+Chevrolet,Colorado,2015,6x120,66.9,6,17,8.0,33,Chevrolet Colorado
+Chevrolet,Colorado,2023,6x139.7,78.1,6,18,8.0,33,Chevrolet Colorado
+Chevrolet,Corvette,2005,5x120.65,70.3,5,,,,Chevrolet Corvette
+Chevrolet,Corvette,2008,5x120.65,70.3,5,,,,Chevrolet Corvette
+Chevrolet,Cruze,2011,5x105,56.6,5,16,6.5,39,Chevrolet Cruze
+Chevrolet,Cruze,2012,5x105,56.6,5,17,7.0,39,Chevrolet Cruze Hatchback
+Chevrolet,Cruze,2015,5x105,56.6,5,17,7.0,39,Chevrolet Cruze
+Chevrolet,Cruze,2016,5x105,56.6,5,18,7.5,39,Chevrolet Cruze
+Chevrolet,Cruze,2017,5x105,56.6,5,18,7.5,39,Chevrolet Cruze Hatchback
+Chevrolet,Cruze,2019,5x105,56.6,5,17,7.0,39,Chevrolet Cruze
+Chevrolet,Epica,2006,4x114.3,56.6,4,15,6.0,44,Chevrolet Epica
+Chevrolet,Equinox,2005,5x115,70.3,5,16,6.5,45,Chevrolet Equinox
+Chevrolet,Equinox,2008,5x115,70.3,5,18,8.0,45,Chevrolet Equinox Sport
+Chevrolet,Equinox,2010,5x120,66.9,5,18,7.0,46,Chevrolet Equinox
+Chevrolet,Equinox,2016,5x120,66.9,5,19,7.5,46,Chevrolet Equinox
+Chevrolet,Equinox,2018,5x115,70.3,5,19,7.5,45,Chevrolet Equinox
+Chevrolet,Equinox,2021,5x115,70.3,5,19,7.5,45,Chevrolet Equinox
+Chevrolet,Equinox,2025,5x115,70.3,5,19,7.5,45,Chevrolet Equinox
+Chevrolet,Impala,2006,5x115,70.3,5,16,6.5,51,Chevrolet Impala
+Chevrolet,Impala,2014,5x120,66.9,5,19,8.5,41,Chevrolet Impala
+Chevrolet,Malibu,2013,5x120,67.1,5,18,8.0,41,Chevrolet Malibu
+Chevrolet,Malibu,2014,5x120,67.1,5,18,8.0,41,Chevrolet Malibu
+Chevrolet,Malibu,2016,5x115,70.3,5,19,8.5,45,Chevrolet Malibu
+Chevrolet,Malibu,2019,5x115,70.3,5,19,8.5,45,Chevrolet Malibu
+Chevrolet,Orlando,2012,5x115,70.3,5,18,8.0,45,Chevrolet Orlando
+Chevrolet,Silverado 1500,2005,6x139.7,78.1,6,16,7.0,31,Chevrolet Silverado Hybrid
+Chevrolet,Silverado 1500,2007,6x139.7,78.1,6,17,7.5,,Chevrolet Silverado Crew Cab / Chevrolet Silverado Extended Cab / Chevrolet Silverado Regular Cab
+Chevrolet,Silverado 1500,2012,6x139.7,78.1,6,18,8.0,31,Chevrolet Silverado
+Chevrolet,Silverado 1500,2014,6x139.7,78.1,6,20,9.0,24,Chevrolet Silverado
+Chevrolet,Silverado 1500,2016,6x139.7,78.1,6,20,9.0,24,Chevrolet Silverado
+Chevrolet,Silverado 1500,2019,6x139.7,78.1,6,20,9.0,24,Chevrolet Silverado
+Chevrolet,Silverado 1500,2022,6x139.7,78.1,6,20,9.0,24,Chevrolet Silverado
+Chevrolet,Silverado 1500,2027,6x139.7,78.1,6,20,9.0,24,Chevrolet Silverado 1500
+Chevrolet,Sonic,2012,5x105,56.6,5,16,6.0,39,Chevrolet Sonic
+Chevrolet,Sonic,2017,5x105,56.6,5,17,6.5,39,Chevrolet Sonic
+Chevrolet,Spark,2013,4x100,56.6,4,15,6.0,,Chevrolet Spark
+Chevrolet,Spark,2016,4x100,56.6,4,15,6.0,45,Chevrolet Spark
+Chevrolet,Spark,2019,4x100,56.6,4,15,6.0,45,Chevrolet Spark
+Chevrolet,SS,2014,5x120,66.9,5,,,,Chevrolet SS
+Chevrolet,SS,2016,5x120,66.9,5,,,,Chevrolet SS
+Chevrolet,Suburban,2015,6x139.7,78.1,6,20,9.0,,Chevrolet Suburban
+Chevrolet,Suburban,2021,6x139.7,78.1,6,22,9.0,,Chevrolet Suburban
+Chevrolet,Suburban,2025,6x139.7,78.1,6,22,9.0,24,Chevrolet Suburban
+Chevrolet,Tahoe,2007,6x139.7,78.1,6,17,7.5,31,Chevrolet Tahoe
+Chevrolet,Tahoe,2015,6x139.7,78.1,6,20,9.0,24,Chevrolet Tahoe
+Chevrolet,Tahoe,2021,6x139.7,78.1,6,22,9.0,24,Chevrolet Tahoe
+Chevrolet,Tahoe,2025,6x139.7,78.1,6,22,9.0,24,Chevrolet Tahoe
+Chevrolet,Trailblazer,2021,5x115,70.3,5,18,7.5,40,Chevrolet Trailblazer
+Chevrolet,Trailblazer,2024,5x115,70.3,5,18,7.5,40,Chevrolet Trailblazer
+Chevrolet,Traverse,2009,6x132,74.5,6,18,8.0,50,Chevrolet Traverse
+Chevrolet,Traverse,2013,6x132,74.5,6,20,8.5,50,Chevrolet Traverse
+Chevrolet,Traverse,2018,6x120,66.9,6,20,8.0,50,Chevrolet Traverse
+Chevrolet,Traverse,2021,6x120,66.9,6,20,8.0,50,Chevrolet Traverse
+Chevrolet,Traverse,2024,6x120,66.9,6,20,8.5,50,Chevrolet Traverse
+Chevrolet,Trax,2014,5x105,56.6,5,18,7.0,38,Chevrolet Trax
+Chevrolet,Trax,2017,5x105,56.6,5,18,7.0,38,Chevrolet Trax
+Chevrolet,Trax,2024,5x115,70.3,5,18,7.5,42,Chevrolet Trax
+Chevrolet,Uplander,2005,5x115,70.3,5,17,6.5,51,Chevrolet Uplander
+Chevrolet,Volt,2011,5x115,70.3,5,17,7.0,42,Chevrolet Volt
+Chevrolet,Volt,2016,5x105,56.6,5,17,7.0,44,Chevrolet Volt
+Chrysler,200,2011,5x114.3,67.1,5,17,6.5,,Chrysler 200
+Chrysler,200,2015,5x110,65.1,5,17,7.5,,Chrysler 200
+Chrysler,300,2005,5x115,71.5,5,17,7.0,,Chrysler 300
+Chrysler,300,2011,5x115,71.5,5,17,7.0,,Chrysler 300
+Chrysler,300,2015,5x115,71.5,5,18,7.5,,Chrysler 300
+Chrysler,300C,2005,5x115,71.5,5,18,7.5,,Chrysler 300C
+Chrysler,Aspen,2007,5x139.7,77.8,5,18,8.0,,Chrysler Aspen
+Chrysler,Pacifica,2007,5x127,71.5,5,17,7.0,,Chrysler Pacifica
+Chrysler,Pacifica,2017,5x127,71.5,5,18,7.5,,Chrysler Pacifica
+Chrysler,Pacifica,2021,5x127,71.5,5,20,7.5,,Chrysler Pacifica
+Chrysler,Pacifica,2027,5x127,71.5,5,20,7.5,,Chrysler Pacifica
+Chrysler,PT Cruiser,2005,5x100,57.1,5,16,6.0,,Chrysler PT Cruiser Convertible
+Chrysler,Sebring,2007,5x114.3,67.1,5,17,6.5,,Chrysler Sebring
+Chrysler,Sebring,2008,5x114.3,67.1,5,17,6.5,,Chrysler Sebring Convertible
+Chrysler,Town and Country,2005,5x114.3,71.5,5,16,6.5,,Chrysler Town and Country
+Chrysler,Town and Country,2008,5x127,71.5,5,16,6.5,,Chrysler Town and Country
+Chrysler,Town and Country,2011,5x127,71.5,5,16,6.5,,Chrysler Town and Country
+Dodge,Avenger,2008,5x114.3,67.1,5,18,7.0,40,Dodge Avenger RT
+Dodge,Avenger,2011,5x114.3,67.1,5,17,6.5,40,Dodge Avenger
+Dodge,Avenger,2012,5x114.3,67.1,5,18,7.0,40,Dodge Avenger RT
+Dodge,Avenger,2013,5x114.3,67.1,5,18,7.0,40,Dodge Avenger Blacktop Edition
+Dodge,Caliber,2007,5x114.3,67.1,5,17,6.5,38,Dodge Caliber
+Dodge,Caliber,2010,5x114.3,67.1,5,17,6.5,38,Dodge Caliber
+Dodge,Challenger,2009,5x115,71.5,5,18,7.5,24,Dodge Challenger RT
+Dodge,Challenger,2011,5x115,71.5,5,18,7.5,24,Dodge Challenger RT
+Dodge,Challenger,2015,5x115,71.5,5,18,7.5,,Dodge Challenger
+Dodge,Challenger,2017,5x115,71.5,5,19,7.5,24,Dodge Challenger GT AWD
+Dodge,Challenger,2019,5x115,71.5,5,18,7.5,,Dodge Challenger
+Dodge,Challenger,2023,5x115,71.5,5,20,9.5,24,Dodge Challenger Convertible
+Dodge,Charger,2006,5x115,71.5,5,,,,Dodge Charger RT / Dodge Charger SXT
+Dodge,Charger,2011,5x115,71.5,5,17,7.0,24,Dodge Charger
+Dodge,Charger,2015,5x115,71.5,5,18,7.5,,Dodge Charger
+Dodge,Dakota,2005,5x139.7,77.8,5,16,7.0,25,Dodge Dakota
+Dodge,Dakota,2008,5x139.7,77.8,5,16,7.0,25,Dodge Dakota
+Dodge,Dart,2013,5x110,65.1,5,16,7.0,41,Dodge Dart
+Dodge,Durango,2005,5x139.7,77.8,5,17,7.5,25.4,Dodge Durango
+Dodge,Durango,2011,5x127,71.5,5,18,8.0,35,Dodge Durango
+Dodge,Durango,2014,5x127,71.5,5,18,8.0,35,Dodge Durango
+Dodge,Durango,2021,5x127,71.5,5,18,8.0,35,Dodge Durango
+Dodge,Grand Caravan,2005,5x114.3,71.5,5,16,6.5,40,Dodge Grand Caravan
+Dodge,Grand Caravan,2008,5x127,71.5,5,16,6.5,40,Dodge Grand Caravan
+Dodge,Grand Caravan,2011,5x127,71.5,5,16,6.5,40,Dodge Grand Caravan
+Dodge,Hornet,2023,5x110,65.1,5,18,7.5,40,Dodge Hornet
+Dodge,Journey,2009,5x127,71.5,5,17,6.5,40,Dodge Journey
+Dodge,Journey,2011,5x127,71.5,5,19,7.0,40,Dodge Journey
+Dodge,Magnum,2005,5x115,71.5,5,,,,Dodge Magnum RT / Dodge Magnum SXT
+Dodge,Magnum,2008,5x115,71.5,5,18,7.5,24,Dodge Magnum RT
+Dodge,Nitro,2007,5x114.3,71.5,5,,,,Dodge Nitro RT / Dodge Nitro SLT
+Dodge,Ram 1500,2006,5x139.7,77.8,5,17,7.0,19,Dodge Ram 1500
+Dodge,Ram 1500,2009,5x139.7,77.8,5,17,7.0,19,Dodge Ram 1500
+Dodge,Stratus,2005,5x114.3,67.1,5,17,6.5,42,Dodge Stratus Coupe
+Fiat,500L,2018,5x98,58.1,5,16,6.5,,Fiat 500L
+Ford,Bronco,2021,6x139.7,93.1,6,17,7.5,,Ford Bronco 2-door / Ford Bronco 4-door
+Ford,Bronco,2022,6x139.7,93.1,6,17,7.5,,Ford Bronco 4-door
+Ford,Bronco Sport,2021,5x108,63.4,5,17,7.0,,Ford Bronco Sport
+Ford,Bronco Sport,2025,5x108,63.4,5,17,7.0,,Ford Bronco Sport
+Ford,C-Max,2013,5x108,63.4,5,17,7.0,50,Ford C-MAX Hybrid
+Ford,C-Max,2015,5x108,63.4,5,16,6.5,50,Ford C-MAX
+Ford,Crown Victoria,2006,5x114.3,70.5,5,16,7.0,6.3,Ford Crown Victoria
+Ford,Ecosport,2018,4x108,63.4,4,16,6.5,,Ford EcoSport [US]
+Ford,Edge,2011,5x114.3,63.4,5,22,9.0,52.5,Ford Edge Sport
+Ford,Edge,2015,5x108,63.4,5,18,8.0,,Ford Edge
+Ford,Escape,2005,5x114.3,67.1,5,16,7.0,45,Ford Escape Limited
+Ford,Escape,2008,5x114.3,67.1,5,16,7.0,45,Ford Escape Hybrid
+Ford,Escape,2017,5x108,63.4,5,18,7.5,,Ford Escape
+Ford,Escape,2020,5x108,63.4,5,18,7.5,,Ford Escape
+Ford,Escape,2023,5x108,63.4,5,18,7.5,,Ford Escape
+Ford,Expedition,2018,6x135,87.1,6,18,8.5,,Ford Expedition
+Ford,Expedition,2020,6x135,87.1,6,22,9.0,,Ford Expedition
+Ford,Expedition,2022,6x135,87.1,6,20,8.5,,Ford Expedition
+Ford,Expedition,2025,6x135,87.1,6,22,9.0,,Ford Expedition
+Ford,Explorer,2016,5x114.3,63.4,5,18,8.0,,Ford Explorer
+Ford,Explorer,2018,5x114.3,63.4,5,20,9.0,,Ford Explorer Sport
+Ford,Explorer,2020,5x114.3,70.5,5,20,8.5,,Ford Explorer
+Ford,Explorer,2021,5x114.3,70.5,5,,,,Ford Explorer King Ranch Edition / Ford Explorer Timberline
+Ford,Explorer,2025,5x114.3,70.5,5,20,8.5,,Ford Explorer
+Ford,Explorer Sport Trac,2007,5x114.3,70.5,5,18,7.5,42,Ford Explorer Sport Trac
+Ford,F-150,2009,6x135,87.1,6,20,8.5,44,Ford F-150 Platinum
+Ford,F-150,2015,6x135,87.1,6,17,7.5,,Ford F-150
+Ford,F-150,2016,6x135,87.1,6,22,9.0,,Ford F-150 Limited
+Ford,F-150,2018,6x135,87.1,6,17,7.5,,Ford F-150
+Ford,F-150,2021,6x135,87.1,6,18,7.5,,Ford F-150
+Ford,F-150,2024,6x135,87.1,6,18,7.5,,Ford F-150
+Ford,F-350,2006,8x170,124.9,8,16,7.0,40,Ford F-350
+Ford,Fiesta,2014,4x108,63.4,4,15,6.0,47.5,Ford Fiesta Sedan
+Ford,Fiesta,2017,4x108,63.4,4,15,6.0,,Ford Fiesta
+Ford,Five Hundred,2005,5x114.3,63.4,5,18,7.5,44,Ford Five Hundred Limited
+Ford,Flex,2013,5x114.3,63.4,5,18,7.5,40,Ford Flex
+Ford,Focus,2015,5x108,63.4,5,16,6.5,,Ford Focus
+Ford,Freestar,2006,5x114.3,63.4,5,16,6.5,44,Ford Freestar
+Ford,Freestyle,2005,5x114.3,63.4,5,17,7.0,40,Ford Freestyle
+Ford,Fusion,2013,5x108,63.4,5,17,7.5,55,Ford Fusion Hybrid
+Ford,Fusion,2019,5x108,63.4,5,17,7.5,,Ford Fusion
+Ford,GT,2017,5x114.3,70.5,5,,,,Ford GT
+Ford,GT,2020,5x114.3,70.5,5,,,,Ford GT
+Ford,Maverick,2022,5x108,63.4,5,17,7.0,,Ford Maverick
+Ford,Maverick,2023,5x108,63.4,5,17,7.0,,Ford Maverick Tremor
+Ford,Maverick,2025,5x108,63.4,5,17,7.0,42,Ford Maverick
+Ford,Mustang,2005,5x114.3,70.5,5,16,7.0,,Ford Mustang
+Ford,Mustang,2010,5x114.3,70.5,5,17,7.0,,Ford Mustang
+Ford,Mustang,2011,5x114.3,70.5,5,18,8.0,,Ford Mustang GT
+Ford,Mustang,2013,5x114.3,70.5,5,17,7.0,,Ford Mustang
+Ford,Mustang,2015,5x114.3,70.5,5,,,,Ford Mustang Convertible / Ford Mustang GT
+Ford,Mustang,2016,5x114.3,70.5,5,18,8.0,,Ford Mustang
+Ford,Mustang,2018,5x114.3,70.5,5,,,,Ford Mustang GT Convertible / Ford Mustang GT
+Ford,Mustang,2024,5x114.3,70.5,5,18,8.0,,Ford Mustang
+Ford,Mustang,2025,5x114.3,70.5,5,19,9.0,50,Ford Mustang
+Ford,Mustang GTD,2025,5x114.3,70.5,5,,,,Ford Mustang GTD
+Ford,Mustang Mach-E,2021,5x108,63.4,5,18,7.5,,Ford Mustang Mach-E
+Ford,Mustang Mach-E,2025,5x108,63.4,5,19,7.5,45,Ford Mustang Mach-E
+Ford,Ranger,2019,6x139.7,93.1,6,17,7.5,,Ford Ranger [US]
+Ford,Ranger,2021,6x139.7,93.1,6,17,8.0,,Ford Ranger Tremor
+Ford,Ranger,2023,6x139.7,93.1,6,17,7.5,,Ford Ranger
+Ford,Ranger,2024,6x139.7,93.1,6,18,8.0,,Ford Ranger [US]
+Ford,Ranger,2025,6x139.7,93.1,6,,,,Ford Ranger Plug-in Hybrid
+Ford,Taurus,2013,5x114.3,63.4,5,18,8.0,,Ford Taurus
+Ford,Taurus X,2008,5x114.3,63.4,5,18,7.5,44,Ford Taurus X
+Ford,Transit Connect,2014,5x108,63.4,5,16,6.5,50,Ford Transit Connect
+Ford,Transit Connect,2019,5x108,63.4,5,16,6.5,,Ford Transit Connect Wagon
+Genesis,G70,2022,5x114.3,67.1,5,,,,Genesis G70
+Genesis,G80,2022,5x114.3,67.1,5,,,,Genesis G80 [US]
+Genesis,G90,2023,5x114.3,67.1,5,,,,Genesis G90
+Genesis,GV60 Magma,2027,5x114.3,67.1,5,21,9.5,40,Genesis GV60 Magma
+Genesis,GV80,2025,5x114.3,67.1,5,,,,Genesis GV80
+GMC,Acadia,2007,6x132,74.5,6,18,7.5,,GMC Acadia
+GMC,Acadia,2013,6x132,74.5,6,19,7.5,,GMC Acadia
+GMC,Acadia,2020,6x120,66.9,6,20,8.0,,GMC Acadia
+GMC,Acadia,2024,6x120,66.9,6,20,8.0,,GMC Acadia
+GMC,Acadia,2026,6x120,66.9,6,22,8.5,,GMC Acadia Denali Ultimate
+GMC,Canyon,2015,6x120,66.9,6,17,8.0,,GMC Canyon
+GMC,Canyon,2017,6x120,66.9,6,20,8.5,,GMC Canyon Denali
+GMC,Canyon,2021,6x120,66.9,6,18,8.5,,GMC Canyon
+GMC,Canyon,2023,6x139.7,78.1,6,18,8.5,,GMC Canyon
+GMC,Envoy,2005,6x127,78.1,6,17,7.0,,GMC Envoy Denali
+GMC,Hummer EV SUV,2024,8x165.1,116.7,8,22,9.5,35,GMC Hummer EV SUV
+GMC,Sierra 1500,2007,6x139.7,78.1,6,17,7.5,,GMC Sierra
+GMC,Sierra 1500,2009,6x139.7,78.1,6,18,8.0,,GMC Sierra Hybrid Crew Cab
+GMC,Sierra 1500,2014,6x139.7,78.1,6,18,8.5,,GMC Sierra
+GMC,Sierra 1500,2016,6x139.7,78.1,6,22,9.0,31,GMC Sierra Denali Ultimate
+GMC,Sierra 1500,2019,6x139.7,78.1,6,,,,GMC Sierra AT4 / GMC Sierra Denali
+GMC,Sierra 1500,2022,6x139.7,78.1,6,20,9.0,,GMC Sierra
+GMC,Sierra 1500,2027,6x139.7,78.1,6,20,9.0,,GMC Sierra 1500
+GMC,Terrain,2013,5x120,66.9,5,19,7.5,,GMC Terrain Denali
+GMC,Terrain,2016,5x120,66.9,5,18,7.5,,GMC Terrain
+GMC,Terrain,2018,5x115,70.3,5,18,7.0,,GMC Terrain
+GMC,Terrain,2022,5x115,70.3,5,17,7.0,,GMC Terrain AT4
+GMC,Terrain,2025,5x115,70.3,5,19,7.5,,GMC Terrain
+GMC,Yukon,2007,6x139.7,78.1,6,17,7.5,,GMC Yukon
+GMC,Yukon,2008,6x139.7,78.1,6,18,8.0,,GMC Yukon Hybrid
+GMC,Yukon,2023,6x139.7,78.1,6,22,9.0,28,GMC Yukon Denali Ultimate
+GMC,Yukon,2025,6x139.7,78.1,6,,,,GMC Yukon AT4 / GMC Yukon Denali
+GMC,Yukon XL,2007,6x139.7,78.1,6,17,7.5,,GMC Yukon XL
+GMC,Yukon XL,2015,6x139.7,78.1,6,20,9.0,,GMC Yukon XL
+Honda,Accord,2014,5x114.3,64.1,5,17,7.5,50,Honda Accord PHEV
+Honda,Accord,2015,5x114.3,64.1,5,17,7.5,50,Honda Accord PHEV
+Honda,Accord,2016,5x114.3,64.1,5,17,7.5,50,Honda Accord PHEV
+Honda,Accord,2017,5x114.3,64.1,5,17,7.5,50,Honda Accord PHEV
+Honda,Accord,2025,5x114.3,64.1,5,19,8.5,50,Honda Accord
+Honda,Civic,2025,5x114.3,64.1,5,18,8.0,45,Honda Civic
+Honda,Civic Si,2022,5x114.3,64.1,5,18,8.0,50,Honda Civic Si
+Honda,Civic Si,2023,5x114.3,64.1,5,18,8.0,50,Honda Civic Si
+Honda,Civic Si,2024,5x114.3,64.1,5,18,8.0,50,Honda Civic Si
+Honda,Civic Si,2025,5x114.3,64.1,5,18,8.0,50,Honda Civic Si
+Honda,Civic Type R,2023,5x120,64.1,5,19,9.5,60,Honda Civic Type R
+Honda,CR-V,2025,5x114.3,64.1,5,18,7.5,45,Honda CR-V
+Honda,Crosstour,2012,5x114.3,64.1,5,18,7.0,55,Honda Crosstour
+Honda,Crosstour,2013,5x114.3,64.1,5,18,7.0,55,Honda Crosstour
+Honda,Fit,2010,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2011,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2012,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2013,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2014,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2015,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2016,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2017,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2018,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2019,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,Fit,2020,4x100,56.1,4,16,6.0,45,Honda Fit
+Honda,HR-V,2016,5x114.3,64.1,5,17,7.5,55,Honda HR-V
+Honda,HR-V,2017,5x114.3,64.1,5,17,7.5,55,Honda HR-V
+Honda,HR-V,2018,5x114.3,64.1,5,17,7.5,55,Honda HR-V
+Honda,HR-V,2019,5x114.3,64.1,5,17,7.5,55,Honda HR-V
+Honda,HR-V,2020,5x114.3,64.1,5,17,7.5,55,Honda HR-V
+Honda,HR-V,2021,5x114.3,64.1,5,17,7.5,55,Honda HR-V
+Honda,HR-V,2022,5x114.3,64.1,5,17,7.5,55,Honda HR-V
+Honda,Odyssey,2018,5x120,64.1,5,19,8.0,50,Honda Odyssey
+Honda,Odyssey,2019,5x120,64.1,5,19,8.0,50,Honda Odyssey
+Honda,Odyssey,2020,5x120,64.1,5,19,8.0,50,Honda Odyssey
+Honda,Odyssey,2021,5x120,64.1,5,19,8.0,50,Honda Odyssey
+Honda,Odyssey,2022,5x120,64.1,5,19,8.0,50,Honda Odyssey
+Honda,Odyssey,2023,5x120,64.1,5,19,8.0,50,Honda Odyssey
+Honda,Odyssey,2024,5x120,64.1,5,19,8.0,50,Honda Odyssey
+Honda,Odyssey,2025,5x120,64.1,5,19,8.0,50,Honda Odyssey
+Honda,Pilot,2023,5x120,64.1,5,20,8.0,50,Honda Pilot
+Honda,Pilot,2024,5x120,64.1,5,20,8.0,50,Honda Pilot
+Honda,Pilot,2025,5x120,64.1,5,20,8.0,50,Honda Pilot
+Honda,Pilot,2026,5x120,64.1,5,20,8.0,50,Honda Pilot
+Honda,Ridgeline,2017,5x120,64.1,5,18,8.0,55,Honda Ridgeline
+Honda,Ridgeline,2018,5x120,64.1,5,18,8.0,55,Honda Ridgeline
+Honda,Ridgeline,2019,5x120,64.1,5,18,8.0,55,Honda Ridgeline
+Honda,Ridgeline,2020,5x120,64.1,5,18,8.0,55,Honda Ridgeline
+Honda,Ridgeline,2021,5x120,64.1,5,18,8.0,55,Honda Ridgeline
+Honda,Ridgeline,2022,5x120,64.1,5,18,8.0,55,Honda Ridgeline
+Honda,Ridgeline,2023,5x120,64.1,5,18,8.0,55,Honda Ridgeline
+Honda,Ridgeline,2024,5x120,64.1,5,18,8.0,55,Honda Ridgeline
+Honda,S2000,2008,5x114.3,70.1,5,,,,Honda S2000
+Honda,S2000,2009,5x114.3,70.1,5,,,,Honda S2000
+Hummer,H2,2008,8x165.1,116.7,8,20,8.5,18,Hummer H2
+Hummer,H3,2006,6x139.7,100.3,6,16,7.5,38,Hummer H3
+Hyundai,Accent,2018,4x100,54.1,4,17,6.5,45,Hyundai Accent
+Hyundai,Azera,2015,5x114.3,67.1,5,18,7.5,40,Hyundai Azera
+Hyundai,Elantra,2014,5x114.3,67.1,5,17,7.0,45,Hyundai Elantra Coupe / Hyundai Elantra Sedan
+Hyundai,Elantra,2017,5x114.3,67.1,5,18,7.5,50,Hyundai Elantra Sport
+Hyundai,Elantra,2024,5x114.3,67.1,5,17,7.0,45,Hyundai Elantra
+Hyundai,Elantra GT,2018,5x114.3,67.1,5,17,7.0,50,Hyundai Elantra GT
+Hyundai,Elantra N,2024,5x114.3,67.1,5,19,8.0,55,Hyundai Elantra N
+Hyundai,Entourage,2007,6x139.7,92.3,6,17,6.5,40,Hyundai Entourage
+Hyundai,Equus,2014,5x114.3,67.1,5,,,,Hyundai Equus
+Hyundai,Genesis,2015,5x114.3,67.1,5,18,8.0,39,Hyundai Genesis
+Hyundai,Genesis Coupe,2013,5x114.3,67.1,5,,,,Hyundai Genesis Coupe
+Hyundai,Ioniq,2020,5x114.3,67.1,5,17,7.0,53,Hyundai Ioniq
+Hyundai,Ioniq 5,2022,5x114.3,67.1,5,20,8.5,45,Hyundai Ioniq 5 [US]
+Hyundai,Ioniq 5 N,2025,5x114.3,67.1,5,21,9.5,40,Hyundai Ioniq 5 N [US] / Ioniq 5 N [US]
+Hyundai,Ioniq 6,2023,5x114.3,67.1,5,20,8.5,53,Hyundai Ioniq 6
+Hyundai,Ioniq 6 N,2026,5x114.3,67.1,5,21,9.0,45,Hyundai Ioniq 6 N
+Hyundai,Ioniq 9,2026,5x114.3,67.1,5,20,8.5,45,Hyundai Ioniq 9
+Hyundai,Kona,2020,5x114.3,67.1,5,18,7.5,52,Hyundai Kona Hybrid
+Hyundai,Kona,2024,5x114.3,67.1,5,19,7.5,45,Hyundai Kona [US]
+Hyundai,Kona N,2022,5x114.3,67.1,5,18,7.5,50,Hyundai Kona N Line [US]
+Hyundai,Nexo,2026,5x114.3,67.1,5,19,7.5,45,Hyundai Nexo
+Hyundai,Palisade,2026,5x114.3,67.1,5,20,8.5,45,Hyundai Palisade
+Hyundai,Santa Cruz,2025,5x114.3,67.1,5,20,8.5,45,Hyundai Santa Cruz
+Hyundai,Santa Fe,2024,5x114.3,67.1,5,21,8.5,64,Hyundai Santa Fe [US]
+Hyundai,Santa Fe Sport,2017,5x114.3,67.1,5,19,7.5,45,Hyundai Santa Fe Sport
+Hyundai,Sonata,2016,5x114.3,67.1,5,17,7.0,45,Hyundai Sonata Plug-in Hybrid
+Hyundai,Sonata,2020,5x114.3,67.1,5,17,7.0,45,Hyundai Sonata Hybrid
+Hyundai,Sonata,2021,5x114.3,67.1,5,19,8.0,45,Hyundai Sonata N Line
+Hyundai,Sonata,2022,5x114.3,67.1,5,19,8.0,45,Hyundai Sonata N Line Night Edition
+Hyundai,Sonata,2024,5x114.3,67.1,5,19,8.0,55,Hyundai Sonata
+Hyundai,Tiburon,2007,5x114.3,67.1,5,17,7.0,46,Hyundai Tiburon Coupe
+Hyundai,Tucson,2022,5x114.3,67.1,5,19,7.5,45,Hyundai Tucson N Line [US] / Hyundai Tucson Plug-in Hybrid [US]
+Hyundai,Tucson,2025,5x114.3,67.1,5,19,7.5,45,Hyundai Tucson [US]
+Hyundai,Veloster,2019,5x114.3,67.1,5,18,7.5,50,Hyundai Veloster
+Hyundai,Veloster N,2019,5x114.3,67.1,5,19,8.0,55,Hyundai Veloster N
+Hyundai,Venue,2020,5x114.3,67.1,5,17,6.5,45,Hyundai Venue
+Hyundai,Veracruz,2007,5x114.3,67.1,5,18,7.5,40,Hyundai Veracruz
+Infiniti,EX35,2008,5x114.3,66.1,5,18,8.0,,Infiniti EX35
+Infiniti,FX35,2009,5x114.3,66.1,5,18,8.0,,Infiniti FX35
+Infiniti,FX45,2006,5x114.3,66.1,5,20,8.0,,Infiniti FX45
+Infiniti,FX50,2009,5x114.3,66.1,5,21,9.5,,Infiniti FX50
+Infiniti,G35,2005,5x114.3,66.1,5,17,7.0,,Infiniti G35 Sport Sedan
+Infiniti,G35,2006,5x114.3,66.1,5,,,,Infiniti G35 Sport Coupe
+Infiniti,G35,2007,5x114.3,66.1,5,17,7.5,,Infiniti G35 Sedan
+Infiniti,G37,2008,5x114.3,66.1,5,,,,Infiniti G37 Coupe
+Infiniti,G37,2009,5x114.3,66.1,5,17,7.5,,Infiniti G37
+Infiniti,G37,2010,5x114.3,66.1,5,17,7.5,,Infiniti G37 Sedan
+Infiniti,M35,2006,5x114.3,66.1,5,18,8.0,,Infiniti M35
+Infiniti,M35h,2013,5x114.3,66.1,5,18,8.0,,Infiniti M35h GT
+Infiniti,M45,2006,5x114.3,66.1,5,18,8.0,,Infiniti M45
+Infiniti,Q45,2006,5x114.3,66.1,5,17,7.5,,Infiniti Q45
+Infiniti,Q50,2014,5x114.3,66.1,5,17,7.5,,Infiniti Q50
+Infiniti,Q50,2018,5x114.3,66.1,5,18,7.5,,Infiniti Q50
+Infiniti,Q60,2017,5x114.3,66.1,5,,,,Infiniti Q60
+Infiniti,Q70,2015,5x114.3,66.1,5,18,8.0,,Infiniti Q70
+Infiniti,Q70L,2015,5x114.3,66.1,5,18,8.0,,Infiniti Q70L
+Infiniti,QX30,2017,5x112,66.6,5,18,7.0,,Infiniti QX30
+Infiniti,QX50,2016,5x114.3,66.1,5,18,8.0,,Infiniti QX50
+Infiniti,QX50,2021,5x114.3,66.1,5,19,7.5,,Infiniti QX50
+Infiniti,QX50,2023,5x114.3,66.1,5,20,8.5,,Infiniti QX50 Sport
+Infiniti,QX55,2022,5x114.3,66.1,5,20,8.5,,Infiniti QX55
+Infiniti,QX56,2006,6x139.7,77.8,6,18,8.0,,Infiniti QX56
+Infiniti,QX56,2008,6x139.7,77.8,6,20,8.0,,Infiniti QX56
+Infiniti,QX60,2016,5x114.3,66.1,5,18,7.5,,Infiniti QX60
+Infiniti,QX60,2025,5x114.3,66.1,5,20,8.0,,Infiniti QX60 Black Edition
+Infiniti,QX60,2026,5x114.3,66.1,5,20,8.0,,Infiniti QX60
+Infiniti,QX65,2027,5x114.3,66.1,5,20,8.5,,Infiniti QX65
+Infiniti,QX80,2022,6x139.7,77.8,6,22,8.0,,Infiniti QX80
+Infiniti,QX80,2025,6x139.7,77.8,6,22,8.5,,Infiniti QX80
+Infiniti,QX80,2026,6x139.7,77.8,6,22,8.5,,Infiniti QX80 Sport
+Jaguar,E-PACE,2021,5x108,63.4,5,18,8.0,45,Jaguar E-Pace
+Jaguar,F-PACE,2021,5x108,63.4,5,19,8.5,45,Jaguar F-Pace
+Jaguar,F-TYPE,2015,5x108,63.4,5,,,,Jaguar F-Type Coupe
+Jaguar,F-TYPE,2021,5x108,63.4,5,,,,Jaguar F-Type
+Jaguar,I-PACE,2019,5x108,63.4,5,20,8.0,52,Jaguar I-Pace
+Jaguar,S-Type,2008,5x108,63.4,5,17,7.5,60,Jaguar S-Type
+Jaguar,X-Type,2008,5x108,63.4,5,16,6.5,52,Jaguar X-Type
+Jaguar,XE,2017,5x108,63.4,5,,,,Jaguar XE AWD
+Jaguar,XE,2021,5x108,63.4,5,,,,Jaguar XE
+Jaguar,XF,2021,5x108,63.4,5,,,,Jaguar XF
+Jaguar,XJ,2013,5x108,63.4,5,,,,Jaguar XJ Ultimate
+Jaguar,XJ,2016,5x108,63.4,5,,,,Jaguar XJ
+Jaguar,XK,2007,5x108,63.4,5,,,,Jaguar XK
+Jeep,Cherokee,2008,5x114.3,71.5,5,16,7.0,,Jeep Cherokee
+Jeep,Compass,2007,5x114.3,67.1,5,17,6.5,,Jeep Compass
+Jeep,Compass,2014,5x114.3,67.1,5,18,7.0,,Jeep Compass
+Jeep,Compass,2021,5x110,65.1,5,18,7.0,,Jeep Compass 4xe
+Jeep,Compass,2026,5x110,65.1,5,18,7.0,,Jeep Compass
+Jeep,Gladiator,2020,5x127,71.5,5,17,7.5,,Jeep Gladiator Mojave
+Jeep,Gladiator,2024,5x127,71.5,5,17,7.5,,Jeep Gladiator
+Jeep,Grand Cherokee,2017,5x127,71.5,5,,,,Jeep Grand Cherokee Summit / Jeep Grand Cherokee Trailhawk
+Jeep,Grand Cherokee,2022,5x127,71.5,5,20,8.5,,Jeep Grand Cherokee
+Jeep,Grand Cherokee L,2026,5x127,71.5,5,21,9.0,,Jeep Grand Cherokee L
+Jeep,Grand Wagoneer,2026,6x139.7,77.8,6,22,9.0,,Jeep Grand Wagoneer
+Jeep,Liberty,2008,5x114.3,71.5,5,16,7.0,,Jeep Liberty
+Jeep,Patriot,2007,5x114.3,67.1,5,16,6.5,,Jeep Patriot
+Jeep,Patriot,2014,5x114.3,67.1,5,17,6.5,,Jeep Patriot
+Jeep,Recon,2026,5x127,71.5,5,20,8.5,,Jeep Recon
+Jeep,Renegade,2019,5x110,65.1,5,17,7.0,,Jeep Renegade
+Jeep,Renegade,2021,5x110,65.1,5,17,7.0,,Jeep Renegade 4xe
+Jeep,Wagoneer,2022,6x139.7,77.8,6,20,9.0,,Jeep Wagoneer
+Jeep,Wagoneer,2025,6x139.7,77.8,6,20,9.0,,Jeep Wagoneer Overland Special Edition
+Jeep,Wagoneer S,2024,5x127,71.5,5,20,8.5,40,Jeep Wagoneer S
+Jeep,Wagoneer S,2025,5x127,71.5,5,20,8.5,,Jeep Wagoneer S Limited
+Jeep,Wrangler,2007,5x127,71.5,5,,,,Jeep Wrangler Rubicon / Jeep Wrangler Unlimited
+Jeep,Wrangler,2011,5x127,71.5,5,17,7.5,,Jeep Wrangler Mojave
+Jeep,Wrangler,2012,5x127,71.5,5,18,7.5,44,Jeep Wrangler Unlimited Altitude
+Jeep,Wrangler,2013,5x127,71.5,5,17,7.5,44,Jeep Wrangler Rubicon 10th Anniversary
+Jeep,Wrangler,2021,5x127,71.5,5,17,7.5,,Jeep Wrangler Rubicon 4xe
+Jeep,Wrangler,2024,5x127,71.5,5,,,,Jeep Wrangler 4xe / Jeep Wrangler Willys
+Jeep,Wrangler,2025,5x127,71.5,5,17,7.5,44,Jeep Wrangler
+Kia,Cadenza,2014,5x114.3,67.1,5,19,8.0,,Kia Cadenza
+Kia,Cadenza,2017,5x114.3,67.1,5,19,8.0,,Kia Cadenza
+Kia,Cadenza,2020,5x114.3,67.1,5,19,8.0,,Kia Cadenza
+Kia,Carnival,2022,5x114.3,67.1,5,19,7.5,,Kia Carnival
+Kia,Carnival,2025,5x114.3,67.1,5,19,7.5,,Kia Carnival
+Kia,EV3,2027,5x114.3,67.1,5,19,7.5,45,Kia EV3 [US]
+Kia,EV6,2022,5x114.3,67.1,5,20,8.5,,Kia EV6 [US]
+Kia,EV6,2025,5x114.3,67.1,5,20,8.5,,Kia EV6 [US]
+Kia,EV9,2024,5x114.3,67.1,5,21,8.5,,Kia EV9
+Kia,EV9,2026,5x114.3,67.1,5,22,9.0,,Kia EV9 GT
+Kia,Forte,2014,5x114.3,67.1,5,17,7.0,,Kia Forte
+Kia,Forte,2017,5x114.3,67.1,5,17,7.0,,Kia Forte
+Kia,Forte,2019,5x114.3,67.1,5,17,7.0,,Kia Forte
+Kia,Forte,2020,5x114.3,67.1,5,18,7.5,,Kia Forte GT
+Kia,Forte,2022,5x114.3,67.1,5,17,7.0,,Kia Forte
+Kia,K4,2025,5x114.3,67.1,5,18,7.5,,Kia K4
+Kia,K4,2026,5x114.3,67.1,5,18,7.5,,Kia K4 Hatchback
+Kia,K5,2021,5x114.3,67.1,5,18,7.5,,Kia K5
+Kia,K5,2025,5x114.3,67.1,5,19,8.0,,Kia K5
+Kia,K900,2015,5x114.3,67.1,5,,,,Kia K900
+Kia,K900,2019,5x114.3,67.1,5,,,,Kia K900
+Kia,Niro,2017,5x114.3,67.1,5,18,7.5,,Kia Niro
+Kia,Niro,2018,5x114.3,67.1,5,16,6.5,,Kia Niro Plug-In Hybrid
+Kia,Niro,2020,5x114.3,67.1,5,18,7.5,,Kia Niro Hybrid
+Kia,Niro,2023,5x114.3,67.1,5,18,7.5,,Kia Niro
+Kia,Niro,2027,5x114.3,67.1,5,18,7.5,45,Kia Niro
+Kia,Optima,2014,5x114.3,67.1,5,18,7.5,,Kia Optima
+Kia,Optima,2016,5x114.3,67.1,5,18,7.5,,Kia Optima
+Kia,Optima,2017,5x114.3,67.1,5,17,7.0,,Kia Optima Hybrid / Kia Optima Plug-In Hybrid
+Kia,Optima,2019,5x114.3,67.1,5,18,7.5,,Kia Optima [US]
+Kia,Rio,2012,4x100,54.1,4,17,6.5,,Kia Rio
+Kia,Rio,2016,4x100,54.1,4,17,6.5,,Kia Rio 5-door / Kia Rio Sedan
+Kia,Rio,2017,4x100,54.1,4,17,6.5,,Kia Rio
+Kia,Rio,2018,4x100,54.1,4,17,6.5,,Kia Rio 5-door / Kia Rio Sedan
+Kia,Rio,2021,4x100,54.1,4,17,6.5,,Kia Rio
+Kia,Sedona,2015,5x114.3,67.1,5,18,7.0,,Kia Sedona
+Kia,Sedona,2019,5x114.3,67.1,5,18,7.0,,Kia Sedona
+Kia,Seltos,2021,5x114.3,67.1,5,18,7.5,,Kia Seltos
+Kia,Seltos,2024,5x114.3,67.1,5,18,7.5,,Kia Seltos
+Kia,Seltos,2027,5x114.3,67.1,5,18,7.5,45,Kia Seltos
+Kia,Sorento,2013,5x114.3,67.1,5,19,7.5,,Kia Sorento
+Kia,Sorento,2014,5x114.3,67.1,5,19,7.5,,Kia Sorento
+Kia,Sorento,2015,5x114.3,67.1,5,19,7.5,,Kia Sorento
+Kia,Sorento,2018,5x114.3,67.1,5,19,7.5,,Kia Sorento
+Kia,Sorento,2019,5x114.3,67.1,5,19,7.5,,Kia Sorento [US]
+Kia,Sorento,2021,5x114.3,67.1,5,20,8.5,,Kia Sorento [US]
+Kia,Sorento,2022,5x114.3,67.1,5,19,7.5,,Kia Sorento PHEV [US]
+Kia,Sorento,2024,5x114.3,67.1,5,20,8.5,,Kia Sorento
+Kia,Soul,2012,5x114.3,67.1,5,18,7.0,,Kia Soul
+Kia,Soul,2014,5x114.3,67.1,5,18,7.5,,Kia Soul
+Kia,Soul,2020,5x114.3,67.1,5,18,7.5,,Kia Soul
+Kia,Soul,2023,5x114.3,67.1,5,18,7.5,,Kia Soul
+Kia,Sportage,2014,5x114.3,67.1,5,18,7.0,,Kia Sportage
+Kia,Sportage,2016,5x114.3,67.1,5,19,7.5,,Kia Sportage
+Kia,Sportage,2017,5x114.3,67.1,5,19,7.5,,Kia Sportage [US]
+Kia,Sportage,2019,5x114.3,67.1,5,19,7.5,,Kia Sportage
+Kia,Sportage,2020,5x114.3,67.1,5,19,7.5,,Kia Sportage [US]
+Kia,Sportage,2022,5x114.3,67.1,5,19,7.5,,Kia Sportage
+Kia,Sportage,2023,5x114.3,67.1,5,19,7.5,,Kia Sportage PHEV [US] / Kia Sportage [US]
+Kia,Sportage,2026,5x114.3,67.1,5,19,7.5,,Kia Sportage
+Kia,Stinger,2018,5x114.3,67.1,5,,,,Kia Stinger
+Kia,Stinger,2022,5x114.3,67.1,5,,,,Kia Stinger
+Kia,Telluride,2020,5x114.3,67.1,5,20,8.5,,Kia Telluride
+Kia,Telluride,2023,5x114.3,67.1,5,20,8.5,,Kia Telluride
+Kia,Telluride,2027,5x114.3,67.1,5,20,8.5,50,Kia Telluride
+Land Rover,Discovery,2017,5x120,72.6,5,20,8.5,,Land Rover Discovery
+Land Rover,Discovery,2021,5x120,72.6,5,21,9.5,,Land Rover Discovery
+Land Rover,Discovery Sport,2015,5x108,63.4,5,19,8.0,,Land Rover Discovery Sport
+Land Rover,Discovery Sport,2024,5x108,63.4,5,20,8.0,,Land Rover Discovery Sport
+Land Rover,LR3,2005,5x120,72.6,5,18,8.0,,Land Rover LR3
+Land Rover,Range Rover,2011,5x120,72.6,5,19,8.0,,Land Rover Range Rover
+Land Rover,Range Rover,2013,5x120,72.6,5,20,8.5,,Land Rover Range Rover
+Land Rover,Range Rover,2015,5x120,72.6,5,21,9.5,42,Land Rover Range Rover Hybrid
+Land Rover,Range Rover Evoque,2012,5x108,63.4,5,19,8.0,45,Land Rover Range Rover Evoque 5-door
+Land Rover,Range Rover Evoque,2016,5x108,63.4,5,19,8.0,,Land Rover Range Rover Evoque
+Land Rover,Range Rover Evoque,2017,5x108,63.4,5,20,8.0,45,Land Rover Range Rover Evoque Convertible
+Land Rover,Range Rover Evoque,2024,5x108,63.4,5,20,8.0,,Land Rover Range Rover Evoque
+Land Rover,Range Rover Sport,2010,5x120,72.6,5,19,9.0,,Land Rover Range Rover Sport
+Land Rover,Range Rover Sport,2013,5x120,72.6,5,20,9.5,,Land Rover Range Rover Sport
+Land Rover,Range Rover Sport,2018,5x120,72.6,5,21,9.5,42,Land Rover Range Rover Sport PHEV
+Land Rover,Range Rover Sport,2023,5x120,72.6,5,21,9.5,,Land Rover Range Rover Sport
+Land Rover,Range Rover Velar,2024,5x108,63.4,5,20,8.5,,Land Rover Range Rover Velar
+Lexus,ES,2005,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2006,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2007,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2008,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2009,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2010,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2011,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2012,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2013,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2014,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2015,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2016,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2017,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2018,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2019,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2020,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2021,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2022,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2023,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2024,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2025,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,ES,2026,5x114.3,60.1,5,18,8.0,45,Lexus ES
+Lexus,GS,2015,5x114.3,60.1,5,,,,Lexus GS F
+Lexus,GS,2016,5x114.3,60.1,5,,,,Lexus GS F
+Lexus,GS,2017,5x114.3,60.1,5,,,,Lexus GS F
+Lexus,GS,2018,5x114.3,60.1,5,,,,Lexus GS F
+Lexus,GS,2019,5x114.3,60.1,5,,,,Lexus GS F
+Lexus,GS,2020,5x114.3,60.1,5,,,,Lexus GS F
+Lexus,GX,2024,6x139.7,95.1,6,20,8.0,20,Lexus GX
+Lexus,IS,2010,5x114.3,60.1,5,,,,Lexus IS Convertible
+Lexus,IS,2016,5x114.3,60.1,5,,,,Lexus IS F-Sport [US]
+Lexus,IS,2021,5x114.3,60.1,5,18,8.5,45,Lexus IS
+Lexus,LS,2018,5x120,60.1,5,19,8.0,25,Lexus LS
+Lexus,LS,2019,5x120,60.1,5,19,8.0,25,Lexus LS
+Lexus,LS,2020,5x120,60.1,5,19,8.0,25,Lexus LS
+Lexus,LS,2021,5x120,60.1,5,19,8.0,25,Lexus LS
+Lexus,LX,2022,6x139.7,95.1,6,20,8.0,55,Lexus LX [US]
+Lexus,NX,2015,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2016,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2017,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2018,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2019,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2020,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2021,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2022,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2023,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2024,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,NX,2025,5x114.3,60.1,5,18,7.5,35,Lexus NX
+Lexus,RC,2015,5x114.3,60.1,5,19,8.0,45,Lexus RC F Sport
+Lexus,RC,2016,5x114.3,60.1,5,19,8.0,45,Lexus RC F Sport
+Lexus,RC,2017,5x114.3,60.1,5,19,8.0,45,Lexus RC F Sport
+Lexus,RC,2018,5x114.3,60.1,5,19,8.0,45,Lexus RC F Sport
+Lexus,RC,2019,5x114.3,60.1,5,,,,Lexus RC
+Lexus,RC,2020,5x114.3,60.1,5,,,,Lexus RC F Sport / Lexus RC F
+Lexus,RC,2021,5x114.3,60.1,5,19,8.0,45,Lexus RC F Sport
+Lexus,RC,2022,5x114.3,60.1,5,19,8.0,45,Lexus RC F Sport
+Lexus,RC,2023,5x114.3,60.1,5,19,8.0,45,Lexus RC F Sport
+Lexus,RC,2024,5x114.3,60.1,5,19,8.0,45,Lexus RC F Sport
+Lexus,RC,2025,5x114.3,60.1,5,19,8.0,45,Lexus RC F Sport
+Lexus,RX,2023,5x114.3,60.1,5,19,8.0,40,Lexus RX [US] / RX [US]
+Lexus,RZ,2023,5x114.3,60.1,5,20,8.0,40,Lexus RZ
+Lexus,RZ,2024,5x114.3,60.1,5,20,8.0,40,Lexus RZ
+Lexus,RZ,2025,5x114.3,60.1,5,20,8.0,40,Lexus RZ
+Lexus,RZ,2026,5x114.3,60.1,5,20,8.0,40,Lexus RZ
+Lexus,RZ,2027,5x114.3,60.1,5,20,8.0,40,Lexus RZ
+Lexus,TX,2024,5x120,60.1,5,,,,Lexus TX
+Lexus,UX,2019,5x114.3,60.1,5,18,7.0,40,Lexus UX [US]
+Lincoln,Aviator,2005,5x114.3,70.5,5,17,7.5,44,Lincoln Aviator
+Lincoln,Aviator,2020,5x114.3,70.5,5,22,9.5,38,Lincoln Aviator
+Lincoln,Aviator,2021,5x114.3,70.5,5,22,9.5,38,Lincoln Aviator
+Lincoln,Aviator,2022,5x114.3,70.5,5,22,9.5,38,Lincoln Aviator
+Lincoln,Aviator,2023,5x114.3,70.5,5,22,9.5,38,Lincoln Aviator
+Lincoln,Aviator,2024,5x114.3,70.5,5,22,9.5,38,Lincoln Aviator
+Lincoln,Aviator,2025,5x114.3,70.5,5,22,9.5,38,Lincoln Aviator
+Lincoln,Continental,2017,5x108,63.4,5,20,8.5,55,Lincoln Continental
+Lincoln,Continental,2018,5x108,63.4,5,20,8.5,55,Lincoln Continental
+Lincoln,Continental,2019,5x108,63.4,5,20,8.5,55,Lincoln Continental
+Lincoln,Continental,2020,5x108,63.4,5,20,8.5,55,Lincoln Continental
+Lincoln,Corsair,2020,5x108,63.4,5,19,8.0,52,Lincoln Corsair
+Lincoln,Corsair,2023,5x108,63.4,5,20,8.0,52,Lincoln Corsair
+Lincoln,Corsair,2024,5x108,63.4,5,20,8.0,52,Lincoln Corsair
+Lincoln,Corsair,2025,5x108,63.4,5,20,8.0,52,Lincoln Corsair
+Lincoln,Mark LT,2006,6x135,87.1,6,18,8.0,44,Lincoln Mark LT
+Lincoln,Mark LT,2007,6x135,87.1,6,18,8.0,44,Lincoln Mark LT
+Lincoln,Mark LT,2008,6x135,87.1,6,18,8.0,44,Lincoln Mark LT
+Lincoln,MKC,2015,5x108,63.4,5,18,8.0,52.5,Lincoln MKC
+Lincoln,MKC,2016,5x108,63.4,5,18,8.0,52.5,Lincoln MKC
+Lincoln,MKC,2017,5x108,63.4,5,18,8.0,52.5,Lincoln MKC
+Lincoln,MKC,2018,5x108,63.4,5,18,8.0,52.5,Lincoln MKC
+Lincoln,MKC,2019,5x108,63.4,5,18,8.0,52.5,Lincoln MKC
+Lincoln,MKS,2009,5x114.3,63.4,5,19,8.0,39,Lincoln MKS
+Lincoln,MKS,2010,5x114.3,63.4,5,19,8.0,39,Lincoln MKS
+Lincoln,MKS,2011,5x114.3,63.4,5,19,8.0,39,Lincoln MKS
+Lincoln,MKS,2012,5x114.3,63.4,5,19,8.0,39,Lincoln MKS
+Lincoln,MKS,2013,5x114.3,63.4,5,19,8.0,39,Lincoln MKS
+Lincoln,MKS,2014,5x114.3,63.4,5,19,8.0,39,Lincoln MKS
+Lincoln,MKS,2015,5x114.3,63.4,5,19,8.0,39,Lincoln MKS
+Lincoln,MKS,2016,5x114.3,63.4,5,19,8.0,39,Lincoln MKS
+Lincoln,MKT,2010,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKT,2011,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKT,2012,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKT,2013,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKT,2014,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKT,2015,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKT,2016,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKT,2017,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKT,2018,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKT,2019,5x114.3,63.4,5,19,8.0,39,Lincoln MKT
+Lincoln,MKX,2007,5x114.3,70.5,5,18,8.0,40,Lincoln MKX
+Lincoln,MKX,2008,5x114.3,70.5,5,18,8.0,40,Lincoln MKX
+Lincoln,MKX,2009,5x114.3,70.5,5,18,8.0,40,Lincoln MKX
+Lincoln,MKX,2010,5x114.3,70.5,5,18,8.0,40,Lincoln MKX
+Lincoln,MKX,2011,5x114.3,70.5,5,18,8.0,40,Lincoln MKX
+Lincoln,MKX,2012,5x114.3,70.5,5,18,8.0,40,Lincoln MKX
+Lincoln,MKX,2013,5x114.3,70.5,5,18,8.0,40,Lincoln MKX
+Lincoln,MKX,2014,5x114.3,70.5,5,18,8.0,40,Lincoln MKX
+Lincoln,MKX,2015,5x114.3,70.5,5,18,8.0,40,Lincoln MKX
+Lincoln,MKX,2016,5x108,63.4,5,20,8.0,50,Lincoln MKX
+Lincoln,MKX,2017,5x108,63.4,5,20,8.0,50,Lincoln MKX
+Lincoln,MKX,2018,5x108,63.4,5,20,8.0,50,Lincoln MKX
+Lincoln,MKZ,2007,5x114.3,67.1,5,17,7.5,44,Lincoln MKZ
+Lincoln,MKZ,2008,5x114.3,67.1,5,17,7.5,44,Lincoln MKZ
+Lincoln,MKZ,2009,5x114.3,67.1,5,17,7.5,44,Lincoln MKZ
+Lincoln,MKZ,2010,5x114.3,67.1,5,17,7.5,44,Lincoln MKZ
+Lincoln,MKZ,2011,5x114.3,67.1,5,17,7.5,44,Lincoln MKZ
+Lincoln,MKZ,2012,5x114.3,67.1,5,17,7.5,44,Lincoln MKZ
+Lincoln,MKZ,2013,5x108,63.4,5,19,8.0,55,Lincoln MKZ
+Lincoln,MKZ,2014,5x108,63.4,5,19,8.0,55,Lincoln MKZ
+Lincoln,MKZ,2015,5x108,63.4,5,19,8.0,55,Lincoln MKZ
+Lincoln,MKZ,2016,5x108,63.4,5,19,8.0,55,Lincoln MKZ
+Lincoln,MKZ,2017,5x108,63.4,5,19,8.0,55,Lincoln MKZ
+Lincoln,MKZ,2018,5x108,63.4,5,19,8.0,55,Lincoln MKZ
+Lincoln,MKZ,2019,5x108,63.4,5,19,8.0,55,Lincoln MKZ
+Lincoln,MKZ,2020,5x108,63.4,5,19,8.0,55,Lincoln MKZ
+Lincoln,Nautilus,2019,5x108,63.4,5,20,8.0,50,Lincoln Nautilus
+Lincoln,Nautilus,2020,5x108,63.4,5,20,8.0,50,Lincoln Nautilus
+Lincoln,Nautilus,2021,5x108,63.4,5,21,9.0,50,Lincoln Nautilus
+Lincoln,Nautilus,2022,5x108,63.4,5,21,9.0,50,Lincoln Nautilus
+Lincoln,Nautilus,2023,5x108,63.4,5,21,9.0,50,Lincoln Nautilus
+Lincoln,Nautilus,2024,5x114.3,70.5,5,21,8.5,60,Lincoln Nautilus
+Lincoln,Nautilus,2025,5x114.3,70.5,5,21,8.5,60,Lincoln Nautilus
+Lincoln,Navigator,2007,6x135,87.1,6,18,8.0,44,Lincoln Navigator
+Lincoln,Navigator,2008,6x135,87.1,6,18,8.0,44,Lincoln Navigator
+Lincoln,Navigator,2009,6x135,87.1,6,18,8.0,44,Lincoln Navigator
+Lincoln,Navigator,2010,6x135,87.1,6,18,8.0,44,Lincoln Navigator
+Lincoln,Navigator,2011,6x135,87.1,6,18,8.0,44,Lincoln Navigator
+Lincoln,Navigator,2012,6x135,87.1,6,18,8.0,44,Lincoln Navigator
+Lincoln,Navigator,2013,6x135,87.1,6,18,8.0,44,Lincoln Navigator
+Lincoln,Navigator,2014,6x135,87.1,6,18,8.0,44,Lincoln Navigator
+Lincoln,Navigator,2015,6x135,87.1,6,20,8.5,44,Lincoln Navigator
+Lincoln,Navigator,2016,6x135,87.1,6,20,8.5,44,Lincoln Navigator
+Lincoln,Navigator,2017,6x135,87.1,6,20,8.5,44,Lincoln Navigator
+Lincoln,Navigator,2018,6x135,87.1,6,22,9.5,44,Lincoln Navigator
+Lincoln,Navigator,2019,6x135,87.1,6,22,9.5,44,Lincoln Navigator
+Lincoln,Navigator,2020,6x135,87.1,6,22,9.5,44,Lincoln Navigator
+Lincoln,Navigator,2021,6x135,87.1,6,22,9.5,44,Lincoln Navigator
+Lincoln,Navigator,2022,6x135,87.1,6,22,9.5,44,Lincoln Navigator
+Lincoln,Navigator,2023,6x135,87.1,6,22,9.5,44,Lincoln Navigator
+Lincoln,Navigator,2024,6x135,87.1,6,22,9.5,44,Lincoln Navigator
+Lincoln,Navigator,2025,6x135,87.1,6,22,9.5,44,Lincoln Navigator
+Lincoln,Town Car,2005,5x114.3,70.5,5,17,7.0,9,Lincoln Town Car
+Lincoln,Town Car,2006,5x114.3,70.5,5,17,7.0,9,Lincoln Town Car
+Lincoln,Town Car,2007,5x114.3,70.5,5,17,7.0,9,Lincoln Town Car
+Lincoln,Town Car,2008,5x114.3,70.5,5,17,7.0,9,Lincoln Town Car
+Lincoln,Town Car,2009,5x114.3,70.5,5,17,7.0,9,Lincoln Town Car
+Lincoln,Town Car,2010,5x114.3,70.5,5,17,7.0,9,Lincoln Town Car
+Lincoln,Town Car,2011,5x114.3,70.5,5,17,7.0,9,Lincoln Town Car
+Lincoln,Zephyr,2006,5x114.3,67.1,5,17,7.5,44,Lincoln Zephyr
+Lucid,Gravity,2025,5x120,64.1,5,,,,Lucid Gravity
+Maserati,Ghibli,2019,5x114.3,67.1,5,,,,Maserati Ghibli
+Maserati,Ghibli,2021,5x114.3,67.1,5,,,,Maserati Ghibli Hybrid
+Maserati,Grancabrio,2027,5x110,65.1,5,,,,Maserati GranCabrio
+Maserati,Granturismo,2013,5x114.3,67.1,5,,,,Maserati GranTurismo Sport
+Maserati,Granturismo,2027,5x110,65.1,5,,,,Maserati GranTurismo
+Maserati,Grecale,2027,5x110,65.1,5,20,8.5,35,Maserati Grecale
+Maserati,Levante,2017,5x114.3,67.1,5,19,8.5,40,Maserati Levante
+Maserati,Levante,2021,5x114.3,67.1,5,19,8.5,40,Maserati Levante Hybrid
+Maserati,MCPura,2026,5x114.3,67.1,5,,,,Maserati MCPura
+Maserati,Quattroporte,2006,5x114.3,67.1,5,,,,Maserati Quattroporte Sport GT
+Maserati,Quattroporte,2019,5x114.3,67.1,5,,,,Maserati Quattroporte
+Mazda,CX-3,2019,5x114.3,67.1,5,18,7.0,50,Mazda CX-3
+Mazda,CX-5,2026,5x114.3,67.1,5,19,7.0,45,Mazda CX-5
+Mazda,CX-50,2023,5x114.3,67.1,5,20,8.0,45,Mazda CX-50
+Mazda,CX-7,2010,5x114.3,67.1,5,19,7.5,50,Mazda CX-7
+Mazda,CX-70,2025,5x114.3,67.1,5,21,9.5,45,Mazda CX-70
+Mazda,CX-9,2009,5x114.3,67.1,5,20,8.0,45,Mazda CX9
+Mazda,CX-9,2016,5x114.3,67.1,5,20,8.5,45,Mazda CX-9
+Mazda,CX-90,2024,5x114.3,67.1,5,21,9.5,45,Mazda CX-90
+Mazda,Mazda2,2020,4x100,54.1,4,,,,Mazda 2
+Mazda,Mazda3,2019,5x114.3,67.1,5,18,7.0,45,Mazda 3 Sedan
+Mazda,Mazda5,2013,5x114.3,67.1,5,17,6.5,52,Mazda 5
+Mazda,Mazda6,2008,5x114.3,67.1,5,18,8.0,60,Mazda 6 Hatchback
+Mazda,Mazda6,2009,5x114.3,67.1,5,18,8.0,60,Mazda 6 US-spec
+Mazda,Mazda6,2017,5x114.3,67.1,5,19,7.5,45,Mazda 6 Sedan
+Mazda,Mazda6,2018,5x114.3,67.1,5,19,7.5,45,Mazda 6
+Mazda,MX-5,2006,5x114.3,67.1,5,17,7.0,55,Mazda MX5
+Mazda,MX-5,2013,5x114.3,67.1,5,17,7.0,55,Mazda MX-5
+Mazda,RX-8,2009,5x114.3,67.1,5,18,8.0,50,Mazda RX-8
+Mazda,Tribute,2005,5x114.3,67.1,5,16,7.0,55,Mazda Tribute
+Mazda,Tribute,2008,5x114.3,67.1,5,16,7.0,45,Mazda Tribute Hybrid
+Mercedes-Benz,A-Class,2019,5x112,66.6,5,17,7.5,,Mercedes-Benz A-Class Sedan [US]
+Mercedes-Benz,AMG GT,2016,5x112,66.6,5,,,,Mercedes-Benz AMG GT
+Mercedes-Benz,AMG GT,2020,5x112,66.6,5,,,,Mercedes-Benz AMG GT
+Mercedes-Benz,AMG GT,2021,5x112,66.6,5,,,,Mercedes-Benz AMG GT Black Series
+Mercedes-Benz,AMG GT,2024,5x112,66.6,5,,,,Mercedes-Benz AMG GT Coupe
+Mercedes-Benz,B-Class,2012,5x112,66.6,5,16,6.5,,Mercedes-Benz B-Class
+Mercedes-Benz,B-Class,2015,5x112,66.6,5,16,6.5,,Mercedes-Benz B-Class
+Mercedes-Benz,B-Class,2019,5x112,66.6,5,16,6.5,,Mercedes-Benz B-Class
+Mercedes-Benz,C-Class,2008,5x112,66.6,5,,,,Mercedes-Benz C-Class
+Mercedes-Benz,C-Class,2012,5x112,66.6,5,,,,Mercedes-Benz C-Class
+Mercedes-Benz,C-Class,2015,5x112,66.6,5,,,,Mercedes-Benz C-Class [US]
+Mercedes-Benz,C-Class,2017,5x112,66.6,5,,,,Mercedes-Benz C-Class Coupe
+Mercedes-Benz,C-Class,2019,5x112,66.6,5,,,,Mercedes-Benz C-Class
+Mercedes-Benz,C-Class,2022,5x112,66.6,5,,,,Mercedes-Benz C-Class [US]
+Mercedes-Benz,CL-Class,2011,5x112,66.6,5,,,,Mercedes-Benz CL-Class
+Mercedes-Benz,CLA-Class,2014,5x112,66.6,5,17,7.5,,Mercedes-Benz CLA-Class
+Mercedes-Benz,CLE,2024,5x112,66.6,5,,,,Mercedes-Benz CLE Coupe
+Mercedes-Benz,CLS-Class,2012,5x112,66.6,5,,,,Mercedes-Benz CLS-Class
+Mercedes-Benz,CLS-Class,2015,5x112,66.6,5,,,,Mercedes-Benz CLS-Class
+Mercedes-Benz,E-Class,2006,5x112,66.6,5,16,7.5,,Mercedes-Benz E-Class
+Mercedes-Benz,E-Class,2010,5x112,66.6,5,17,8.0,,Mercedes-Benz E-Class
+Mercedes-Benz,E-Class,2014,5x112,66.6,5,18,8.0,,Mercedes-Benz E-Class
+Mercedes-Benz,E-Class,2017,5x112,66.6,5,18,8.0,,Mercedes-Benz E-Class
+Mercedes-Benz,E-Class,2021,5x112,66.6,5,18,8.0,,Mercedes-Benz E-Class
+Mercedes-Benz,E-Class,2024,5x112,66.6,5,19,8.5,,Mercedes-Benz E-Class
+Mercedes-Benz,G-Class,2009,5x130,84.1,5,18,7.5,,Mercedes-Benz G-Class
+Mercedes-Benz,G-Class,2013,5x130,84.1,5,18,8.0,,Mercedes-Benz G-Class
+Mercedes-Benz,G-Class,2016,5x130,84.1,5,18,7.5,,Mercedes-Benz G-Class
+Mercedes-Benz,G-Class,2019,5x130,84.1,5,18,8.0,,Mercedes-Benz G-Class
+Mercedes-Benz,G-Class,2025,5x130,84.1,5,19,8.5,,Mercedes-Benz G-Class
+Mercedes-Benz,GL-Class,2006,5x112,66.6,5,18,8.0,,Mercedes-Benz GL-Class
+Mercedes-Benz,GL-Class,2013,5x112,66.6,5,19,8.5,,Mercedes-Benz GL-Class
+Mercedes-Benz,GLA-Class,2015,5x112,66.6,5,17,6.5,,Mercedes-Benz GLA-Class
+Mercedes-Benz,GLK-Class,2013,5x112,66.6,5,17,7.5,,Mercedes-Benz GLK-Class
+Mercedes-Benz,M-Class,2009,5x112,66.6,5,18,8.0,,Mercedes-Benz M-Class
+Mercedes-Benz,R-Class,2008,5x112,66.6,5,18,8.0,,Mercedes-Benz R-Class
+Mercedes-Benz,R-Class,2011,5x112,66.6,5,18,8.0,,Mercedes-Benz R-Class
+Mercedes-Benz,S-Class,2006,5x112,66.6,5,,,,Mercedes-Benz S-Class
+Mercedes-Benz,S-Class,2014,5x112,66.6,5,,,,Mercedes-Benz S-Class
+Mercedes-Benz,S-Class,2015,5x112,66.6,5,,,,Mercedes-Benz S-Class Coupe
+Mercedes-Benz,S-Class,2018,5x112,66.6,5,,,,Mercedes-Benz S-Class
+Mercedes-Benz,S-Class,2021,5x112,66.6,5,,,,Mercedes-Benz S-Class
+Mercedes-Benz,SL-Class,2006,5x112,66.6,5,,,,Mercedes-Benz SL-Class
+Mercedes-Benz,SL-Class,2013,5x112,66.6,5,,,,Mercedes-Benz SL-Class
+Mercedes-Benz,SLK-Class,2008,5x112,66.6,5,16,7.0,,Mercedes-Benz SLK-Class
+Mercedes-Benz,SLK-Class,2012,5x112,66.6,5,17,7.5,,Mercedes-Benz SLK-Class
+Mercury,Mariner,2006,5x114.3,67.1,5,16,7.0,45,Mercury Mariner Hybrid
+Mercury,Mariner,2008,5x114.3,67.1,5,16,7.0,45,Mercury Mariner
+Mercury,Milan,2010,5x114.3,67.1,5,16,6.5,44,Mercury Milan
+Mercury,Montego,2006,5x114.3,63.4,5,17,7.5,44,Mercury Montego
+Mercury,Mountaineer,2006,5x114.3,70.5,5,17,7.5,44,Mercury Mountaineer
+Mercury,Sable,2008,5x114.3,63.4,5,17,7.5,44,Mercury Sable
+MINI,Clubman,2008,4x100,56.1,4,15,5.5,,Mini Clubman
+MINI,Clubman,2016,5x112,66.6,5,16,6.5,,Mini Clubman
+MINI,Cooper,2007,4x100,56.1,4,15,5.5,,Mini Cooper
+MINI,Cooper Convertible,2009,4x100,56.1,4,15,5.5,,Mini Cooper Convertible
+MINI,Countryman,2015,5x120,72.6,5,16,6.5,,Mini Countryman
+MINI,Countryman,2017,5x112,66.6,5,17,7.5,,Mini Countryman Plug-in Hybrid
+MINI,Countryman,2021,5x112,66.6,5,16,6.5,,Mini Countryman
+MINI,Paceman,2015,5x120,72.6,5,16,6.5,,Mini Paceman
+Mitsubishi,Eclipse,2009,5x114.3,67.1,5,18,8.0,46,Mitsubishi Eclipse GT
+Mitsubishi,Endeavor,2007,5x114.3,67.1,5,17,7.5,42,Mitsubishi Endeavor SE
+Mitsubishi,Galant,2009,5x114.3,67.1,5,16,6.5,46,Mitsubishi Galant
+Mitsubishi,Lancer,2016,5x114.3,67.1,5,18,7.0,46,Mitsubishi Lancer GT
+Mitsubishi,Lancer SportBack,2009,5x114.3,67.1,5,16,6.5,46,Mitsubishi Lancer Sportback
+Mitsubishi,Mirage,2017,4x100,56.1,4,15,5.5,46,Mitsubishi Mirage GT
+Mitsubishi,Mirage,2020,4x100,56.1,4,14,4.5,46,Mitsubishi Mirage
+Mitsubishi,Mirage G4,2017,4x100,56.1,4,14,5.5,46,Mitsubishi Mirage G4
+Mitsubishi,Montero,2005,6x139.7,67.1,6,16,7.0,46,Mitsubishi Montero
+Mitsubishi,Outlander,2010,5x114.3,67.1,5,18,7.0,38,Mitsubishi Outlander GT
+Mitsubishi,Outlander,2022,5x114.3,67.1,5,20,8.0,38,Mitsubishi Outlander PHEV
+Mitsubishi,Outlander Sport,2018,5x114.3,67.1,5,18,7.0,38,Mitsubishi Outlander Sport
+Mitsubishi,RVR,2011,5x114.3,67.1,5,16,6.5,46,Mitsubishi RVR
+Nissan,350Z,2006,5x114.3,66.1,5,,,,Nissan 350Z
+Nissan,370Z,2009,5x114.3,66.1,5,,,,Nissan 370Z
+Nissan,370Z,2010,5x114.3,66.1,5,,,,Nissan 370Z Black Edition
+Nissan,370Z,2011,5x114.3,66.1,5,,,,Nissan 370Z
+Nissan,370Z,2013,5x114.3,66.1,5,,,,Nissan 370Z
+Nissan,370Z,2020,5x114.3,66.1,5,,,,Nissan 370Z 50th Anniversary Edition
+Nissan,Altima,2005,5x114.3,66.1,5,16,6.5,45,Nissan Altima
+Nissan,Altima,2007,5x114.3,66.1,5,16,7.0,45,Nissan Altima
+Nissan,Altima,2008,5x114.3,66.1,5,17,7.5,45,Nissan Altima Coupe
+Nissan,Altima,2010,5x114.3,66.1,5,,,,Nissan Altima Coupe / Nissan Altima Sedan
+Nissan,Altima,2013,5x114.3,66.1,5,18,7.5,45,Nissan Altima Sedan
+Nissan,Altima,2019,5x114.3,66.1,5,19,8.0,55,Nissan Altima
+Nissan,Altima,2023,5x114.3,66.1,5,19,8.0,45,Nissan Altima
+Nissan,Ariya,2026,5x114.3,66.1,5,19,7.5,40,Nissan Ariya
+Nissan,Armada,2012,6x139.7,77.8,6,20,8.0,35,Nissan Armada
+Nissan,Armada,2017,6x139.7,77.8,6,20,8.0,35,Nissan Armada
+Nissan,Armada,2021,6x139.7,77.8,6,20,8.0,35,Nissan Armada
+Nissan,Cube,2010,4x100,60.1,4,16,6.0,42,Nissan Cube
+Nissan,Frontier,2022,6x114.3,66.1,6,17,7.5,30,Nissan Frontier
+Nissan,Frontier,2025,6x114.3,66.1,6,17,7.5,30,Nissan Frontier
+Nissan,Frontier,2027,6x114.3,66.1,6,,,,Nissan Frontier Sport Edition
+Nissan,GT-R,2011,5x114.3,66.1,5,,,,Nissan GT-R
+Nissan,GT-R,2012,5x114.3,66.1,5,,,,Nissan GT-R
+Nissan,GT-R,2013,5x114.3,66.1,5,,,,Nissan GT-R
+Nissan,GT-R,2014,5x114.3,66.1,5,,,,Nissan GT-R
+Nissan,GT-R,2015,5x114.3,66.1,5,,,,Nissan GT-R
+Nissan,GT-R,2017,5x114.3,66.1,5,,,,Nissan GT-R
+Nissan,GT-R,2018,5x114.3,66.1,5,,,,Nissan GT-R [US]
+Nissan,GT-R,2020,5x114.3,66.1,5,,,,Nissan GT-R 50th Anniversary Edition
+Nissan,GT-R,2024,5x114.3,66.1,5,,,,Nissan GT-R
+Nissan,Juke,2011,5x114.3,66.1,5,17,7.0,47,Nissan Juke
+Nissan,Juke,2015,5x114.3,66.1,5,17,7.0,47,Nissan Juke
+Nissan,Kicks,2018,4x100,60.1,4,17,6.5,40,Nissan Kicks [US]
+Nissan,Kicks,2021,4x100,60.1,4,17,6.5,40,Nissan Kicks
+Nissan,Kicks,2025,5x114.3,66.1,5,17,7.0,40,Nissan Kicks
+Nissan,Leaf,2011,5x114.3,66.1,5,16,6.5,40,Nissan LEAF
+Nissan,Leaf,2014,5x114.3,66.1,5,17,6.5,40,Nissan Leaf
+Nissan,Leaf,2018,5x114.3,66.1,5,17,6.5,40,Nissan Leaf
+Nissan,Leaf,2022,5x114.3,66.1,5,17,6.5,40,Nissan Leaf
+Nissan,Leaf,2023,5x114.3,66.1,5,17,6.5,40,Nissan Leaf [US]
+Nissan,Leaf,2026,5x114.3,66.1,5,17,6.5,40,Nissan Leaf
+Nissan,Maxima,2009,5x114.3,66.1,5,18,8.0,50,Nissan Maxima
+Nissan,Maxima,2012,5x114.3,66.1,5,19,8.0,50,Nissan Maxima
+Nissan,Maxima,2016,5x114.3,66.1,5,19,8.0,50,Nissan Maxima
+Nissan,Maxima,2019,5x114.3,66.1,5,19,8.0,50,Nissan Maxima
+Nissan,Micra,2017,4x100,60.1,4,17,6.5,38,Nissan Micra
+Nissan,Murano,2005,5x114.3,66.1,5,18,7.5,40,Nissan Murano
+Nissan,Murano,2009,5x114.3,66.1,5,18,7.5,40,Nissan Murano
+Nissan,Murano,2011,5x114.3,66.1,5,20,7.5,40,Nissan Murano
+Nissan,Murano,2012,5x114.3,66.1,5,20,7.5,40,Nissan Murano
+Nissan,Murano,2013,5x114.3,66.1,5,20,7.5,40,Nissan Murano
+Nissan,Murano,2015,5x114.3,66.1,5,20,7.5,40,Nissan Murano
+Nissan,Murano,2019,5x114.3,66.1,5,20,7.5,40,Nissan Murano
+Nissan,Murano,2025,5x114.3,66.1,5,20,7.5,40,Nissan Murano
+Nissan,Pathfinder,2008,6x114.3,66.1,6,17,7.5,30,Nissan Pathfinder
+Nissan,Pathfinder,2010,6x114.3,66.1,6,18,8.0,30,Nissan Pathfinder
+Nissan,Pathfinder,2013,5x114.3,66.1,5,20,7.5,35,Nissan Pathfinder
+Nissan,Pathfinder,2014,5x114.3,66.1,5,20,7.5,35,Nissan Pathfinder Hybrid
+Nissan,Pathfinder,2017,5x114.3,66.1,5,20,7.5,35,Nissan Pathfinder
+Nissan,Pathfinder,2019,5x114.3,66.1,5,,,,Nissan Pathfinder Rock Creek Edition
+Nissan,Pathfinder,2022,5x114.3,66.1,5,20,8.0,35,Nissan Pathfinder
+Nissan,Pathfinder,2023,5x114.3,66.1,5,18,8.0,35,Nissan Pathfinder Rock Creek
+Nissan,Pathfinder,2026,5x114.3,66.1,5,20,8.0,35,Nissan Pathfinder
+Nissan,Qashqai,2017,5x114.3,66.1,5,19,7.0,40,Nissan Rogue Sport
+Nissan,Qashqai,2018,5x114.3,66.1,5,19,7.0,40,Nissan Qashqai
+Nissan,Qashqai,2020,5x114.3,66.1,5,19,7.0,40,Nissan Rogue Sport
+Nissan,Qashqai,2022,5x114.3,66.1,5,19,7.5,40,Nissan Qashqai
+Nissan,Quest,2011,5x114.3,66.1,5,18,7.5,45,Nissan Quest
+Nissan,Rogue,2008,5x114.3,66.1,5,17,7.0,40,Nissan Rogue
+Nissan,Rogue,2011,5x114.3,66.1,5,17,7.0,40,Nissan Rogue
+Nissan,Rogue,2014,5x114.3,66.1,5,18,7.0,40,Nissan Rogue
+Nissan,Rogue,2017,5x114.3,66.1,5,18,7.0,40,Nissan Rogue
+Nissan,Rogue,2021,5x114.3,66.1,5,19,7.5,40,Nissan Rogue
+Nissan,Rogue,2024,5x114.3,66.1,5,19,7.5,40,Nissan Rogue
+Nissan,Rogue,2025,5x114.3,66.1,5,17,7.5,35,Nissan Rogue Rock Creek Edition
+Nissan,Rogue,2026,5x114.3,66.1,5,,,,Nissan Rogue Plug-in Hybrid
+Nissan,Sentra,2013,5x114.3,66.1,5,17,6.5,40,Nissan Sentra
+Nissan,Sentra,2016,5x114.3,66.1,5,17,6.5,40,Nissan Sentra
+Nissan,Sentra,2020,5x114.3,66.1,5,18,7.5,40,Nissan Sentra
+Nissan,Sentra,2024,5x114.3,66.1,5,17,7.0,40,Nissan Sentra
+Nissan,Sentra,2026,5x114.3,66.1,5,17,7.0,40,Nissan Sentra
+Nissan,Titan,2017,6x139.7,77.8,6,20,8.0,23,Nissan Titan
+Nissan,Titan,2020,6x139.7,77.8,6,20,8.0,23,Nissan Titan
+Nissan,Versa,2007,4x114.3,66.1,4,15,5.5,40,Nissan Versa Hatchback / Nissan Versa Sedan
+Nissan,Versa,2015,4x100,60.1,4,15,5.5,40,Nissan Versa Sedan
+Nissan,Versa,2020,4x100,60.1,4,16,6.0,40,Nissan Versa
+Nissan,Versa,2023,4x100,60.1,4,16,6.0,40,Nissan Versa
+Nissan,Versa Note,2014,4x100,60.1,4,15,5.5,40,Nissan Versa Note
+Nissan,Versa Note,2017,4x100,60.1,4,16,6.0,40,Nissan Versa Note
+Nissan,Xterra,2005,6x114.3,66.1,6,16,7.0,30,Nissan Xterra
+Nissan,Xterra,2009,6x114.3,66.1,6,16,7.0,30,Nissan Xterra
+Nissan,Z,2023,5x114.3,66.1,5,,,,Nissan Z
+Nissan,Z,2027,5x114.3,66.1,5,,,,Nissan Z Performance
+Porsche,718 Boxster,2017,5x130,71.6,5,,,,Porsche 718 Boxster
+Porsche,718 Cayman,2017,5x130,71.6,5,,,,Porsche 718 Cayman
+Porsche,718 Spyder,2020,5x130,71.6,5,,,,Porsche 718 Spyder
+Porsche,911,2011,5x130,71.6,5,,,,Porsche 911 Black Edition
+Porsche,Boxster,2005,5x130,71.6,5,,,,Porsche Boxster
+Porsche,Boxster,2006,5x130,71.6,5,,,,Porsche Boxster
+Porsche,Boxster,2007,5x130,71.6,5,,,,Porsche Boxster
+Porsche,Boxster,2008,5x130,71.6,5,,,,Porsche Boxster
+Porsche,Boxster,2009,5x130,71.6,5,,,,Porsche Boxster
+Porsche,Boxster,2013,5x130,71.6,5,,,,Porsche Boxster
+Porsche,Cayenne,2008,5x130,71.6,5,17,7.5,,Porsche Cayenne
+Porsche,Cayenne,2010,5x130,71.6,5,18,8.0,50,Porsche Cayenne
+Porsche,Cayenne,2011,5x130,71.6,5,18,8.0,50,Porsche Cayenne
+Porsche,Cayenne,2012,5x130,71.6,5,18,8.0,50,Porsche Cayenne
+Porsche,Cayenne,2013,5x130,71.6,5,18,8.0,50,Porsche Cayenne
+Porsche,Cayenne,2014,5x130,71.6,5,18,8.0,50,Porsche Cayenne
+Porsche,Cayenne,2015,5x130,71.6,5,18,8.0,50,Porsche Cayenne
+Porsche,Cayenne,2018,5x130,71.6,5,,,,Porsche Cayenne
+Porsche,Cayenne,2020,5x130,71.6,5,,,,Porsche Cayenne Coupe
+Porsche,Cayenne,2024,5x130,71.6,5,,,,Porsche Cayenne
+Porsche,Cayman,2007,5x130,71.6,5,,,,Porsche Cayman
+Porsche,Cayman,2009,5x130,71.6,5,,,,Porsche Cayman
+Porsche,Cayman,2013,5x130,71.6,5,,,,Porsche Cayman
+Porsche,Cayman,2014,5x130,71.6,5,,,,Porsche Cayman
+Porsche,Macan,2015,5x112,66.5,5,,,,Porsche Macan
+Porsche,Macan,2019,5x112,66.5,5,,,,Porsche Macan
+Porsche,Macan,2022,5x112,66.5,5,,,,Porsche Macan
+Porsche,Panamera,2010,5x130,71.6,5,,,,Porsche Panamera
+Porsche,Panamera,2013,5x130,71.6,5,,,,Porsche Panamera Platinum Edition
+Porsche,Panamera,2014,5x130,71.6,5,,,,Porsche Panamera
+Porsche,Panamera,2017,5x130,71.6,5,,,,Porsche Panamera
+Porsche,Panamera,2018,5x130,71.6,5,,,,Porsche Panamera
+Porsche,Panamera,2019,5x130,71.6,5,,,,Porsche Panamera
+Porsche,Panamera,2020,5x130,71.6,5,,,,Porsche Panamera
+Porsche,Panamera,2021,5x130,71.6,5,,,,Porsche Panamera
+Porsche,Panamera,2024,5x130,71.6,5,,,,Porsche Panamera
+Ram,1500,2013,5x139.7,77.8,5,20,8.0,19,Ram 1500
+Ram,1500,2014,5x139.7,77.8,5,20,9.0,19,Ram 1500
+Ram,1500,2015,5x139.7,77.8,5,20,9.0,19,Ram 1500 Laramie Limited
+Ram,1500,2017,5x139.7,77.8,5,20,9.0,19,Ram 1500 Night Package
+Ram,1500,2025,6x139.7,77.8,6,20,9.0,,Ram 1500
+Rivian,R1T,2022,5x139.7,64.1,5,20,8.5,48,Rivian R1T
+Saab,9-2X,2005,5x100,56.1,5,16,6.5,55,Saab 9-2X
+Saab,9-3,2005,5x110,65.1,5,16,6.5,41,Saab 9-3 Sport Sedan
+Saab,9-3,2008,5x110,65.1,5,17,7.5,41,Saab 9-3
+Saab,9-4x,2012,6x120,66.9,6,,,,Saab 9-4X
+Saab,9-5,2010,5x120,66.9,5,19,8.5,41,Saab 9-5 Sedan
+Saab,9-7X,2006,6x127,78.1,6,,,,Saab 9-7X
+Saturn,Astra,2008,5x110,65.1,5,16,6.5,37,Saturn Astra
+Saturn,Sky,2007,5x110,65.1,5,18,8.0,55,Saturn Sky
+Scion,FR-S,2013,5x100,56.1,5,17,7.0,48,Scion FR-S
+Scion,iM,2016,5x114.3,60.1,5,17,7.0,50,Scion iM
+Scion,iQ,2011,4x100,54.1,4,16,5.0,45,Scion iQ
+Scion,iQ,2012,4x100,54.1,4,16,5.0,45,Scion iQ
+Scion,tC,2011,5x114.3,60.1,5,18,7.5,39,Scion tC
+Scion,tC,2012,5x114.3,60.1,5,18,7.5,39,Scion tC
+Scion,tC,2013,5x114.3,60.1,5,18,7.5,39,Scion tC
+Scion,tC,2014,5x114.3,60.1,5,18,7.5,39,Scion tC
+Scion,xB,2008,5x114.3,60.1,5,16,6.5,45,Scion xB
+Smart,EQ Fortwo,2020,4x100,60.1,4,,,,Smart EQ fortwo
+Smart,Fortwo,2015,4x100,60.1,4,,,,Smart fortwo
+Subaru,Ascent,2023,5x114.3,56.1,5,20,7.5,55,Subaru Ascent
+Subaru,BRZ,2022,5x100,56.1,5,18,7.5,48,Subaru BRZ
+Subaru,Crosstrek,2024,5x114.3,56.1,5,17,7.0,48,Subaru Crosstrek [US]
+Subaru,Crosstrek,2026,5x114.3,56.1,5,17,7.0,48,Subaru Crosstrek Hybrid
+Subaru,Forester,2025,5x114.3,56.1,5,18,7.0,48,Subaru Forester Hybrid
+Subaru,Forester,2026,5x114.3,56.1,5,17,7.0,48,Subaru Forester Wilderness
+Subaru,Impreza,2024,5x114.3,56.1,5,17,7.0,55,Subaru Impreza
+Subaru,Legacy,2023,5x114.3,56.1,5,18,7.5,55,Subaru Legacy
+Subaru,Outback,2025,5x114.3,56.1,5,18,7.0,48,Subaru Outback
+Subaru,Outback,2026,5x114.3,56.1,5,17,7.0,55,Subaru Outback Wilderness
+Subaru,Trailseeker,2026,5x114.3,56.1,5,18,8.0,40,Subaru Trailseeker
+Subaru,Uncharted,2026,5x114.3,56.1,5,18,7.5,42,Subaru Uncharted
+Subaru,WRX,2025,5x114.3,56.1,5,18,8.5,55,Subaru WRX
+Tesla,Cybertruck,2025,6x139.7,84.1,6,20,9.0,58.5,Tesla Cybertruck
+Tesla,Model 3,2018,5x114.3,64.1,5,18,8.5,40,Tesla Model 3
+Tesla,Model 3,2024,5x114.3,64.1,5,18,8.5,40,Tesla Model 3
+Tesla,Model 3,2025,5x114.3,64.1,5,,,,Tesla Model 3
+Tesla,Model S,2013,5x120,64.1,5,19,8.0,35,Tesla Model S
+Tesla,Model S,2017,5x120,64.1,5,19,8.0,35,Tesla Model S
+Tesla,Model S,2021,5x120,64.1,5,,,,Tesla Model S
+Tesla,Model X,2017,5x120,64.1,5,,,,Tesla Model X
+Tesla,Model Y,2021,5x114.3,64.1,5,19,9.5,45,Tesla Model Y
+Tesla,Model Y,2025,5x114.3,64.1,5,19,9.5,45,Tesla Model Y
+Tesla,Model Y,2026,5x114.3,64.1,5,,,,Tesla Model Y Performance
+Tesla,Roadster,2008,5x110,65.1,5,,,,Tesla Roadster
+Toyota,4Runner,2009,6x139.7,106.1,6,16,7.0,15,Toyota 4Runner
+Toyota,4Runner,2010,6x139.7,106.1,6,17,7.5,15,Toyota 4Runner
+Toyota,4Runner,2014,6x139.7,106.1,6,17,7.5,15,Toyota 4Runner
+Toyota,4Runner,2015,6x139.7,106.1,6,,,,Toyota 4Runner TRD Pro Series
+Toyota,4Runner,2019,6x139.7,106.1,6,17,7.5,15,Toyota 4Runner TRD Pro
+Toyota,4Runner,2020,6x139.7,106.1,6,17,7.5,15,Toyota 4Runner TRD Pro
+Toyota,4Runner,2023,6x139.7,106.1,6,,,,Toyota 4Runner 40th Anniversary
+Toyota,4Runner,2025,6x139.7,95.1,6,17,7.5,,Toyota 4Runner
+Toyota,Avalon,2016,5x114.3,60.1,5,17,7.5,40,Toyota Avalon
+Toyota,Avalon,2019,5x114.3,60.1,5,18,8.0,40,Toyota Avalon
+Toyota,bZ Woodland,2026,5x114.3,60.1,5,18,7.5,40,Toyota bZ Woodland
+Toyota,bZ4X,2023,5x114.3,60.1,5,18,7.5,40,Toyota bZ4X
+Toyota,C-HR,2018,5x114.3,60.1,5,17,7.0,45,Toyota C-HR [US]
+Toyota,C-HR,2020,5x114.3,60.1,5,17,7.0,45,Toyota C-HR
+Toyota,C-HR,2021,5x114.3,60.1,5,17,7.0,45,Toyota C-HR [US]
+Toyota,Camry,2007,5x114.3,60.1,5,17,7.0,45,Toyota Camry SE
+Toyota,Camry,2012,5x114.3,60.1,5,17,7.0,45,Toyota Camry
+Toyota,Camry,2015,5x114.3,60.1,5,17,7.0,45,Toyota Camry
+Toyota,Camry,2018,5x114.3,60.1,5,17,7.5,40,Toyota Camry
+Toyota,Camry,2020,5x114.3,60.1,5,19,8.5,40,Toyota Camry TRD
+Toyota,Camry,2021,5x114.3,60.1,5,17,7.5,40,Toyota Camry
+Toyota,Camry,2025,5x114.3,60.1,5,18,8.0,40,Toyota Camry
+Toyota,Corolla,2007,5x100,54.1,5,15,6.0,39,Toyota Corolla
+Toyota,Corolla,2010,5x100,54.1,5,16,6.5,39,Toyota Corolla
+Toyota,Corolla,2014,5x100,54.1,5,16,6.5,39,Toyota Corolla
+Toyota,Corolla,2017,5x100,54.1,5,16,6.5,39,Toyota Corolla [US]
+Toyota,Corolla Cross,2022,5x114.3,60.1,5,17,6.5,40,Toyota Corolla Cross [US]
+Toyota,Corolla Cross,2026,5x114.3,60.1,5,17,6.5,40,Toyota Corolla Cross
+Toyota,Crown,2023,5x114.3,60.1,5,19,7.0,35,Toyota Crown
+Toyota,Crown Signia,2025,5x114.3,60.1,5,19,7.5,40,Toyota Crown Signia
+Toyota,FJ Cruiser,2007,6x139.7,106.1,6,17,7.5,15,Toyota FJ Cruiser
+Toyota,GR Corolla,2023,5x114.3,60.1,5,18,8.5,30,Toyota GR Corolla
+Toyota,GR Corolla,2026,5x114.3,60.1,5,18,8.5,30,Toyota GR Corolla
+Toyota,GR86,2022,5x100,56.1,5,18,7.5,48,Toyota GR 86
+Toyota,GR86,2023,5x100,56.1,5,18,7.5,48,Toyota GR86 Special Edition
+Toyota,Grand Highlander,2024,5x120,60.1,5,18,7.5,35,Toyota Grand Highlander
+Toyota,Highlander,2005,5x114.3,60.1,5,17,6.5,35,Toyota Highlander Hybrid
+Toyota,Highlander,2008,5x114.3,60.1,5,17,7.5,35,Toyota Highlander
+Toyota,Highlander,2011,5x114.3,60.1,5,17,7.5,35,Toyota Highlander
+Toyota,Highlander,2014,5x114.3,60.1,5,18,7.5,35,Toyota Highlander
+Toyota,Highlander,2017,5x114.3,60.1,5,18,7.5,35,Toyota Highlander
+Toyota,Highlander,2020,5x114.3,60.1,5,18,8.0,35,Toyota Highlander
+Toyota,Highlander,2021,5x114.3,60.1,5,20,8.0,35,Toyota Highlander XSE
+Toyota,Highlander,2027,5x114.3,60.1,5,18,8.0,35,Toyota Highlander
+Toyota,Land Cruiser,2013,5x150,110.1,5,18,8.0,60,Toyota Land Cruiser
+Toyota,Land Cruiser,2016,5x150,110.1,5,18,8.0,60,Toyota Land Cruiser
+Toyota,Land Cruiser,2024,6x139.7,95.1,6,18,7.5,55,Toyota Land Cruiser [US]
+Toyota,Mirai,2016,5x114.3,60.1,5,17,7.5,35,Toyota Mirai
+Toyota,Mirai,2022,5x120,60.1,5,19,8.0,35,Toyota Mirai
+Toyota,Prius,2010,5x100,54.1,5,15,6.5,45,Toyota Prius
+Toyota,Prius,2012,5x100,54.1,5,15,6.5,45,Toyota Prius
+Toyota,Prius,2013,5x100,54.1,5,15,6.0,45,Toyota Prius Plug-in Hybrid
+Toyota,Prius,2016,5x100,54.1,5,15,6.5,39,Toyota Prius
+Toyota,Prius,2019,5x100,54.1,5,15,6.5,40,Toyota Prius
+Toyota,Prius,2023,5x114.3,60.1,5,,,,Toyota Prius XLE [US] / Toyota Prius [US]
+Toyota,Prius,2024,5x114.3,60.1,5,17,6.5,40,Toyota Prius
+Toyota,Prius C,2012,4x100,54.1,4,15,5.0,39,Toyota Prius C
+Toyota,Prius C,2015,4x100,54.1,4,15,5.0,39,Toyota Prius c
+Toyota,Prius C,2017,4x100,54.1,4,15,5.0,39,Toyota Prius c
+Toyota,Prius C,2018,4x100,54.1,4,15,5.0,39,Toyota Prius c
+Toyota,Prius Prime,2017,5x100,54.1,5,15,6.5,39,Toyota Prius Prime
+Toyota,Prius V,2012,5x114.3,60.1,5,16,6.5,45,Toyota Prius V
+Toyota,Prius V,2015,5x114.3,60.1,5,16,6.5,45,Toyota Prius v
+Toyota,RAV4,2006,5x114.3,60.1,5,17,7.0,45,Toyota RAV4
+Toyota,RAV4,2009,5x114.3,60.1,5,17,7.0,45,Toyota RAV4
+Toyota,RAV4,2011,5x114.3,60.1,5,17,7.0,45,Toyota RAV4
+Toyota,RAV4,2013,5x114.3,60.1,5,17,7.0,40,Toyota RAV4
+Toyota,RAV4,2016,5x114.3,60.1,5,17,7.0,40,Toyota RAV4 Hybrid
+Toyota,RAV4,2019,5x114.3,60.1,5,17,7.0,40,Toyota RAV4
+Toyota,RAV4,2020,5x114.3,60.1,5,18,7.5,40,Toyota RAV4 TRD Off Road
+Toyota,RAV4,2023,5x114.3,60.1,5,,,,Toyota RAV4 Hybrid Woodland Edition
+Toyota,RAV4,2025,5x114.3,60.1,5,18,7.0,40,Toyota RAV4
+Toyota,RAV4,2026,5x114.3,60.1,5,17,7.0,40,Toyota RAV4
+Toyota,RAV4 Prime,2021,5x114.3,60.1,5,19,7.5,40,Toyota RAV4 Prime
+Toyota,Sequoia,2008,5x150,110.1,5,18,8.0,60,Toyota Sequoia
+Toyota,Sequoia,2011,5x150,110.1,5,18,8.0,60,Toyota Sequoia
+Toyota,Sequoia,2020,5x150,110.1,5,18,8.0,60,Toyota Sequoia TRD Pro
+Toyota,Sequoia,2023,6x139.7,95.1,6,20,8.5,60,Toyota Sequoia
+Toyota,Sequoia,2024,6x139.7,95.1,6,18,8.0,60,Toyota Sequoia TRD Pro
+Toyota,Sequoia,2027,6x139.7,95.1,6,,,,Toyota Sequoia Trailhunter
+Toyota,Sienna,2011,5x114.3,60.1,5,17,7.0,35,Toyota Sienna
+Toyota,Sienna,2018,5x114.3,60.1,5,17,7.0,35,Toyota Sienna
+Toyota,Sienna,2021,5x114.3,60.1,5,17,7.0,35,Toyota Sienna
+Toyota,Sienna,2022,5x114.3,60.1,5,,,,Toyota Sienna Woodland Edition
+Toyota,Tacoma,2011,6x139.7,106.1,6,16,7.0,30,Toyota Tacoma
+Toyota,Tacoma,2012,6x139.7,106.1,6,16,7.0,30,Toyota Tacoma
+Toyota,Tacoma,2015,6x139.7,106.1,6,16,7.0,30,Toyota Tacoma TRD Pro Series
+Toyota,Tacoma,2016,6x139.7,106.1,6,16,7.0,30,Toyota Tacoma
+Toyota,Tacoma,2017,6x139.7,106.1,6,16,7.0,30,Toyota Tacoma TRD Pro
+Toyota,Tacoma,2019,6x139.7,106.1,6,16,7.0,30,Toyota Tacoma TRD Pro
+Toyota,Tacoma,2020,6x139.7,106.1,6,16,7.0,30,Toyota Tacoma
+Toyota,Tacoma,2022,6x139.7,106.1,6,16,7.0,30,Toyota Tacoma TRD Pro
+Toyota,Tacoma,2024,6x139.7,95.1,6,17,7.5,,Toyota Tacoma
+Toyota,Tundra,2007,5x150,110.1,5,18,8.0,60,Toyota Tundra
+Toyota,Tundra,2010,5x150,110.1,5,18,8.0,60,Toyota Tundra
+Toyota,Tundra,2014,5x150,110.1,5,18,8.0,60,Toyota Tundra
+Toyota,Tundra,2015,5x150,110.1,5,18,8.0,60,Toyota Tundra TRD Pro Series
+Toyota,Tundra,2018,5x150,110.1,5,18,8.0,60,Toyota Tundra
+Toyota,Tundra,2019,5x150,110.1,5,18,8.0,60,Toyota Tundra TRD Pro
+Toyota,Tundra,2022,6x139.7,95.1,6,18,8.0,,Toyota Tundra
+Toyota,Tundra,2024,6x139.7,95.1,6,,,,Toyota Tundra 1794 Limited Edition
+Toyota,Tundra,2027,6x139.7,95.1,6,18,8.0,60,Toyota Tundra Trailhunter
+Toyota,Venza,2009,5x114.3,60.1,5,19,7.5,35,Toyota Venza
+Toyota,Venza,2013,5x114.3,60.1,5,19,7.5,35,Toyota Venza
+Toyota,Venza,2021,5x114.3,60.1,5,19,7.0,35,Toyota Venza
+Toyota,Yaris,2007,4x100,54.1,4,14,5.5,39,Toyota Yaris
+Toyota,Yaris,2009,4x100,54.1,4,15,5.5,39,Toyota Yaris
+Toyota,Yaris,2010,4x100,54.1,4,15,5.5,45,Toyota Yaris
+Toyota,Yaris,2012,4x100,54.1,4,15,5.5,45,Toyota Yaris
+Toyota,Yaris,2013,4x100,54.1,4,15,5.5,45,Toyota Yaris Hybrid
+Toyota,Yaris,2015,4x100,54.1,4,15,5.5,45,Toyota Yaris
+Toyota,Yaris,2016,4x100,54.1,4,15,5.5,45,Toyota Yaris Sedan
+Toyota,Yaris,2017,4x100,54.1,4,15,6.0,45,Toyota Yaris
+Toyota,Yaris,2019,4x100,54.1,4,16,6.0,45,Toyota Yaris Sedan
+Toyota,Yaris,2020,4x100,54.1,4,16,6.0,45,Toyota Yaris Hatchback [US]
+Volkswagen,Atlas,2027,5x112,57.1,5,20,8.0,34,Volkswagen Atlas
+Volkswagen,Golf R,2025,5x112,57.1,5,19,8.0,,Volkswagen Golf R
+Volkswagen,Tiguan,2025,5x112,57.1,5,18,7.5,43,Volkswagen Tiguan
+Volvo,C30,2010,5x108,63.4,5,16,6.5,,Volvo C30
+Volvo,C70,2007,5x108,63.4,5,16,7.0,,Volvo C70
+Volvo,C70,2010,5x108,63.4,5,17,7.5,,Volvo C70
+Volvo,EX30,2025,5x108,63.4,5,18,7.5,,Volvo EX30
+Volvo,EX60,2027,5x108,63.4,5,19,8.0,,Volvo EX60
+Volvo,S40,2008,5x108,63.4,5,16,6.5,,Volvo S40
+Volvo,S60,2005,5x108,65.1,5,15,6.5,,Volvo S60
+Volvo,S60,2007,5x108,65.1,5,16,6.5,,Volvo S60
+Volvo,S60,2014,5x108,63.4,5,16,7.0,,Volvo S60
+Volvo,S80,2006,5x108,63.4,5,16,7.0,,Volvo S80
+Volvo,S80,2014,5x108,63.4,5,17,7.5,,Volvo S80
+Volvo,S90,2020,5x108,63.4,5,17,7.5,,Volvo S90
+Volvo,S90,2026,5x108,63.4,5,18,8.0,,Volvo S90
+Volvo,V50,2005,5x108,63.4,5,15,6.0,,Volvo V50
+Volvo,V50,2008,5x108,63.4,5,16,6.5,,Volvo V50
+Volvo,V60,2019,5x108,63.4,5,17,7.5,,Volvo V60
+Volvo,V70,2007,5x108,63.4,5,16,6.5,,Volvo V70
+Volvo,V90,2020,5x108,63.4,5,17,7.5,,Volvo V90
+Volvo,XC60,2014,5x108,63.4,5,17,7.5,,Volvo XC60
+Volvo,XC60,2022,5x108,63.4,5,18,7.5,,Volvo XC60
+Volvo,XC60,2026,5x108,63.4,5,19,8.0,,Volvo XC60
+Volvo,XC70,2007,5x108,63.4,5,16,6.5,,Volvo XC70
+Volvo,XC70,2014,5x108,63.4,5,16,7.0,,Volvo XC70
+Volvo,XC90,2006,5x108,67.1,5,17,7.0,,Volvo XC90
+Volvo,XC90,2011,5x108,67.1,5,18,7.0,,Volvo XC90
+Volvo,XC90,2020,5x108,63.4,5,19,8.0,,Volvo XC90
+Volvo,XC90,2025,5x108,63.4,5,19,8.5,,Volvo XC90

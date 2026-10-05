@@ -202,6 +202,15 @@ export type PaymentLinkState =
     }
   /** The database could not be reached. Our fault, not the owner's input. */
   | { status: "unavailable"; values: { amount: string; description: string; expiry: string } }
+  /** This page's idempotency key already made a link, and that link holds a
+   *  different amount or description than the one just submitted (D145 audit,
+   *  SEC-AUTH). Nothing new was created; `reference` names the link that
+   *  exists. The key only changes on a reload, so the form says to reload. */
+  | {
+      status: "reused";
+      reference: string;
+      values: { amount: string; description: string; expiry: string };
+    }
   | {
       status: "success";
       /** The customer's link, `https://pay.platinumwheels.ca/pay/<token>` in

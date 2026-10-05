@@ -34,10 +34,13 @@ import {
   not,
   or,
   sql,
+  type AnyColumn,
   type SQL,
 } from "drizzle-orm";
+import { unionAll, type PgSelect } from "drizzle-orm/pg-core";
 
 import { getDb } from "@/db/client";
+import { stripBrandPrefix } from "@/lib/product-name";
 import { PRICES_VISIBLE } from "@/lib/site";
 import {
   accessorySpecs,
@@ -45,6 +48,8 @@ import {
   products,
   tireSpecs,
   wheelSpecs,
+  type ProductRow,
+  type WheelSpecsRow,
 } from "@/db/schema";
 
 import {
@@ -66,9 +71,11 @@ import {
   loadImages,
   PRODUCT_SELECTION,
   toCatalogProduct,
-  toCatalogProducts,
   withSpecs,
+  type Executor,
+  type ProductJoinRow,
 } from "./rows";
+import { listingFacts } from "./siblings";
 import { normalizeBoltPattern, normalizeThreadSize } from "./size";
 
 const DEFAULT_LIMIT = 24;
@@ -104,10 +111,33 @@ function storefrontPrice<T extends { price: number | null }>(product: T): T {
   return PRICES_VISIBLE ? product : { ...product, price: null };
 }
 
+/**
+ * Rows → storefront products: the first image of each, the price rule, and
+ * the facts that tell a card from its look-alikes (`tellingFacts`, when it
+ * has a sibling). The photo read and the sibling read run together, so a page
+ * costs one extra round trip, not two (launch audit D145; D153).
+ */
 async function toStorefrontProducts(
-  ...args: Parameters<typeof toCatalogProducts>
+  db: Executor,
+  rows: readonly ProductJoinRow[],
 ): Promise<CatalogProduct[]> {
-  return (await toCatalogProducts(...args)).map(storefrontPrice);
+  const bare = rows.map((row) => toCatalogProduct(row, null));
+  const [images, siblings] = await Promise.all([
+    loadImages(
+      db,
+      bare.map((product) => product.id),
+    ),
+    getListingSiblings(db, bare),
+  ]);
+  const facts = listingFacts(bare, siblings);
+  return bare.map((product) => {
+    const mine = facts.get(product.id);
+    return storefrontPrice({
+      ...product,
+      image: images.get(product.id)?.[0] ?? null,
+      ...(mine === undefined ? {} : { tellingFacts: mine }),
+    });
+  });
 }
 
 /* --- Filters → SQL ------------------------------------------------------- */
@@ -1115,6 +1145,231 @@ export async function getOtherSizes(
     .orderBy(...nearest, asc(products.name), asc(products.id))
     .limit(clampLimit(limit, 24));
   return toStorefrontProducts(db, rows);
+}
+
+/**
+ * With no model, a product is read by its name, and the title drops a brand
+ * the name starts with (`stripBrandPrefix`): `DAI Wheels Center Cap Black
+ * DW125` and `Center Cap Black DW125` are one title. So the name may be this
+ * one, without the brand, or with `<brand> ` in front. A superset on exact
+ * strings, so it stays a plain equality filter on the brand's own un-modelled
+ * rows (a `lower()` / `left()` test measured +35 ms on the accessories page,
+ * for the 4 products in the catalogue it would catch beyond this); a brand
+ * joined by a dash or a colon, or in other letters, is not matched.
+ */
+function nameReadsAs(product: CatalogProduct): SQL {
+  const brand = product.brand?.trim() ?? "";
+  const rest = stripBrandPrefix(product.brand, product.name);
+  const names = new Set([product.name, rest]);
+  if (brand !== "") names.add(`${brand} ${rest}`);
+  return inArray(products.name, [...names]);
+}
+
+/**
+ * What a product's possible title siblings share with it: category, status
+ * (published or discontinued), brand, model (or name) and the size columns
+ * its card prints. **A superset on purpose**: `siblings.ts` `titleKey()` is
+ * the exact test and runs afterwards, so this need not reproduce the size
+ * line's formatting, and it leaves out the bolt pattern, whose array
+ * containment can only be answered by the GIN index (measured, 4 ms a key
+ * against 0.4 ms without it; the few wheels it lets through that differ only
+ * in bolt pattern are dropped by `titleKey()`). Without the product itself
+ * excluded; a caller adds that.
+ */
+function titleSiblingConditions(product: CatalogProduct): SQL[] {
+  const where: SQL[] = [
+    eq(products.category, product.category),
+    inArray(products.status, ["published", "discontinued"]),
+    product.brand === null
+      ? isNull(products.brand)
+      : eq(products.brand, product.brand),
+    product.model === null
+      ? sql`${products.model} is null and ${nameReadsAs(product)}`
+      : eq(products.model, product.model),
+  ];
+
+  /* Null-safe: two blanks are the same blank on a size line. */
+  const same = (column: SQL | AnyColumn, value: unknown) =>
+    sql`${column} is not distinct from ${value}`;
+  if (product.category === "tires" && product.specs) {
+    const { size, loadIndex, speedRating, isXl } = product.specs;
+    where.push(
+      eq(tireSpecs.size, size),
+      same(tireSpecs.loadIndex, loadIndex),
+      same(tireSpecs.speedRating, speedRating),
+      eq(tireSpecs.isXl, isXl),
+    );
+  }
+  if (product.category === "wheels" && product.specs) {
+    const { diameter, width, offsetMm, finish } = product.specs;
+    where.push(
+      eq(wheelSpecs.diameter, diameter),
+      eq(wheelSpecs.width, width),
+      same(wheelSpecs.offsetMm, offsetMm),
+      same(wheelSpecs.finish, finish),
+    );
+  }
+  return where;
+}
+
+/** What `titleSiblingConditions` asks, as a string: two products with the
+ *  same key ask the same question, so a page asks it once. */
+function titleSiblingKey(product: CatalogProduct): string {
+  const specs =
+    product.category === "tires" && product.specs
+      ? [
+          product.specs.size,
+          product.specs.loadIndex,
+          product.specs.speedRating,
+          product.specs.isXl,
+        ]
+      : product.category === "wheels" && product.specs
+        ? [
+            product.specs.diameter,
+            product.specs.width,
+            product.specs.offsetMm,
+            product.specs.finish,
+          ]
+        : [];
+  return JSON.stringify([
+    product.category,
+    product.brand,
+    product.model === null ? [product.name] : product.model,
+    specs,
+  ]);
+}
+
+/**
+ * The products a product page could share its title with: same category,
+ * brand and model (or, with no model, name), and the same size columns the
+ * size line prints. A superset on purpose: `siblings.ts` `siblingFacts()`
+ * keeps only those whose name and size line are exactly this product's, so
+ * the SQL need not reproduce the size line's formatting. Published and
+ * discontinued, the two states a product page shows. Only the page itself is
+ * excluded. Served by `products_brand_model_idx` (launch audit D145;
+ * D151).
+ */
+export async function getTitleSiblings(
+  product: CatalogProduct,
+  limit = 100,
+): Promise<CatalogProduct[]> {
+  const rows = await selectSiblingRows(getDb(), product.category, [
+    and(...titleSiblingConditions(product), ne(products.id, product.id)) as SQL,
+  ]);
+  /* No images: the facts are read off the specs, and the page never shows
+     these products. */
+  return rows
+    .slice(0, clampLimit(limit, 100))
+    .map((row) => storefrontPrice(toCatalogProduct(row, null)));
+}
+
+/**
+ * The title siblings of a whole page of cards, in ONE statement per
+ * category (a page is almost always one): the products that share any of
+ * `listed`'s name and size columns, the products themselves included.
+ * `listed` is collapsed to its distinct keys first. Wheels ask one
+ * conjunctive branch per key in a `UNION ALL`, so each is planned and served
+ * by `products_brand_model_idx` on its own (measured on the same 24 wheels:
+ * 10 ms as branches, 28 ms as one `OR`, and 61 ms against 266 ms on 150);
+ * see `selectSiblingRows` for why tires and accessories take the `OR`. Not a
+ * window over the page's own filtered set: a sibling that the page's filters
+ * hide (the bore filter, say) still tells a card apart, and a window under
+ * `ORDER BY ... LIMIT` would have to rank the whole category before the
+ * first page could be cut. The largest title group in the catalogue holds 26
+ * products. A product with no spec row has no size to share and is skipped
+ * (none exists today).
+ */
+async function getListingSiblings(
+  db: Executor,
+  listed: readonly CatalogProduct[],
+): Promise<CatalogProduct[]> {
+  const byCategory = new Map<ProductCategory, Map<string, SQL>>();
+  for (const product of listed) {
+    if (product.specs === null) continue;
+    const keys = byCategory.get(product.category) ?? new Map<string, SQL>();
+    byCategory.set(product.category, keys);
+    /* Two products asking the same question are asked once. */
+    const key = titleSiblingKey(product);
+    if (!keys.has(key)) {
+      keys.set(key, and(...titleSiblingConditions(product)) as SQL);
+    }
+  }
+  const found = await Promise.all(
+    [...byCategory].map(([category, keys]) =>
+      selectSiblingRows(db, category, [...keys.values()]),
+    ),
+  );
+  /* Two keys can reach the same product (a name with and without its brand),
+     so a product may come back twice. */
+  const seen = new Map<string, ProductJoinRow>();
+  for (const row of found.flat()) seen.set(row.product.id, row);
+  return [...seen.values()].map((row) => toCatalogProduct(row, null));
+}
+
+/** `UNION ALL` of one or more selects, awaited. Drizzle's variadic form
+ *  wants two or more and types every branch's rows; the caller says what
+ *  they are. */
+async function unionRows<R>(
+  selects: readonly [PgSelect, ...PgSelect[]],
+): Promise<R[]> {
+  const [first, ...rest] = selects;
+  const query =
+    rest.length === 0 ? first : unionAll(first, rest[0], ...rest.slice(1));
+  return (await query) as unknown as R[];
+}
+
+/**
+ * Products of ONE category with that category's spec row, one `INNER JOIN`
+ * select per condition, unioned. The shared `withSpecs()` left-joins all
+ * three spec tables, and a filter that only one of them can satisfy then
+ * keeps the planner from treating the joins as inner: on this query it swung
+ * between a primary-key probe per row and a scan of the whole 30,000-row spec
+ * table (measured, the same query at 8 ms and at 58 ms). A product with no
+ * spec row is not returned, which is right here: it has no size to share.
+ */
+async function selectSiblingRows(
+  db: Executor,
+  category: ProductCategory,
+  wheres: readonly SQL[],
+): Promise<ProductJoinRow[]> {
+  if (wheres.length === 0) return [];
+  const [first, ...rest] = wheres;
+  switch (category) {
+    case "tires": {
+      /* One `OR`, not branches: `tire_specs` is 8,400 rows with no index on
+         the size text, so each branch would scan it again (measured 1.2 ms a
+         key); one statement scans it once. */
+      const rows = await db
+        .select({ product: products, tire: tireSpecs })
+        .from(products)
+        .innerJoin(tireSpecs, eq(tireSpecs.productId, products.id))
+        .where(or(...wheres));
+      return rows.map((row) => ({ ...row, wheel: null, accessory: null }));
+    }
+    case "wheels": {
+      const select = (where: SQL) =>
+        db
+          .select({ product: products, wheel: wheelSpecs })
+          .from(products)
+          .innerJoin(wheelSpecs, eq(wheelSpecs.productId, products.id))
+          .where(where)
+          .$dynamic();
+      const rows = await unionRows<{
+        product: ProductRow;
+        wheel: WheelSpecsRow;
+      }>([select(first), ...rest.map(select)]);
+      return rows.map((row) => ({ ...row, tire: null, accessory: null }));
+    }
+    case "accessories": {
+      // 1,700 rows in all: one statement.
+      const rows = await db
+        .select({ product: products, accessory: accessorySpecs })
+        .from(products)
+        .innerJoin(accessorySpecs, eq(accessorySpecs.productId, products.id))
+        .where(or(...wheres));
+      return rows.map((row) => ({ ...row, tire: null, wheel: null }));
+    }
+  }
 }
 
 /**

@@ -38,8 +38,9 @@ export async function startPayment(publicToken: string): Promise<PayState> {
   const result = await startAttempt(publicToken, gateway);
   switch (result.kind) {
     case "redirect":
-      // Converge's return can arrive empty (`handleEmptyReturn`): remember
-      // which link this browser is paying, for 30 minutes. SameSite=None
+      // Remember which link this browser is paying, for 30 minutes: the
+      // return is honoured only for this link (`handleReturn`, LA-01/LA-02),
+      // including Converge's empty return. SameSite=None
       // because the return is a cross-site POST from Converge's page.
       (await cookies()).set(PAY_RETURN_COOKIE, publicToken, {
         httpOnly: true,

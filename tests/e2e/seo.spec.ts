@@ -16,8 +16,9 @@
  * Stop any server already on the port first: the suite reuses one, and a
  * server built with the other flag state fails every test here by design.
  *
- * Product tests need a product. The suite has no fixture database yet (D111),
- * so they skip with that reason when the slug is a 404, rather than fail.
+ * Product tests need a product: they read `SLUG.tire` from the fixture
+ * database (`tests/fixture/`, run by `npm run test:e2e:fixture`). A 404 there
+ * is a failure, not a skip.
  */
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { SLUG } from "../helpers";
@@ -234,8 +235,7 @@ for (const [crawler, userAgent] of Object.entries(CRAWLERS)) {
         headers: { Host: CANONICAL_HOST, "User-Agent": userAgent },
         maxRedirects: 0,
       });
-      // No fixture database yet (D111): the product slug may not exist.
-      if (res.status() === 404) continue;
+      expect(res.status(), `${path} answers`).toBe(200);
       const html = await res.text();
       const headEnd = html.indexOf("</head>");
       for (const tag of ["<title>", 'rel="canonical"', 'name="robots"', 'property="og:image"']) {
@@ -307,7 +307,8 @@ test("the home page describes an online store: no street address, no opening hou
   expect(org, "an OnlineStore node").toBeDefined();
   expect(org).toMatchObject({
     name: "Platinum Wheels",
-    legalName: "Platinum Wheels and Tire Solutions",
+    // Owner ruling 2026-10-05: the legal name carries "Inc." everywhere.
+    legalName: "Platinum Wheels and Tire Solutions Inc.",
     url: SITE_URL,
     email: "sales@platinumwheels.ca",
     telephone: "+14378825000",
@@ -351,7 +352,6 @@ for (const [path, name] of [["/tires", "Tires"], ["/wheels", "Wheels"], ["/acces
 test("a product page: own title, clean canonical, Product with no price or offer", async ({ request }) => {
   const path = `/products/${SLUG.tire}`;
   const res = await get(request, `${path}?qty=2`);
-  test.skip(res.status() === 404, "no fixture database yet (D111): the slug does not exist");
   expect(res.status()).toBe(200);
   const html = await res.text();
 

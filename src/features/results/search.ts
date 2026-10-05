@@ -50,7 +50,7 @@ import {
   type WheelSizeOptions,
 } from "@/features/catalog/queries";
 import type { ProductCategory } from "@/features/catalog/types";
-import { findFitment, type FitmentSize } from "@/features/finder/data";
+import { findFitment, type VehicleFitment } from "@/features/finder/fitment";
 import {
   parseResultsQuery,
   withOffsetBounds,
@@ -83,28 +83,31 @@ function hasSize(size: SizeFilter): boolean {
 }
 
 /**
- * D48(4): a vehicle in the URL with every size select still at `Any` borrows
- * a size from the PLACEHOLDER fitment map beside the finder seed
- * (`src/features/finder/data.ts`, sample data — year is ignored there). An
- * unmapped vehicle resolves to no size, so the page behaves exactly as it
- * does with no vehicle at all.
+ * A vehicle in the URL with every size select still at `Any` borrows a size
+ * from `finder/fitment.ts` (LA-05, D145 audit). An unknown vehicle resolves to
+ * no size, so the page behaves exactly as it does with no vehicle at all
+ * (D110).
  *
  * Per category, because a car determines different things for different
- * goods (owner, 2026-09-21): **tires** derive `width`/`profile`/`rim`
- * straight off the fitment entry; **wheels** derive `bolt` only — diameter
- * and width are the buyer's choice, not the car's; **accessories** derive no
- * size at all and narrow on the lug thread instead (D67), below.
+ * goods (owner, 2026-09-21): **tires** derive `width`/`profile`/`rim` from the
+ * D48(4) placeholder (owner, 2026-10-04: "Keep placeholder for tires");
+ * **wheels** derive `bolt` only, real for the exact model year where the
+ * ANKUSI data has it, else the placeholder; diameter and width are the
+ * buyer's choice, not the car's; **accessories** derive no size at all and
+ * narrow on the lug thread instead (D67), below.
  */
 function fitmentSize(
   category: ProductCategory,
-  fit: FitmentSize | null,
+  fit: VehicleFitment | null,
 ): SizeFilter {
   if (fit === null) return NO_SIZE;
   switch (category) {
     case "tires":
-      return { width: fit.width, profile: fit.profile, rim: fit.rim };
+      return fit.tireSize === null
+        ? NO_SIZE
+        : { width: fit.tireSize.width, profile: fit.tireSize.profile, rim: fit.tireSize.rim };
     case "wheels":
-      return { bolt: fit.bolt };
+      return fit.boltPattern === null ? NO_SIZE : { bolt: fit.boltPattern };
     case "accessories":
       return NO_SIZE;
   }
@@ -151,7 +154,7 @@ function sizeFilters(size: SizeFilter): Pick<ProductFilters, "tire" | "wheel"> {
 function catalogFilters(
   query: ResultsQuery,
   size: SizeFilter,
-  fit: FitmentSize | null,
+  fit: VehicleFitment | null,
   price: PriceFacet,
 ): ProductFilters {
   const { tire, wheel } = sizeFilters(size);
@@ -182,7 +185,7 @@ function catalogFilters(
         query.category === "accessories"
           ? query.chips.map(accessoryFromParam)
           : [],
-      thread: fit?.thread,
+      thread: fit?.thread ?? undefined,
       threads: query.threads,
     },
   };
@@ -682,12 +685,13 @@ async function readCatalogue(
 ): Promise<{ view: ResultsView; catalog: StorefrontFacets }> {
   const { category } = query;
 
-  /* The vehicle's placeholder fitment entry, read once (D48(4)). `null` for
-     no vehicle and for a vehicle the map does not cover. */
+  /* The vehicle's fitment, read once: real bolt pattern for the model year
+     where known, placeholder for the rest (`finder/fitment.ts`, LA-05).
+     `null` for no vehicle and for a vehicle neither source covers. */
   const fit =
     query.vehicle === null
       ? null
-      : findFitment(query.vehicle.make, query.vehicle.model);
+      : findFitment(query.vehicle.year, query.vehicle.make, query.vehicle.model);
 
   /* An explicit size in the URL always wins; otherwise a vehicle may lend
      one, mapped per category (D48(4)). `query` is NOT mutated: the rail's
@@ -700,7 +704,7 @@ async function readCatalogue(
   /* Something narrows when a size is in play, or when a vehicle's thread is
      (accessories). With nothing narrowing, every match is a best match and
      the similar row does not render (D47(8)), so it is not even asked for. */
-  const narrows = hasSize(size) || (category === "accessories" && fit !== null);
+  const narrows = hasSize(size) || (category === "accessories" && (fit?.thread ?? null) !== null);
   const expanded = query.show > RESULTS_WINDOW.best;
 
   const [best, similar, catalog] = await Promise.all([

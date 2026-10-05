@@ -16,6 +16,11 @@
    when `AUTO_EMAIL_LEAD_CAPTURE_ENABLED=true`. Nothing is written to a
    database: the owner alert is the record (D104).
 
+   Ahead of all of that sits a per-IP cap (LA-03, D145 audit; owner: "Keep it,
+   rate-limited" on the auto-reply). The honeypot and the timer are posted by
+   the browser, so a script fakes both; the cap is the one guard the client
+   does not control. Numbers and what counts: `QUOTE_LIMITER` below.
+
    The cart arrives as one hidden JSON field. Nothing in it is trusted beyond
    its shape: every product is read again here, a slug the catalogue no longer
    has still reaches the shop by its slug (a lost product name never costs the
@@ -46,7 +51,9 @@ import {
 } from "@/features/cart/types";
 import type { CartItem } from "@/lib/cart";
 import { productName } from "@/lib/product-name";
+import { createRateLimiter, clientIpFrom } from "@/lib/rate-limit";
 import { productRoute } from "@/lib/routes";
+import { PRIMARY_CONTACT } from "@/lib/site";
 
 /* `src/lib/cart.ts` holds the same two numbers; a `"use server"` file can
    export only async functions, so they are written in both places. */
@@ -74,6 +81,36 @@ const INVISIBLE_FORMAT = /\p{Cf}/gu;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const CONTACT_VALUES = new Set<string>(CONTACT_METHODS.map((method) => method.value));
+
+/**
+ * The per-IP cap on quote requests (LA-03, D145 audit). In memory, per server
+ * instance (`src/lib/rate-limit.ts` lists what that does not stop).
+ *
+ * What counts: a request that passed the spam checks and validation, i.e. one
+ * that would send email. A person fixing a typo is never counted, and a post
+ * the honeypot or the timer catches sends nothing, so it costs nothing. The
+ * check itself runs first, before the honeypot and the timer, so an IP over
+ * the cap gets the same answer whatever it posts and cannot probe the guards.
+ *
+ * The numbers. A real customer sends one request, two if they forgot a
+ * product. Each counted request sends two emails (owner alert + auto-reply)
+ * from a Resend free quota of 100 a day shared with another site.
+ * - 3 in 10 minutes: room for a resend and one correction, then a pause.
+ * - 5 in 24 hours: one IP can spend at most 10 emails a day, a tenth of the
+ *   quota, and can aim at most 5 auto-replies at strangers. Generous enough
+ *   for a household or an office on one address.
+ * 10,000 keys bounds the memory to well under a megabyte.
+ */
+const QUOTE_LIMITER = createRateLimiter({
+  windows: [
+    { limit: 3, windowMs: 10 * 60 * 1000 },
+    { limit: 5, windowMs: 24 * 60 * 60 * 1000 },
+  ],
+  maxKeys: 10_000,
+});
+
+/** New copy (LA-03): the visitor hit the cap. Plain, points at the phone. */
+const RATE_LIMITED_NOTICE = `You've sent a few requests already. Call us at ${PRIMARY_CONTACT.display} and we'll help.`;
 
 /* --- refreshCart ---------------------------------------------------------- */
 
@@ -215,6 +252,12 @@ function logSpam(reason: "honeypot" | "too_fast"): void {
   console.warn(JSON.stringify({ event: `quote.spam.${reason}` }));
 }
 
+/** No name, email, phone or message: the IP only, which the admin's sign-in
+ *  log already records (D95). `event`, like the spam lines beside it. */
+function logRateLimited(ip: string): void {
+  console.warn(JSON.stringify({ event: "quote.rate_limited", ip }));
+}
+
 export async function submitCartQuote(
   _prevState: QuoteFormState,
   formData: FormData,
@@ -227,6 +270,29 @@ export async function submitCartQuote(
   // Ticked = the field is present (an unticked checkbox submits nothing).
   const consented = formData.get(QUOTE_FIELD.consent) !== null;
 
+  const contact: ContactMethod = CONTACT_VALUES.has(rawContact)
+    ? (rawContact as ContactMethod)
+    : DEFAULT_CONTACT_METHOD;
+
+  // The visitor's own tick is echoed on `invalid` and `failed` only, so an
+  // unrelated error never silently unticks it (WDG-10).
+  const echo = {
+    name,
+    email,
+    phone,
+    message,
+    contact,
+    ...(consented ? { [QUOTE_FIELD.consent]: "on" } : {}),
+  };
+
+  // The per-IP cap (LA-03), before every other check and before any email.
+  // The form keeps what was typed; the notice offers the phone.
+  const ip = clientIpFrom(await headers());
+  if (QUOTE_LIMITER.isLimited(ip)) {
+    logRateLimited(ip);
+    return { status: "invalid", errors: {}, values: echo, notice: RATE_LIMITED_NOTICE };
+  }
+
   // Form protection (D104). A person never fills the off-screen honeypot and
   // never sends within 3 s of opening the form. Either way: pretend it worked.
   if (readString(formData, QUOTE_FIELD.website) !== "") {
@@ -238,10 +304,6 @@ export async function submitCartQuote(
     logSpam("too_fast");
     return { status: "success" };
   }
-
-  const contact: ContactMethod = CONTACT_VALUES.has(rawContact)
-    ? (rawContact as ContactMethod)
-    : DEFAULT_CONTACT_METHOD;
 
   const errors: Partial<Record<"name" | "email" | "phone" | "message", string>> = {};
   if (name === "" || name.length > NAME_MAX_LENGTH) {
@@ -261,17 +323,6 @@ export async function submitCartQuote(
     errors.message = "Keep your message to 1,000 characters or fewer.";
   }
 
-  // The visitor's own tick is echoed on `invalid` and `failed` only, so an
-  // unrelated error never silently unticks it (WDG-10).
-  const echo = {
-    name,
-    email,
-    phone,
-    message,
-    contact,
-    ...(consented ? { [QUOTE_FIELD.consent]: "on" } : {}),
-  };
-
   const lines = readLines(formData);
   if (lines.length === 0) {
     return {
@@ -285,6 +336,11 @@ export async function submitCartQuote(
   if (Object.keys(errors).length > 0) {
     return { status: "invalid", errors, values: echo };
   }
+
+  // Counted here, once the request would send email (`QUOTE_LIMITER`). Also
+  // with `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` off, so the cap can be tried
+  // locally; a failed send still counts, since a retry would send again.
+  QUOTE_LIMITER.hit(ip);
 
   const products = await quotedProducts(lines.map((line) => line.slug));
   // The consent record names the wording the visitor saw, picked the way the

@@ -20,15 +20,17 @@ links point at nothing.
 - [`money.ts`](money.ts) — integer cents ⇄ `"452.60"` without floats.
 - [`service.ts`](service.ts) — every state change: `createLink` (idempotent), `cancelLink`, `listLinks`,
   `countOpenLinks` (the admin home's tile, D118),
-  `getPayPage`, `startAttempt` (row lock, then network), `handleReturn` (with `handleEmptyReturn` for Converge's
-  empty POSTs, matched by the `pw_pay` cookie), `handleNotify` (D119). The money rules are listed at
-  the top of the file.
+  `getPayPage`, `startAttempt` (row lock, then network), `handleReturn` (gated on the `pw_pay` cookie, LA-01/LA-02;
+  it also takes Converge's empty POSTs, looking the attempt up by its own invoice), `handleNotify` (D119).
+  The money rules are listed at the top of the file.
 - [`payment-email.ts`](payment-email.ts) — the shop's "Payment received" / "Refund needed" email via
   Resend (D120). Sent after the commit, by whichever path settled the attempt.
 - [`pay-actions.ts`](pay-actions.ts) — `"use server"`. `startPayment`: the Pay button. Its only input is the
   link token, bound by the page.
 - [`components/pay-button.tsx`](components/pay-button.tsx) — client island. Opens a session, then POSTs the
   one-time token to the hosted page (D107) from a **new** form element that carries nothing else (D125b).
+  While pending the button is `aria-disabled` (presses refused in its click handler), never `disabled`,
+  so keyboard focus stays on it; an error alert takes focus (D145 audit, A11Y-MANUAL; D151).
 
 ## Rules
 
@@ -37,6 +39,23 @@ links point at nothing.
   invoice number and amount match the attempt.
 - **Every state change writes a `payment_events` row in the same transaction.** Events are append-only
   (DB trigger), and gateway data goes in only through `REDACTED_FIELDS`.
+- **`/pay/return` reaches Converge only for the browser's own attempt (LA-01/LA-02, D145 audit; D146).**
+  The return is anonymous and a `txnquery` costs a Fixie request (500 a month, D102), so `handleReturn`
+  queries only when the `pw_pay` cookie (set by the Pay button, 30 minutes) names a link whose attempt is
+  still open: `pending`, or `declined` when a different transaction id arrives (the approval after a
+  decline on one hosted page). An invoice number in the return must be one of that link's. Each attempt
+  allows one completed query per lookup (a transaction id, or its own invoice) and at most
+  `MAX_RETURN_QUERIES_PER_ATTEMPT` (3) in all, which with the 10-attempt cap bounds a link at 30. The
+  claim is an `attempt.return_query` event written under the link's row lock before the call, so two
+  returns at once cannot both query; a failed query adds `attempt.return_query_failed` and may be retried
+  within the cap. A transaction already settled (notify or an earlier return) is never queried again.
+  No event row is written for a return without a cookie-bound attempt, and `attempt.return_received`
+  (a settled return) is written once per attempt.
+- **The return never picks a link page from its own fields (LA-02).** It 303s to `/pay/<token>` only for
+  the link the cookie names; every other return lands on `/pay/done`. Invoice numbers are sequential,
+  so a lookup by a browser-sent invoice would hand out someone else's capability URL. A customer whose
+  cookie has expired sees `/pay/done`; the admin list, the D120 email and `/pay/notify` still show and
+  settle the truth.
 - **Only the return redirect and Converge's export script settle an attempt (D108, D119).** No cron and
   no staff check: each would cost Fixie requests. An attempt with neither stays `pending`.
 - **The export script is trusted on source range plus Basic credentials, never on its own.** It is
@@ -61,7 +80,9 @@ links point at nothing.
 
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
-| — | — | None folder-scoped. | The payment decisions are global: D99–D103, D105–D108 in root `llm.md` §5b. | — |
+| D146 | 2026-10-04 | `/pay/return` queries Converge only for the attempt the browser's `pw_pay` cookie names, at most 3 times per attempt (one completed query per lookup), and redirects to a link page only for that cookie's link. | LA-01 (anonymous returns could spend the Fixie quota and write unbounded event rows) and LA-02 (a guessed invoice redirected to another customer's pay link), D145 audit. | Owner-approved fix of LA-01/LA-02; ID to be assigned by the coordinator. |
+
+The other payment decisions are global: D99–D103, D105–D108, D119–D121, D125b in root `llm.md` §5b.
 
 ## Connects to
 
@@ -78,6 +99,8 @@ links point at nothing.
 - Don't add a gateway call that a customer's payment did not cause (a cron, a staff button, a page
   load). The Fixie free tier is 500 requests a month (D108).
 - Don't delete a link. Cancel it.
+- Don't let `/pay/return` query the gateway, write an event or choose a `/pay/<token>` redirect from what
+  the return itself carries (LA-01/LA-02). The cookie names the link; the return only says what to ask.
 
 ## Open
 
@@ -88,3 +111,7 @@ links point at nothing.
    if the real one lacks it too, notify matches nothing (logged as `unmatched`) and the 1-request saving
    does not happen. Then the option is to send our invoice in a field Converge echoes back, or to match
    on `ssl_txn_id` after the return has run once.
+3. ~~`pay-actions.ts` still names `handleEmptyReturn`.~~ Closed: the comment now points at `handleReturn`.
+4. The audit's per-IP cap and the Vercel firewall rule for `/pay/return` (`todo.md` item 7) are not
+   built: a flood with a made-up cookie now costs at most one indexed database read per request and no gateway
+   call or write; a request with no cookie touches nothing. Owner.

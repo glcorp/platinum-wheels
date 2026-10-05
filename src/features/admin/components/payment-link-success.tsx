@@ -91,7 +91,7 @@ export function PaymentLinkSuccess({
           full size and never superscript, matching the storefront's own
           price rule even though `Price` itself is not used here (it forbids
           cents, and a payment amount needs them). */}
-      <dl className="flex flex-col gap-1 sm:gap-1.5">
+      <dl className="flex w-full min-w-0 flex-col gap-1 sm:gap-1.5">
         <div className="flex flex-wrap items-baseline gap-2">
           <dt className="label text-ink-dim text-11 tracking-12 sm:text-12">
             Amount
@@ -112,11 +112,12 @@ export function PaymentLinkSuccess({
           </dt>
           <dd className="text-ink text-15 sm:text-16">{expiresLabel}</dd>
         </div>
-        <div className="flex flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-0.5">
           <dt className="label text-ink-dim text-11 tracking-12 sm:text-12">
             Description
           </dt>
-          <dd className="text-ink text-15 leading-body sm:text-16">
+          {/* Staff text with no guaranteed break point (D145 audit, UI-ADMIN). */}
+          <dd className="text-ink min-w-0 text-15 leading-body wrap-anywhere sm:text-16">
             {description}
           </dd>
         </div>

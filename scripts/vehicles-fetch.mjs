@@ -28,8 +28,10 @@
  * matches nothing is reported at the end of a run, so a rule vPIC has
  * outgrown does not sit here unnoticed.
  *
- * The list carries no tire size and no bolt pattern. That is a separate,
- * hand-kept sheet (`scripts/data/vehicle-fitment.csv`).
+ * The list carries no tire size and no bolt pattern. Bolt pattern and bore
+ * are `scripts/data/vehicle-fitment.csv`, built by `vehicle-fitment.mjs`
+ * from the ANKUSI dataset (LA-05); run that script after this one so the
+ * finder's generated list matches. Tire size has no source yet.
  */
 
 import { mkdir, writeFile } from "node:fs/promises";

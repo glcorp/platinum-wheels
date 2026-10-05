@@ -41,7 +41,19 @@ and the `metadata` of `layout.tsx` and of each indexable page.
   `Host` header on every request, because `src/proxy.ts` lets any path with a dot through on `admin.`
   and `pay.`, and the `*.vercel.app` alias serves the same build. **The page-level `robots` meta does not
   check the host**, on purpose: reading a request in the root layout would make every static page
-  dynamic, and the mobile LCP gate is already red (root `llm.md` §7.12).
+  dynamic, and the mobile LCP gate is already red (root `llm.md` §7.12). **Instead, `next.config.ts`
+  sends `X-Robots-Tag: noindex, nofollow` on every host but `platinumwheels.ca`** (a header rule with a
+  `missing` host condition; launch audit D145, D151), so the `*.vercel.app` alias and deployment
+  URLs are never indexable even with the flag on, and every page stays static. The canonical host is
+  governed by the flag alone.
+- **A 404 carries one robots tag**, Next's own `noindex`: `src/app/not-found.tsx` sets `robots: null`
+  so the layout's site-wide value does not add a second (D145).
+- **No two product pages share a title** (D145, D151). The title is the name plus the page's size
+  line, and when other published or discontinued products share both, the size line ends with what
+  tells this one apart: `Left side`, `Centre bore 72.6 mm`, `Part number GT14156LB`, `Load range E`
+  (`src/features/catalog/siblings.ts`, read by `product/view.ts`). Measured on `catalogue.csv`: 24% of
+  products shared a title before, 0.1% after (42 that differ only in the vendor's name text). An
+  accessory's title also skips any part of its size line its own name already prints.
 - **One canonical origin, `SITE_URL` in `src/lib/site.ts`:** https, apex, no `www`. Nothing here builds
   a URL from the request's host.
 - **An indexable page builds its metadata with `pageMetadata()` and nothing else.** Metadata merges
@@ -131,8 +143,9 @@ and the `metadata` of `layout.tsx` and of each indexable page.
    limit: split it when it passes that. Coordinator.
 4. **`<html lang>` is `en`**, the previews say `en_CA`. Google ignores `lang`. Changing it touches
    `layout.tsx` and `global-error.tsx`. Owner.
-5. **Legal name.** `SITE.legalName` has no `Inc.`; the live goodwill site's markup has. Client, via owner
-   (`todo.md` S5).
+5. **Legal name.** `SITE.legalName` is `Platinum Wheels and Tire Solutions Inc.` (owner, 2026-10-05, D153);
+   it feeds `organizationSchema().legalName` and the site's `alternateName`. Whether the client agrees is
+   still theirs to confirm via owner (`todo.md` S5).
 6. **Content an assistant could cite** (size and bolt-pattern pages, how quoting works, an Ontario
    winter-tire guide, fitment basics) does not exist. `llms.txt` was considered and skipped: no search
    engine or AI company says its crawler reads it. Owner.

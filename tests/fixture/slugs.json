@@ -1,0 +1,16 @@
+{
+  "tire": "zeta-antarctica-sport-225-60r17-103t",
+  "wheel": "fuel-off-road-d596-sledge-18x8-5x120-et35-matte-black-gloss-black-lip",
+  "accessory": "gt-off-road-gt-hardware-lug-nuts-14x1-5-gt14156lb",
+  "tireUnavailable": "zmax-winternova-stud-i-215-60r16-99t",
+  "wheelUnavailable": "art-replica-replica-105-17x7-5-5x110-et31-gloss-black",
+  "accessoryUnavailable": "gt-off-road-caps-matte-black-cap-chrome-gt-logo-sc-305b",
+  "hidden": "zeta-antarctica-ice-195-60r15-88t",
+  "pay": {
+    "open": "fixtureOpenLinkToken00001",
+    "paid": "fixturePaidLinkToken00001",
+    "cancelled": "fixtureCancelledLinkToken1",
+    "expired": "fixtureExpiredLinkToken01",
+    "unknown": "fixtureUnknownLinkToken01"
+  }
+}

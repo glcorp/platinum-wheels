@@ -86,18 +86,39 @@
    still run the link's own `onClick` (the drawer closes), so no pointless
    refetch or transition starts, the URL and history stay exactly as Next
    would have left them (it `replaceState`s an unchanged URL), and the scroll
-   runs through `settle(true)`: smooth, `instant` under reduced motion, a
-   frame later so `scroll-reveal` has un-translated a pending section and the
-   drawer has closed first. A focusable target (`<main tabIndex={-1}>` behind
-   the skip link) also takes focus, as the browser's own fragment jump would
-   give it. Every other click is untouched: a different hash on the same page
-   is Next's `onlyHashChange` scroll (forced, glides under `scroll-behavior:
-   smooth`), another path is a route navigation, modified clicks and
+   runs through `settle()`: smooth, `instant` under reduced motion, a frame
+   later so `scroll-reveal` has un-translated a pending section and the
+   drawer has closed first. The target also takes focus (any target since
+   D145, below; only an already focusable one before). Every other click
+   keeps its own scroll: a different hash on the same page is Next's
+   `onlyHashChange` scroll (forced, glides under `scroll-behavior: smooth`),
+   another path is a route navigation, modified clicks and
    `target`/`download` links are the browser's.
+
+   Launch audit (D145, A11Y-MANUAL, "Fragment nav links do not move the
+   keyboard's place"): the scroll moved and focus did not, so after the
+   header's `Contact` a keyboard user's next Tab started from the header
+   again. Every fragment ARRIVAL now also moves focus to the target, with
+   `preventScroll` so it never cuts a glide short; a target that is not
+   focusable gets `tabindex="-1"` for as long as it holds focus (removed on
+   `blur`, so no section stays a click-focus trap). Arrivals are: a route
+   change that lands on a fragment (footer `How it works` from `/about`), a
+   `hashchange` (a plain `<a href="#…">`, the skip link), the D131 same-URL
+   click, and a same-page click to a DIFFERENT fragment through `next/link`.
+   That last one fires neither `hashchange` nor a pathname change — Next
+   scrolls it itself (`onlyHashChange`, `layout-router.js`, which "leaves
+   focus untouched") — so the capture listener catches it, leaves the default
+   alone so Next's scroll and URL update run as before, and only focuses.
+   Focus waits while a modal `<dialog>` that does not contain the target is
+   still open (the drawer closes from React state; an inert target cannot
+   take focus). A cold load does NOT move focus: the browser's own fragment
+   jump already sets the sequential focus starting point there, and moving
+   focus on first paint would ring a whole section before anyone touched the
+   page. The rest of this file's scrolling is unchanged.
    --------------------------------------------------------------------------- */
 
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /** Long enough for a slow stream, short enough never to fight a real scroll. */
 const WINDOW_MS = 4000;
@@ -107,19 +128,41 @@ export function HashScroll() {
      mounted across navigations, so the effect re-runs on arrival, not on a
      remount. */
   const pathname = usePathname();
+  /* The pathname the effect last ran for. `null` on the first run (a cold
+     load); a run with a different pathname is a client-navigation arrival.
+     Strict Mode's double first run sees the same pathname, so it never reads
+     as an arrival. */
+  const lastPathname = useRef<string | null>(null);
 
   useEffect(() => {
     let frame = 0;
     let cancelled = false;
 
+    const arrival =
+      lastPathname.current !== null && lastPathname.current !== pathname;
+    lastPathname.current = pathname;
+
     /** `smooth` only for a same-page `hashchange` (D92b) or a same-URL click
-     *  (D131); a cold load passes nothing and lands instantly. `focus` only
-     *  for the click, which has prevented the browser's own fragment jump. */
-    function settle(smooth = false, focus = false) {
-      const hash = window.location.hash;
+     *  (D131); a cold load passes nothing and lands instantly. `scroll: false`
+     *  when Next already scrolls (a same-page `next/link` hash change).
+     *  `focus` on every arrival except the cold load (D145). `hash` defaults
+     *  to the URL's; the click path passes the link's, because Next has not
+     *  pushed the new URL yet when its click listener runs. */
+    function settle({
+      smooth = false,
+      focus = false,
+      scroll = true,
+      hash = window.location.hash,
+    }: {
+      smooth?: boolean;
+      focus?: boolean;
+      scroll?: boolean;
+      hash?: string;
+    } = {}) {
       if (hash.length <= 1) return;
 
       const started = performance.now();
+      let scrolled = !scroll;
       cancel();
 
       const tick = () => {
@@ -134,22 +177,25 @@ export function HashScroll() {
         const target = matches.item(matches.length - 1);
 
         if (target instanceof HTMLElement && target.offsetParent !== null) {
-          const behavior: ScrollBehavior =
-            smooth &&
-            !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              ? "smooth"
-              : /* `instant`, not `auto`: `<html>` is `scroll-behavior:smooth`
-                   since D92b, and `auto` defers to that — the cold landing
-                   would glide 4000px after all. */
-                "instant";
-          target.scrollIntoView({ behavior });
-          /* `preventScroll`, or the focus would cut the glide short. Only an
-             element that is focusable at all: a plain section has no
-             `tabindex` and stays unfocused, as it would natively. */
-          if (focus && (target.tabIndex >= 0 || target.hasAttribute("tabindex"))) {
-            target.focus({ preventScroll: true });
+          if (!scrolled) {
+            const behavior: ScrollBehavior =
+              smooth &&
+              !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? "smooth"
+                : /* `instant`, not `auto`: `<html>` is `scroll-behavior:smooth`
+                     since D92b, and `auto` defers to that — the cold landing
+                     would glide 4000px after all. */
+                  "instant";
+            target.scrollIntoView({ behavior });
+            scrolled = true;
           }
-          return;
+          /* A modal that does not hold the target makes it inert, so focus
+             would silently fail: wait for the drawer to finish closing. */
+          const modal = focus ? openModalOutside(target) : false;
+          if (!focus || !modal) {
+            if (focus) focusTarget(target);
+            return;
+          }
         }
         if (performance.now() - started < WINDOW_MS) {
           frame = requestAnimationFrame(tick);
@@ -167,7 +213,7 @@ export function HashScroll() {
     /* A named handler so the listener can pass the flag and still be
        removed; `settle` itself must not receive the `HashChangeEvent` as its
        argument. */
-    const onHashChange = () => settle(true);
+    const onHashChange = () => settle({ smooth: true, focus: true });
 
     /* D131: a click on a link to the URL we are already on. Nobody else
        scrolls for it (see the header), so this does. */
@@ -190,16 +236,33 @@ export function HashScroll() {
       } catch {
         return;
       }
-      /* Exactly the current URL, hash included. A different hash on this
-         page is Next's own (working) `onlyHashChange` scroll. */
-      if (url.hash.length <= 1 || url.href !== window.location.href) return;
+      if (url.hash.length <= 1) return;
 
-      event.preventDefault();
-      settle(true, true);
+      /* Exactly the current URL, hash included (D131): nobody scrolls, so we
+         scroll and focus. */
+      if (url.href === window.location.href) {
+        event.preventDefault();
+        settle({ smooth: true, focus: true });
+        return;
+      }
+
+      /* A different hash on this same page: Next's own (working)
+         `onlyHashChange` scroll, which leaves focus where it was. Default
+         untouched; focus only (D145). Another path or query is a route
+         change, handled on arrival by the effect below. */
+      const here = new URL(window.location.href);
+      if (
+        url.origin === here.origin &&
+        url.pathname === here.pathname &&
+        url.search === here.search
+      ) {
+        settle({ scroll: false, focus: true, hash: url.hash });
+      }
     };
 
-    /* Cold load and client-navigation arrival alike: both land instantly. */
-    settle();
+    /* Cold load and client-navigation arrival alike land instantly; only an
+       arrival moves focus (see the header). */
+    settle({ focus: arrival });
     window.addEventListener("hashchange", onHashChange);
     window.addEventListener("click", onClick, true);
     return () => {
@@ -211,4 +274,28 @@ export function HashScroll() {
   }, [pathname]);
 
   return null;
+}
+
+/** An open modal `<dialog>` that does not contain `target` (so `target` is
+ *  inert behind it). */
+function openModalOutside(target: HTMLElement): boolean {
+  for (const dialog of document.querySelectorAll("dialog[open]")) {
+    if (dialog.matches(":modal") && !dialog.contains(target)) return true;
+  }
+  return false;
+}
+
+/** Focus a fragment target without scrolling. A target that is not focusable
+ *  takes `tabindex="-1"` until it loses focus again, which keeps it out of the
+ *  Tab order and stops a later click inside the section from focusing it. */
+function focusTarget(target: HTMLElement) {
+  if (target.tabIndex < 0 && !target.hasAttribute("tabindex")) {
+    target.setAttribute("tabindex", "-1");
+    target.addEventListener(
+      "blur",
+      () => target.removeAttribute("tabindex"),
+      { once: true },
+    );
+  }
+  target.focus({ preventScroll: true });
 }

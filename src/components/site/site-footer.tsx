@@ -123,10 +123,10 @@ export function SiteFooter() {
       <div className="border-border mt-12 flex flex-wrap justify-between gap-3 border-t pt-6 lg:mx-auto lg:max-w-content">
         <span className="text-13 leading-relaxed text-ink-dim">
           {/* Artboard reads "© 2026 Platinum Wheels and Tire Solutions Inc."
-              (home-desktop.html:429); SITE.legalName is "Platinum Wheels and
-              Tire Solutions", so " Inc." is appended here. Year computed at
-              render (D32). */}
-          © {year} {SITE.legalName} Inc.
+              (home-desktop.html:429); SITE.legalName now carries the "Inc."
+              itself, so nothing is appended here. Year computed at render
+              (D32). */}
+          © {year} {SITE.legalName}
         </span>
         {/* D122: the currency line only while prices show. */}
         <span className="text-13 leading-relaxed text-ink-dim">

@@ -629,11 +629,19 @@
    `top:2px`, `--text` fill, `--radius-ctl` (results-desktop.html:146). Two of
    these overlap for the min/max pair; the track is painted by siblings, so the
    input's own track is transparent and only the thumb takes pointer events.
-   Thumb margin −7px centres 16px on the 2px rail at y=9–11. */
+   Target size (launch audit, D145; WCAG 2.5.8): the thumb is a 24×24 box
+   whose CONTENT box is the drawn 16×16 handle — 4px of transparent padding,
+   painted with `background-clip: content-box`, and a radius of 2 + 4px so the
+   content curve is the drawn `--radius-ctl`. The focus ring sits 4px inside
+   the border box, i.e. on the handle's edge as before. A thumb is positioned
+   by its border box, so `RangeGroup`'s travel box widens to match (12px past
+   each track edge, `filter-panel.tsx`): the two change together. The input
+   is 24px tall and sits 2px above the 20px track box, so margin −11px still
+   centres the handle on the 2px rail at y=9–11. */
 @utility range-input {
   appearance: none;
   background: transparent;
-  height: 20px;
+  height: 24px;
   width: 100%;
   margin: 0;
   pointer-events: none;
@@ -648,20 +656,26 @@
   }
   &::-webkit-slider-thumb {
     appearance: none;
-    width: 16px;
-    height: 16px;
-    margin-top: -7px;
+    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    margin-top: -11px;
     background: var(--text);
+    background-clip: content-box;
     border: 0;
-    border-radius: var(--radius-ctl);
+    border-radius: calc(var(--radius-ctl) + 4px);
     pointer-events: auto;
   }
   &::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
+    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
+    padding: 4px;
     background: var(--text);
+    background-clip: content-box;
     border: 0;
-    border-radius: var(--radius-ctl);
+    border-radius: calc(var(--radius-ctl) + 4px);
     pointer-events: auto;
   }
   &:focus-visible {
@@ -669,11 +683,11 @@
   }
   &:focus-visible::-webkit-slider-thumb {
     outline: 2px solid var(--accent);
-    outline-offset: 0;
+    outline-offset: -4px;
   }
   &:focus-visible::-moz-range-thumb {
     outline: 2px solid var(--accent);
-    outline-offset: 0;
+    outline-offset: -4px;
   }
 }
 
@@ -726,6 +740,15 @@
    `display`; seeked, the panel reads 0% → 61% → 88% → 98% → 100%. The snap
    does not reproduce (design/reports/motion.md). */
 @utility sheet-dialog {
+  /* WebKit (launch audit, D145, MOTION-ENGINES): while the panel enters from
+     `translate: 0 100%` it overflows the dialog, the UA's `dialog:modal
+     { overflow: auto }` makes the dialog scrollable, and `showModal()`'s
+     focus scrolls it to the focused control — so the sheet shot past the top
+     and snapped back as the overflow vanished. `clip` (not `hidden`, which
+     script and focus can still scroll) makes the dialog no scroll container
+     at all; the panel's own body is the only scroller, as it always was. */
+  overflow: hidden;
+  overflow: clip;
   transition:
     display var(--duration-overlay) allow-discrete,
     overlay var(--duration-overlay) allow-discrete;
@@ -778,6 +801,25 @@
   grid-template-columns: 55fr 45fr;
   column-gap: 64px;
   align-items: start;
+}
+
+/* The stacked PDP gallery below 1100. 720–1099 (undrawn, D41, DEVIATIONS #39):
+   full-bleed and square it was 720–1099px tall and buried the title and
+   `Add to cart` (launch audit, D145, UI-CRITIQUE), so it is capped at 60dvh.
+   Below 720 (DEVIATIONS #117, owner 2026-10-05 "Yes, shorter photo"): the
+   stack under the photo is ~470px (header, crumbs, h1, size line, quantity,
+   `Add to cart`), so the square pushed `Add to cart` past the first screen;
+   the cap leaves that stack plus 12px on screen. `svh`, not `dvh`, so it holds
+   with the browser toolbars showing and never resizes during a scroll.
+   1100+ never matches. The box is `overflow-hidden`, so its aspect-ratio
+   minimum is zero and the cap holds; the photo stays whole (`object-contain`). */
+@utility pdp-gallery-band {
+  @media (max-width: 719.98px) {
+    max-height: max(240px, calc(100svh - 482px));
+  }
+  @media (min-width: 720px) and (max-width: 1099.98px) {
+    max-height: 60dvh;
+  }
 }
 
 /* The quote band's inner grid at 1440: `5fr 7fr;gap:64px;align-items:start`
@@ -1334,11 +1376,39 @@
       vt-rise;
 }
 
-/* Card photo → PDP gallery image. The group interpolates box and position;
-   the pair crossfades inside it. */
+/* Card photo → PDP gallery image. The group interpolates box and position.
+   Owner, 2026-10-04: "the image transition is not smooth". Measured: on
+   `--ease-arrive` over 280ms the box had covered 98% of its growth at half
+   time, so with the frames a navigation drops at its start the photo jumped
+   rather than travelled. It now runs the route slide's 350ms on `--ease-card`,
+   so it lands with the page. Inside the box the pair hands over in the first
+   `--duration-feedback` instead of crossfading the whole way: the card insets
+   its picture 6% and the gallery 8% (both measured), so a long crossfade drew
+   two tyres, or two brand labels on a no-photo tile, a few pixels apart. The
+   arriving snapshot is opaque from the first frame, which needs it to hold a
+   picture: `pdp-gallery.tsx` paints the card's cached file under the sharp one
+   for that. `mix-blend-mode: normal` replaces the UA's `plus-lighter`, which
+   only sums to one when both halves fade together.
+   `z-index`: groups stack in the order they are created, and the photo's group
+   is created from the OLD page (it exists there as the card), so the arriving
+   page's group, created after it, painted over it. As the product page faded
+   in, the gallery's opaque frame covered the travelling photo, which vanished
+   and popped back when the transition ended. It now flies above both pages and
+   under the pinned header (100). */
 ::view-transition-group(.morph) {
-  animation-duration: var(--duration-overlay);
-  animation-timing-function: var(--ease-arrive);
+  z-index: 50;
+  animation-duration: var(--duration-route);
+  animation-timing-function: var(--ease-card);
+}
+
+::view-transition-old(.morph) {
+  mix-blend-mode: normal;
+  animation: var(--duration-feedback) var(--ease-leave) both vt-fade-out;
+}
+
+::view-transition-new(.morph) {
+  mix-blend-mode: normal;
+  animation: none;
 }
 
 /* Same-route result changes (filters, sort, Load more). New cards fade up in a
@@ -1636,13 +1706,16 @@
    too, which drew the "current" underline under every nav link; the rule
    slot is hidden instead. */
 @media (forced-colors: active) {
+  /* `background-color`, not the `background` shorthand: the shorthand would
+     reset the thumb's `background-clip: content-box` and paint the whole
+     24×24 hit box (D145). */
   .range-input::-webkit-slider-thumb {
     forced-color-adjust: none;
-    background: CanvasText;
+    background-color: CanvasText;
   }
   .range-input::-moz-range-thumb {
     forced-color-adjust: none;
-    background: CanvasText;
+    background-color: CanvasText;
   }
   [data-price-fill] {
     forced-color-adjust: none;
@@ -1661,6 +1734,24 @@
     background: Highlight;
     color: HighlightText;
     border-color: Highlight;
+  }
+  /* Launch audit (D145, A11Y-MANUAL): the selected filter chip (`Chip`
+     `data-selected`, `ChipCheckbox` checked) and the quote form's checked
+     Preferred contact segment signal state with an `--text` fill alone, so
+     they vanished. Same treatment as the quantity cell. Children inherit the
+     system text colour, including a chip's dim count and its `×`. */
+  [data-chip][data-selected],
+  [data-chip]:has(input:checked),
+  [data-segment]:has(input:checked) {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+  [data-chip][data-selected] *,
+  [data-chip]:has(input:checked) *,
+  [data-segment]:has(input:checked) * {
+    color: inherit;
   }
 }
 

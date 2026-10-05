@@ -61,7 +61,9 @@ export interface QuoteFormState {
   /** Echoed back on `invalid` and `failed`. Never echoed on `success`. */
   values?: Partial<Record<QuoteField, string>>;
   /** A whole-form line with no field behind it: the send never reached the
-   *  server (set by the form island, D93b ENV-1), or the cart arrived empty. */
+   *  server (set by the form island, D93b ENV-1), the cart arrived empty, or
+   *  the visitor's IP is over the request cap (LA-03, `actions.ts`). Always
+   *  with `status: "invalid"`, empty `errors` and every value echoed. */
   notice?: string;
 }
 

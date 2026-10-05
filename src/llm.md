@@ -9,9 +9,13 @@ business logic) and *constants*, so that a change lands in exactly one place.
 
 ## Owns
 - [`app/`](app/llm.md) — App Router root: `layout.tsx`, `fonts.ts`, `globals.css` (the token system),
-  `favicon.ico`, and the `(storefront)` route group.
+  `favicon.ico` + `icon.png` + `apple-icon.png`, and the `(storefront)` route group.
 - [`proxy.ts`](proxy.ts) — Next 16's request proxy (the renamed middleware). Host routing for the admin
-  only (D97); the rules are `features/admin/host-routing.ts`. Routing, never authorisation.
+  (D97, D115) and `/pay` (D105); the rules are `features/admin/host-routing.ts`. Routing, never
+  authorisation. **Since the launch audit (D145; D151)** it also answers a path whose
+  percent-encoding cannot be decoded (`/products/%FF`) with that host's 404 instead of Next's unbranded
+  500, so its matcher also covers `/products/**`, `/sitemaps/**` and any path containing `%`. Ordinary
+  storefront pages still never reach it (the LCP reason in its header comment).
 - [`components/ui/`](components/ui/llm.md) — ten token-only primitives (`badge`, `button`, `checkbox`,
   `chip`, `field-label`, `input`, `price`, `section-heading`, `select`, `stripe-divider`).
 - [`components/site/`](components/site/llm.md) — header, footer, mobile drawer. **Not created yet**;

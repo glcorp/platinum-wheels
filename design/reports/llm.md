@@ -35,6 +35,17 @@ Without this folder a page can be called "done" on an opinion, which is exactly 
   reports behind `audit.md`, one per delegated agent (D25), on strictly disjoint files. `shared-audit.md`
   is the cross-cutting one: chrome, the ten primitives, catalog, `globals.css` integrity and the
   cross-page consistency pass.
+- [`launch-audit-brief.md`](launch-audit-brief.md) — the pre-launch audit's prompt (D145): rules, the
+  environment table, severity, finding format and the 31 scopes, each naming its skills. Written to be
+  run again: update §2 Environment before a later release.
+- [`launch-audit.md`](launch-audit.md) — the pre-launch audit's ranked report (D145): P1 table, every
+  finding by severity, owner decisions, accepted risks, gap checks, not covered, cleared.
+- [`launch-fixes.md`](launch-fixes.md) — the fix plan built from it: issues de-duplicated into batches
+  with the recommended fix, who decides and where the code is, plus the prompt that starts the fix
+  session. Each row gets a status as it is applied.
+- [`fitment-questions-prompt.md`](fitment-questions-prompt.md) — the prompt for the session that settles the
+  vehicle finder's fit data (D149): where it stands, the standing source rules, and the questions to put to
+  the owner one at a time.
 - [`motion.md`](motion.md) — the **D92b** motion inventory: tokens, every animated element with its
   trigger, before/after, token, reduced-motion behaviour and frame-sampled values from the production
   build, the gate table, and the recorded limits. Its "How this was measured" section is the protocol

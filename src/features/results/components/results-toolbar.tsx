@@ -117,6 +117,7 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
   /* Without a vehicle in the URL the chip is omitted and the summary reads
      `Add vehicle` (D47(5)). */
   const disclosureCopy = vehicle === null ? "Add vehicle" : "Change vehicle";
+  const partial = view.query.partialVehicle ?? null;
 
   /* Owner, 2026-09-30 (WDG-17, "Keep filters, stay empty"): choosing another
      car keeps the rest of the page's filters. The finder's GET form carries
@@ -211,7 +212,11 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
           </div>
 
           {finder === null ? null : (
-          <details className="min-w-0">
+          /* LA-05 P2: a part-filled finder submit opens the disclosure, with
+             the known fields kept and the missing one focused, instead of
+             rendering the plain list as if nothing had been chosen. `open`
+             is server-rendered, so it works with JS off too. */
+          <details className="min-w-0" open={partial !== null}>
             <summary
               data-probe="change-vehicle"
               /* Marker suppression: `list-none` plus the WebKit pseudo. These
@@ -316,6 +321,7 @@ export function ResultsToolbar({ view }: ResultsToolbarProps) {
               action={config.route}
               cta={finder.cta}
               carry={carried}
+              partial={partial}
             />
           </details>
           )}

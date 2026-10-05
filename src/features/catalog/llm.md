@@ -43,6 +43,22 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   (**D122**), the card's and the PDP's one CTA, a client island: the drawn CTA's `Button` box, primary or
   (discontinued) ghost, writes the browser cart (`src/lib/cart.ts`) and reads `Added ✓` / `Updated ✓` for
   1.8 s. Takes the quantity and the server-checked vehicle as props.
+- [`siblings.ts`](siblings.ts) — `titleKey()` and `siblingFacts(product, siblings)`, pure (launch audit
+  D145; D151): which facts set a product apart from the products that share its name and size line
+  (wheels: side, centre bore, seat type, backspacing, load rating; accessories: part number unless the
+  name prints it; tires: load range, M+S, 3PMSF, studdable, ply). The siblings come from `queries.ts`
+  `getTitleSiblings()` (same category, brand, model or name, and size columns; published and
+  discontinued; one indexed query per product page). Read by `product/view.ts` for the size line and,
+  through it, the page title. **The card uses it too (owner, 2026-10-05: "Yes, on the card"; D153):**
+  `listingFacts(products, candidates)` runs the same rule over a whole listing, and `queries.ts`
+  attaches the result as `CatalogProduct.tellingFacts`, which `adapter.ts` `toProduct()` appends to the
+  card's size line (`… · Gloss Black · Centre bore 57.1 mm`). So the card, the cart line, both quote
+  emails and the page title say the same thing, and a card shows a fact only when a sibling shares
+  everything else it prints. `titleKey()` reads `baseSizeLine()`, never the line with facts.
+- **`adapter.ts` `expandWith()`** (D145; D151): the vendors' `W/` reads `with` in a wheel's size
+  line and `Product.wheel.finish`, so on the card, the PDP subheading, the title, the cart line and both
+  emails, and since 2026-10-05 the PDP spec table's Finish, Finish family and Colour rows (`product/view.ts`
+  imports it). Display only; the database keeps the vendor's text (D125).
 - [`cart-item.ts`](cart-item.ts) — `cartItem(product)`, the one description of a product a cart line
   shows (no price), shared by the card, the PDP and the cart's refresh (D122).
 - [`components/product-card.tsx`](components/product-card.tsx) — `ProductCard`, props
@@ -63,7 +79,8 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 - [`adapter.ts`](adapter.ts) — `toProduct()`: a database product (`CatalogProduct`) into the card-shaped
   `Product` every component renders, plus the hyphen/underscore enum spelling and `ACCESSORY_LABEL`
   (since D125 the vendors' fifteen labels verbatim, `Center Caps` … `Tire Bags & Storage`). The
-  one place the two shapes meet (D108b). Pure, client-safe.
+  one place the two shapes meet (D108b). Pure, client-safe. `baseSizeLine()` is the size line from the
+  product's own columns; `toProduct()` appends `tellingFacts` to it (D153).
 - [`cache-tag.ts`](cache-tag.ts) — `CATALOGUE_TAG`, the one tag for a cached catalogue read; the product
   admin's actions expire it on every write.
 - [`components/product-photo-placeholder.tsx`](components/product-photo-placeholder.tsx) — the tile a
@@ -78,7 +95,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     client-safe.
   - [`queries.ts`](queries.ts) — storefront reads: `listProducts`, `getFacets`, `getProductBySlug`,
     `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs` (`includeDiscontinued` for the cart,
-    D122), `getPriceBounds`, `getBrands` (every
+    D122), `getTitleSiblings`, `getPriceBounds`, `getBrands` (every
     brand a category carries, whatever is filtered; D111), `listProductUrls`.
     The only place visibility is decided. **Since D132 `getFacets(filters, sizeChoice)` returns
     `StorefrontFacets`**: `CatalogFacets` (whose `tire` / `wheel` lists stay every value the category
@@ -86,6 +103,15 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     in `sizeChoice`. Only size parts narrow size options; brand, season, type and price do not. All the
     size lists, whole and narrowed, come from one `array_agg(distinct …) filter (where …)` row per
     category, and every facet read is issued in one wave.
+    **Every list that renders cards (`listProducts`, `getOtherSizes`, `getSimilarProducts`,
+    `getProductsBySlugs`) ends in `toStorefrontProducts`**, which reads the photos and the cards'
+    title siblings together (`getListingSiblings`, one extra statement per page and category) and sets
+    `tellingFacts`. The sibling read is a superset (brand, model or name, and the size columns the line
+    prints, **not** the bolt pattern, whose GIN scan cost 4 ms a key); `titleKey()` is the exact test.
+    Wheels ask it as a `UNION ALL` of one conjunctive branch per distinct key (`selectSiblingRows`);
+    tires and accessories as one `OR`, because their spec tables are small and unindexed on the size
+    text. Inner joins to one spec table, not `withSpecs()`: the left joins let the planner flip between
+    a primary-key probe per row and a scan of the whole spec table.
   - [`store.ts`](store.ts) — staff reads and every write: `listAllProducts`, `getProductById`,
     `listBrands`, `createProduct`, `updateProduct`, `setProductStatus`, `bulkSetProductStatus`, and
     `createProductsBatch` (D114), the bulk form of `createProduct` for a catalogue load: one INSERT
@@ -324,3 +350,15 @@ in place.
    in `HANDOFF.md` §7. Client, via owner.
 6. ~~**The accessory types follow the photography (D63).**~~ **Superseded by D125:** the types are the
    vendors' fifteen; D105b's nine (and D63's photographed four) are gone.
+7. **`W/` stays in product names** (D145; D151). The size line, title, cart, emails and (since
+   2026-10-05) the PDP spec rows expand it; one Lock Off-Road wheel model and a few accessory names
+   (`Sentali … CAP W/BLACK LOGO`, TIS `… w/ Chrlogo Cap`) still print the vendor's shorthand. Names are
+   D125 vendor wording and need the owner. Owner.
+8. ~~**The card's size line does not name the sibling facts**~~ **Closed (D153; owner, 2026-10-05,
+   "Yes, on the card").** Measured on the local copy of the catalogue (39,960 products): 8,642 wheels
+   (29.0%), 812 accessories (47.0%) and 87 tires (1.0%) gain a fact on the card. What it costs and
+   what is left: the cost is one more statement per listing page (about 5 to 15 ms on the local
+   Postgres, 90 ms for a 150-card `Load more` window on wheels, which a stored title-key column would
+   cut to an index lookup; a schema change, owner). The 8 wheels and 89 tires that no fact can tell
+   apart (they differ only in the vendor's own name text) stay identical, as on the page title. A card
+   whose only sibling is `discontinued` still shows the fact, because the title rule counts it. Owner.

@@ -34,13 +34,13 @@ above the fold is ever held back, nothing loops, nothing blurs, nothing scales p
 | Token | Value | Use |
 |---|---|---|
 | `--ease-card` | `cubic-bezier(.2,0,0,1)` | The artboards' card curve — feedback and state |
-| `--ease-arrive` | `cubic-bezier(.16,1,.3,1)` | Arrivals, reveals, morphs, slides in |
+| `--ease-arrive` | `cubic-bezier(.16,1,.3,1)` | Arrivals, reveals, slides in (the photo morph left it in D144) |
 | `--ease-leave` | `cubic-bezier(.4,0,1,1)` | Exits |
 | `--duration-feedback` | 120ms | Hover fills, press |
 | `--duration-state` | 200ms | Disclosure, small enters, image fade, crossfade in |
 | `--duration-exit` | 150ms | Anything leaving |
 | `--duration-handoff` | 100ms | Entering view waits for the leaving one |
-| `--duration-overlay` | 280ms | Sheet, photo morph, card travel, nav indicator |
+| `--duration-overlay` | 280ms | Sheet, card travel, nav indicator (the photo morph runs `--duration-route` since D144) |
 | `--duration-route` | 350ms | Directional slide (owner) |
 | `--duration-reveal` | 300ms | Home scroll reveal (owner) |
 | `--stagger-step` | 30ms × ≤5 = 150ms | New result cards (owner) |
@@ -69,6 +69,7 @@ routes 280–350 (250–400). Longest single animation measured: **350ms**; long
 | Page, untyped (header nav between categories, footer, drawer) | navigation | hard cut | crossfade, arriving view rises 6px | out 150 `--ease-leave`; in 200 + 6px over 280, after 100 | 0s | `/results → /wheels`: old opacity `1 → 0` by 150ms; new `0 → .95` at 183ms, `translate 6 → 0.76px` |
 | ~~`loading.tsx` skeleton → content~~ | — | — | **Removed 2026-09-29 with `loading.tsx` (D91b):** no skeleton, so no handover | — | — | — |
 | Card photo → PDP gallery | open a product from a card | photo vanished, gallery appeared | **one photo morphs** (`product-photo-<slug>`, only on `product-open`/`product-back` types) | `--duration-overlay` `--ease-arrive` | 0s | 326px at (377,287) → 681.9 at (66.5,129.9) → 700.6 → **702px at (49,121)**; reverse 702 → 433 → 339 → **326 at (377,301)**. Exactly one photo group on each trip |
+| **D144 (2026-10-04)** Card photo → PDP gallery, corrected | same | the photo faded to nothing mid-flight, the gallery box sat empty, the photo popped in ~200ms after the morph ended (measured on production); on a no-photo tile two brand labels crossed | the morph group flies at `z-index: 50` above both pages; the arriving snapshot is opaque from frame 1 because the gallery paints the card's cached 480px file under the 1000px one; the pair hands over in `--duration-feedback` instead of crossfading the whole way; the gallery vignette travels with the photo | group `--duration-route` `--ease-card`; old out 120ms `--ease-leave`; new no animation | 0s | screencast at 1440 and 390: the photo is visible in every frame card → gallery, no blank box, no pop; 4× CPU throttle at 390 keeps 15–20ms frames. Back via the crumb untested with a photo card present (needs a photo on the first results page locally) |
 | Result cards | filter, sort, `Load more` (same-route) | cards popped | leavers fade; survivors travel; arrivals fade up 12px, 30ms apart, ≤150ms | out 150; travel 280 `--ease-arrive`; in 200 + rise 280 | 0s | `?season=winter`: leavers `1 → 0` at 150ms; survivor `(376,864) → (1062.9,300.9) → (1064,300)`; arrivals rise `12 → 1.05px`, finishing at 400 and 430ms (delays 120 and 150ms). `Load more`: arrivals run `vt-fade-in` + `vt-rise` |
 | Lazy images | image `load` | popped in | fade in over their own ground | `--duration-state` `--ease-card` | 0.01ms | from the frame `data-loaded` lands: `0 → .10 → .61 → .82 → .92 → .98 → 1` over ~230ms. `loading="eager"` (LCP) images never held |
 | Home sections below the fold | enter viewport, once | static | fade + 12px rise | `--duration-reveal` `--ease-arrive` | never armed | at load all six sit below the 900px fold (first at 933px) and arm; revealed `opacity 0 → .30 → .79 → .93 → .98 → 1`, `translate 12 → 8.36 → 2.53 → 0.79 → 0px` in ~300ms. Hero and finder never carry `data-reveal` |

@@ -63,7 +63,10 @@ export default defineConfig({
       use: { ...devices["Pixel 7"], viewport: { width: 320, height: 640 } },
     },
   ],
-  webServer: [
+  /* `tests/fixture/run.mjs` (npm run test:e2e:fixture) has already built and
+     started the app on PW_PORT against its throwaway database, so it sets
+     PW_EXTERNAL_SERVER=1 and Playwright starts nothing of its own. */
+  webServer: process.env.PW_EXTERNAL_SERVER === "1" ? undefined : [
     {
       command: `npx next build && QA_ERROR_ROUTE=1 npx next start -p ${PORT}`,
       url: BASE_URL,

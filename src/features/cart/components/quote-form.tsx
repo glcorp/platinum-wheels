@@ -240,6 +240,10 @@ export function QuoteForm({ getLines, copy, openedAt, onSuccess }: QuoteFormProp
               {CONTACT_METHODS.map((method, index) => (
                 <label
                   key={method.value}
+                  /* Forced-colours hook: the checked segment's `--text` fill
+                     is repainted as `Canvas` there, so globals.css gives
+                     `[data-segment]:has(:checked)` `Highlight`. D145. */
+                  data-segment=""
                   className={cx(
                     "font-sans relative flex cursor-pointer items-center justify-center text-14 leading-flat font-medium",
                     "text-ink-muted has-checked:bg-ink has-checked:text-on-accent",
@@ -290,7 +294,18 @@ export function QuoteForm({ getLines, copy, openedAt, onSuccess }: QuoteFormProp
         </Checkbox>
       </div>
 
-      <div className="flex flex-col items-stretch gap-3 sm:items-start">
+      {/* Sticky submit row (launch audit, D145, UI-CRITIQUE): the form is
+          taller than the sheet on most phones and laptops, so `Send inquiry`
+          sat below the visible area and nothing said it was there. The row
+          now sticks to the bottom of the sheet's scroller (`cart-view.tsx`),
+          on the panel's own `--surface` so fields scroll under it cleanly.
+          Rest geometry at the end of the scroll is unchanged: `-mt-4 pt-4`
+          cancel inside the form's 32px gap (16px of surface above the button
+          when stuck), and the scroller's `pb-safe` moved onto this row, so
+          the button ends exactly where it did. The scroller's
+          `scroll-pb-24` keeps a field focused by Tab or by the
+          first-invalid jump out from under it (WCAG 2.4.11). */}
+      <div className="bg-surface pb-safe sticky bottom-0 -mt-4 flex flex-col items-stretch gap-3 pt-4 sm:items-start">
         <Button
           type="submit"
           variant="primary"

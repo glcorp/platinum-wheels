@@ -16,6 +16,10 @@
         (a refund for staff to issue), never folded silently into `approved`.
         The partial unique index makes a second `approved` impossible anyway.
      5. Every change writes a `payment_events` row, in the same transaction.
+     6. A return redirect reaches the gateway only for an attempt the
+        browser's own `pw_pay` cookie names, a bounded number of times, and
+        never chooses which link page to send the browser to (LA-01/LA-02,
+        D145 audit; see "The return redirect" below).
 
    Callers: the `/pay` routes (customer) and the admin actions (staff). The
    gateway is passed in, so the money logic runs against a fake in tests.
@@ -408,116 +412,249 @@ export function invoiceNumberFor(reference: string, attemptNo: number): string {
   return `${reference.replace(/[^A-Za-z0-9]/g, "")}N${attemptNo}`;
 }
 
+/* ===========================================================================
+   The return redirect (LA-01/LA-02, D145 audit; D146)
+   ===========================================================================
+
+   `/pay/return` is the customer's browser coming back from the hosted page,
+   so anyone can call it with anything. Two rules hold whatever it carries:
+
+     1. **No gateway call unless the return is bound to an attempt we
+        started.** The `pw_pay` cookie (set by the Pay button, 30 minutes)
+        must name a link; that link's attempt must still be open (pending, or
+        declined when a different transaction id arrives: the approval that
+        can follow a decline on the same hosted page); an invoice number in
+        the return must be one of that link's. Each attempt answers at most
+        one completed query per lookup (a transaction id, or its own invoice)
+        and `MAX_RETURN_QUERIES_PER_ATTEMPT` queries in all. The claim is an
+        event row written under the link's row lock before the network call,
+        so two returns at once cannot both query. A failed query is recorded
+        against its claim and may be retried within the cap.
+     2. **The redirect never comes from return data.** The customer is sent
+        to `/pay/<token>` only for the link their own cookie names; everyone
+        else gets the neutral `/pay/done`. Invoice numbers are sequential, so
+        a lookup by a browser-sent invoice would hand out another customer's
+        capability URL.
+
+   No event row is written for a return without that cookie-bound attempt. */
+
+/** Gateway queries one attempt may cause from `/pay/return`, whatever comes
+ *  back: the first, a retry after a failed query, and the approval that can
+ *  follow a decline. With `MAX_ATTEMPTS_PER_LINK` that bounds one link at 30
+ *  return queries beside its 10 session requests. */
+const MAX_RETURN_QUERIES_PER_ATTEMPT = 3;
+
+/** A query is about to run for this attempt (written before the call). */
+const RETURN_QUERY = "attempt.return_query";
+/** That query failed (transport, HTTP or gateway error): the claim may be retried. */
+const RETURN_QUERY_FAILED = "attempt.return_query_failed";
+/** The customer came back on a transaction already settled (by `/pay/notify`
+ *  or an earlier return). Written once per attempt. */
+const RETURN_RECEIVED = "attempt.return_received";
+
+/** `randomBytes(16)` base64url is 22 characters; the page accepts 22–64. */
+const PUBLIC_TOKEN_SHAPE = /^[A-Za-z0-9_-]{22,64}$/;
+
+/** What the gateway is asked: the transaction the browser named, or, when it
+ *  named none, the attempt's own invoice number. */
+type ReturnLookup = { via: "txn_id"; txnId: string } | { via: "invoice" };
+
+function lookupKey(lookup: ReturnLookup): string {
+  return lookup.via === "txn_id" ? `txn:${lookup.txnId}` : "invoice";
+}
+
+function dataField(data: unknown, name: string): unknown {
+  return data !== null && typeof data === "object" ? (data as Record<string, unknown>)[name] : undefined;
+}
+
+/** The link the browser's own `pw_pay` cookie names. Untrusted like the rest,
+ *  but holding it means holding the link's capability URL already. */
+async function findCookieLink(token: string | null, db: Database): Promise<PaymentLink | null> {
+  if (!token || !PUBLIC_TOKEN_SHAPE.test(token)) return null;
+  const [link] = await db.select().from(paymentLinks).where(eq(paymentLinks.publicToken, token));
+  return link ?? null;
+}
+
+/** The attempt this return may query the gateway about, or null. Read-only;
+ *  `claimReturnQuery` runs it again under the link's row lock. */
+async function eligibleAttempt(
+  tx: Tx,
+  linkId: string,
+  claimedInvoice: string | null,
+  lookup: ReturnLookup,
+): Promise<PaymentAttempt | null> {
+  const [attempt] = claimedInvoice
+    ? await tx
+        .select()
+        .from(paymentAttempts)
+        .where(and(eq(paymentAttempts.linkId, linkId), eq(paymentAttempts.providerInvoiceNumber, claimedInvoice)))
+    : await tx
+        .select()
+        .from(paymentAttempts)
+        .where(eq(paymentAttempts.linkId, linkId))
+        .orderBy(desc(paymentAttempts.attemptNo))
+        .limit(1);
+  if (!attempt) return null;
+
+  const open =
+    attempt.status === "pending" ||
+    (attempt.status === "declined" && lookup.via === "txn_id" && lookup.txnId !== attempt.providerTxnId);
+  if (!open) return null;
+
+  const rows = await tx
+    .select({ id: paymentEvents.id, type: paymentEvents.type, data: paymentEvents.data })
+    .from(paymentEvents)
+    .where(and(eq(paymentEvents.attemptId, attempt.id), inArray(paymentEvents.type, [RETURN_QUERY, RETURN_QUERY_FAILED])));
+  const claims = rows.filter((row) => row.type === RETURN_QUERY);
+  if (claims.length >= MAX_RETURN_QUERIES_PER_ATTEMPT) return null;
+
+  const failed = new Set(rows.filter((row) => row.type === RETURN_QUERY_FAILED).map((row) => dataField(row.data, "claim")));
+  const key = lookupKey(lookup);
+  const answered = claims.some((claim) => dataField(claim.data, "key") === key && !failed.has(claim.id));
+  return answered ? null : attempt;
+}
+
+/** Atomically claim one gateway query for this return: lock the link (the
+ *  order every writer takes), re-check, record the claim, commit. */
+async function claimReturnQuery(
+  db: Database,
+  linkId: string,
+  claimedInvoice: string | null,
+  lookup: ReturnLookup,
+): Promise<{ claimId: number; attempt: PaymentAttempt } | null> {
+  return db.transaction(async (tx) => {
+    const [locked] = await tx.select({ id: paymentLinks.id }).from(paymentLinks).where(eq(paymentLinks.id, linkId)).for("update");
+    if (!locked) return null;
+    const attempt = await eligibleAttempt(tx, linkId, claimedInvoice, lookup);
+    if (!attempt) return null;
+    const [claim] = await tx
+      .insert(paymentEvents)
+      .values({
+        linkId,
+        attemptId: attempt.id,
+        type: RETURN_QUERY,
+        actor: "customer",
+        data: { key: lookupKey(lookup), via: lookup.via, txn_id: lookup.via === "txn_id" ? lookup.txnId : null },
+      })
+      .returning({ id: paymentEvents.id });
+    return { claimId: claim.id, attempt };
+  });
+}
+
+/** One `attempt.return_received` per attempt, however often the customer
+ *  reloads or repeats the return. */
+async function recordSettledReturn(settled: { linkId: string; attemptId: string }, txnId: string, db: Database) {
+  await db.transaction(async (tx) => {
+    await tx.select({ id: paymentLinks.id }).from(paymentLinks).where(eq(paymentLinks.id, settled.linkId)).for("update");
+    const [seen] = await tx
+      .select({ id: paymentEvents.id })
+      .from(paymentEvents)
+      .where(and(eq(paymentEvents.attemptId, settled.attemptId), eq(paymentEvents.type, RETURN_RECEIVED)))
+      .limit(1);
+    if (seen) return;
+    await event(tx, {
+      linkId: settled.linkId,
+      attemptId: settled.attemptId,
+      type: RETURN_RECEIVED,
+      actor: "customer",
+      data: { txn_id: txnId, verified: true, settled: true },
+    });
+  });
+}
+
 /**
- * The browser came back from the hosted page. `fields` is untrusted: it only
- * names a transaction (or, failing that, an invoice) to ask the gateway about.
- * Returns the link's public token so the caller can send the customer back to
- * their page, or null when nothing matches.
+ * The browser came back from the hosted page (`fields` untrusted, possibly
+ * empty). Returns the public token of the link the browser's own cookie
+ * names, so the caller can send the customer back to their page, or null
+ * (the neutral page). See the rules above.
  *
  * When the export script has already settled this transaction (D119), the
  * attempt row says so and no gateway query is made: one Fixie request per
  * payment instead of two. `notifyGraceMs` > 0 (only while `/pay/notify` is
- * enabled) waits that long for the POST before falling back to the query.
+ * enabled) waits that long for the POST before querying, and only for a
+ * return that would otherwise query.
+ *
+ * `getGateway` is called only when a query is about to run, so a return that
+ * queries nothing needs no gateway configuration.
  */
 export async function handleReturn(
   fields: { txnId: string | null; invoiceNumber: string | null },
-  gateway: Gateway,
+  getGateway: () => Gateway,
   db: Database = getDb(),
-  options: { notifyGraceMs?: number; fallbackToken?: string | null } = {},
+  options: { notifyGraceMs?: number; cookieToken?: string | null } = {},
 ): Promise<string | null> {
-  const txnId = fields.txnId && TXN_ID_SHAPE.test(fields.txnId) ? fields.txnId : null;
-  const claimedInvoice = fields.invoiceNumber && INVOICE_SHAPE.test(fields.invoiceNumber) ? fields.invoiceNumber : null;
-
-  if (!txnId && !claimedInvoice) {
-    return options.fallbackToken ? handleEmptyReturn(options.fallbackToken, gateway, db) : null;
-  }
-
-  if (txnId) {
-    const settled = await findSettled(txnId, db, options.notifyGraceMs ?? 0);
-    if (settled) {
-      await db.insert(paymentEvents).values({
-        linkId: settled.linkId,
-        attemptId: settled.attemptId,
-        type: "attempt.return_received",
-        actor: "customer",
-        data: { txn_id: txnId, verified: true, settled_by: "notify" },
-      });
-      return settled.publicToken;
-    }
-  }
-
-  let transactions: GatewayTransaction[] = [];
-  if (txnId) {
-    const result = await gateway.getTransaction(txnId);
-    if (result.ok) transactions = result.transactions;
-    else console.error(JSON.stringify({ at: "payments.handleReturn", detail: result.detail }));
-  }
-
-  // The invoice we trust is the gateway's; the browser's is only a fallback
-  // for finding the customer's page when the query failed or had no txn id.
-  const invoice = transactions[0]?.invoiceNumber ?? claimedInvoice;
-  if (!invoice) return null;
-
-  const [row] = await db
-    .select({ attemptId: paymentAttempts.id, publicToken: paymentLinks.publicToken, linkId: paymentLinks.id })
-    .from(paymentAttempts)
-    .innerJoin(paymentLinks, eq(paymentLinks.id, paymentAttempts.linkId))
-    .where(eq(paymentAttempts.providerInvoiceNumber, invoice));
-  if (!row) return null;
-
-  await db.insert(paymentEvents).values({
-    linkId: row.linkId,
-    attemptId: row.attemptId,
-    type: "attempt.return_received",
-    actor: "customer",
-    data: { txn_id: txnId, verified: transactions.length > 0 },
-  });
-
-  const txn = transactions.find((t) => t.txnId === txnId);
-  if (txn) await resolveAttempt(row.attemptId, txn, "return", db);
-  return row.publicToken;
-}
-
-const PUBLIC_TOKEN_SHAPE = /^[A-Za-z0-9_-]{16,64}$/;
-
-/**
- * Converge came back with an empty POST: it does so whenever its hosted page
- * failed before authorizing (seen 2026-10-02/03), and may on a cancel. The
- * `pw_pay` cookie set by the Pay button names the link; it is untrusted and
- * only picks which page to show and which invoice to ask Converge about. One
- * `txnquery` by invoice (1 Fixie request) settles the newest pending attempt
- * if a transaction does exist, under the usual amount and invoice checks.
- */
-async function handleEmptyReturn(publicToken: string, gateway: Gateway, db: Database): Promise<string | null> {
-  if (!PUBLIC_TOKEN_SHAPE.test(publicToken)) return null;
-  const [link] = await db.select().from(paymentLinks).where(eq(paymentLinks.publicToken, publicToken));
+  const link = await findCookieLink(options.cookieToken ?? null, db);
   if (!link) return null;
 
-  const [attempt] = await db
-    .select()
-    .from(paymentAttempts)
-    .where(and(eq(paymentAttempts.linkId, link.id), eq(paymentAttempts.status, "pending")))
-    .orderBy(desc(paymentAttempts.attemptNo))
-    .limit(1);
-  if (!attempt) return link.publicToken;
+  const txnId = fields.txnId && TXN_ID_SHAPE.test(fields.txnId) ? fields.txnId : null;
+  const claimedInvoice = fields.invoiceNumber && INVOICE_SHAPE.test(fields.invoiceNumber) ? fields.invoiceNumber : null;
+  const lookup: ReturnLookup = txnId ? { via: "txn_id", txnId } : { via: "invoice" };
 
-  const result = await gateway.findByInvoice(attempt.providerInvoiceNumber);
-  const found = result.ok ? result.transactions.filter((t) => t.invoiceNumber === attempt.providerInvoiceNumber) : [];
-  if (!result.ok) console.error(JSON.stringify({ at: "payments.handleEmptyReturn", detail: result.detail }));
+  if (txnId) {
+    const open = await db.transaction((tx) => eligibleAttempt(tx, link.id, claimedInvoice, lookup));
+    const settled = await findSettled(txnId, db, open ? (options.notifyGraceMs ?? 0) : 0);
+    if (settled) {
+      if (settled.linkId === link.id) await recordSettledReturn(settled, txnId, db);
+      return link.publicToken;
+    }
+    if (!open) return link.publicToken;
+  }
 
-  await db.insert(paymentEvents).values({
-    linkId: link.id,
-    attemptId: attempt.id,
-    type: "attempt.return_received",
-    actor: "customer",
-    data: { txn_id: null, verified: result.ok, via: "cookie", found: found.length },
-  });
+  let gateway: Gateway;
+  try {
+    gateway = getGateway();
+  } catch (error) {
+    console.error(JSON.stringify({ at: "payments.handleReturn", detail: error instanceof Error ? error.message : "unknown" }));
+    return link.publicToken;
+  }
 
-  // A decline then an approval on the same hosted page: apply in that order,
-  // so the attempt ends approved (`applyTransaction` only moves forward).
+  const claim = await claimReturnQuery(db, link.id, claimedInvoice, lookup);
+  if (!claim) return link.publicToken;
+
+  const result =
+    lookup.via === "txn_id"
+      ? await gateway.getTransaction(lookup.txnId)
+      : await gateway.findByInvoice(claim.attempt.providerInvoiceNumber);
+  if (!result.ok) {
+    console.error(JSON.stringify({ at: "payments.handleReturn", via: lookup.via, detail: result.detail }));
+    await db.insert(paymentEvents).values({
+      linkId: link.id,
+      attemptId: claim.attempt.id,
+      type: RETURN_QUERY_FAILED,
+      actor: "system",
+      data: { claim: claim.claimId },
+    });
+    return link.publicToken;
+  }
+
+  if (lookup.via === "txn_id") {
+    const txn = result.transactions.find((t) => t.txnId === lookup.txnId);
+    if (!txn) return link.publicToken;
+    // The gateway's invoice number names the attempt, and it must be one of
+    // this link's: a transaction for another link is left to its own return
+    // or to `/pay/notify`.
+    const [target] = txn.invoiceNumber
+      ? await db
+          .select({ id: paymentAttempts.id })
+          .from(paymentAttempts)
+          .where(and(eq(paymentAttempts.linkId, link.id), eq(paymentAttempts.providerInvoiceNumber, txn.invoiceNumber)))
+      : [];
+    if (!target) {
+      console.error(JSON.stringify({ at: "payments.handleReturn", foreignTransaction: true, txnId: txn.txnId }));
+      return link.publicToken;
+    }
+    await resolveAttempt(target.id, txn, "return", db);
+    return link.publicToken;
+  }
+
+  // No transaction id: Converge's empty POST after a hosted-page failure
+  // (seen 2026-10-02/03), or a return carrying only our invoice. A decline
+  // then an approval on the same hosted page: apply in that order, so the
+  // attempt ends approved (`applyTransaction` only moves forward).
+  const found = result.transactions.filter((t) => t.invoiceNumber === claim.attempt.providerInvoiceNumber);
   const order = { declined: 0, other: 1, approved: 2 } as const;
   for (const txn of [...found].sort((a, b) => order[a.outcome] - order[b.outcome])) {
-    await resolveAttempt(attempt.id, txn, "return", db);
+    await resolveAttempt(claim.attempt.id, txn, "return", db);
   }
   return link.publicToken;
 }

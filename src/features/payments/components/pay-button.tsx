@@ -17,8 +17,13 @@
    on the session and its hosted page then failed every card with
    errorType SYSTEM. Only `ssl_txn_auth_token` may be posted.
 
-   The button disables while pending: a second press would open a second
-   session, and two sessions on one link is how a double charge starts.
+   The button ignores presses while pending: a second press would open a
+   second session, and two sessions on one link is how a double charge starts.
+   It is `aria-disabled`, not `disabled` (D145 audit, A11Y-MANUAL; D151):
+   a `disabled` button drops keyboard focus to <body>, and focus stayed there
+   when an error came back. The click handler is what refuses the press; the
+   classes repeat the primary button's `disabled:` look for `aria-disabled`.
+   When an error comes back, focus moves to it.
    --------------------------------------------------------------------------- */
 
 import { useActionState, useEffect, useRef } from "react";
@@ -31,6 +36,12 @@ const INITIAL: PayState = { status: "idle" };
 export function PayButton({ publicToken, amountLabel }: { publicToken: string; amountLabel: string }) {
   const [state, formAction, isPending] = useActionState(startPayment.bind(null, publicToken), INITIAL);
   const handoffRef = useRef<HTMLFormElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+
+  // A new state object per answer, so a second identical error refocuses too.
+  useEffect(() => {
+    if (state.status === "error") errorRef.current?.focus();
+  }, [state]);
 
   useEffect(() => {
     if (state.status !== "redirect") return;
@@ -64,12 +75,23 @@ export function PayButton({ publicToken, amountLabel }: { publicToken: string; a
   }
 
   return (
-    <form key="start" action={formAction} className="flex flex-col gap-3">
-      <Button type="submit" variant="primary" size="panel" fullWidth disabled={isPending}>
+    <form key="start" action={formAction} aria-busy={isPending || undefined} className="flex flex-col gap-3">
+      <Button
+        type="submit"
+        variant="primary"
+        size="panel"
+        fullWidth
+        aria-disabled={isPending || undefined}
+        onClick={(event) => {
+          // Enter on the focused button arrives here as a click too.
+          if (isPending) event.preventDefault();
+        }}
+        className="aria-disabled:translate-y-0 aria-disabled:bg-surface aria-disabled:text-ink-dim aria-disabled:hover:bg-surface aria-disabled:active:translate-y-0 aria-disabled:active:bg-surface"
+      >
         {isPending ? "Opening secure payment…" : `Pay ${amountLabel}`}
       </Button>
       {state.status === "error" ? (
-        <p role="alert" className="text-ink text-14 leading-body">
+        <p ref={errorRef} role="alert" tabIndex={-1} className="text-ink text-14 leading-body">
           {state.message}
         </p>
       ) : null}
