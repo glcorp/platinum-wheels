@@ -44,14 +44,16 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   transition, route changes included) and degrades to a plain swap.
 - [`site-footer.tsx`](site-footer.tsx) — Server Component, named export `SiteFooter`, no props.
   120px logo badge, Shop/Company/Legal link columns (`ROUTES`), a computed `Winter <year>` link
-  and bottom-bar `© <year> {SITE.legalName} Inc.` (D32). Social row omitted per D34.
+  and bottom-bar `© <year> {SITE.legalName}` (D32; the legal name carries its own `Inc.`, so the footer appends nothing, D153). Social row omitted per D34.
 - [`cart-link.tsx`](cart-link.tsx) — `"use client"`, named export `CartLink` (**D122**). The header's
   cart: a 44×44 link to `/cart` in the menu trigger's box and stroke weight, after the phone CTA and
   before the menu at every width (owner: "it doesn't need to be inside the hamburger"). An accent count
   of units, only when the cart is not empty, that pops (`cart-pop`) on an add and never on a page load;
   and a fixed `Added to cart` / `Cart updated` prompt with `View cart`, bottom of the screen on a phone
   and bottom-right at the 420px measure from `sm:`, held while hovered or focused, 6 s otherwise. The
-  prompt sits in an always-mounted polite live region. On `/cart` (`usePathname()`) the icon and count
+  prompt sits in an always-mounted polite live region, **portalled to `<body>` once hydrated (LA-04, D145
+  audit, D148)**: rendered inside the header it was trapped in the header's stacking context (the
+  permanent `view-transition-name`, D92b) and every result card painted over it. On `/cart` (`usePathname()`) the icon and count
   stay but render as a non-link `role="img"` labelled `…, current page` (D127). Reads `src/lib/cart.ts` only.
 - [`site-nav-drawer.tsx`](site-nav-drawer.tsx) — `"use client"`, named export `SiteNavDrawer`. Props:
   `{ links: ReadonlyArray<{ label: string; href: string; active: boolean }>; phone: { display: string;
@@ -131,6 +133,9 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   (card `Request a quote` → PDP `#quote` stopped at 1558–1638 against 1486, FIN-4).
   **D131:** a click on a fragment link whose URL is exactly the current one (`/#contact` on `/#contact`) is taken
   by a capture-phase click listener and scrolled here, because Next's same-URL navigation never scrolls.
+  **D145 (D151):** every fragment arrival but the cold load also moves focus to the target
+  (`preventScroll`, temporary `tabindex="-1"`), including a same-page `next/link` hash change, which Next
+  scrolls and never focuses; the click listener lets that one through and only focuses.
 - [`route-error.tsx`](route-error.tsx) — `"use client"`. `RouteError({ error, retry })`, the storefront's
   route error boundary (**D62**), plus `RouteErrorPanel({ digest?, retry?, as? })`, its contents without
   the `<main>` wrapper so `/styleguide` §11 can render the real component instead of a copy that drifts
@@ -199,6 +204,7 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 | D91b | 2026-09-30 | `scroll-reveal` reveals a fragment target instantly (link, `hashchange`, `popstate`, cold load); `nav-progress` drops the inert `[data-route-loading]` settle check, which only `loading.tsx` ever set; `hash-scroll` re-lands a fragment on route arrival. | QA pass: `/#contact` landed 12px short on `/`; the check could never fire after D91b. | D91b |
 | D128 | 2026-10-03 | `SiteHeader` takes `finderSwitch`; the desktop link row is the `site-nav-links.tsx` island; on `/` the category links in the row and the drawer switch the hero finder instead of navigating. | Owner: header Wheels / Accessories "should stay on the home page and refresh that part only"; chose "Header nav switches it, home only". | Owner, 2026-10-03; D128 |
 | D141 | 2026-10-04 | From `lg:` the header `<nav>` and the footer's two rows are capped at `max-w-content` and centred; the header's side padding moved from the `<nav>` to the `<header>` so the bar's background and hairline stay full-bleed. Identical at ≤1440. | Above 1440 the header and footer ran to 48px from the screen edge while page content sat in the centred 1344px frame (x=288 at 1920). | Owner, 2026-10-04 ("symmetry should be maintained"); DEVIATIONS #114; D141 |
+| D151 | 2026-10-04 | `hash-scroll` moves focus to the fragment target on every arrival (route change onto a fragment, `hashchange`, the D131 same-URL click, and a same-page `next/link` click to a different hash, which Next scrolls but never focuses), `preventScroll`, adding `tabindex="-1"` until `blur` when the target is not focusable, and waiting while a modal that does not hold the target is still open. A cold load does not move focus (the browser's own fragment jump sets the focus starting point). | Fragment links moved the view but not the keyboard (launch audit, D145, A11Y-MANUAL). | Owner, 2026-10-04: "Apply all code items" |
 | — | — | None folder-scoped. | Every ruling that shapes this folder is global. | — |
 
 **D92b** (motion) governs `page-transition.tsx`, `scroll-reveal.tsx`, the header's pinned name and
@@ -237,6 +243,10 @@ all widths, hide rather than remove).
   (`docs/decisions.md:73`).
 - **Don't import `src/features/finder/` to switch the finder (D37, D128).** The header writes
   `src/lib/finder-category-store.ts`; the finder reads it.
+- **Don't move the cart prompt back inside the header's tree, or give the header a z-index to lift it
+  (LA-04).** The header's `view-transition-name` makes it a stacking context at z-auto, so anything
+  `fixed` inside it ranks only within the header and later positioned content paints over it. Anything
+  that must float over the page from the header renders through a portal to `<body>`.
 - **Don't intercept the category links with `onClick` + `preventDefault` (D128).** `nav-progress.tsx`
   deliberately ignores `defaultPrevented` and would start the loader for a navigation that never
   comes; the click must be stopped at the anchor (or the dialog) before it reaches `document`.

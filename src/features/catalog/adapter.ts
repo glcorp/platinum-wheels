@@ -68,6 +68,18 @@ export function etOffset(value: number): string {
   return `ET${signedOffset(value)}`;
 }
 
+/**
+ * The vendors' `W/` shorthand read as the word: `Gloss Silver W/ Machined
+ * Face` is `Gloss Silver with Machined Face`, `Milled W/Red Inner` is
+ * `Milled with Red Inner` (launch audit D145, COPY; D151). Display only:
+ * the database keeps the vendor's text (D125), and nothing filters or matches
+ * on a finish string. `W/O` ("without") is left alone; no row carries it
+ * today.
+ */
+export function expandWith(text: string): string {
+  return text.replace(/\bW\/(?!O\b)\s*/gi, "with ");
+}
+
 function tireSizeLine(product: CatalogProduct & { category: "tires" }): string {
   const specs = product.specs;
   if (specs === null) return "";
@@ -83,7 +95,7 @@ function wheelSizeLine(
   if (specs === null) return "";
   const size = `${plain(specs.diameter)}×${plain(specs.width)}`;
   const bolts = specs.boltPatterns.map(timesSign).join(" / ");
-  const finish = specs.finish?.trim() ?? "";
+  const finish = expandWith(specs.finish?.trim() ?? "");
   /* D135: `20×9.5 · 5×130 · ET+25 · Gloss Black`. Offset and finish tell two
      wheels of one model and size apart; each is left out when the vendor gave
      none. */
@@ -141,6 +153,30 @@ function accessorySizeLine(
 
 /* --- The adapter -------------------------------------------------------- */
 
+/**
+ * The size line without any telling facts: what the product's own columns
+ * print. The title key (`siblings.ts`) is built from this, so a product's
+ * key never changes with the facts that were computed from it.
+ */
+export function baseSizeLine(product: CatalogProduct): string {
+  switch (product.category) {
+    case "tires":
+      return tireSizeLine(product);
+    case "wheels":
+      return wheelSizeLine(product);
+    case "accessories":
+      return accessorySizeLine(product);
+  }
+}
+
+/** The card's size line: the product's own, then ` · ` and each telling fact
+ *  (`20×9.5 · 5×130 · ET+25 · Gloss Black · Centre bore 57.1 mm`). */
+function cardSizeLine(product: CatalogProduct): string {
+  const base = baseSizeLine(product);
+  const facts = product.tellingFacts ?? [];
+  return facts.length === 0 ? base : [base, ...facts].filter(Boolean).join(" · ");
+}
+
 export function toProduct(product: CatalogProduct): Product {
   const base = {
     category: product.category,
@@ -164,7 +200,7 @@ export function toProduct(product: CatalogProduct): Product {
       const specs = product.specs;
       return {
         ...base,
-        size: tireSizeLine(product),
+        size: cardSizeLine(product),
         badges: specs?.season ? [seasonParam(specs.season)] : [],
         threePeakMountainSnowflake: specs?.winterApproved ?? false,
         studdable: specs?.studdable ?? false,
@@ -174,7 +210,7 @@ export function toProduct(product: CatalogProduct): Product {
       const specs = product.specs;
       return {
         ...base,
-        size: wheelSizeLine(product),
+        size: cardSizeLine(product),
         // A wheel carries no badge and no 3PMSF (D59(4)).
         badges: [],
         threePeakMountainSnowflake: false,
@@ -187,14 +223,15 @@ export function toProduct(product: CatalogProduct): Product {
                 bolt: specs.boltPatterns.join(" / "),
                 offset:
                   specs.offsetMm === null ? "" : signedOffset(specs.offsetMm),
-                finish: specs.finish,
+                finish:
+                  specs.finish === null ? null : expandWith(specs.finish),
               },
       };
     }
     case "accessories":
       return {
         ...base,
-        size: accessorySizeLine(product),
+        size: cardSizeLine(product),
         badges: [],
         threePeakMountainSnowflake: false,
         accessoryType:

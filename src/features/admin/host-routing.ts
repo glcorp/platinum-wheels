@@ -24,7 +24,11 @@
      - **`PAY_HOST` (D105), production only:** `/pay` and everything under it
        passes — the customer's `/pay/<token>` page and Converge's
        `/pay/return` — and any other path is a 404. Elsewhere `/pay` is a 404.
-       Unchanged by D115.
+       Unchanged by D115. That 404 is the pay host's own (D145 audit; D151):
+       a stray path is served from `PAY_NOT_FOUND_PATH`, which only ever
+       renders `src/app/pay/not-found.tsx`, the page with the shop's phone and
+       email. The storefront's 404 answered before, and every link on it was
+       itself a 404 on the pay host.
 
    Which hosts count as the admin host: `ADMIN_HOST` always, and outside
    production also `admin.localhost`, so `next dev` can still reach the admin
@@ -49,6 +53,11 @@ export const DEV_ADMIN_HOST = "admin.localhost";
  *  Vercel, like `ADMIN_HOST`. Duplicated in `src/proxy.ts`'s `matcher` and in
  *  `src/features/payments/config.ts` — change all three. */
 export const PAY_HOST = "pay.platinumwheels.ca";
+
+/** Where a stray path on `PAY_HOST` is served from. `src/app/pay/page.tsx`
+ *  answers it with `notFound()`, so it renders the pay host's own 404 with a
+ *  real 404 status. */
+export const PAY_NOT_FOUND_PATH = "/pay";
 
 /** The folder under `src/app/` that holds every admin page. Internal only. */
 export const ADMIN_FOLDER = "/admin";
@@ -120,7 +129,7 @@ export function decideHostRouting({
   if (!isProduction) return { kind: "pass" };
 
   if (normalizeHost(host) === PAY_HOST) {
-    return isPayPath(pathname) ? { kind: "pass" } : { kind: "not-found" };
+    return isPayPath(pathname) ? { kind: "pass" } : { kind: "rewrite", pathname: PAY_NOT_FOUND_PATH };
   }
 
   return isPayPath(pathname) ? { kind: "not-found" } : { kind: "pass" };

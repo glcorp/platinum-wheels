@@ -362,8 +362,20 @@ function RangeGroup({
             `right` mark the same two points the handles do. The overhang at
             the extremes is what the track box's own `margin:0 8px` is for:
             half a handle hangs off the rail exactly as the artboard draws
-            it with `margin-left:-8px`. */}
-        <div className="pointer-events-none absolute -inset-x-2 top-0 h-5">
+            it with `margin-left:-8px`.
+
+            Target size (launch audit, D145; WCAG 2.5.8): the thumb is now a
+            24×24 box whose drawn 16×16 handle is its content box, painted
+            with `background-clip: content-box` inside 4px of transparent
+            padding (`range-input`, globals.css). The thumb is still
+            positioned by its border-box, so the D69 arithmetic is redone for
+            24px: the travel box hangs **12px** past each track edge
+            (`-inset-x-3`) and is 24px tall, 2px above and below the 20px
+            track box (`-top-0.5 h-6`), so the thumb centre still lands on
+            0–100% of the track and on its y=10 line. Handle, fill and rail
+            paint where they did; only the hit area grows. This box and the
+            utility change together or the handles drift 4px. */}
+        <div className="pointer-events-none absolute -inset-x-3 -top-0.5 h-6">
           <input
             id={`${idPrefix}-${noun}-min`}
             type="range"

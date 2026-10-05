@@ -361,7 +361,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             products={best}
             probe="best-grid"
             anchorPrefix="result"
-            priorityCount={3}
+            priorityCount={1}
             vehicle={vehicle}
           />
         )}

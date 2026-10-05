@@ -25,6 +25,16 @@ from `design/assets/`, and parity becomes eyeballing — which
   requests and four minutes. `--check` fetches and reports without writing. The cleanup rules
   (`EXCLUDED`, `RENAMED`, `SPLIT`, `SCION`, `ADDED`) are in the file, each with its reason; a rule that
   matches nothing is printed at the end of a run.
+- [`vehicle-fitment.mjs`](vehicle-fitment.mjs) — `node scripts/vehicle-fitment.mjs --ankusi <file>`
+  (**D149**, LA-05 of the D145 audit). Turns the downloaded ANKUSI wheel fitment CSV into
+  [`data/vehicle-fitment.csv`](data/llm.md): one row per vehicles.csv make + model + model year ANKUSI
+  publishes for that exact year (bolt pattern, bore, lug count, OE size), with the rules `ALIASES`,
+  `TRIM_WORDS` and `EXCLUDED` in the file and a review list of everything it did not use written to
+  `import-report/` (gitignored). Every run, with or without `--ankusi`, also validates the hand-kept
+  [`data/vehicle-fitment-generations.csv`](data/llm.md) (valid model, bolt pattern, years, no overlap, two
+  sources on two different sites, none of the banned ones; a bad row throws), lists any year where a
+  generation row disagrees with an exact ANKUSI row, accepts `bolt_pattern=unknown` rows (they block the app's nearest-year rule), and compiles the committed CSVs into
+  `src/features/finder/vehicle-list.ts` and `vehicle-fitment-data.ts`. No dependencies, no network.
 - [`db-migrate.mjs`](db-migrate.mjs) — applies `drizzle/*.sql` via `DATABASE_URL_UNPOOLED`. Runs first in
   `npm run build`, so every Vercel build migrates its own Neon branch (preview) or main (production)
   before `next build`. Exits 1 on Vercel with no URL; skips locally. Also `npm run db:migrate`.
@@ -41,7 +51,8 @@ from `design/assets/`, and parity becomes eyeballing — which
   every row by slug **and** vendor + vendor SKU. Dry run by default; typed `yes` before each write; creates
   only; skips stored files and products that already have photos, so a rerun adds nothing twice. Reports
   go to `photo-report/` (gitignored). Settings (the five R2 ones, `IMPORT_DATABASE_URL`) come only from
-  the `--env` file.
+  the `--env` file. Rows whose file is a known vendor placeholder graphic are left out, not refused
+  (next rule).
 - [`catalog-csv-build.ts`](catalog-csv-build.ts) — `npm run catalog:build-csv -- --share <dir> --final
   <dir> --out <dir>` (D125). Turns the co-founder's merged vendor workbooks (`share/`: one row per vendor
   listing; `final/`: one sheet per vendor, read only for `vendor_price`) into the one `catalogue.csv`
@@ -59,6 +70,21 @@ from `design/assets/`, and parity becomes eyeballing — which
   **Since D142** Part number and Mud & snow still travel through the merge as extras (so M3 and the
   vendor-own-code rule see them as before) and leave at output for the `part_number` and `mud_snow`
   columns. A tire's Part number is dropped, and M3 no longer counts it as a visible difference.
+  **Since D152 (launch audit Batch 3, owner 2026-10-05)** three more rules run, every edit a row of
+  `changes-review.csv`: **M10** trims descriptions: a trimmed text may use only the vendor's own words plus a short list of joining
+  words (a, the, and, for, is, …), so no new noun, number or claim can appear, and a hollow or broken sentence
+  is recast in those words; the run fails if a trimmed text uses another word, still has a dash, or names a
+  season other than the label. A size or load index that is not the
+  product's own blanks the whole description. Otherwise `DESCRIPTION_TRIMS` (vendor + SKU, hash of the vendor
+  text) holds the curated text of each of the 270 listings that was touched: sales words and clauses deleted
+  inside their sentence, the facts kept, pasted "Key Features:" headings stripped but their feature sentences
+  kept, and each text read by a person; a vendor text that changed no longer matches its hash and takes the automatic path, which does the
+  same by rule (and each row's log names its path). **M11** blanks an impossible tire load index and its speed
+  letter (above 150, the vendor's own name stating another one, or more than 15 from the median of at least 5
+  tires of the same size) unless `LOAD_INDEX_CONFIRMED` holds a value read from a vendor or maker page, which
+  then sets it. **M12** retypes a lug whose vendor Model is `BOLT` from Lug Nuts to Lug Bolts (and its name).
+  `MODEL_ALIASES` gains 14 tire folds; `MODEL_NOT_FOLDED` lists the look-alikes left apart. Three more final
+  checks fail the run: a dash in a description, a load index above 150, a Lug Nuts row whose Model is BOLT.
 
 ## Rules
 - **`client-assets/` is where client material supplied AFTER the design export goes** (D63).
@@ -72,6 +98,26 @@ from `design/assets/`, and parity becomes eyeballing — which
 - **`catalog-photos.ts` reads its secrets from the `--env` file only** (D139b). Never pass a key or a
   connection string as an argument or paste one into a chat; the owner writes the file (mode 600,
   outside the repo).
+- **`catalog-photos.ts` never loads a vendor placeholder graphic as a product photo** (LA-06, D145
+  audit; D150). `PLACEHOLDER_SHA256` lists them by the SHA-256 of the file's bytes (the hand-off's
+  16-hex file name is that hash's prefix, so the name is checked too, and a renamed copy is still
+  caught). Today one file: `cd5df080e7e3ade5`, a grey wheel outline over "Image not available", the same
+  bytes under `tires/`, `wheels/` and `accessories/` (367 rows in the 2026-10-04 hand-off). Such a row is
+  skipped and listed in `placeholder-skipped.csv`, not a problem; the sheet's order checks still run on
+  the rows as given, then the product's remaining photos close up to 0..n-1. A product left with none
+  gets no `product_images` row, so the storefront draws its no-photo tile. Add a hash only after looking
+  at the picture. The loader never deletes, so rows an earlier run already linked are removed by hand.
+- **Production was cleaned by hand on 2026-10-04 (LA-06, D150), so never re-run `--link` on the raw
+  2026-10-04 hand-off.** One transaction on production deleted the 367 placeholder rows and 15 rows where
+  a product had been given another brand's generic logo or cap photo, set 6 accessory brands from the
+  vendor's own photo and code prefix (`ACCESSORY_BRAND_FIXES` in `catalog-csv-build.ts`, rule `LA06`,
+  so a rebuild agrees), and added 6 photo rows from files already in the bucket (Rydanz Revimax R23 ×2,
+  Haida HD667, RTX Valhalla 22x9, and GT Invasion Matte Black ×2 showing the Satin Black photo, a
+  different finish, by owner choice). `--link` skips products that have a photo, so a re-run would put
+  the 15 wrong photos back on the products now without one. Plan and evidence: the fix session's
+  `la06-fix-plan.md` (not committed). Still open: Dovroad YS716 and Habilead H206 (the owner approved
+  Wheel Works' photos; they need uploading with the R2 settings), and 359 products with no vendor photo
+  (337 DAI accessories: ask DAI).
 - **`catalog-import.ts` is a TypeScript script** (D114). It must run the app's own validator
   and store, so `tsx` runs it and `npm run check` type-checks it. It is `.ts`, not `.mts`: the repo has
   no `"type": "module"`, and an ES-module script cannot see what `src/db/schema.ts` re-exports.
@@ -115,13 +161,17 @@ from `design/assets/`, and parity becomes eyeballing — which
   `npm run design` serving `design/assets` on :4000 for the probe baseline (`package.json:12`).
   `catalog-csv-build.ts`: the vendor workbooks named on its command line, `exceljs`, and
   `src/features/catalog/{import-mapping,import-plan,product-input,size}.ts`.
-- Depended on by: `scripts/data/vehicles.csv` (output of `vehicles-fetch.mjs`), `public/images/` (the output), `design/reports/*.md` (every row is probe output),
+- Depended on by: `scripts/data/vehicles.csv` (output of `vehicles-fetch.mjs`),
+  `scripts/data/vehicle-fitment.csv` and `src/features/finder/{vehicle-list,vehicle-fitment-data}.ts`
+  (output of `vehicle-fitment.mjs`), `public/images/` (the output), `design/reports/*.md` (every row is probe output),
   `design/reports/README.md` §"Running a measurement", `docs/decisions.md` §9.
 
 - **`vehicles-fetch.mjs` is the only thing that talks to vPIC.** The app reads the committed snapshot,
   never the API, so a page or a build does not depend on NHTSA being up (the file's header).
 - **Fetch models by make ID, never by make name.** vPIC's by-name endpoint substring-matches: `ford`
   returns trailer builders (`vehicles-fetch.mjs` header).
+- **After `vehicles:fetch` rewrites `vehicles.csv`, run `node scripts/vehicle-fitment.mjs`** so the
+  finder's generated list matches, and with `--ankusi` so fitment rows follow renamed models.
 
 ## Don't
 - Don't move migrations out of the build without a replacement: the Neon URLs are Vercel **Sensitive**,
@@ -157,6 +207,8 @@ from `design/assets/`, and parity becomes eyeballing — which
    the vendor images (~4% affected) in `~/platinum-wheels-feasibility/tools/web_image.mjs`, which now pads by the
    size the resize actually produced (D90b). Not checked against the current `public/images/products/` output and
    not fixed here — **owner** decides whether to port the fix.
-4. **Nothing reads `data/vehicles.csv` yet.** The finder still renders the 15-make seed in
-   `src/features/finder/data.ts`; the table, its loader and the lookup the dropdowns call are not built.
-   They wait on the catalogue branch landing, because the search they feed extends its queries. Owner.
+4. **`data/vehicles.csv` is read through a generated module, not a table** (D149, LA-05): the
+   finder renders it from `src/features/finder/vehicle-list.ts`. No database table or loader exists, and
+   at this size none is needed unless the owner wants one. Owner.
+5. **No npm script for `vehicle-fitment.mjs`.** `package.json` was outside the LA-05 change; add
+   `"vehicles:fitment": "node scripts/vehicle-fitment.mjs"` beside `vehicles:fetch` if wanted. Owner.

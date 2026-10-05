@@ -32,6 +32,11 @@ Action, its emails and its two authored states moved there.
   unbranded accessory loses its `Brand` row. `fullName` is `productName()` (`src/lib/product-name.ts`),
   so it is the bare name when there is no brand. The vehicle is accepted only via `isFinderVehicle` (D91b).
 - `load.ts` — server only (D108b). `loadProduct(slug)` in React `cache()`, and `loadProductRows(detail)`.
+  Since the launch audit (D145; D151) also `loadTitleSiblings(detail)`, memoised, read by both
+  `generateMetadata` and the page: `view.ts` passes them to `catalog/siblings.ts` and ends `sizeLine`
+  with what tells this product from others of the same name and size (`· Centre bore 72.6 mm`), so the
+  buy panel's size line and the `<title>` say the same thing. Nothing is added when no product shares
+  the name and size.
 - `components/pdp-breadcrumb.tsx` · `pdp-gallery.tsx` · `buy-panel.tsx` · `quantity-control.tsx` — the
   split column. `product-desktop.html:101-125`, `product-mobile.html:90-100`.
 - `components/add-to-cart-panel.tsx` — the buy panel's primary CTA (D122), a client island. Adds the
@@ -71,8 +76,10 @@ Action, its emails and its two authored states moved there.
 - **`ProductCard` renders the product rows unchanged** (`src/features/catalog/llm.md`); no PDP variant.
 - Server Components by default; one `"use client"` leaf here (`add-to-cart-panel.tsx`). Named exports, no
   barrel. Tokens only (`.claude/rules/ui.md`).
-- **Motion (D92b).** `pdp-gallery.tsx` wraps its image in the `product-photo-<slug>` view transition with
-  `share="morph"`. The breadcrumb's `Tires` crumb carries `["nav-back", "product-back"]` and
+- **Motion (D92b, D144).** `pdp-gallery.tsx` wraps a box in the `product-photo-<slug>` view transition
+  with `share="morph"`: the photo (or tile), the card-size underlay that gives the arriving snapshot a
+  picture from its first frame, and the vignette, so nothing changes when the morph ends. Keep the
+  underlay and keep it inside the named box: without it the morph lands on an empty box (D144). The breadcrumb's `Tires` crumb carries `["nav-back", "product-back"]` and
   `prefetch={true}`; `Home` carries `["nav-back"]`. `SimilarProducts` renders `morph={false}`. Cells press
   (`active:translate-y-px`). The `Custom` field and the `Added` label arrive with `enter-rise`.
 
@@ -80,6 +87,8 @@ Action, its emails and its two authored states moved there.
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
 | D91b | 2026-09-29 | (1) `view.ts` accepts a vehicle only via `isFinderVehicle`, the one cross-feature import outside `catalog/`, on `results/search.ts`'s precedent; (5) cells 1/2/4 are `scroll={false}` and every cell carries `data-qty-cell`; (6) the h1 is `text-ink` and `wrap-anywhere`, the size numeral `leading-flat`, the mobile price row loses a stray `pt-2`. Items (2)–(4), about the quote form, moved with it to `src/features/cart/` (D122). | QA pass (`design/reports/qa.md`). | D91b |
+| D151 | 2026-10-04 | (1) `buy-panel` steps the h1 by name length: up to 24 characters the drawn 56 / 88, to 40 characters 48 / 56, beyond 36 / 48 (DEVIATIONS #115). (2) `pdp-gallery`'s box carries `pdp-gallery-band`: `max-height: 60dvh` from 720 to 1099 only (DEVIATIONS #39 amended); D144's morph wrapper, underlay and vignette are untouched inside it. | Long accessory names pushed `Add to cart` below the phone fold; the full-bleed square gallery buried the panel on tablets (launch audit, D145, UI-CRITIQUE). | Owner, 2026-10-04: "Apply all code items" |
+| D153 | 2026-10-05 | (1) The `pdp-gallery-band` utility also caps the gallery box below 720: `max-height: max(240px, 100svh - 482px)`. 482 = 470 of page outside the gallery plus a 12px margin. The 470: above it 119 (header 68, crumb pt 16 + row 19, gallery mt 16) and below it 351 (panel pt 32, brand 12 + 6, two-line h1 103, 6, size line 18, gap 16, quantity 78, gap 16, `Add to cart` 8 + 56); it matches the audit's measured 845 at 375x812 (375 + 470). Photo stays whole; 720-1099 (60dvh) and desktop unchanged (DEVIATIONS row #117). (2) The wheel `Finish`, `Finish family`, `Colour` and the accessory `Finish` rows read the vendor's `W/` as "with" through `catalog/adapter.ts` `expandWith()`. (3) A wheel with no bolt pattern shows `Bolt pattern: Undrilled, drilled to order`. | (1) Add to cart ended 14px below the fold at 390x844. (2) `catalog/llm.md` Open 7. (3) The 386 wheels with no pattern are undrilled blanks: PRO WHEELS' own `pcd1` reads `BLANK` (7 of 7 sampled), Auto Country's names say `blank` or `0x0`. No vendor site offers a blank filter (PRO WHEELS / Dealer Wheels' bolt pattern selector lists 50 real patterns; Direct Auto Import searches by vehicle only), so a spec row is all there is. | Owner, 2026-10-05: "Yes, shorter photo"; "check if vendor has filter, then keep else just add spec" |
 | — | — | None other folder-scoped. | Every PDP ruling is global. | root `llm.md` §5b |
 
 **D141** (2026-10-04, owner: *"symmetry should be maintained"*; DEVIATIONS #114): from `lg:` the `SimilarProducts` heading and grid (both `Similar products` and `Other sizes`) are capped at `max-w-content` and centred, matching the buy panel and specifications; the card `sizes` gains a fixed `324px` from 1440. Identical at ≤1440; the mobile/tablet scroller is untouched.

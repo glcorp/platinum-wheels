@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { barlow, barlowCondensed } from "./fonts";
 import "./globals.css";
 import Script from "next/script";
+import { preconnect } from "react-dom";
+import { photosBaseUrl } from "@/features/catalog/photo-store";
 import { HashScroll } from "@/components/site/hash-scroll";
 import { NavProgress } from "@/components/site/nav-progress";
 import { siteRobots } from "@/features/seo/indexing";
@@ -57,7 +59,32 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+/* The origin the product photos load from (`PHOTOS_BASE_URL`, D126b), or
+   `null` when it is not set or not a URL. */
+function photoOrigin(): string | null {
+  const base = photosBaseUrl();
+  if (!base) return null;
+  try {
+    return new URL(base).origin;
+  } catch {
+    return null;
+  }
+}
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  /* Open the connection to the photo host while the HTML is still parsing, so
+     the first card photo does not pay DNS + TCP + TLS after the CSS and the
+     image tag are found (mobile LCP, launch audit). React hoists this into
+     `<head>` as `<link rel="preconnect">`.
+     No `crossOrigin`: card and gallery photos are plain `<img>` elements with
+     no `crossorigin` attribute, so the browser fetches them in no-CORS mode
+     on a connection that is not the CORS one. A preconnect with `crossorigin`
+     opens only the CORS connection, which those images would not reuse, so it
+     would waste the connection. Only the origin, never a path, and nothing at
+     all when the variable is unset. */
+  const photos = photoOrigin();
+  if (photos) preconnect(photos);
+
   return (
     <html
       lang="en"

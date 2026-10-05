@@ -9,7 +9,11 @@ import { PdpBreadcrumb } from "@/features/product/components/pdp-breadcrumb";
 import { PdpGallery } from "@/features/product/components/pdp-gallery";
 import { SimilarProducts } from "@/features/product/components/similar-products";
 import { Specifications } from "@/features/product/components/specifications";
-import { loadProduct, loadProductRows } from "@/features/product/load";
+import {
+  loadProduct,
+  loadProductRows,
+  loadTitleSiblings,
+} from "@/features/product/load";
 import { productView } from "@/features/product/view";
 import { vehicleLabel } from "@/features/product/types";
 import { JsonLd } from "@/features/seo/json-ld";
@@ -80,9 +84,18 @@ export async function generateMetadata({
 }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const detail = await loadProduct(slug);
-  if (!detail) return { title: "Product" };
+  /* An unknown or hidden slug renders the 404 below. `robots: null` clears the
+     layout's robots tag, as `src/app/not-found.tsx` does, so the page carries
+     only Next's own 404 `noindex` (e2e fixture finding, 2026-10-05). */
+  if (!detail) return { title: "Page not found", robots: null };
 
-  const view = productView(detail, {}, { similar: [], otherSizes: [] });
+  /* The title siblings, so two products that share a name and size never
+     share a title (launch audit D145; memoised, the page reads them too). */
+  const view = productView(detail, {}, {
+    similar: [],
+    otherSizes: [],
+    siblings: await loadTitleSiblings(detail),
+  });
   const seo = toProductSeo(view.product, view);
   const path = productRoute(seo.slug);
   return pageMetadata({

@@ -114,6 +114,8 @@ const NOT_FOUND = [
   "/products",
   "/products/not-a-slug",
   "/products/ZETA-ANTARCTICA-SPORT",
+  // Status `hidden` in the fixture: not on sale, so a real 404 (D111, D107b).
+  `/products/${SLUG.hidden}`,
   `/products/${SLUG.tire}/extra`,
   "/Tires",
   "/tires/x",
@@ -190,9 +192,15 @@ for (const path of NOT_FOUND) {
       "tel:+14378825000",
     );
 
-    const metaRobots = await page.locator('meta[name="robots"]').getAttribute("content");
-    const headerRobots = res?.headers()["x-robots-tag"] ?? "";
-    expect(`${metaRobots ?? ""} ${headerRobots}`, "robots directive").toContain("noindex");
+    // Every robots meta in the DOM, not the first: an unknown product slug
+    // once ended up with two (the 404's own `noindex` and the product route's
+    // `noindex, nofollow`), found 2026-10-05 and fixed in the product route's
+    // metadata. A 404 carries exactly one, and it says noindex.
+    const metaRobots = await page
+      .locator('meta[name="robots"]')
+      .evaluateAll((tags) => tags.map((tag) => tag.getAttribute("content") ?? ""));
+    expect(metaRobots, "exactly one robots meta on a 404").toHaveLength(1);
+    expect(metaRobots[0], "the robots meta").toContain("noindex");
 
     const { violations } = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])

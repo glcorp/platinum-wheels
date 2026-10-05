@@ -192,13 +192,16 @@ const TIRE_KIND: Readonly<Partial<Record<Product["badges"][number], string>>> = 
  *
  * `sizeLine` is the page's own size string with everything it states
  * (`ProductView.sizeLine`): `215/55R16 97T XL` on a tire, `18×8.5 · 5×114.3 · ET+35 · Gloss Black`
- * on a wheel, `Set of 20 · 12×1.5` on an accessory. The title takes all of
- * it, because the catalogue holds the same tire in the same size at two load
- * indexes and they must not share a title. Its ` · ` separators become
+ * on a wheel, `Set of 20 · 12×1.5` on an accessory, and after those, only
+ * when other products share the name and size, what tells this one apart
+ * (`Centre bore 72.6 mm`, `Part number GT14156LB`; `catalog/siblings.ts`,
+ * launch audit D145). The title takes all of it, because no two products may
+ * share a title. Its ` · ` separators become
  * commas, because the root title template already uses ` · ` before the site
  * name. An accessory that states nothing falls back to its type's label
  * (`Lug nuts`) on the page; that is a category, not a detail, so it is
- * dropped from the title and used as `kind` instead.
+ * dropped from the title and used as `kind` instead, and so is any part the
+ * accessory's name already prints.
  *
  * `sizeCode` is the bare size (`ProductView.sizeCode`, `215/55R16`), which is
  * what the markup's `size` carries for a tire.
@@ -213,10 +216,23 @@ export function toProductSeo(
     product.accessoryType === undefined
       ? undefined
       : ACCESSORY_LABEL[product.accessoryType];
-  const detail =
-    sizeLine === "" || sizeLine === typeLabel
-      ? ""
-      : sizeLine.replaceAll(" · ", ", ");
+  /* One part per ` · `. An accessory drops its type label (a category, not a
+     detail; it is `kind` below) and any part its own name already prints:
+     `GT Hardware Lug Nuts 14x1.5` is not followed by `14×1.5` again (launch
+     audit D145, DATA-ACC). `×` and `x` count as the same letter there. */
+  const plainName = name.toLowerCase().replaceAll("×", "x");
+  const detail = sizeLine
+    .split(" · ")
+    .filter(
+      (part) =>
+        part !== "" &&
+        part !== typeLabel &&
+        !(
+          category === "accessories" &&
+          plainName.includes(part.toLowerCase().replaceAll("×", "x"))
+        ),
+    )
+    .join(", ");
 
   let title = name;
   if (detail !== "") {

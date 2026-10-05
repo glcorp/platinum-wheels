@@ -39,6 +39,7 @@ with it.
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
 | D91b | 2026-09-29 | `DEVIATIONS.md` gains #79 (desktop hero scrim), #80 (consent row floor, recorded) and #82 (brand strip columns); #55 is struck (no loading state) and #66 corrected in place (the nav moved 14.6px). #81 is reserved for the motion pass's centred loader. | QA pass. | D91b |
+| D151 | 2026-10-04 | `DEVIATIONS.md` gains #115 (PDP h1 steps down for long names) and #116 (sticky quote submit row); #39 is amended in place with the 720–1099 gallery cap. | Launch audit fixes (D145). | Owner, 2026-10-04: "Apply all code items" |
 No folder-scoped rows. The global decisions that govern this folder are **D1, D3, D4, D5, D6, D7, D9,
 D10, D11, D19, D20, D22** — one line each in root `llm.md` §5a, canonical text in `HANDOFF.md` §11.
 

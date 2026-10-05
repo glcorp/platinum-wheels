@@ -404,7 +404,13 @@ export function CartView({ copy }: CartViewProps) {
             </button>
           </div>
 
-          <div className="pb-safe flex flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4 pt-6 sm:px-8 sm:pt-8">
+          {/* No bottom padding here: `pb-safe` lives on the form's sticky
+              submit row, which is the last thing in this scroller, so a
+              sticky `bottom-0` has no scroller padding to argue with.
+              `scroll-pb-24` (96px) is that row's height (56/60px button +
+              16px above + 20px below), so focus never lands under it.
+              Launch audit, D145. */}
+          <div className="scroll-pb-24 flex flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4 pt-6 sm:px-8 sm:pt-8">
             <p className="text-ink-muted text-14 leading-body">
               {`Your request covers ${productCount(lines.length)} in your cart.`}
             </p>

@@ -44,7 +44,7 @@ import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
   title: "Terms",
-  description: `The terms that apply to quotes and pricing from ${SITE.legalName}.`,
+  description: `The terms that apply to quotes and pricing from ${SITE.name}.`,
   path: ROUTES.terms,
 });
 

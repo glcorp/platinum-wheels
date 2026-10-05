@@ -29,11 +29,20 @@
    On `/cart` itself the icon and count stay, so the header does not shift on
    one page, but they are not a link (D127, owner: "Keep it, not a link"): a
    link to the page you are on goes nowhere. The label adds `, current page`.
+
+   The prompt is portalled to `<body>` (LA-04, D145 audit). Rendered in place
+   it sat inside the header, whose permanent `view-transition-name`
+   (`site-header.tsx`, D92b) makes the header a stacking context at z-auto,
+   so every later positioned card painted over the prompt and it could be
+   neither seen nor clicked on the results grids. At `<body>` level its
+   `z-20` clears the cards, the finder and the gallery (`z-10`) and stays
+   under the loader, the skip link and every dialog (top layer).
    --------------------------------------------------------------------------- */
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { cartUnits, onCartAdded, useCartLines, type CartAddedNotice } from "@/lib/cart";
@@ -61,6 +70,14 @@ const CART_ICON = (
     <circle cx="17" cy="20" r="1.2" />
   </svg>
 );
+
+/** false on the server and through hydration, true after, when
+ *  `document.body` exists for the portal. A store, not a mount effect: the
+ *  project's `react-hooks/set-state-in-effect` rule rejects that (D84). */
+const subscribeNever = () => () => {};
+function useHydrated(): boolean {
+  return useSyncExternalStore(subscribeNever, () => true, () => false);
+}
 
 function countLabel(units: number): string {
   return units > 99 ? "99+" : String(units);
@@ -107,6 +124,8 @@ export function CartLink() {
     }, PROMPT_MS / 2);
   }
 
+  const hydrated = useHydrated();
+
   const label = units > 0 ? `Cart, ${units} ${units === 1 ? "item" : "items"}` : "Cart";
   const icon = (
     <>
@@ -152,61 +171,68 @@ export function CartLink() {
 
       {/* The prompt. `fixed`, full width less the 16px page gutter on a phone
           and the 420px measure in the bottom-right corner from `sm:`, above
-          the page and below any open dialog (dialogs sit in the top layer). */}
-      <div
-        role="status"
-        aria-live="polite"
-        className="pointer-events-none fixed inset-x-4 bottom-4 z-20 sm:inset-x-auto sm:right-8 sm:bottom-8 sm:w-measure"
-      >
-        {notice ? (
-          <div
-            data-probe="cart-prompt"
-            onPointerEnter={hold}
-            onPointerLeave={release}
-            onFocus={hold}
-            onBlur={(event) => {
-              // Tabbing from `View cart` to `Close` stays inside: still held.
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) release();
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") setNotice(null);
-            }}
-            className="bg-surface border-border-strong text-ink enter-rise pointer-events-auto flex items-center gap-3 border p-3 pl-4"
-          >
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="label text-accent text-11 tracking-12">
-                {notice.updated ? "Cart updated" : "Added to cart"}
-              </span>
-              <span className="text-ink line-clamp-2 text-14 leading-snug font-bold">
-                {notice.name}
-              </span>
-              <span className="text-ink-muted text-13 leading-snug">{notice.amount}</span>
-            </div>
-            <Button href={ROUTES.cart} variant="secondary" size="compact">
-              View cart
-            </Button>
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setNotice(null)}
-              className="text-ink-muted hover:text-ink inline-flex size-11 shrink-0 touch-manipulation items-center justify-center bg-transparent active:translate-y-px"
+          the page and below any open dialog (dialogs sit in the top layer).
+          Portalled once hydrated (LA-04, see the file header); it is empty
+          until an add, so the live region is in place before it speaks. */}
+      {hydrated
+        ? createPortal(
+            <div
+              role="status"
+              aria-live="polite"
+              className="pointer-events-none fixed inset-x-4 bottom-4 z-20 sm:inset-x-auto sm:right-8 sm:bottom-8 sm:w-measure"
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-          </div>
-        ) : null}
-      </div>
+              {notice ? (
+                <div
+                  data-probe="cart-prompt"
+                  onPointerEnter={hold}
+                  onPointerLeave={release}
+                  onFocus={hold}
+                  onBlur={(event) => {
+                    // Tabbing from `View cart` to `Close` stays inside: still held.
+                    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) release();
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setNotice(null);
+                  }}
+                  className="bg-surface border-border-strong text-ink enter-rise pointer-events-auto flex items-center gap-3 border p-3 pl-4"
+                >
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="label text-accent text-11 tracking-12">
+                      {notice.updated ? "Cart updated" : "Added to cart"}
+                    </span>
+                    <span className="text-ink line-clamp-2 text-14 leading-snug font-bold">
+                      {notice.name}
+                    </span>
+                    <span className="text-ink-muted text-13 leading-snug">{notice.amount}</span>
+                  </div>
+                  <Button href={ROUTES.cart} variant="secondary" size="compact">
+                    View cart
+                  </Button>
+                  <button
+                    type="button"
+                    aria-label="Close"
+                    onClick={() => setNotice(null)}
+                    className="text-ink-muted hover:text-ink inline-flex size-11 shrink-0 touch-manipulation items-center justify-center bg-transparent active:translate-y-px"
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                </div>
+              ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

@@ -119,6 +119,12 @@ export function Chip({
   return (
     <button
       aria-pressed={removable ? undefined : selected}
+      /* Forced colours repaint every fill as `Canvas`, so the selected chip
+         (an `--text` fill) became identical to a rest chip. The hook lets
+         globals.css's forced-colours block give it `Highlight`, as it does the
+         quantity cell (D91b, KBD-4). Launch audit, D145. */
+      data-chip=""
+      data-selected={selected ? "" : undefined}
       {...rest}
       type={type}
       className={cx(
@@ -222,6 +228,9 @@ export function ChipCheckbox({
     <label
       htmlFor={id}
       data-probe={dataProbe}
+      /* Forced-colours hook for the checked state (`:has(:checked)` in
+         globals.css), same reason as `Chip`'s. D145. */
+      data-chip=""
       className={cx(
         chipBox,
         size === "auto" && "sm:h-10",

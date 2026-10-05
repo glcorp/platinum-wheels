@@ -44,6 +44,7 @@
    TypeScript, like `catalog-import.ts`, because it runs the app's validator.
    --------------------------------------------------------------------------- */
 
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
@@ -265,6 +266,23 @@ const SEASON_REVIEWED_AS_IS = new Set([
  */
 const ACCESSORY_BRANDS: Record<string, string> = {
   DAICAPS: "DAI Wheels",
+};
+
+/**
+ * LA-06 (launch audit, D145; owner 2026-10-04: "fix whatever you can based on
+ * market data and vendor data"). Direct Auto Import gives these accessories no
+ * brand; `brand_clean` was derived from the fit list. The vendor's own photo
+ * for the code and DAI's code prefix (ART / ADAI / ARUFF) say otherwise.
+ * Production was corrected in place the same day (slugs unchanged, D107b(1));
+ * this keeps a rebuild in agreement. Keyed on the vendor SKU.
+ */
+const ACCESSORY_BRAND_FIXES: Record<string, { to: string; reason: string }> = {
+  ARTBC007BK: { to: "ART Replica", reason: "DAI's own photo shows the ART mark; code prefix ART" },
+  "210K62AB1": { to: "DAI Wheels", reason: "DAI's own photo shows DAI ALLOYS; 7 of 16 fitted designs are DW" },
+  "210K62BB1": { to: "DAI Wheels", reason: "DAI's own photo shows DAI ALLOYS" },
+  "210K62ACH": { to: "DAI Wheels", reason: "DAI's own photo shows DAI ALLOYS; 5 of 8 fitted designs are DW" },
+  "241K64BB1": { to: "DAI Wheels", reason: "DAI's own photo shows DAI ALLOYS" },
+  ARUFF645BWA6177: { to: "Ruffino", reason: "DAI's own photo shows RUFFINO; code prefix ARUFF (owner confirmed)" },
 };
 
 const modelKey = (brand: string, model: string) => `${brand}|${model}`.toLowerCase();
@@ -978,6 +996,25 @@ const MODEL_ALIASES: { category: Category; brand: string; from: string; to: stri
   { category: "tires", brand: "Michelin", from: "Cross Climate 2 A/W", to: "CrossClimate 2", why: "CrossClimate 2 30 vs 1; Michelin writes CrossClimate 2 (michelin.ca crossclimate-2)" },
   { category: "tires", brand: "Falken", from: "WildPeak M/T 01", to: "Wildpeak M/T MT01", why: "Wildpeak M/T MT01 3 vs 2; Falken's M/T01, one tire" },
   { category: "tires", brand: "Mileking", from: "MK878", to: "MK878 R/T", why: "MK878 R/T 14 vs 1; same tire" },
+  // D152 (owner 2026-10-05, launch audit LA-DATA-TIRES): every pair below has
+  // same-size listings under both spellings, or is a typo / word order / doubled
+  // word of the other; the spelling carried by more products wins (a tie goes to
+  // the priority vendor's), as for the folds above.
+  { category: "tires", brand: "Haida", from: "HD687 UHP", to: "HD 687", why: "HD 687 12 vs HD687 UHP 6; 3 sizes are listed under both (175/65R15 88T, 235/50R19 103V, 245/45R19 102H)" },
+  { category: "tires", brand: "Haida", from: "HD697", to: "HD697 Performance", why: "HD697 Performance 11 vs HD697 7; 2 sizes are listed under both (245/45R20 103V, 255/45R20 105V)" },
+  { category: "tires", brand: "Fronway", from: "Icemaster I", to: "Ice Master 1", why: "Ice Master 1 31 vs Icemaster I 16; 2 sizes are listed under both (225/40R19 93V, 235/55R20 105H)" },
+  { category: "tires", brand: "Fronway", from: "Icemaster 11", to: "Icemaster II", why: "Icemaster II 21 vs 11 2; 11 is a typo for the Roman II (the brand's two models are I and II)" },
+  { category: "tires", brand: "Fronway", from: "Roadpower 79 H/T", to: "Roadpower H/T 79", why: "Roadpower H/T 79 11 vs 1; the same words in another order" },
+  { category: "tires", brand: "Rockblade", from: "Icecruiser 11", to: "Icecruiser II", why: "Icecruiser II 1 vs 11 1, both Wheel Works (a tie); 11 is a typo for the Roman II" },
+  { category: "tires", brand: "Roadboss", from: "W301 Nixvia", to: "Nixvia W301", why: "1 vs 1, both Wheel Works (a tie); the brand's other models are written name then code (Concrossor S701)" },
+  { category: "tires", brand: "Doublestar", from: "Winterking DW16+", to: "DW16 Winterking", why: "1 vs 1, so the priority vendor (Vertex) decides; 175/70R14 84S is listed under both" },
+  { category: "tires", brand: "Toyo", from: "M-55 Black", to: "M55", why: "M55 2 vs M-55 Black 1" },
+  { category: "tires", brand: "Continental", from: "Conticrosscontact LX", to: "CrossContact LX", why: "CrossContact LX 4 vs 1; 225/65R17 102 is listed under both" },
+  { category: "tires", brand: "AMP", from: "Terrain Pro A/T Pro A/T", to: "Terrain Pro A/T", why: "Terrain Pro A/T 16 vs 4; the vendor doubled the words" },
+  { category: "tires", brand: "AMP", from: "Terrain Attack M/T M/T A", to: "Terrain Attack M/T", why: "Terrain Attack M/T 12 vs 10; 5 sizes are listed under both (LT285/55R20 122/119, LT285/65R18 125/122, LT305/55R20 121/118, 33x12.50R20LT 114, 35x12.50R20LT 121)" },
+  // Haida HD927 (summer, ultra high performance) and HD927SP (all-season) are two tires (simpletire.com/brands/haida-tires/hd927 and /hd927sp; carid.com hd927). The descriptor words after HD927 are the same tire.
+  { category: "tires", brand: "Haida", from: "HD927 UHP Performance", to: "HD927", why: "HD927 8 vs 1; UHP Performance only describes the HD927, the maker's ultra high performance summer tire (simpletire.com/brands/haida-tires/hd927)" },
+  { category: "tires", brand: "Haida", from: "HD927 High-Performance", to: "HD927", why: "HD927 8 vs 1; High-Performance only describes the HD927 (amazon.com B072PS83FJ 'Haida HD927 High Performance')" },
   { category: "wheels", brand: "Fuel Off-Road", from: "D500 DUALIE INNER", to: "D500 DUALLY INNER", why: "D500 DUALLY INNER 16 vs 1; DUALIE is a typo for DUALLY" },
   { category: "wheels", brand: "Spec-1 Racing", from: "STP-33", to: "SPT-33", why: "SPT-33 47 vs 1; the 47 are the real model, STP-33 a transposition" },
 ];
@@ -992,13 +1029,20 @@ const MODEL_NOT_FOLDED: { category: Category; brand: string; models: string; why
   { category: "tires", brand: "Goodyear", models: "EAGLE F1 SuperCar 3R | EAGLE F1 SuperCar 3", why: "3R is its own tire" },
   { category: "tires", brand: "Firestone", models: "Winterforce 2 UV | Winterforce 2", why: "UV is a separate tire" },
   { category: "tires", brand: "Haida", models: "HD317 | HD317 EV", why: "EV is a separate tire" },
-  { category: "tires", brand: "Haida", models: "HD927 | HD927 SP", why: "SP could be a separate variant; no maker page found" },
-  { category: "tires", brand: "Haida", models: "HD927SP UHP Performance | HD927 UHP Performance", why: "one product each; unsure" },
   { category: "tires", brand: "Hankook", models: "Ion Evo AS SUV | Ion Evo AS SUV (EV)", why: "EV marking is a separate tire line" },
   { category: "tires", brand: "Nexen", models: "CP671H | CP671", why: "unsure whether the H is a speed rating or part of the name" },
   { category: "tires", brand: "Suretrac", models: "Comfortride GP | Comfortride", why: "unsure; no maker page" },
   { category: "tires", brand: "Michelin", models: "CrossClimate 2 | CrossClimate 2 CUV", why: "CUV is a separate tire" },
   { category: "tires", brand: "Mazzini", models: "ECO307 | ECO307+", why: "the plus is a different tire" },
+  { category: "tires", brand: "Haida", models: "HD927 | HD927 SP", why: "D152: the maker sells them as two tires (HD927 summer, HD927SP all-season; simpletire.com), so they stay apart" },
+  { category: "tires", brand: "Haida", models: "HD927SP UHP Performance | HD927 SP", why: "D152: the same all-season HD927SP (simpletire.com/brands/haida-tires/hd927sp), listed under both at 275/40R20 106W, but Vertex labels its one Summer and the priority rule would give the merged product that label; left apart until the owner rules on the Haida seasons" },
+  { category: "tires", brand: "Fronway", models: "Roadpower H/T | Roadpower H/T 79", why: "D152: one listing with no 79 in the model; no size is listed under both" },
+  { category: "tires", brand: "Doublestar", models: "DW16 | DW16 Winterking", why: "D152: the bare DW16 is a different size and vendor; not shown to be the same line" },
+  { category: "tires", brand: "Fronway", models: "Ice Master 1 | Icemaster II", why: "D152: Icemaster I and II are the brand's two different models" },
+  { category: "tires", brand: "Falken", models: "Azenis RT660 | Azenis RT660+", why: "D152: the plus is a different tire (ECO307 | ECO307+ precedent)" },
+  { category: "tires", brand: "Venom Power", models: "Terra Hunter R/T | Terra Hunter R/T+", why: "D152: the plus is a different tire" },
+  { category: "tires", brand: "Zeta", models: "Antarctica 5 | Antarctica 5+", why: "D152: the plus is a different tire" },
+  { category: "tires", brand: "Continental", models: "VanContact A/S | Vancontact A/S Reinf", why: "D152: Reinf is the reinforced (XL) variant, a separate tire" },
   { category: "wheels", brand: "Fast Wheels", models: "EV01 | EV01(+)", why: "unsure whether (+) is a different wheel" },
   { category: "wheels", brand: "Fast Wheels", models: "FC04X | FC04V", why: "different wheels" },
   { category: "wheels", brand: "XF Off-Road", models: "XF-239 | XF-239C", why: "unsure; C may be a finish code" },
@@ -1423,6 +1467,700 @@ function cleanDescription(listing: Listing): void {
   descriptionsEdited += 1;
   if (after === "") editField("M9", listing, F.description, "", "description names a vendor or talks about wholesale, dealers or pricing and nothing meaningful is left");
   else editField("M9", listing, F.description, after, "sentences naming a vendor or talking about wholesale, dealers or pricing removed; trailing pricing clauses trimmed");
+}
+
+/* --- M10, M11, M12 (D152: launch audit, Batch 3, owner 2026-10-05) -------- */
+
+/**
+ * M10 (owner 2026-10-05, "Fix + trim marketing"): vendor descriptions for
+ * shoppers. A trimmed text uses only the vendor's own words plus a short list
+ * of joining words (JOINING_WORDS), so no new noun, number or claim can
+ * appear; sales words and clauses are deleted and a sentence the deletion
+ * would leave broken is recast with the vendor's own words (checked below,
+ * the run fails otherwise).
+ *   1. A description that states a size or load index that is not the
+ *      product's own describes another tire and is blanked.
+ *   2. A listing found in DESCRIPTION_TRIMS (below; same vendor + SKU and the
+ *      same vendor text, by hash) takes that curated text: the sales words and
+ *      clauses are deleted inside a sentence and the sentence's facts stay.
+ *   3. Any other listing (a new vendor row) takes the automatic path with the
+ *      same aims: it deletes sales words and clauses, strips the pasted size
+ *      title and "Key Features:" headings (keeping each feature sentence),
+ *      drops a sentence only when sales talk is all that is left, deletes the
+ *      season phrase that contradicts the label (all-season on an all-weather
+ *      tire and the reverse), and fixes dashes.
+ * Every edited description is one row of changes-review.csv naming its path.
+ */
+const DELETE_WORDS = new RegExp(
+  String.raw`(?<![\w])(?:premium|superior|superb|ultimate|perfect(?:ly)?|ideal(?:ly)?|excellent|exceptional|outstanding|unmatched|unparalleled|finest|world-class|top-notch|incredible|amazing|stunning|striking|sleek|sophisticated|refined|timeless|elegant|reliable|dependable|dependability|confident(?:ly)?|rugged|serious|exacting|Canadian|classic|timeless|trusted|expertly|expert-level|expert|maximum|demanding(?=\s+(?:terrain|conditions|applications|environments|loads|work|driving|surfaces|use|tasks)\b))(?![\w])\s*`,
+  "gi",
+);
+const DELETE_PHRASES: RegExp[] = [
+  /\s+(?:for|under|in|through|across)\s+demanding\s+(?=(?:terrain|conditions|applications|environments|loads|work|surfaces|use|tasks)\b)\w+/gi,
+  /\bconfidence\s+(?:with|in)\s+/gi,
+  /\s*,?\s*(?:for|on|in|across|throughout)\s+(?:the\s+)?Canadian\s+\w+/gi,
+  /\s*,?\s*(?:for|to)\s+Canadian\s+(?:drivers?|owners?)\b/gi,
+  /\s+for\s+(?:a\s+)?(?:classic|modern|professional|sleek)\s+[\w\s-]*?(?:aesthetics?|appearance|styling|look)\b/gi,
+  /\s*,?\s*(?:make|makes)\s+(?:them|it|this)\s+an?\s+(?:ideal|excellent|perfect|great)\s+\w+[^.!?]*/gi,
+  /,?\s*(?:providing|offering|delivering|giving)\s+(?:excellent|great|exceptional)\s+value\b[^.!?]*/gi,
+  /\s*,?\s*(?:with|without)\s+(?:\w+\s+)?(?:confidence|compromise)(?![\w])/gi,
+  /\s*,?\s*without\s+compromis\w*[^.!?,]*/gi,
+  /\s*,?\s*(?:for|to)\s+(?:drivers?|owners?|those|anyone)\s+(?:who|seeking|looking|prioriti[sz]ing|needing)\b[^.!?]*?(?=,\s+(?:this|it|the|these)\b|[.!?]|$)/gi,
+  /\s*,?\s*(?:for|with)\s+(?:the\s+)?(?:best|great)\s+value\b[^.!?,]*/gi,
+];
+const DELETE_TAILS: RegExp[] = [
+  /,\s+(?:offering|delivering|providing|making)\s+[^.!?]*(?:aggressive|stance|fitment|versatile|refined|timeless|appeal|aesthetic)[^.!?]*$/i,
+  /,\s+(?:making|offering|delivering|providing|ensuring|allowing|giving)\s+(?:it|them|this|these|you|drivers?)\b[^.!?]*(?:choice|option|solution|package|value|ride|comfort|confidence|ideal|perfect|practical|versatile|appeal)[^.!?]*$/i,
+  /,?\s*(?:complements?|adds?|adding|completes?)\s+(?:a\s+|an\s+)?(?:[\w-]+\s+){0,3}?(?:aesthetics?|appearance|styling|style|look|looks|stance)\b[^.!?]*$/i,
+  /\s+(?:that\s+)?complements?\b[^.!?]*$/i,
+  /\s*[—–]\s*(?:ideal|perfect|built|designed|engineered)[^.!?]*$/i,
+  /,\s*(?:ideal|perfect)\s+for\b[^.!?]*$/i,
+];
+/** A sentence with any of these left is sales talk with nothing factual in it. */
+const SALES_LEFT =
+  /(?<![\w])(?:reputation|choose|confidence|reliability|keeps you|demand\w*|choice|trust|heritage|proven|value|investment|enthusiasts?|contractors?|fleet operators?|adventures?|adventure-ready|seeking|seekers?|prioritizing|whether you|built for|work hard|go far|lifespan|ideal|perfect|best|great|aesthetics?|appearance|styling|style|looks?|complements?)(?![\w])|!/i;
+const SALES_FRAGMENT = /^The (?:raised white lettering|blackwall sidewall construction|blackwall design|BSW \(Black Sidewall\) finish)(?: \([A-Z]+\))?\.$/i;
+const SALES_OPENER = /^(?:ideal|perfect|trust|designed for drivers|built for|engineered for drivers)\b/i;
+const ALL_SEASON = /all[- ]season/i;
+const ALL_WEATHER = /all[- ]weather/i;
+const sizeKey = (size: string) => size.toUpperCase().replace(/^(?:LT|P)(?=\d)/, "").replace(/(?:LT|C)$/, "").replace(/Z(?=R)/, "");
+const TEXT_SIZE = /(?<![\w])(?:LT|P)?\d{2,3}[xX/]\d{1,2}(?:\.\d+)?Z?R\d{2}(?:\.\d+)?(?:LT|C)?(?![\w])/g;
+const TEXT_LOAD = /(?<![\w/.+])(\d{2,3})(?:\/\d{2,3})?\s?([A-Z])(?![\w/.+])/g;
+const PASTED_SIZE_TITLE = /^\S*\d{2,3}\/\d{2}[A-Z]*R\d{2}[^.]*?\b(?:Tires?(?:\s*\([^)]*\))?)\s+(?=The |This )/;
+const PASTED_DESCRIPTION_TITLE = /^[^.]*?\bDescription:\s+/;
+const FEATURE_VERB = /^(?:Enhances|Improves|Provides|Delivers|Offers|Reduces|Helps|Maintains|Ensures|Promotes|Minimizes|Resists|Absorbs|Channels|Engineered|Designed|Built)$/;
+const capFirst = (text: string) => text.replace(/^([^A-Za-z0-9]*)([a-z])/, (_m, a: string, b: string) => `${a}${b.toUpperCase()}`);
+
+/** Words of a text for the word check: lower case, letters and digits only; a dash between digits reads "to". */
+const descriptionWords = (text: string) =>
+  text.toLowerCase().replace(/(\d)\s*[–—]\s*(\d)/g, "$1 to $2").replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+/** Joining words a trimmed text may use even when the vendor text lacks them. */
+const JOINING_WORDS = new Set("a an the and or for with on in of to at by it its this these is are as from across use".split(" "));
+/** True when every word of `after` is in `before` or is a joining word: no new noun, number or claim. */
+function usesOnlyOriginalWords(before: string, after: string): boolean {
+  const original = new Set(descriptionWords(before));
+  return descriptionWords(after).every((word) => original.has(word) || JOINING_WORDS.has(word));
+}
+const descriptionHash = (text: string) => createHash("sha1").update(text).digest("hex").slice(0, 10);
+
+/** "Improved Wet Traction Wide circumferential grooves channel water." keeps the sentence, loses the pasted heading. */
+function stripFeatureHeadings(block: string): string {
+  const upper = (w: string) => /^[([]?[A-Z0-9]/.test(w);
+  const lower = (w: string) => /^[a-z]/.test(w);
+  return block
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => {
+      const w = sentence.split(/\s+/);
+      for (let k = 0; k < w.length - 1; k += 1) {
+        if (!upper(w[k] ?? "") || !lower(w[k + 1] ?? "")) continue;
+        if ((w[k] ?? "").startsWith("(") && k >= 2) return w.slice(k - 2).join(" ");
+        if (k > 0 && FEATURE_VERB.test(w[k] ?? "")) {
+          const head = w.slice(0, k).join(" ");
+          const subject = head.charAt(0) + head.slice(1).replace(/\b([A-Z])([a-z]+)/g, (_m, a: string, b: string) => `${a.toLowerCase()}${b}`);
+          return `${subject} ${(w[k] ?? "").toLowerCase()} ${w.slice(k + 1).join(" ")}`;
+        }
+        return w.slice(k).join(" ");
+      }
+      return sentence;
+    })
+    .join(" ");
+}
+
+function trimSentence(sentence: string): { body: string; end: string } {
+  const end = /[.!?]$/.test(sentence) ? sentence.slice(-1) : "";
+  let body = end ? sentence.slice(0, -1) : sentence;
+  for (const tail of DELETE_TAILS) {
+    const m = tail.exec(body);
+    if (m && m.index >= 20) body = body.slice(0, m.index);
+  }
+  for (const phrase of DELETE_PHRASES) body = body.replace(phrase, "");
+  body = body
+    .replace(DELETE_WORDS, "")
+    .replace(/(\w+),\s+(\w+),\s+and\s+(driving experience|ride)\b/, "$1, $2 $3")
+    .replace(/^Engineered,\s+(?=the )/i, "")
+    .replace(/\bof and\b/g, "of")
+    .replace(/(\w+)\s+and\s+more\s+(ride|driving)\b/i, "$1 $2")
+    .replace(/(\w+),\s+more\s+(driving|ride)\b/i, "$1 $2")
+    .replace(/,\s+this tire offers\s+year-round\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+,/g, ",")
+    .replace(/,\s*,/g, ",")
+    .replace(/^[\s,;:]+/, "")
+    .trim();
+  return { body: capFirst(body).replace(/\s+(?:engineered|designed|built)$/i, ""), end: end || "." };
+}
+
+interface AutoTrim {
+  text: string;
+  pasted: boolean;
+  title: boolean;
+  seasonSentences: number;
+  droppedSentences: number;
+}
+/** The automatic path of M10 (no curated entry): it only deletes. */
+function autoTrimDescription(original: string, season: string): AutoTrim {
+  let text = original;
+  const result: AutoTrim = { text: "", pasted: false, title: false, seasonSentences: 0, droppedSentences: 0 };
+  const described = PASTED_DESCRIPTION_TITLE.exec(text);
+  if (described) {
+    text = text.slice(described[0].length);
+    result.title = true;
+  }
+  const titled = PASTED_SIZE_TITLE.exec(text);
+  if (titled) {
+    text = text.slice(titled[0].length);
+    result.title = true;
+  }
+  const block = text.indexOf("Key Features:");
+  if (block >= 0) {
+    text = `${text.slice(0, block).trim()} ${stripFeatureHeadings(text.slice(block + "Key Features:".length))}`.trim();
+    result.pasted = true;
+  }
+  const kept: string[] = [];
+  for (const s of text.split(/(?<=[.!?])\s+/)) {
+    const drop = () => {
+      result.droppedSentences += 1;
+    };
+    if (SALES_OPENER.test(s)) {
+      drop();
+      continue;
+    }
+    const trimmed = trimSentence(s);
+    let body = trimmed.body;
+    const end = trimmed.end;
+    if (SALES_FRAGMENT.test(body + end)) {
+      drop();
+      continue;
+    }
+    if (season === "all_weather" && ALL_SEASON.test(body)) {
+      body = capFirst(body.replace(/all[- ]season\s*/gi, "").replace(/\s+/g, " ").trim());
+      result.seasonSentences += 1;
+    }
+    if (season === "all_season" && ALL_WEATHER.test(body)) {
+      body = capFirst(body.replace(/all[- ]weather\s*/gi, "").replace(/\s+/g, " ").trim());
+      result.seasonSentences += 1;
+    }
+    body = body.replace(/\s+(?:engineered|designed|built|crafted)$/i, "");
+    const unchanged = body === (/[.!?]$/.test(s) ? s.slice(0, -1) : s) && !/[–—]/.test(s);
+    let sentence = body + end;
+    if (unchanged && !SALES_LEFT.test(s)) {
+      kept.push(s);
+      continue;
+    }
+    if (/\b(?:is|are|was|be|an?|the|of|for|with|and|that|which|this)$/i.test(body)) {
+      drop();
+      continue;
+    }
+    if (/(?<![\w])a\s+[aeiou]/i.test(sentence)) {
+      sentence = sentence.replace(/(?<![\w])a\s+(?=[aeiou])\S+\s+/i, "a ").replace(/\s+(?:engineered|designed|built)\./i, ".");
+      if (sentence.split(/\s+/).length < 7) {
+        drop();
+        continue;
+      }
+    }
+    if (sentence.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length < 4 || SALES_LEFT.test(sentence)) {
+      drop();
+      continue;
+    }
+    kept.push(unchanged ? s : sentence);
+  }
+  // A first sentence that opens on a clause about "it" has lost its subject.
+  while (kept[0] && /^(?:Featuring|With|Built|Designed|Engineered)\b[^.]*?,\s+(?:it|they)\s/.test(kept[0])) kept.shift();
+  if (kept[0]) kept[0] = capFirst(kept[0].replace(/^(?:Their|Its|It|They)\s+/, "").replace(/^These\s+tires\s+/i, ""));
+  result.text = kept
+    .join(" ")
+    .replace(/(\d)\s*[–—]\s*(\d)/g, "$1 to $2")
+    .replace(/\s*[–—]\s*(?=[a-z])/g, ", ")
+    .replace(/\s*[–—]\s*/g, ". ");
+  return result;
+}
+
+const m10Stats = {
+  differentTire: [] as string[],
+  edited: 0,
+  curated: 0,
+  automatic: 0,
+  blank: [] as string[],
+  pasted: 0,
+  seasonSentences: { changedByMaker: 0, other: 0 },
+  droppedSentences: 0,
+  dashes: 0,
+  violations: [] as string[],
+};
+const reseasoned = new Set<string>(); // filled from seasonByMaker in main()
+
+/** The size or load index in the text that is not the product's own, if any. */
+function otherTireIn(f: Record<string, string>, text: string): string | null {
+  const size = f[F.tireSize] ?? "";
+  if (size !== "") {
+    for (const m of text.matchAll(TEXT_SIZE)) {
+      if (sizeKey(m[0]) !== sizeKey(size)) return `size ${m[0]} (the product is ${size})`;
+    }
+  }
+  const load = (f[F.loadIndex] ?? "").split("/")[0] ?? "";
+  if (load !== "") {
+    for (const m of text.matchAll(TEXT_LOAD)) {
+      const n = Number(m[1]);
+      if (SPEED_SYMBOLS.has(m[2] ?? "") && n >= 60 && n <= 150 && m[1] !== load) {
+        return `load index ${m[0].replace(/\s/g, "")} (the product is ${f[F.loadIndex]}${f[F.speedRating] ?? ""})`;
+      }
+    }
+  }
+  return null;
+}
+
+function cleanDescriptionM10(listing: Listing): void {
+  const f = listing.fields;
+  const before = f[F.description] ?? "";
+  if (before === "") return;
+  if (listing.category === "tires") {
+    const other = otherTireIn(f, before);
+    if (other) {
+      m10Stats.differentTire.push(listing.primary.rowId);
+      editField("M10 different tire", listing, F.description, "", `the description names ${other}, so it was written for another tire`);
+      return;
+    }
+  }
+  const season = f[F.season] ?? "";
+  const key = `${listing.primary.source}|${listing.primary.sku}`;
+  const entry = DESCRIPTION_TRIMS[key];
+  const curated = entry !== undefined && entry[0] === descriptionHash(before);
+  let after: string;
+  let how: string;
+  if (curated) {
+    after = entry[1];
+    how = "path: curated table (every sales word and clause deleted inside its sentence, the facts kept)";
+    m10Stats.curated += 1;
+  } else {
+    const auto = autoTrimDescription(before, season);
+    after = auto.text;
+    const parts = [
+      auto.title ? "pasted size title removed" : "",
+      auto.pasted ? 'pasted "Key Features:" headings removed, feature sentences kept' : "",
+      auto.seasonSentences ? `${auto.seasonSentences} sentence(s) lose the season phrase that contradicts the label (${season === "all_weather" ? "all-season on an all-weather tire" : "all-weather on an all-season tire"})` : "",
+      auto.droppedSentences ? `${auto.droppedSentences} sentence(s) dropped, sales talk only` : "",
+      /[–—]/.test(before) ? "dashes replaced" : "",
+    ].filter(Boolean);
+    how = `path: automatic fallback (no curated entry for this vendor text); ${parts.join("; ") || "words deleted"}`;
+    m10Stats.pasted += auto.pasted ? 1 : 0;
+    m10Stats.droppedSentences += auto.droppedSentences;
+    if (auto.seasonSentences) m10Stats.seasonSentences[reseasoned.has(listing.primary.rowId) ? "changedByMaker" : "other"] += auto.seasonSentences;
+  }
+  if (/[–—]/.test(before) && !/[–—]/.test(after)) m10Stats.dashes += 1;
+  if (!usesOnlyOriginalWords(before, after)) m10Stats.violations.push(`${key}: the text uses a word that is neither in the vendor text nor a joining word`);
+  if ((season === "all_weather" && ALL_SEASON.test(after)) || (season === "all_season" && ALL_WEATHER.test(after))) {
+    m10Stats.violations.push(`${key}: still names a season other than the label`);
+  }
+  if (/[–—]/.test(after)) m10Stats.violations.push(`${key}: still has a dash`);
+  if (after === before) return;
+  if (!curated) m10Stats.automatic += 1;
+  m10Stats.edited += 1;
+  if (after === "") m10Stats.blank.push(`${key} (${f[F.name] ?? ""})`);
+  editField("M10", listing, F.description, after, `${how}${after === "" ? "; nothing factual is left, so the description is blank" : ""}`);
+}
+
+/**
+ * The curated text of every vendor description M10 touches (D152, owner
+ * 2026-10-05). Key: vendor + vendor SKU of the listing. Value: [hash of the
+ * vendor text it was written from, the trimmed text]. The text is the vendor's
+ * own, DELETION ONLY (checked at build time): sales words and clauses are
+ * deleted inside their sentence and its facts kept, pasted headings lose their
+ * heading words, a dangling opener loses its pronoun phrase, a dash becomes
+ * "to", a comma or a full stop. A sentence is dropped only when nothing
+ * factual is left. If the vendor's text changes the hash no longer matches and
+ * the automatic path of M10 takes over.
+ */
+const DESCRIPTION_TRIMS: Record<string, readonly [string, string]> = {
+  "Vertex Tires|45574375538877": ["27f1b09cbc", "The Haida 205/55R16 HD617 Winter Tires are engineered for winter performance. Featuring a winter-formulated compound that retains elasticity in extreme cold, these tires maintain traction down to -40°C. Their wide tread with 3D sawtooth sipes enhances grip and handling on ice and snow, while fine siping and optimized tread blocks ensure strong bite on slippery surfaces for improved safety. Directional V-shaped tread channels efficiently disperse water and slush, delivering traction and better braking control in harsh winter conditions."],
+  "Vertex Tires|45745829118141": ["c41e61ef02", "The 175/70R14 Haida HD617 Winter 84T tire is for challenging winter driving. Its directional V-shaped tread pattern enhances grip and stability on ice and snow, while advanced materials ensure durability and consistent braking in freezing conditions. This tire is engineered to provide precise handling and traction."],
+  "Vertex Tires|45745829413053": ["bdad97814c", "The 185/65R14 Haida HD617 Winter 90T tire is for cold weather conditions. Designed with a tread pattern optimized for winter traction, it offers enhanced grip on snow and ice, ensuring safer driving throughout the season. The tire's 90T load and speed rating provide a robust balance of durability and control."],
+  "Vertex Tires|45745834950845": ["4af75a7e92", "The 205/65R15 Haida HD617 Winter 94T tire is engineered to deliver winter traction and handling. Its aggressive tread pattern enhances grip on snow and icy surfaces, while the robust rubber compound remains flexible in low temperatures for improved safety. With a 94 load index and T speed rating, this tire supports medium-sized vehicles, providing stability and control during harsh winter driving conditions."],
+  "Vertex Tires|45745836753085": ["5da38fb2b7", "The 205/60R16 Haida HD617 Winter 96T tire is designed for winter conditions. Its advanced tread pattern maximizes traction on snow and ice, while the flexible rubber compound ensures grip in cold temperatures. With a 96 load index and T speed rating, this tire supports mid-sized vehicles, offering enhanced stability and control during challenging winter driving."],
+  "Vertex Tires|45745839374525": ["e4bd2a4123", "The 215/65R16 Haida HD617 Winter 98T tire delivers winter traction for SUVs and larger vehicles. Its optimized tread design enhances grip on snow and ice, while the flexible rubber compound maintains performance in low temperatures. With a 98 load index and T speed rating, this tire ensures stability, safety, and control for winter driving."],
+  "Vertex Tires|45745840750781": ["a52633a433", "Designed for winter conditions, the 215/50R17 Haida HD617 Winter 95H tire offers traction and enhanced control on snow and ice. Its specialized tread pattern improves grip and stability, ensuring safe driving in cold weather. With a 95H rating, this tire balances performance and durability."],
+  "Vertex Tires|45745842127037": ["2aa41073ee", "The 215/55R17 Haida HD617 Winter 94T tire is engineered for harsh winter conditions. Its advanced tread design enhances traction on snow and ice, while the 94T speed rating ensures balanced handling and safety. This tire offers grip and stability."],
+  "Vertex Tires|45745843896509": ["56b9d4e3e6", "The 225/45ZR17 Haida HD617 Winter 94H tire delivers winter performance with enhanced traction on snow and ice. Its precise tread pattern improves grip and control in cold weather, while the 94H speed rating offers stability."],
+  "Vertex Tires|45745844519101": ["5957c61ac2", "The 225/65R17 Haida HD617 Winter 102T tire is designed to deliver traction and control in winter conditions. Its advanced tread pattern enhances grip on snow and ice, while the 102T load and speed rating ensures durability and safe handling."],
+  "Vertex Tires|45745845469373": ["f0d384a6f4", "The 235/60R18 Haida HD617 Winter 103T tire is engineered for winter driving, offering traction on snow and icy surfaces. Its specialized tread design enhances grip and stability, while the 103T load and speed rating provides strong performance and durability."],
+  "Vertex Tires|45745848647869": ["e9496384b3", "The 265/70R16 Haida HD677 Winter 112T tire is designed to provide winter performance for larger vehicles. Its robust tread pattern enhances traction on snow and ice, ensuring grip and stability. With a 112T load and speed rating, this tire supports heavy loads while maintaining safe handling in challenging winter conditions."],
+  "Vertex Tires|45745853661373": ["d947f5d94e", "The 225/55R19 Haida HD687 UHP Winter 99H tire delivers high-performance traction and control in winter conditions. Its ultra-high performance design combines advanced tread technology for grip on snow and ice with a 99H speed rating, ensuring responsive handling and safety."],
+  "Vertex Tires|45745855529149": ["fba372e9b0", "Ultra-high performance tread design enhances grip on snow and ice, while the 102H load and speed rating ensures durability and safety."],
+  "Vertex Tires|45745857200317": ["b1cbaa583e", "The 235/40R18 Haida HD697 Performance Winter 95V tire combines sporty performance with winter capability. Its advanced tread design optimizes grip on snow and ice, while the 95V speed rating ensures responsive handling and stability."],
+  "Vertex Tires|45745857265853": ["0113ba7e4a", "The 245/50R20 Haida HD697 Performance Winter 102H tire offers winter performance with a focus on stability and control. Its advanced tread pattern enhances traction on snow and ice, while the 102H load and speed rating ensures durability."],
+  "Vertex Tires|45745857331389": ["a61d6a3b26", "The 255/50R20 Haida HD697 Performance Winter 109H tire is engineered for winter driving performance. Its advanced tread design provides enhanced traction and stability on snow and ice, while the 109H load and speed rating supports heavy loads."],
+  "Vertex Tires|45745857953981": ["3d582416c8", "Reinforced construction and tread design provide enhanced traction and durability on snow and ice, while the 106/104 load index and R speed rating ensure it can handle heavy loads safely."],
+  "Vertex Tires|45745858805949": ["5631a17414", "The 235/55R20 Haida HD697 Performance Winter 105V tire delivers advanced winter traction with a focus on responsive handling. Its specialized tread pattern enhances grip on snow and ice, while the 105V load and speed rating ensures strong performance and safety."],
+  "Vertex Tires|45745859854525": ["79eee3819a", "The 245/60R18 Haida HD697 Performance Winter 105H tire is engineered to deliver winter performance with enhanced traction on snow and ice. Its advanced tread design promotes stability and control, while the 105H load and speed rating ensures durability."],
+  "Vertex Tires|45745863983293": ["3795e84adb", "Experience winter traction with the 255/45R20 Haida HD697 Performance Winter tire. Engineered for cold conditions, it offers enhanced grip on snow and ice thanks to its specialized tread design. With a 105V load and speed rating, this tire combines durability and stability, ensuring safety throughout winter driving."],
+  "Vertex Tires|45759657705661": ["796888a044", "The 205/55R17 95H XL iLink Snowgripper I is a high-performance winter tire engineered for enhanced traction on snow and ice. Its extra load (XL) rating ensures durability under heavier loads, while the specialized tread design improves grip and stability in challenging winter conditions."],
+  "Vertex Tires|45762148434109": ["d3b187cff7", "The aggressive tread pattern excels on gravel, mud, and rocky terrain while maintaining reasonable on-road stability."],
+  "Vertex Tires|45762250408125": ["99a248f120", "The 275/40R20 106H XL ILINK WINTERS tire is engineered for winter performance with an Extra Load (XL) rating, providing enhanced strength and durability for heavier vehicles. Its winter-specific design ensures grip and stability on snow-covered and icy roads, improving safety and control in challenging winter conditions."],
+  "Vertex Tires|45800800780477": ["8f6da6c384", "The HAIDA HD837 is a highway all-season tire engineered for smooth, comfortable driving in diverse weather conditions. With a 225/65R17 102H load rating, it delivers traction on wet and dry roads while maintaining fuel efficiency. The advanced tread design reduces road noise and enhances stability at highway speeds."],
+  "Vertex Tires|45841364549821": ["1d4392792e", "The HAIDA HD687 delivers responsive handling, reduced braking distances, and enhanced traction in cold conditions. Load index 98 supports mid-size vehicles. XL sidewall construction provides durability and stability through harsh winter months."],
+  "Vertex Tires|46240616841405": ["02110f6cdf", "The Kumho KU22 ECSTA 4X II is an all-season performance tire engineered for responsive handling and grip in wet, dry, and light winter conditions. Advanced tread compound and pattern optimize traction while reducing rolling resistance for improved fuel efficiency. Durable construction supports extended mileage and performance."],
+  "Vertex Tires|46313656615101": ["645e2c0f67", "This is the HC1/GE Stance Flow Form wheel in Hyper Black finish. Specifications: Size: 18x8.0, Bolt Pattern: 5x114.3 (5-lug), Offset: +40mm, Bore: 64.1mm, Finish: Hyper Black, Seat Type: Radius, Part #: HC1-1880-5114640HB. Flow-form technology delivers the strength of a forged wheel."],
+  "Vertex Tires|46318413611197": ["abeeec4c2b", "This is the LIGHTNING/OE Stance-Flow Form alloy wheel in Gloss Black finish. This 19x8.0 wheel features a 5x120 bolt pattern with +42mm offset and 74.1mm bore, specifically engineered for Vinfast fitment applications. Conical seat design ensures optimal lug nut contact and secure mounting. Part #LIGHTNING-1980-12074GB. Key Specifications: Size: 19x8.0 Bolt Pattern: 5x120 Finish: Gloss Black Offset: +42mm Bore: 74.1mm Seat Type: Conical Fitment: Vinfast"],
+  "Vertex Tires|46318458568893": ["9297da97c7", "This is the THUNDER/OE Stance alloy wheel in Satin Black finish. This 19x9.5 wheel features a 5x120 bolt pattern with +35mm offset and 64.1mm bore. Conical seat design ensures proper lug nut fitment and secure mounting. Part #THUNDER-19951205B. Note: This model has been discontinued - limited availability. Key Specifications: Size: 19x9.5 Bolt Pattern: 5x120 Finish: Satin Black Offset: +35mm Bore: 64.1mm Seat Type: Conical Status: Discontinued"],
+  "Vertex Tires|46318468038845": ["4c31ce9119", "This is the SPIKE/OE Stance alloy wheel in Satin Black finish. This 20x8.5 wheel features a 5x114.3 bolt pattern with +35mm offset and 64.1mm bore. Conical seat design ensures secure lug nut engagement and proper wheel mounting. Part #SPIKE-208511458. Key Specifications: Size: 20x8.5 Bolt Pattern: 5x114.3 Finish: Satin Black Offset: +35mm Bore: 64.1mm Seat Type: Conical"],
+  "Vertex Tires|46318472396989": ["1b0f07621f", "This is the UG04/OE Stance alloy wheel in Gloss Black finish. This 17x7.5 wheel features a 5x114.3 bolt pattern with +35mm offset and 64.1mm bore, specifically designed with Honda Radius seat configuration for optimal fitment on Honda vehicles. Part #UG04-17x64GB. Key Specifications: Size: 17x7.5 Bolt Pattern: 5x114.3 Finish: Gloss Black Offset: +35mm Bore: 64.1mm Seat Type: Honda Radius"],
+  "Vertex Tires|46318483341501": ["7a8a24a62b", "This is the UG04-1880/OE Stance alloy wheel in Gloss Black finish. This 18x8.0 wheel features a 5x120 bolt pattern with +35mm offset and 64.1mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #UG04-1880-512064GB. Key Specifications: Size: 18x8.0 Bolt Pattern: 5x120 Finish: Gloss Black Offset: +35mm Bore: 64.1mm Seat Type: Radius"],
+  "Vertex Tires|46318486814909": ["eeb14671c0", "This is the BC5/OE Stance alloy wheel in Gloss Black finish. This 19x8.5 wheel features a 5x120 bolt pattern with +35mm offset and 72.6mm bore. Conical seat design provides secure lug nut engagement and proper wheel mounting. Part #BC5-1985120GB. Key Specifications: Size: 19x8.5 Bolt Pattern: 5x120 Finish: Gloss Black Offset: +35mm Bore: 72.6mm Seat Type: Conical"],
+  "Vertex Tires|46318486945981": ["d3ed6e4157", "This is the UG04 alloy wheel featuring an 18x8.0 configuration with 5x120 bolt pattern and Matt Gunmetal finish. Equipped with a radius seat design for secure fitment. Part #UG04-1880-512064MG. Key Specifications: Size: 18x8.0 Bolt Pattern: 5x120 Finish: Matt Gunmetal Offset: +35mm Bore: 64.1mm Seat Type: Radius"],
+  "Vertex Tires|46324274593981": ["cc502fb340", "This is the MC2/OE Stance alloy wheel in Black finish. This 18x8.0 wheel features a 5x112 bolt pattern with +35mm offset and 66.6mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #MC2-18808. Key Specifications: Size: 18x8.0 Bolt Pattern: 5x112 Finish: Black Offset: +35mm Bore: 66.6mm Seat Type: Radius"],
+  "Vertex Tires|46324332462269": ["1f76709b4e", "This is the MC7/OE Stance-Flow Form alloy wheel in Gloss Black finish. This 20x8.5 wheel features a 5x112 bolt pattern with +35mm offset and 66.6mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #MC7-2085-5112GB. Note: This model has been discontinued - limited availability. Key Specifications: Size: 20x8.5 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +35mm Bore: 66.6mm Seat Type: Radius Status: Discontinued"],
+  "Vertex Tires|46324353433789": ["911da63f70", "This is the MC4/OE Stance alloy wheel in Gloss Black finish. This 19x9.0 wheel features a 5x112 bolt pattern with +38mm offset and 66.6mm bore. Radius seat design ensures optimal lug nut contact and secure wheel mounting. Part #MC4-1990GB. Note: This model has been discontinued - limited availability. Key Specifications: Size: 19x9.0 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +38mm Bore: 66.6mm Seat Type: Radius Load Rating: 17 Status: Discontinued"],
+  "Vertex Tires|46324372603069": ["b27addc5e6", "This is the MC2/OE Stance alloy wheel in Gloss Black finish. This 19x9.0 wheel features a 5x112 bolt pattern with +35mm offset and 66.6mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #MC2-1990GB. Key Specifications: Size: 19x9.0 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +35mm Bore: 66.6mm Seat Type: Radius"],
+  "Vertex Tires|46324388233405": ["2b50f68a0d", "This is the UG05/OE Stance alloy wheel in Gloss Black finish. This 17x7.5 wheel features a 5x112 bolt pattern with +38mm offset and 66.6mm bore. Conical seat design ensures secure lug nut engagement and proper wheel mounting. Part #UG05-1775-511266C-GB. Key Specifications: Size: 17x7.5 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +38mm Bore: 66.6mm Seat Type: Conical"],
+  "Vertex Tires|46324423983293": ["cda782abe9", "This is the AR09/OE Stance-Flow Form alloy wheel in Gloss Black finish. This 20x9.0 wheel features a 5x112 bolt pattern with +28mm offset and 66.6mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #AR09-2090-5112GB. Key Specifications: Size: 20x9.0 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +28mm Bore: 66.6mm Seat Type: Radius"],
+  "Vertex Tires|46324437975229": ["da1b652dea", "This is the AC4/OE Stance alloy wheel in Gloss Black finish. This 19x8.5 wheel features a 5x112 bolt pattern with +28mm offset and 66.6mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #AC4-1985-5112GB. Key Specifications: Size: 19x8.5 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +28mm Bore: 66.6mm Seat Type: Radius"],
+  "Vertex Tires|46324450689213": ["bb3d71ef16", "This is the AC5/OE Stance alloy wheel in Gloss Black finish. This 20x9.0 wheel features a 5x112 bolt pattern with +28mm offset and 66.6mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #AC5-2090GB. Key Specifications: Size: 20x9.0 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +28mm Bore: 66.6mm Seat Type: Radius"],
+  "Vertex Tires|46324459602109": ["dccd33103c", "This is the AC5-20/OE Stance alloy wheel in Hyper Black finish. This 20x9.0 wheel features a 5x112 bolt pattern with +28mm offset and 66.6mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #AC5-2090HB. Key Specifications: Size: 20x9.0 Bolt Pattern: 5x112 Finish: Hyper Black Offset: +28mm Bore: 66.6mm Seat Type: Radius"],
+  "Vertex Tires|46327379427517": ["bfd84a2a20", "This is the MC8/OE Stance alloy wheel in Gloss Black finish. This 19x8.0 wheel features a 5x112 bolt pattern with +33mm offset and 66.6mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #MC8-1980-51123GB. Key Specifications: Size: 19x8.0 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +33mm Bore: 66.6mm Seat Type: Radius"],
+  "Vertex Tires|46327383130301": ["2651e24185", "This is the AC4/OE Stance alloy wheel in Gloss Black finish. This 20x9.0 wheel features a 5x112 bolt pattern with +28mm offset and 66.6mm bore. Radius seat design provides optimal lug nut contact and secure wheel mounting. Part #AC4-2090-5112GB. Key Specifications: Size: 20x9.0 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +28mm Bore: 66.6mm Seat Type: Radius"],
+  "Vertex Tires|46327384637629": ["c0b89a4ea1", "This is the BC10/OE Stance alloy wheel in Gloss Black finish. This 19x8.5 wheel features a 5x112 bolt pattern with +25mm offset and 66.6mm bore. Conical seat design ensures secure lug nut engagement and proper wheel mounting. Part #BC10-1985GB. Key Specifications: Size: 19x8.5 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +25mm Bore: 66.6mm Seat Type: Conical"],
+  "Vertex Tires|46327385981117": ["fd9738d7ea", "This is the BR01/OE Stance alloy wheel in Gloss Black finish. This 19x8.5 wheel features a 5x112 bolt pattern with +25mm offset and 66.6mm bore. Conical seat design ensures secure lug nut engagement and proper wheel mounting. Part #BR01-1985GB. Key Specifications: Size: 19x8.5 Bolt Pattern: 5x112 Finish: Gloss Black Offset: +25mm Bore: 66.6mm Seat Type: Conical"],
+  "Vertex Tires|46329314476221": ["4bd0fa9b24", "The HAIDA HD828 is a light truck tire engineered for versatility across changing weather conditions. With a 10-ply rating and load index of 125/122Q, it delivers robust load-carrying capacity for trucks and SUVs tackling both highway and light off-road terrain. The LT275/70R18 sizing provides ground clearance and sidewall strength. The all-season tread pattern maintains traction in rain, light snow, and dry conditions."],
+  "Vertex Tires|46690539012285": ["1320b7406a", "The Haida EX-Comfort is designed to deliver a smooth, quiet ride with performance throughout the year. Built with an advanced all-season compound and an asymmetric tread design, it offers traction, handling, and enhanced driving comfort for everyday use. It is engineered with a specialized rubber compound that remains flexible across varying temperatures, ensuring consistent grip in different weather conditions. Continuous tread ribs and an optimized groove pattern improve steering precision and overall road control. Asymmetric tread design enhances road contact and traction, providing better grip and cornering in both dry and wet conditions. Wide circumferential grooves efficiently channel water away, reducing the risk of hydroplaning. The comfort-oriented ride is designed to minimize road noise and vibration, offering a quieter and more comfortable driving experience."],
+  "Vertex Tires|46690558345405": ["8cf5ddf8cb", "This tire is engineered to reduce road noise and vibration, ensuring a smoother and quieter driving experience. Specialized rubber compound adapts to changing temperatures, maintaining consistent grip throughout the year. Asymmetric tread design improves road contact for enhanced traction and cornering in both dry and wet conditions. Continuous tread ribs and optimized groove layout provide better steering control and driving stability. Wide circumferential grooves efficiently disperse water, helping to resist hydroplaning and maintain traction on wet roads."],
+  "Vertex Tires|46690571780285": ["1ae53ea5df", "The Haida EX-Comfort is designed to provide a smooth, quiet driving experience all year round. With its advanced all-season compound and asymmetric tread pattern, it delivers traction, enhanced comfort, and handling for everyday driving. A specialized rubber compound maintains flexibility across a wide range of temperatures, ensuring consistent grip in various weather conditions. Wide circumferential grooves effectively channel water away, helping to reduce the risk of hydroplaning on wet roads. The comfort-oriented design is engineered to minimize road noise and vibrations, providing a quieter and more comfortable ride. Asymmetric tread pattern enhances road contact for better traction and improved cornering performance in both dry and wet conditions. Continuous tread ribs and an optimized groove layout improve steering precision and overall driving control."],
+  "Vertex Tires|46690573779133": ["9331063f01", "The Haida EX-Comfort is designed to deliver a smooth, quiet ride with all-season performance. Featuring an advanced rubber compound and an asymmetric tread design, it provides traction, stable handling, and enhanced comfort for everyday driving. A specialized compound maintains flexibility across varying temperatures, ensuring consistent grip throughout the year. Wide circumferential grooves efficiently channel water away to reduce the risk of hydroplaning on wet roads. Asymmetric tread design improves road contact for better traction and cornering in both dry and wet conditions. Continuous tread ribs and an optimized groove layout enhance steering precision and overall stability. The comfort-focused ride is engineered to minimize road noise and vibrations, delivering a quieter and smoother driving experience."],
+  "Vertex Tires|46690579841213": ["c56d9e9837", "The Haida EX-Comfort 97W is designed to deliver a smooth, quiet ride with enhanced durability and all-season performance. With its advanced compound and asymmetric tread design, this tire offers strong traction, responsive handling, and improved load capacity. Asymmetric tread design improves road contact for enhanced traction and cornering in both dry and wet conditions. Continuous tread ribs and an optimized groove layout provide better steering precision and overall stability. Wide circumferential grooves efficiently channel water away to reduce the risk of hydroplaning. The comfort-focused ride is designed to minimize road noise and vibration, ensuring a quieter and smoother driving experience. Specialized rubber compound remains flexible across varying temperatures for consistent year-round performance."],
+  "Vertex Tires|46690580234429": ["72b4f53aaf", "The Haida EX-Comfort 95H is designed to deliver a smooth, quiet ride with all-season performance. Built with an advanced rubber compound and an asymmetric tread pattern, it provides traction, enhanced comfort, and stable handling for everyday driving. Asymmetric tread design enhances road contact for improved traction and cornering in both dry and wet conditions. The comfort-focused ride is engineered to reduce road noise and vibration, ensuring a quieter and smoother driving experience. Wide circumferential grooves effectively channel water away to help resist hydroplaning on wet roads. Specialized rubber compound maintains flexibility across varying temperatures for consistent year-round grip. Continuous tread ribs and an optimized groove layout improve steering precision and overall stability."],
+  "Vertex Tires|46690581053629": ["20936e016c", "With its advanced all-season compound and asymmetric tread design, this tire delivers strong traction, responsive handling, and a smooth, quiet ride. Wide circumferential grooves efficiently channel water away to help reduce the risk of hydroplaning. Continuous tread ribs and an optimized groove layout improve steering precision and overall stability. Asymmetric tread design enhances road contact for improved traction and cornering in both dry and wet conditions. Specialized rubber compound maintains flexibility across varying temperatures for consistent performance throughout the year. The comfort-focused ride is designed to minimize road noise and vibration, ensuring a quieter and smoother driving experience."],
+  "Vertex Tires|46690590228669": ["2fee9c845b", "The Haida EX-Comfort 95W is designed to deliver a balance of comfort, durability, and year-round performance. With its advanced all-season compound and asymmetric tread pattern, it provides traction, smooth handling, and a quiet ride for everyday driving. Continuous tread ribs and an optimized groove layout enhance steering precision and driving stability. The comfort-focused ride is engineered to reduce road noise and vibration, ensuring a smoother and quieter driving experience. Wide circumferential grooves effectively channel water away to help resist hydroplaning on wet roads. Specialized rubber compound maintains flexibility across varying temperatures for consistent performance throughout the year. Asymmetric tread design improves road contact for better traction and cornering in both dry and wet conditions."],
+  "Vertex Tires|46690595274941": ["8af4d975ea", "The Haida EX-Comfort 98W is engineered to deliver a smooth, quiet ride with enhanced strength and all-season performance. Designed with an advanced compound and asymmetric tread pattern, it offers traction, stable handling, and increased load capacity. Asymmetric tread design enhances road contact for improved traction and cornering in both dry and wet conditions. Continuous tread ribs and an optimized groove layout improve steering precision and overall stability. The comfort-focused ride is engineered to reduce road noise and vibration, ensuring a quieter and smoother driving experience. Specialized rubber compound maintains flexibility across varying temperatures for consistent year-round performance. Wide circumferential grooves efficiently channel water away to help resist hydroplaning on wet roads."],
+  "Vertex Tires|46690597044413": ["56efcfb6b1", "The Haida EX-Comfort 94W is designed to deliver a sporty yet comfortable driving experience with all-season performance. Featuring an advanced compound and asymmetric tread pattern, it provides strong grip, responsive handling, and a smooth, quiet ride for everyday and highway driving. The comfort-focused design is engineered to reduce road noise and vibration for a quieter and smoother ride. Specialized rubber compound maintains flexibility across varying temperatures for consistent year-round performance. Wide circumferential grooves efficiently channel water away to help reduce hydroplaning risk. Asymmetric tread pattern improves road contact for better traction and cornering in both dry and wet conditions. Continuous tread ribs and optimized groove layout enhance steering precision and driving stability."],
+  "Vertex Tires|46690633220285": ["fc835d8f0f", "Asymmetric tread design enhances road contact for improved traction and cornering in both dry and wet conditions. All-season compound maintains flexibility across a wide range of temperatures for year-round performance. Continuous tread ribs and an optimized groove layout improve steering precision and driving stability. The comfort-focused ride is engineered to reduce road noise and vibration for a quieter and smoother driving experience. Wide circumferential grooves efficiently channel water away to help resist hydroplaning."],
+  "Vertex Tires|46690634760381": ["c4508fb06e", "The Haida EX-Comfort 95W is designed to deliver a sporty yet comfortable driving experience with year-round performance. Featuring an advanced all-season compound and asymmetric tread design, it offers strong traction, precise handling, and a smooth, quiet ride for everyday and highway use. The comfort-focused design is engineered to reduce road noise and vibration for a quieter driving experience. Wide circumferential grooves efficiently channel water away to help reduce hydroplaning risk on wet roads. Asymmetric tread pattern improves road contact for better grip and cornering in both dry and wet conditions. Continuous tread ribs and optimized groove layout enhance steering precision and stability. Specialized rubber compound maintains flexibility across varying temperatures for consistent year-round performance."],
+  "Vertex Tires|46690638758077": ["2ae6052b19", "Extra Load (XL) design provides increased strength and higher load-carrying capacity for performance vehicles. Asymmetric tread pattern enhances road contact for improved traction and precise cornering in both dry and wet conditions. The comfort-focused design is engineered to reduce road noise and vibration for a smoother ride. Wide circumferential grooves efficiently channel water away to help resist hydroplaning. Continuous tread ribs and optimized groove layout improve steering stability and driving control. Specialized rubber compound maintains flexibility across varying temperatures for consistent year-round performance."],
+  "Vertex Tires|46690965586109": ["44afb97bc8", "The Haida HD625 All-Weather is a true year-round performance tire. With its 3PMSF (Three-Peak Mountain Snowflake) certification, it is approved for severe snow use while still delivering strong everyday road performance. It is engineered to perform consistently in dry, wet, and snowy conditions for true year-round usability. Wide longitudinal and cascading grooves quickly channel water and slush away from the tread to reduce hydroplaning. Reinforced shoulder blocks and asymmetric tread design improve steering response and road stability. High-density siping and optimized tread layout promote uniform wear for extended durability."],
+  "Vertex Tires|46690968076477": ["e3b36f8d39", "The Haida HD625 All-Weather is a high-performance year-round tire designed to deliver traction in dry, wet, and winter conditions. With its 3PMSF (Three-Peak Mountain Snowflake) certification, it is approved for severe snow use while maintaining strong everyday driving performance. It is severe snow certified (3PMSF) with enhanced biting edges and dense sipes for improved grip on snow and ice. It provides traction in dry, wet, and snowy conditions for true year-round usability. Wide longitudinal and cascade grooves quickly channel water and slush away to reduce hydroplaning risk. Asymmetric tread design and reinforced shoulder blocks improve steering precision and road stability. High-density siping and optimized tread layout promote uniform wear for longer durability."],
+  "Vertex Tires|46690968535229": ["d026f18a38", "The Haida HD625 All-Weather is a year-round tire designed to deliver performance in dry, wet, and winter conditions. With its 3PMSF (Three-Peak Mountain Snowflake) certification, it is approved for severe snow use while maintaining stable handling and comfort in everyday driving. It is designed to perform consistently in dry, wet, and snowy conditions for true year-round usability. Wide longitudinal and cascade grooves quickly channel water and slush away from the tread to reduce hydroplaning risk. Asymmetric tread pattern and reinforced shoulder blocks improve steering precision and driving stability. High-density siping and optimized tread layout promote uniform wear for extended durability."],
+  "Vertex Tires|46690969747645": ["28636399b0", "The Haida HD625 All-Weather is a high-performance year-round tire engineered to deliver traction in dry, wet, and winter conditions. With its 3PMSF (Three-Peak Mountain Snowflake) certification, it is approved for severe snow use while maintaining comfort, stability, and control for everyday driving. It is severe snow certified (3PMSF) with enhanced biting edges and dense sipes for strong grip on snow and ice. It is built to perform in dry, wet, and snowy conditions for true year-round usability. Wide longitudinal and cascade grooves quickly channel water and slush away to help reduce hydroplaning risk. Asymmetric tread design and reinforced shoulder blocks improve steering precision and road stability. High-density siping and optimized tread layout promote uniform wear for extended durability."],
+  "Vertex Tires|46690976694461": ["4064c138f3", "The Haida HD625 All-Weather is a year-round tire engineered to deliver performance in dry, wet, and winter conditions. With its 3PMSF (Three-Peak Mountain Snowflake) certification, it is approved for severe snow use while maintaining stable handling, comfort, and control for everyday driving. It is severe snow certified (3PMSF) with enhanced biting edges and high-density sipes for improved traction on snow and ice. It is built to deliver consistent grip and control in dry, wet, and snowy conditions throughout the year. Wide longitudinal and cascade grooves quickly channel water and slush away to reduce hydroplaning risk. Asymmetric tread pattern and reinforced shoulder blocks improve steering precision and road stability. High-density siping and optimized tread layout promote uniform wear for longer-lasting performance."],
+  "Vertex Tires|46690980954301": ["48cd8775d3", "The Haida HD625 All-Weather is a high-performance year-round tire designed to deliver traction and control in dry, wet, and winter conditions. With its 3PMSF (Three-Peak Mountain Snowflake) certification, it is approved for severe snow use while maintaining sporty handling, comfort, and stability. It is severe snow certified (3PMSF) with enhanced biting edges and dense sipes for strong grip on snow and ice. It is designed for year-round use in dry, wet, and snowy conditions. Wide longitudinal and cascade grooves quickly channel water and slush away to reduce hydroplaning risk. Asymmetric tread design and reinforced shoulder blocks improve steering precision and road stability. High-density siping and optimized tread layout promote uniform wear for longer-lasting performance."],
+  "Vertex Tires|46690982199485": ["31710052e5", "The Haida HD625 All-Weather is a year-round tire engineered to deliver performance in dry, wet, and winter conditions. With its 3PMSF (Three-Peak Mountain Snowflake) certification, it is approved for severe snow use while maintaining handling, comfort, and stability for everyday driving. It is severe snow certified (3PMSF) with enhanced biting edges and dense sipes for strong grip on snow and ice. It is built to deliver consistent traction and control in dry, wet, and snowy conditions year-round. Wide longitudinal and cascade grooves channel water and slush away from the contact patch to reduce hydroplaning risk. Asymmetric tread design and reinforced shoulder blocks improve steering precision and road stability. High-density siping and optimized tread layout promote uniform wear for extended durability."],
+  "Vertex Tires|46690983837885": ["e6159f993d", "The Haida HD625 All-Weather is a high-performance year-round tire designed to deliver traction and control in dry, wet, and winter conditions. With its 3PMSF (Three-Peak Mountain Snowflake) certification, it is approved for severe snow use while maintaining comfort, stability, and handling. It is severe snow certified (3PMSF) with enhanced biting edges and high-density sipes for grip on snow and ice. It is built to perform consistently in dry, wet, and snowy conditions for true year-round usability. Asymmetric tread design and reinforced shoulder blocks improve steering precision and road stability. High-density siping and optimized tread layout promote uniform wear for longer-lasting durability. Wide longitudinal and cascade grooves channel water and slush away from the contact patch to help reduce hydroplaning risk."],
+  "Vertex Tires|46690985050301": ["4ad3c4928a", "The Haida HD625 All-Weather is a high-performance year-round tire designed to deliver traction and control in dry, wet, and winter conditions. With its 3PMSF (Three-Peak Mountain Snowflake) certification, it is approved for severe snow use while maintaining sporty handling, comfort, and stability. Asymmetric tread design and reinforced shoulder blocks improve road contact, steering precision, and overall driving stability. High-density siping and an optimized tread layout promote uniform wear for longer-lasting durability. It is engineered to provide traction in dry, wet, and snowy conditions for true year-round usability. Wide longitudinal and cascade grooves channel water and slush away from the contact patch to reduce hydroplaning risk. It is severe snow certified (3PMSF) with enhanced biting edges and sipes to deliver grip on snow and ice."],
+  "Vertex Tires|46690994094269": ["b8b58f3b8c", "This tire is designed for light trucks, SUVs, and 4x4 vehicles. 3D tread pattern provides traction in dry, wet, and mixed weather conditions year-round. Wide tread blocks and deep voids enhance traction on mud, dirt, gravel, and rough surfaces. Open grooves help eject mud, snow, and debris to maintain consistent traction off-road. Reinforced sidewalls and anti-collision design improve resistance to punctures and impacts on tough terrain. Optimized tread geometry and shoulder design enhance steering precision and directional stability."],
+  "Vertex Tires|46690996879549": ["cc6d15d238", "Designed for sporty sedans and performance vehicles, this ultra-high-performance summer tire delivers strong grip, responsive handling, and braking in both dry and wet conditions. Asymmetric tread pattern with optimized block placement enhances grip, steering precision, and driving stability. Specialized rubber compound improves road adhesion and traction, especially at higher speeds. Strong outer shoulder blocks and a rigid tread layout deliver cornering stability and quick steering response. Wide longitudinal grooves and internal ribs channel water away to reduce hydroplaning risk. Sequential tread block design enhances braking control and traction on both dry and wet roads. Extra Load (XL) design provides increased strength and higher load-carrying capacity for performance vehicles."],
+  "Vertex Tires|46691031056573": ["4189f9c0d2", "The Haida HD937 UHP is designed to deliver a balance of performance, comfort, and stability for everyday driving and highway use. Engineered for passenger cars, SUVs, and crossovers, it provides responsive handling, traction, and a smooth, quiet ride in warm weather conditions. Performance-oriented compound resists heat buildup, ensuring stable traction and control at higher speeds. Optimized tread layout reduces road noise and vibration for a smoother driving experience. Wide ribs and circumferential grooves channel water away to reduce hydroplaning risk and improve wet traction. Reinforced shoulder blocks and optimized tread geometry enhance steering precision and driving stability. Asymmetric tread pattern and strong block design provide grip, especially in dry conditions."],
+  "Vertex Tires|46691031220413": ["c52b1306a6", "The Haida HD937 UHP is engineered to deliver a balanced combination of performance, comfort, and stability for modern passenger vehicles, SUVs, and crossovers. Designed for warm-weather driving, it offers responsive handling, traction, and a smooth, quiet ride for both city and highway use. Wide ribs and circumferential grooves channel water away from the contact patch to help reduce hydroplaning risk and improve wet traction. Reinforced shoulder blocks and optimized tread geometry enhance steering precision and high-speed stability. Carefully designed tread layout minimizes road noise and vibration for a smoother driving experience. Asymmetric tread pattern and robust block design improve road contact for grip in dry conditions. Performance-focused compound resists heat buildup, ensuring consistent traction and control during highway driving."],
+  "Vertex Tires|46691032203453": ["0e6502733e", "Designed for SUVs and crossovers, this ultra-high-performance summer tire delivers strong grip, responsive handling, and a smooth, quiet ride in warm weather conditions. Extra Load (XL) design provides increased strength and higher load-carrying capacity for heavier vehicles like SUVs and crossovers. Wide ribs and circumferential grooves channel water away from the contact patch to help reduce hydroplaning risk and improve wet traction. Performance-oriented compound resists heat buildup, ensuring stable traction and control during highway and high-speed driving. Asymmetric tread pattern and robust block design enhance road contact for grip, especially in dry conditions. Optimized tread layout minimizes road noise and vibration for a smoother driving experience. Reinforced shoulder blocks and advanced tread geometry improve steering precision and overall stability."],
+  "Vertex Tires|46716413214909": ["6b05f9480a", "The Haida EX-Comfort 88H is designed to provide a smooth, quiet ride with all-season performance. Featuring an advanced rubber compound and an asymmetric tread pattern, it delivers traction, stable handling, and enhanced comfort for everyday driving. Asymmetric tread design enhances road contact for improved traction and cornering in both dry and wet conditions. Continuous tread ribs and an optimized groove layout improve steering precision and overall driving stability. Specialized rubber compound maintains flexibility across varying temperatures for consistent year-round performance. The comfort-focused ride is engineered to reduce road noise and vibration, ensuring a quieter and smoother driving experience. Wide circumferential grooves effectively channel water away to help reduce the risk of hydroplaning."],
+  "Vertex Tires|46716452339901": ["dedcf6ab6c", "The Haida EX-Comfort 88V is designed to deliver a smooth, quiet ride with all-season performance. Featuring an advanced rubber compound and an asymmetric tread pattern, it provides traction, stable handling, and enhanced comfort for everyday driving. The comfort-focused design is engineered to reduce road noise and vibration, ensuring a quieter and smoother driving experience. Asymmetric tread pattern enhances road contact for improved traction and cornering in both dry and wet conditions. Continuous tread ribs and an optimized groove layout improve steering precision and driving stability. Specialized rubber compound maintains flexibility across varying temperatures for consistent year-round performance. Wide circumferential grooves efficiently channel water away to help reduce the risk of hydroplaning."],
+  "Vertex Tires|46716495724733": ["fef26b1ed6", "The Haida EX-Comfort 94H is designed to deliver a smooth, quiet ride with all-season performance. Featuring an advanced rubber compound and an asymmetric tread pattern, it offers traction, stable handling, and enhanced comfort for everyday driving. Specialized rubber compound maintains flexibility across varying temperatures for consistent year-round performance. Wide circumferential grooves efficiently channel water away to help reduce the risk of hydroplaning. Asymmetric tread pattern improves road contact for better traction and cornering in both dry and wet conditions. Continuous tread ribs and optimized groove layout enhance steering precision and driving stability. The comfort-focused ride is engineered to minimize road noise and vibration for a smoother, quieter driving experience."],
+  "Vertex Tires|46716537569469": ["a1a79443eb", "The HAIDA EX-COMFORT delivers all-season performance for everyday driving. This 205/50ZR17 93W tire balances comfort and durability across wet, dry, and light winter conditions."],
+  "Vertex Tires|46716575219901": ["c99255fbe0", "The HAIDA EX-COMFORT All Season tire is engineered for balanced handling, fuel efficiency, and a comfortable ride for everyday driving. The 225/55R17 97V size fits a wide range of sedans and crossovers, providing traction on wet and dry roads. Built with durable compound technology, it offers extended tread life and consistent performance throughout the seasons."],
+  "Vertex Tires|46716634267837": ["6b5f589fdf", "The HAIDA HD317 EV is engineered specifically for electric vehicles. This all-season tire features advanced tread design that reduces rolling resistance, helping maximize your EV's range while maintaining grip in wet and dry conditions. The 255/55R19 111V XL size provides a comfortable ride with enhanced load capacity. Reinforced sidewalls ensure durability and stability, while the specialized compound offers traction year-round."],
+  "Vertex Tires|46716694560957": ["2aabc20954", "The HAIDA HD625 delivers all-weather performance. This 235/55ZR17 tire features 3PMSF certification, meeting severe winter driving standards with enhanced snow and ice traction."],
+  "Vertex Tires|46716731490493": ["82224b050b", "The HAIDA HD625 delivers all-weather performance. With 3PMSF certification, this tire meets severe winter weather standards, providing grip on snow, ice, and wet roads. The 235/50ZR18 101W sizing suits a wide range of sedans and crossovers, balancing comfort with responsive handling."],
+  "Vertex Tires|46716752953533": ["f76117fbdf", "The HAIDA HD625 delivers all-weather performance. This 235/55ZR18 tire features 3PMSF certification, meeting severe winter weather standards for enhanced traction in snow and ice. Engineered for year-round versatility, the HD625 balances winter grip with summer stability, reducing the need for seasonal tire changes."],
+  "Vertex Tires|46717046948029": ["29a505f802", "The HAIDA HD668 is a touring tire engineered for balanced performance across changing weather conditions. Featuring a durable tread compound and optimized grip pattern, it delivers grip on both wet and dry roads while maintaining fuel efficiency. The 225/60R16 98H load rating suits mid-size sedans and crossovers, offering a smooth, quiet ride for daily commuting and highway driving. Built to withstand road conditions, this tire provides traction and longevity."],
+  "Vertex Tires|46717063069885": ["fb6c025034", "The HAIDA HD828 235/65R18 delivers all-terrain performance for trucks and SUVs. The HD828 provides consistent grip through changing weather while maintaining fuel efficiency."],
+  "Vertex Tires|46719475941565": ["49824f9cb5", "The HAIDA HD927 is a summer tire engineered for sports cars and high-powered sedans. Featuring an aggressive tread pattern and reinforced sidewalls, it delivers grip and precise handling on both dry and wet roads. The XL load rating ensures durability under driving conditions. Advanced rubber compounds provide braking performance and reduced rolling resistance for improved fuel efficiency."],
+  "Vertex Tires|46719500452029": ["1230da5a3b", "The HAIDA HD927SP delivers summer performance. Built with advanced grip technology, this ultra-high-performance tire excels in wet and dry conditions. The reinforced sidewall construction ensures precise steering feedback, while the optimized tread pattern reduces road noise for a smoother ride. It is engineered for sports cars and high-performance vehicles."],
+  "Vertex Tires|46719525486781": ["9b6f9fffcf", "The HAIDA HD937 XL delivers all-season performance in a 215/40ZR17 87W size. The XL load rating provides extra capacity for heavier vehicles."],
+  "Vertex Tires|46719558713533": ["bd9489d352", "The HAIDA HD937 delivers responsive handling, braking, and fuel-efficient performance on both wet and dry roads. It is built with advanced tread compound technology to resist wear and extend tire life. The 255/45ZR19 104Y sizing fits a wide range of sport sedans and coupes, offering a balanced blend of comfort and control."],
+  "Vertex Tires|46719569035453": ["63e49abbb2", "The HAIDA HD937 delivers all-season performance in an XL load-rated tire. The reinforced sidewall construction supports heavier loads while maintaining ride comfort."],
+  "Vertex Tires|46719576867005": ["d42bc2ae79", "The HAIDA HD937 XL delivers all-season performance. Engineered with advanced tread design, these 255/45ZR20 tires provide grip in wet and dry conditions while maintaining fuel efficiency. The XL load rating ensures robust support for heavier vehicles."],
+  "Vertex Tires|46719582273725": ["8f06e15090", "The HAIDA HD937 XL All-Season tire is for changing weather conditions. Engineered for passenger vehicles and crossovers, this 275/45ZR20 110W tire combines responsive handling with enhanced traction on wet and dry roads. The XL load rating provides extra durability for heavier loads, while the advanced tread design promotes even wear and extended tread life."],
+  "Vertex Tires|47641326518461": ["47ede34582", "The Continental ContiProContact is an all-season tire, size 155/60R15 with 74T load and speed rating. It is engineered for balanced performance across wet, dry, and light winter conditions. It features advanced grip technology and responsive handling for compact and subcompact vehicles."],
+  "Vertex Tires|47642253492413": ["bb1191b37e", "This is a performance tire engineered for traction in wet, dry, and light winter conditions. The Hankook Weatherflex GT delivers responsive handling and fuel efficiency with a reinforced tread design that resists wear. Load index 91H supports mid-size sedans and crossovers."],
+  "Vertex Tires|47672131059901": ["7d39d407ac", "Engineered for electric and hybrid vehicles, the Hankook ION EVO AS delivers responsive handling and extended range on all-season roads. The XL load rating (102W) supports heavier EV powertrains, while advanced tread compounds reduce rolling resistance for improved efficiency. Optimized grip in wet and dry conditions keeps your vehicle stable year-round."],
+  "Vertex Tires|47672140038333": ["56f071e821", "The Hankook Ventus S1 Noble2 H452 delivers all-season performance. Engineered for sedans and coupes, this 255/45R19 tire combines responsive steering with consistent grip across wet and dry conditions. The advanced tread pattern reduces road noise while promoting even wear, extending tire life. Load-rated at 100H, it handles highway speeds."],
+  "Vertex Tires|47672143216829": ["0715b0be8f", "Engineered with advanced tread compound technology, this tire provides grip in wet, dry, and light winter conditions. The XL load rating (109V) supports heavier vehicles while maintaining fuel efficiency."],
+  "Vertex Tires|47672146428093": ["d58a509ad3", "The Hankook Dynapro AT2 Xtreme in LT275/60R20 delivers all-season performance for trucks and SUVs tackling both highway and off-road terrain. Built with reinforced sidewalls and an aggressive tread pattern, this tire provides enhanced traction in mud, snow, and gravel while maintaining stability on pavement. The LRD load rating (119/116S) ensures durability under heavy loads. The Dynapro AT2 Xtreme balances year-round grip with extended tread life."],
+  "Vertex Tires|47672148721853": ["137dc3d77a", "Engineered for year-round performance, the Hankook Weatherflex GT is for wet, dry, and light winter conditions. The XL load rating supports heavier vehicles with enhanced stability, while the advanced tread compound maintains grip across temperature swings."],
+  "Vertex Tires|47672151081149": ["eb39e42ee6", "The Hankook Weatherflex GT is for wet, dry, and light winter conditions with advanced grip technology and responsive steering. XL load rating (98V) supports heavier vehicles with enhanced stability. The sidewall is blackwall (BSW)."],
+  "Vertex Tires|47672154095805": ["9ab45de18c", "The Hankook Kinergy PT delivers all-season performance for everyday driving. Engineered with advanced tread design, this tire provides balanced grip in wet, dry, and light winter conditions. The 215/55R17 94V sizing suits mid-size sedans and crossovers, offering a smooth ride and responsive handling."],
+  "Vertex Tires|47672157536445": ["100a0f12f7", "This is an all-season tire engineered for electric and hybrid SUVs. The Hankook ION EVO AS delivers responsive handling, reduced rolling resistance for extended range, and wet/dry grip. XL load rating (104W) supports heavier EV powertrains."],
+  "Vertex Tires|47672159600829": ["8efd6d8359", "This is an all-season performance tire engineered for sport sedans and coupes. The Hankook Ventus S1 AS H125 delivers responsive handling, braking, and traction across wet, dry, and light winter conditions. XL load rating ensures durability for heavier vehicles. DOT-approved for North American roads."],
+  "Vertex Tires|47672163696829": ["06ea5fa8ce", "This is a heavy-duty all-season performance tire engineered for light trucks and SUVs. The Hankook Dynapro AT2 Xtreme delivers aggressive tread design for enhanced traction on both paved roads and off-road terrain. LRE sidewall construction provides load-carrying capacity rated at 125/122S, ensuring durability."],
+  "Vertex Tires|47672180146365": ["e49219c314", "Engineered for balanced traction in wet, dry, and light winter conditions, this tire delivers responsive handling and consistent braking power. The reinforced sidewall construction ensures durability, while the optimized tread pattern reduces road noise for a quieter ride."],
+  "Vertex Tires|47672365154493": ["70a8147b04", "The Hankook Kinergy GT H436 delivers all-season performance. Engineered with advanced tread technology, this tire provides grip in wet and dry conditions while maintaining fuel efficiency. The 235/60R18 sizing suits a wide range of sedans and crossovers."],
+  "Vertex Tires|47672376852669": ["c61081be23", "Engineered with advanced tread technology, this tire provides grip in wet, dry, and light winter conditions. The XL load rating ensures robust support for heavier vehicles, while the reinforced sidewall construction enhances stability during cornering and highway driving."],
+  "Vertex Tires|47672379179197": ["7150d28ca5", "This is an all-season tire engineered for electric vehicles. The Hankook Kinergy AS X EV delivers optimized grip, reduced rolling resistance, and enhanced fuel efficiency across wet and dry conditions. XL load rating ensures durability for heavier EV powertrains."],
+  "Vertex Tires|47672380752061": ["ce3c50d64a", "The Hankook Dynapro AT2 Xtreme delivers all-season performance for trucks and SUVs tackling both highway and off-road terrain. Built with advanced tread compound and reinforced sidewalls, this tire offers enhanced durability, improved traction in wet and light snow conditions, and extended tread life. The aggressive tread pattern provides grip on gravel, mud, and rocky surfaces while maintaining stability on paved roads."],
+  "Vertex Tires|47672382947517": ["0a2e32dfce", "The Hankook ION EVO AS is an all-season tire engineered for electric vehicles and modern sedans. The 235/45R18 XL load rating delivers enhanced durability and stability across wet, dry, and light winter conditions. Low rolling resistance reduces energy consumption. Reinforced sidewalls and advanced tread compound provide responsive handling and extended tread life. Load index 98W supports heavier vehicles. DOT-approved for North American roads."],
+  "Vertex Tires|47672385732797": ["8c7a937938", "This is an all-season performance tire engineered for modern SUVs and crossovers. The Hankook ION EVO AS delivers responsive handling, braking, and traction across wet, dry, and light winter conditions. XL load rating (101V) supports heavier vehicles with enhanced stability. The sidewall is black (BSW)."],
+  "Vertex Tires|47672387469501": ["95fcc33d63", "This is a performance tire engineered for responsive handling and traction across changing weather conditions. The Hankook Weatherflex GT delivers balanced grip on wet and dry roads while maintaining fuel efficiency. XL load rating ensures durability."],
+  "Vertex Tires|47672394154173": ["ee49f9bff9", "The Hankook Weatherflex GT tire is for changing weather conditions. The 235/65R17 104H size fits a wide range of sedans and crossovers, offering balanced traction on wet, dry, and light winter roads. It is engineered for everyday driving comfort with responsive handling and predictable braking."],
+  "Vertex Tires|47672395923645": ["f25d746f88", "The Hankook Ventus S1 AS H125 all-season tire delivers balanced performance across wet, dry, and light winter conditions. The XL load rating (103Y) supports heavier vehicles with enhanced stability and durability. Size 245/45R20 fits a wide range of sport-oriented vehicles."],
+  "Vertex Tires|47672398905533": ["0b9b819297", "This LT-rated tire delivers aggressive tread design for enhanced traction on gravel, mud, and snow while maintaining stability on highways. The 124/121S load and speed rating supports heavy payloads. All-season compound ensures performance from summer heat to winter conditions."],
+  "Vertex Tires|47672400740541": ["8c3f73eb88", "The Hankook Ventus S1 AS H125 delivers grip in wet, dry, and light winter conditions with advanced tread compound technology. XL load rating (106Y) supports heavier vehicles with enhanced stability. The sidewall is blackwall (BSW)."],
+  "Vertex Tires|47672402444477": ["752ed49a01", "With a 225/60R18 sizing and 100H load and speed rating, this tire handles everyday driving across varying weather conditions. The Weatherflex GT features advanced tread design that maintains grip on wet and dry roads while resisting uneven wear. Its reinforced sidewalls provide stability during cornering, and the compound ensures consistent performance from spring through winter."],
+  "Vertex Tires|47672406212797": ["5067cf1fde", "This is an all-season performance tire engineered for SUVs and crossovers. The Hankook Dynapro HPX RA43 delivers responsive handling, braking, and traction across wet, dry, and light winter conditions. Load index 102H supports heavier vehicles with sustained highway speeds."],
+  "Vertex Tires|47672698765501": ["667f21bf5f", "The Michelin Defender 2 delivers all-season performance for everyday driving. Built with advanced tread design, this tire offers enhanced grip in wet and dry conditions while maximizing fuel efficiency. The reinforced sidewall construction provides durability and puncture resistance. Load index 102H is for mid-size SUVs and crossovers."],
+  "Vertex Tires|47672760336573": ["6e5c0eb871", "The Michelin Agilis CrossClimate 2 is a light truck tire engineered for year-round performance in diverse weather conditions. Built with Michelin's advanced grip technology, it delivers traction on wet, dry, and winter roads while maintaining fuel efficiency. Designed for commercial and fleet applications, the LT225/75R16 load range E (LRE) configuration supports heavy loads with a 115/112R speed rating. The reinforced sidewall construction ensures durability. Key features include enhanced braking performance, reduced rolling resistance, and extended tread life. The all-season compound adapts to temperature changes, providing consistent handling from summer heat to winter cold."],
+  "Vertex Tires|47672792187069": ["130dfb6e3f", "The Michelin Pilot Sport 4 delivers precise steering feedback, enhanced braking control, and reduced stopping distances on both wet and dry roads. Built with advanced rubber compounds and reinforced sidewalls, this XL-rated tire offers extended load capacity and durability for sport-oriented vehicles."],
+  "Vertex Tires|47672825348285": ["501781bed1", "The Michelin Defender 2 in 245/60R18 XL 109H is engineered for extended tread life. This BlackSidewall (BSW) tire is for wet, dry, and light winter conditions while maintaining fuel efficiency. Built with Michelin's durability technology, the Defender 2 offers a quiet, comfortable ride and wear resistance. Load index 109H supports heavier vehicles."],
+  "Vertex Tires|47672841404605": ["c443223e6d", "The Michelin Agilis CrossClimate LT245/75R17 is an all-season light truck tire engineered for year-round performance. Load Range E (121/118R) delivers robust load capacity for commercial and heavy-duty applications. CrossClimate technology balances wet, dry, and winter traction without seasonal swaps."],
+  "Vertex Tires|47672861163709": ["2570bfd7df", "The Michelin CrossClimate 2 is engineered for year-round performance in diverse weather conditions. The 235/50R20 XL size delivers enhanced load capacity and durability for SUVs and crossovers. Advanced tread compound and siping technology provide grip on wet, dry, and light snow surfaces. Reinforced sidewalls ensure stability and longevity. V-rated for speeds up to 240 km/h. The sidewall is black (BSW)."],
+  "Vertex Tires|47672904614077": ["c278ab4f5d", "This is an all-season tire engineered for light trucks and SUVs. The Michelin Defender LTX M/S 2 delivers traction in wet, dry, and light winter conditions with a reinforced sidewall construction for enhanced durability. Load index 116 supports heavy payloads."],
+  "Vertex Tires|47672912969917": ["ef7da82a31", "This LT275/65R18 load range E tire delivers robust traction across wet, dry, and light winter conditions while resisting wear for extended tread life. The reinforced sidewall construction handles heavy loads and challenging road surfaces. Load Index 123/120S ensures safe performance."],
+  "Vertex Tires|47672919752893": ["b4821b66a9", "This LT265/70R17 load range E tire delivers robust traction across wet, dry, and light snow conditions with reinforced sidewalls designed to resist punctures and cuts. The open shoulder tread pattern enhances off-road grip while maintaining highway stability."],
+  "Vertex Tires|47672930533565": ["4a4384c5a6", "The Michelin Defender LTX M/S 2 is engineered for light trucks and SUVs. This 245/60R20 XL load-rated tire delivers traction in wet, dry, and light winter conditions while maximizing tread life through Michelin's advanced rubber compound. The M/S (mud and snow) rating ensures grip when conditions change. The 111H speed and load rating supports heavy payloads while maintaining safe highway performance."],
+  "Vertex Tires|47672941838525": ["feb5fc2c3a", "The Michelin Defender 2 is an all-season tire engineered for durability and year-round performance. It is built with Michelin's ComfortControl technology to reduce road noise and vibration, extending tire life while maintaining fuel efficiency."],
+  "Vertex Tires|47672951832765": ["e5463b69be", "The Michelin Defender 2 is an all-season tire engineered for everyday durability and performance across changing weather conditions. The 235/65R18 106H load rating delivers traction on wet and dry roads while maintaining fuel efficiency. It is built with Michelin's ComfortControl technology to reduce road noise and vibration, ensuring a smoother, quieter ride. Load Index 106 supports vehicles up to 951 kg per tire."],
+  "Vertex Tires|47673001214141": ["6395ed8b5f", "The Michelin Pilot Sport 4 is an all-season tire engineered for responsive handling and grip in wet, dry, and light winter conditions. The XL load rating delivers enhanced load capacity for performance vehicles. Advanced tread compound and reinforced sidewalls provide precise steering feedback and reduced braking distances. Size 225/40R19, load index 93, speed rating Y."],
+  "Vertex Tires|47673010585789": ["d8e1a0ef7c", "The Michelin Pilot Sport 4 delivers all-season performance. Built with advanced grip technology, this tire excels on both wet and dry roads while maintaining braking control. The reinforced sidewall construction ensures durability through driving conditions."],
+  "Vertex Tires|47673019695293": ["c2678b4a78", "The Michelin CrossClimate 2 delivers year-round advanced grip on wet, dry, and winter roads. This tire combines a reinforced tread design with innovative rubber compounds to maintain performance across temperature extremes. The XL load rating (95V) supports heavier loads while the 205/55R17 fitment suits a wide range of sedans and crossovers."],
+  "Vertex Tires|47673037422781": ["4531ad9958", "The Michelin CrossClimate 2 215/50R17 XL 95V is engineered for performance across changing weather. Advanced grip technology handles rain, snow, and dry roads. The XL load rating supports heavier vehicles, while the reinforced structure resists wear and extends tire life. Michelin's compound delivers consistent handling and safety in unpredictable conditions."],
+  "Vertex Tires|47673042927805": ["958d971f03", "The Michelin CrossClimate 2 is engineered for year-round performance in diverse weather conditions. The 255/45R19 XL size delivers enhanced load capacity and stability for sedans and crossovers. Advanced grip technology ensures handling on wet, dry, and light snow surfaces. Reinforced sidewalls provide durability and puncture resistance. V-speed rating supports highway driving up to 240 km/h."],
+  "Vertex Tires|47673050464445": ["d1362d87d8", "The Michelin CrossClimate 2 delivers year-round advanced grip in wet, dry, and winter conditions. This all-season tire combines a reinforced tread structure with innovative rubber compounds to reduce braking distances and enhance handling across temperatures. The XL load rating (102V) supports heavier vehicles with sustained performance."],
+  "Vertex Tires|47673056919741": ["3e227b68ae", "The Michelin LTX A/T 2 is an all-season tire engineered for light trucks and SUVs. The 275/60R20 114S load rating delivers traction across wet, dry, and light snow conditions. Advanced tread design resists wear and enhances fuel efficiency."],
+  "Vertex Tires|47673137103037": ["3802bdc10c", "The Yokohama Geolandar A/T4 G018 is a light truck tire engineered for on-road comfort and off-road capability. The LT275/70R18 load range E delivers 125/122S load index performance with open-shoulder tread design for enhanced traction on gravel, dirt, and mixed terrain. The sidewall branding is OWL."],
+  "Vertex Tires|47673148014781": ["0d320a04b7", "The Yokohama Geolandar CV G058 delivers all-season performance for light trucks, SUVs, and vans. This 215/70R16 tire combines durability with balanced handling across wet, dry, and light winter conditions. The reinforced sidewalls provide load capacity at 100H rating, while the tread design minimizes road noise and extends tire life."],
+  "Vertex Tires|47673164497085": ["fbe1443183", "The Uniroyal Tiger Paw Touring A/S delivers all-season performance for everyday driving. Engineered with advanced tread design, this tire provides grip in wet, dry, and light winter conditions. The 225/65R17 102H sizing fits a wide range of sedans and crossovers, offering a smooth, quiet ride with fuel efficiency."],
+  "Vertex Tires|47673184026813": ["1f5d030540", "This is an all-season performance tire engineered for year-round traction and comfort. The Uniroyal Tiger Paw Touring A/S delivers responsive handling on wet and dry roads while maintaining fuel efficiency. XL load rating (97H) supports heavier vehicles."],
+  "Vertex Tires|47673191039165": ["7e7aeb76fb", "The Uniroyal Tiger Paw Touring A/S delivers all-season performance for sedans and crossovers. This 235/55R20 tire combines responsive handling with traction across wet, dry, and light winter conditions. The 102H rating ensures durability and load capacity for everyday driving. Advanced tread design reduces road noise while promoting even wear and extended tire life."],
+  "Vertex Tires|47673195561149": ["e54f704570", "The Uniroyal Tiger Paw Touring A/S delivers all-season performance for everyday driving. The 215/55R17 94V size fits a wide range of sedans and crossovers, offering balanced traction in wet, dry, and light winter conditions. Advanced tread design enhances braking response and reduces road noise for a quieter ride. It is built with durable rubber compounds to extend tire life and maintain consistent handling throughout the season."],
+  "Vertex Tires|47673203065021": ["f51c53b012", "The Uniroyal Tiger Paw Touring A/S delivers all-season performance for everyday driving. This 195/65R15 91H tire combines responsive handling with braking in wet and dry conditions. Built with advanced tread technology, it resists hydroplaning and maintains traction across temperature changes."],
+  "Vertex Tires|47684457889981": ["5ceefe5ad1", "The Pirelli P Zero AS Plus 3 delivers enhanced braking stability, reduced rolling resistance for fuel efficiency, and extended tread life. It is built with advanced compound technology for year-round versatility without seasonal tire changes."],
+  "Vertex Tires|47684458217661": ["c7d9286df2", "The Pirelli P Zero AS Plus 3 delivers enhanced braking stability and reduced stopping distances through advanced tread design and compound technology. Expect improved fuel efficiency and a quieter ride compared to previous generations. Size 225/40R19 fits a wide range of performance-oriented vehicles."],
+  "Vertex Tires|47684460150973": ["06d27f0ec2", "The Pirelli Scorpion AS Plus 3 delivers all-season performance for SUVs and crossovers. Advanced tread design provides grip in wet, dry, and light winter conditions while maintaining fuel efficiency. Enhanced durability and reduced rolling resistance extend tire life and lower operating costs. It is engineered for smooth, quiet rides on highways and city streets alike."],
+  "Vertex Tires|47684460511421": ["0a6d5de89c", "This is an all-season performance tire engineered for sedans and crossovers. The Pirelli Scorpion AS Plus 3 delivers grip across wet, dry, and light winter conditions with advanced tread design and reinforced sidewalls. Enhanced fuel efficiency and reduced rolling resistance help lower operating costs. Load index 99 supports heavier vehicles with stability and durability."],
+  "Vertex Tires|47684461396157": ["9d3b42e31f", "The Pirelli Scorpion AS Plus 3 delivers all-season performance. This XL-rated tire combines enhanced grip on wet and dry roads with improved fuel efficiency and reduced rolling resistance. The advanced tread design provides braking response and cornering stability across temperature ranges."],
+  "Vertex Tires|47684461559997": ["790c0e236a", "The Pirelli Scorpion AS Plus 3 delivers all-season performance for SUVs and crossovers. Advanced tread design enhances grip on wet and dry roads while maintaining fuel efficiency. Load index 106H supports heavier vehicles."],
+  "Vertex Tires|47684461658301": ["a4c7ddeb69", "This is an all-season performance tire engineered for SUVs and crossovers. The Pirelli Scorpion AS Plus 3 delivers grip across wet, dry, and light winter conditions with advanced tread design and reinforced sidewalls. Enhanced fuel efficiency and extended tread life reduce operating costs. Load index 105H is for heavier vehicles."],
+  "Vertex Tires|47684463526077": ["1e7bd7ad04", "This is an all-season performance tire engineered for SUVs and crossovers. The Pirelli Scorpion AS Plus 3 delivers grip across wet, dry, and light winter conditions with advanced tread design and reinforced sidewalls. Load index 103H supports heavier vehicles while maintaining comfort on highway and city driving."],
+  "Vertex Tires|47684463657149": ["964fb98a2d", "This is an all-season performance tire engineered for SUVs and crossovers. The Pirelli Scorpion AS Plus 3 delivers grip across wet, dry, and light winter conditions with advanced tread design and reinforced sidewalls. XL load rating (117H) ensures durability and stability."],
+  "Vertex Tires|47684465033405": ["fbc29968d2", "This is an all-season performance tire engineered for responsive handling and grip in wet, dry, and light winter conditions. The Pirelli Cinturato P7 delivers balanced comfort with reduced road noise. Advanced tread design enhances braking performance and extends tire life."],
+  "Vertex Tires|47684465295549": ["d53f3b0239", "This is an all-season performance tire engineered for luxury sedans and coupes. The Pirelli Cinturato P7 delivers responsive handling, braking, and year-round traction across wet, dry, and light winter conditions. XL load rating ensures durability for heavier vehicles."],
+  "Vertex Tires|47684476108989": ["af5b813248", "The Pirelli P7 AS Plus 3 delivers all-season performance for sedans and crossovers. Advanced grip technology ensures traction in wet, dry, and light winter conditions. Optimized tread design reduces rolling resistance for improved fuel efficiency while maintaining responsive handling."],
+  "Vertex Tires|47684478107837": ["ac952d2da5", "The 235/45R18 94V rating ensures grip in wet, dry, and light winter conditions while maintaining responsive handling and fuel efficiency. Built with Pirelli's advanced compound technology, this tire resists premature wear and provides consistent braking performance across temperature ranges. The optimized tread pattern reduces road noise for a quieter ride, while the reinforced sidewall construction enhances durability."],
+  "Vertex Tires|47684480532669": ["4dd350d7be", "This tire features advanced grip technology for wet, dry, and light winter driving."],
+  "Vertex Tires|47684488003773": ["0c8ba5e0b7", "The Sailun Terramax AT2 delivers all-season performance for trucks and SUVs. This 275/60R20 all-terrain tire combines aggressive tread design with reinforced sidewalls for enhanced durability on mixed surfaces, from highways to unpaved roads. Built with advanced rubber compounds, it resists wear while maintaining traction in wet, dry, and light winter conditions."],
+  "Vertex Tires|47684494688445": ["0b4c02fd1f", "This is an all-season light truck tire engineered for on-road and light off-road performance. The Sailun Terramax AT2 delivers aggressive tread design for enhanced traction in wet, dry, and light snow conditions. Load Range E rating supports heavy-duty applications with 120/116S speed and load capacity."],
+  "Vertex Tires|47684496556221": ["050bffa1b5", "The Sailun Terramax AT2 is a light truck tire engineered for on-road and off-road versatility. With a load rating of 123/120S, it delivers traction across gravel, mud, and pavement. The aggressive tread pattern resists wear while maintaining stability in wet and dry conditions. LT265/70R17 sizing fits most full-size trucks."],
+  "Vertex Tires|47684498063549": ["58349e666a", "The 265/65R18 114T load rating delivers traction across highways, gravel, and light off-road conditions. Advanced tread compound resists wear while maintaining grip in wet and dry environments."],
+  "Vertex Tires|47684498423997": ["97df7c63f4", "The Sailun Terramax AT2 is an all-season light truck tire engineered for highway performance. LT225/75R16 load range E delivers 115/112S load capacity with blackwall sidewall construction. Advanced tread compound provides year-round traction in wet, dry, and light snow conditions. Reinforced structure handles heavy loads and off-road use while maintaining fuel efficiency on paved surfaces."],
+  "Vertex Tires|47684500652221": ["fad071763d", "The 265/70R17 115S load rating delivers grip on highways, gravel, and light off-road conditions. The sidewall is blackwall. The aggressive tread pattern resists wear and enhances grip in wet and dry environments."],
+  "Vertex Tires|47684501438653": ["5a0d24aea3", "The Sailun Terramax AT2 is a light truck tire engineered for mixed terrain performance. With a load rating of 125/122R, it delivers traction on highways, gravel, and moderate off-road surfaces. The aggressive tread pattern resists wear while maintaining stability in wet and dry conditions."],
+  "Vertex Tires|47684501962941": ["0551785712", "The Sailun Terramax AT2 delivers all-terrain performance for light trucks and SUVs. The aggressive tread pattern provides traction on gravel, mud, and rocky surfaces, while the load rating of 123/120S ensures carrying capacity."],
+  "Vertex Tires|47684504486077": ["0eca248b94", "The Sailun Terramax AT2 delivers all-terrain performance. The 116T rating supports heavy loads while maintaining durability in varied weather conditions."],
+  "Vertex Tires|47684505927869": ["77fb848a38", "This 245/70R17 all-season tire delivers grip on highways, gravel, and light off-road surfaces. The aggressive tread pattern resists wear while maintaining fuel efficiency. Load rating of 110T ensures durability."],
+  "Vertex Tires|47684506419389": ["b0e3a339cf", "This LT275/65R20 all-terrain tire delivers aggressive tread design for mud, rock, and gravel while maintaining stability on highways. Load Range E (LRE) provides load capacity at 126/123R. The three-peak mountain snowflake rating ensures winter performance in severe snow conditions. Built with reinforced sidewalls to resist punctures and cuts, the Terramax AT2 balances durability with all-season versatility."],
+  "Vertex Tires|47684506747069": ["6b6f2a2cd8", "LT35X12.50R20 121R load rating delivers robust load capacity with aggressive tread design for traction on gravel, mud, and rocky terrain. Three-peak mountain snowflake rated for winter conditions."],
+  "Vertex Tires|47697523179709": ["b2480487ef", "This is an all-season light truck tire engineered for terrain and highway performance. The Sailun Terramax RT delivers aggressive tread design for enhanced traction on mud, snow, and rocky surfaces while maintaining stability on paved roads. Load Range F rating supports heavy-duty applications with a 125Q speed rating."],
+  "Vertex Tires|47697525047485": ["68e45c5b79", "The Sailun Terramax RT delivers grip in wet, dry, and light winter conditions with a reinforced sidewall construction designed to withstand heavy loads and rough surfaces. XL load rating (116T) provides extra carrying capacity."],
+  "Vertex Tires|47697526554813": ["f17cc20e91", "The Sailun Terramax RT is an all-season light truck tire engineered for heavy loads. LT275/65R20 size delivers 126/123Q load rating with blackside wall construction. Radial design provides balanced traction on highways, gravel, and mixed surfaces. Meets load index requirements for full-size trucks and commercial applications."],
+  "Vertex Tires|47697535926461": ["39f2043571", "The Sailun Terramax RT is an all-season light truck tire engineered for heavy loads. LT275/60R20 size delivers 123/120Q load rating with black sidewall construction. It is designed for pickup trucks, SUVs, and commercial vehicles requiring year-round traction on highways, gravel, and mixed surfaces. Reinforced sidewalls resist punctures and cuts. Aggressive tread pattern maintains grip in wet, dry, and light snow conditions."],
+  "Vertex Tires|47697544347837": ["4ff3d5d62b", "The Sailun Atrezzo 4S is for light trucks and SUVs. This LT235/65R16 tire features a reinforced sidewall construction (LRE) rated for 121/119R load capacity, ensuring durability on highways and rough terrain. The advanced tread design provides traction in wet, dry, and light winter conditions while maintaining fuel efficiency."],
+  "Vertex Tires|47697546379453": ["4ef29df94e", "This 225/55R19 XL tire features a robust tread design engineered to handle wet, dry, and light winter conditions. The 103V rating ensures load capacity and speed capability for everyday driving and highway use."],
+  "Vertex Tires|47697547854013": ["a75883adea", "The Sailun Atrezzo 4S tire delivers grip across wet, dry, and winter conditions. The XL load rating (107H) supports heavier vehicles with enhanced stability. Advanced tread design resists hydroplaning while maintaining fuel efficiency. Engineered for year-round performance, this 235/60R18 tire balances durability with responsive handling on highways and city roads."],
+  "Vertex Tires|47697598906557": ["0edcb935ed", "With a Load Range E (LRE) rating and 120/117R load index, this tire handles heavy payloads and highway speeds. The aggressive tread pattern excels in mud, gravel, and rocky terrain while maintaining predictable on-road handling. Three-peak mountain snowflake certification ensures winter performance in severe conditions. At 275/55R20, this tire fits larger truck applications where durability and traction matter most."],
+  "Vertex Tires|47697600544957": ["fd54a18370", "The LT33X12.50R20 114S load rating delivers traction across gravel, mud, and pavement. Aggressive tread pattern resists wear while maintaining stability on highways. Load index 114 supports heavy payloads."],
+  "Vertex Tires|47697603035325": ["1e1b552fb5", "The Sailun Terramax AT2 is an all-season light truck tire engineered for highway performance. LT285/70R17 load range E delivers robust load capacity with 126/123S speed rating for dual and single wheel applications. Advanced tread compound balances off-road traction with on-road stability across mud, gravel, and pavement. Reinforced sidewalls resist punctures and cuts."],
+  "Vertex Tires|47697608376509": ["23bc220314", "The Sailun Terramax AT2 is an all-season all-terrain tire engineered for trucks, SUVs, and light commercial vehicles. The 235/65R17 104S load rating is for highway, gravel, and mixed terrain conditions. Advanced tread compound resists wear while maintaining traction in wet, dry, and light snow environments. Reinforced sidewalls provide durability."],
+  "Vertex Tires|47697609949373": ["733abaede6", "The 265/50R20 XL load rating (111T) delivers robust load capacity and speed rating for highway and off-road conditions. Blackwall sidewall (BSW) construction provides durability across varied terrain. Three-peak mountain snowflake rating ensures winter traction."],
+  "Vertex Tires|47697613357245": ["c050b9e540", "The Sailun Terramax AT2 delivers all-terrain performance for light trucks and SUVs. Built with reinforced sidewalls and an aggressive tread pattern, this LT-rated tire excels on gravel, mud, and rocky terrain while maintaining highway stability."],
+  "Vertex Tires|47697616076989": ["f5fe4be927", "The Sailun Terramax AT2 is an all-season light truck tire engineered for highway performance. LT315/70R17 load range E delivers 126/123S load and speed ratings for heavy-duty applications. Blackwall sidewall construction with aggressive tread pattern provides enhanced traction on gravel, mud, and pavement. Durable compound resists wear and extends tire life across seasonal conditions."],
+  "Vertex Tires|47697618567357": ["d0a34c6d80", "The Sailun Terramax AT2 is an all-season light truck tire engineered for highway performance. LT235/80R17 load range E delivers 120/117R load capacity with blackside wall construction. Advanced tread compound provides year-round traction in wet, dry, and light snow conditions. Reinforced sidewalls handle rough surfaces and off-road challenges while maintaining stability on paved roads."],
+  "Vertex Tires|47697622696125": ["565f63165e", "The SAILUN TERRAMAX AT2 delivers all-season performance for light trucks and SUVs. Built with a reinforced sidewall construction, this LT-rated tire handles terrain while maintaining highway stability. The aggressive tread pattern provides traction in mud, snow, and gravel. Load rating of 123/120R ensures carrying capacity for heavy-duty applications. Durable compound resists wear and extends tire life across varied driving conditions."],
+  "Vertex Tires|47697625776317": ["fa21f37fa7", "The Sailun Terramax AT2 delivers all-season performance for trucks and SUVs tackling mixed terrain. This XL-rated tire combines aggressive tread design with reinforced sidewalls for enhanced load capacity and durability. The 235/75R15 size fits popular light-duty trucks and provides a balanced ride quality for both work and daily commuting."],
+  "Vertex Tires|47697628070077": ["1ecc0d6cdf", "The 225/65R17 XL load rating (106T) delivers enhanced load capacity and speed stability. Advanced tread design balances on-road comfort with off-road grip, while reinforced sidewalls provide durability on rough surfaces. It is built to withstand winters and summer heat."],
+  "Vertex Tires|47697779556541": ["6c6a5280d1", "LT35X12.50R18 load range delivers 123R load index with aggressive tread design for enhanced traction on gravel, mud, and rocky terrain. All-season capability ensures grip in wet, dry, and light snow conditions."],
+  "Vertex Tires|47697781981373": ["9a40ae87c0", "The Sailun Terramax AT2 delivers all-season performance for trucks and SUVs. This 285/45R22 XL tire combines aggressive tread design with reinforced sidewalls for enhanced load capacity and durability on mixed terrain. The 114H rating is for highway speeds while maintaining traction in wet, dry, and light winter conditions."],
+  "Vertex Tires|47697785520317": ["7965b364b7", "The Sailun Terramax AT2 is an all-season light truck tire engineered for highway performance. LT245/70R17 load range E delivers 119/116S load index with reinforced sidewalls (BSW) for durability. Advanced tread compound resists wear while maintaining traction across wet, dry, and light snow conditions."],
+  "Vertex Tires|47697790501053": ["7a30490452", "With a load index of 109S, this LT31x10.50R15 delivers traction on highways, gravel, and light off-road conditions. The aggressive tread pattern provides grip in wet and dry environments, while the reinforced sidewall construction resists punctures and impacts."],
+  "Vertex Tires|47697823891645": ["e69cfc5552", "With a load rating of 125R, this LT35X12.50R17 delivers robust sidewall strength and durability across gravel, mud, and rocky terrain. The aggressive tread pattern provides traction on mud, snow, and dry surfaces, while the all-season compound maintains flexibility in temperature swings. It is built to handle work environments while maintaining highway stability."],
+  "Vertex Tires|47697880187069": ["e64fc102bb", "The Sailun Terramax RT is an all-season light truck tire engineered for heavy loads. LT265/70R17 size delivers 123/120Q load rating with reinforced sidewalls (BSW) for durability on highways and off-road conditions. LRE (Load Range E) construction supports payload capacity. All-season tread compound maintains traction across wet, dry, and light snow surfaces."],
+  "Vertex Tires|47697884315837": ["e1b6639419", "The Sailun Terramax RT is an all-season light truck tire engineered for heavy loads. LT275/70R18 size delivers 125/122Q load rating with black sidewall construction. It is designed for pickup trucks, SUVs, and commercial vehicles requiring durability across highways, gravel, and mixed surfaces. Aggressive tread pattern provides traction in wet and dry conditions while maintaining fuel efficiency."],
+  "Vertex Tires|47697888084157": ["5afbedfc23", "This is a heavy-duty light truck tire engineered for all-season performance. The Sailun Terramax RT delivers aggressive tread design for enhanced traction on gravel, mud, and rocky surfaces while maintaining stability on highways. Load rating of 124Q ensures performance under substantial weight. Radial construction provides durability and fuel efficiency. Available in LT37X12.50R17 sizing for full-size trucks and SUVs."],
+  "Vertex Tires|47697891918013": ["b19f266881", "The 275/65R18 XL load rating (116T) delivers robust sidewall strength and enhanced load capacity for heavy-duty applications. Advanced tread compound balances year-round grip with extended tread life. Reinforced construction handles rough roads, gravel, and seasonal transitions. Suitable for on-road and light off-road use."],
+  "Vertex Tires|47697901125821": ["f582086f2c", "This is a purpose-built light truck tire for off-road and highway work. The Sailun Terramax RT combines aggressive block patterns with reinforced construction to handle rocky terrain, mud, and pavement. Load Range E capacity supports heavy payloads and trailer towing. Three-peak mountain rated for winter performance."],
+  "Vertex Tires|47697907482813": ["2ec541cb48", "The 265/60R18 XL load rating (114S) delivers enhanced load capacity and speed stability. Advanced tread compound resists wear while maintaining grip on wet, dry, and light snow conditions. Reinforced sidewalls provide durability."],
+  "Vertex Tires|47697912922301": ["35033b2e45", "The Sailun Terramax RT delivers all-season performance for light trucks and SUVs. Built with a reinforced sidewall construction, this LT-rated tire handles heavy loads while maintaining traction across pavement, gravel, and light off-road terrain. The aggressive tread pattern resists wear and provides grip in wet and dry conditions."],
+  "Vertex Tires|47697917870269": ["bb59bacc2b", "This is an all-season light truck tire engineered for heavy loads. The Sailun Terramax RT delivers aggressive tread design for traction on mud, snow, and rocky surfaces while maintaining highway stability."],
+  "Vertex Tires|47697934680253": ["3f845fc821", "The Sailun Terramax RT delivers all-season performance for trucks and SUVs. This 265/70R18 tire combines a robust tread design with reinforced sidewalls to handle mixed terrain and conditions. The 116S load and speed rating supports heavy payloads while maintaining stability on highways and rough roads."],
+  "Vertex Tires|47697936449725": ["2dfe1fd54b", "The Sailun Terramax RT is for wet, dry, and light winter conditions with a reinforced sidewall construction and aggressive tread pattern. XL load rating (114Q) supports heavy payloads and towing applications."],
+  "Vertex Tires|47697939333309": ["fddcc49efd", "The Sailun Terramax RT is an all-season light truck tire engineered for year-round performance. LT37X12.50R18 load range E delivers 128Q speed rating with robust sidewall construction for off-road capability and highway stability. The sidewall is black (BSW)."],
+  "Vertex Tires|47697975967933": ["f3c96c2754", "This is a performance tire engineered for year-round traction and durability. The Sailun Atrezzo 4S is for wet, dry, and light winter conditions with advanced tread compound and reinforced sidewalls. XL load rating supports heavier vehicles with enhanced stability."],
+  "Vertex Tires|47697982718141": ["40d9517b6a", "The Sailun Atrezzo 4S delivers grip in wet, dry, and light winter conditions with advanced tread design and reinforced sidewalls. XL load rating (96V) supports heavier vehicles with enhanced stability."],
+  "Vertex Tires|47697987338429": ["df5532c0dd", "This is a performance tire engineered for year-round traction and durability. The Sailun Atrezzo 4S is for wet, dry, and light winter conditions with advanced tread design and reinforced sidewalls. XL load rating (101V) supports heavier vehicles with enhanced stability. The sidewall is blackwall (BSW)."],
+  "Vertex Tires|47698000609469": ["8d3c327a35", "The Sailun Atrezzo SH408 delivers all-season performance in a 235/45R18 size, rated for 94V speeds. This Black Sidewall (BSW) tire balances wet and dry traction with fuel efficiency. The reinforced tread pattern resists wear while maintaining responsive handling across seasons."],
+  "Vertex Tires|47698002182333": ["dbbfccf8a3", "The Sailun Atrezzo SH408 is engineered for balanced performance across varying weather conditions. With a 215/60R16 size and 95V speed rating, it delivers responsive handling and stable braking on both wet and dry roads. Built with durable compound technology, this tire provides extended tread life and consistent grip throughout its service life."],
+  "Vertex Tires|47698006704317": ["07d5f2fabe", "The Sailun Atrezzo SH408 delivers all-season performance for everyday driving. This 225/65R17 tire combines fuel efficiency with balanced handling across wet, dry, and light winter conditions. The reinforced sidewall construction enhances durability, while the optimized tread pattern reduces rolling resistance for better fuel economy. Load index 102H supports mid-size sedans and crossovers."],
+  "Vertex Tires|47698014699709": ["4ad844163c", "This is an all-season performance tire engineered for modern sedans and crossovers. The Sailun Atrezzo TCON delivers balanced grip, responsive handling, and traction across wet, dry, and light winter conditions. Advanced tread design minimizes road noise while optimizing fuel efficiency."],
+  "Vertex Tires|47698017550525": ["16df5dbd59", "The Sailun Atrezzo TCON delivers all-season performance for everyday driving. This 225/60R18 tire combines responsive handling with consistent traction across wet, dry, and light winter conditions. Built with advanced tread design and durable rubber compounds, it offers extended tread life and fuel efficiency. Load index 100H ensures stability under standard passenger vehicle loads."],
+  "Vertex Tires|47698032230589": ["8ee0c73ac7", "The Sailun Inspire delivers all-season performance for everyday driving. This 225/60R17 tire (99T rating) balances traction, durability, and fuel efficiency across wet, dry, and light winter conditions. Built with a reinforced tread design, it resists wear and maintains grip through varied weather."],
+  "Vertex Tires|47698038620349": ["b902769fba", "The Sailun Inspire delivers all-season performance. Engineered with advanced tread design, this tire provides grip in wet and dry conditions while maintaining fuel efficiency. The 225/50R17 94V load rating suits mid-size sedans and crossovers."],
+  "Vertex Tires|47698043240637": ["7728872590", "The Sailun Inspire is an all-season tire engineered for balanced performance across wet, dry, and light winter conditions. The 195/50R16 84V load rating is for sedans and compact vehicles. Advanced tread compound resists wear while maintaining grip in variable weather. Load index 84 supports vehicles up to 500 kg per tire."],
+  "Vertex Tires|47698046091453": ["c5a02e228b", "The Sailun Inspire delivers all-season performance for everyday driving. This 205/55R16 91V tire balances traction, durability, and fuel efficiency across wet, dry, and light winter conditions. Built with advanced tread design and reinforced sidewalls, it offers extended tread life."],
+  "Vertex Tires|47698051006653": ["f5ef1714a4", "The Sailun Inspire delivers all-season performance for everyday driving. Engineered with a balanced tread design, this tire provides grip in wet, dry, and light winter conditions. The 225/65R17 102T sizing suits mid-size sedans and crossovers, offering a smooth ride and predictable handling. Load index 102 supports vehicles up to 850 kg per tire."],
+  "Vertex Tires|47698070470845": ["c2fed230c4", "With a 275/60R20 sizing and 115T load and speed rating, this tire is for highways, gravel, and light off-road surfaces. The Open Country A/T III features an aggressive tread pattern designed to enhance grip on loose terrain while maintaining stability on paved roads. Built with Toyo's advanced rubber compound, this tire resists wear and provides consistent traction in wet, dry, and moderate winter conditions."],
+  "Vertex Tires|47698089574589": ["a94c2e1c94", "The Toyo Open Country A/T III delivers all-terrain performance for trucks and SUVs tackling both highway and off-road conditions. Built with a reinforced sidewall and aggressive tread pattern, this tire excels in mud, gravel, and rocky terrain while maintaining stability on paved roads. Load rating of 117T ensures performance under heavy loads. The compound provides consistent grip across varying temperatures. It is designed for durability and traction."],
+  "Vertex Tires|47698093670589": ["9b135ffea8", "The Toyo Open Country A/T III is for trucks and SUVs tackling both highway and off-road terrain. This 265/65R17 XL tire features a reinforced sidewall construction and aggressive tread pattern designed to handle gravel, mud, and rocky surfaces while maintaining stability on paved roads. Built with Toyo's advanced rubber compound, the A/T III resists wear and provides consistent grip across temperature ranges."],
+  "Vertex Tires|47698095866045": ["d657beae65", "This tire delivers balanced traction in wet, dry, and light snow conditions while maintaining highway stability and fuel efficiency. The aggressive tread pattern resists stone drilling and enhances grip on unpaved surfaces, while the reinforced sidewalls provide durability. The 110T load index supports heavy vehicles."],
+  "Vertex Tires|47698100519101": ["8ecf9fa66f", "The Toyo Open Country A/T III is for trucks and SUVs tackling both highway and off-road terrain. This XL-rated tire (117T) features an aggressive tread pattern designed for enhanced traction on gravel, mud, and snow while maintaining stability on paved roads. Built with Toyo's advanced rubber compound, the A/T III resists wear and extends tire life across varied driving conditions. The reinforced sidewalls provide durability, while the optimized tread design reduces road noise for a quieter ride. The 275/55R20 fitment suits full-size trucks and SUVs requiring all-terrain capability."],
+  "Vertex Tires|47698103140541": ["10152604ed", "The reinforced sidewall construction resists punctures and cuts, while the optimized tread pattern reduces road noise for a quieter ride. Load rating 107T handles substantial weight."],
+  "Vertex Tires|47698106220733": ["364c5c549c", "The 225/60R18 XL load rating (104T) delivers enhanced load capacity and durability across varied terrain. Open Country's aggressive tread pattern provides grip in wet, dry, and light snow conditions while maintaining fuel efficiency."],
+  "Vertex Tires|47698115330237": ["7985fb8784", "The Toyo Open Country A/T III is for trucks and SUVs tackling both highway and off-road terrain. This 245/70R17 110T tire features a reinforced sidewall construction and aggressive tread pattern designed to handle gravel, mud, and rocky surfaces while maintaining stability on paved roads. Built with Toyo's advanced rubber compound, the A/T III resists wear and provides consistent grip across temperature ranges."],
+  "Vertex Tires|47698120638653": ["ade221b297", "The Toyo Open Country A/T III delivers all-terrain performance for trucks and SUVs tackling mixed surfaces. This LT-rated tire combines aggressive tread design with reinforced sidewalls for enhanced load capacity and durability."],
+  "Vertex Tires|47698121785533": ["c913cd4931", "The Toyo Open Country A/T III delivers all-terrain performance for trucks and SUVs tackling mixed road and off-road conditions. This 275/65R18 load index 116T tire features a reinforced sidewall construction and aggressive tread pattern designed to grip loose surfaces while maintaining highway stability. The compound performs across temperature ranges. Load rating 116T supports heavy payloads typical of full-size trucks."],
+  "Vertex Tires|47698127290557": ["a4e27c04f2", "The Toyo Open Country A/T III is for trucks and SUVs tackling both highway and off-road terrain. This XL-rated tire (245/60R18, 109T) features an aggressive tread pattern designed for enhanced traction on gravel, dirt, and snow while maintaining stability on paved roads. Built with Toyo's advanced rubber compound, the Open Country A/T III resists wear and extends tire life across varied driving conditions. The reinforced sidewalls provide durability, while the optimized tread design reduces road noise for a quieter ride. Load index 109T supports heavy loads typical of full-size trucks and work vehicles."],
+  "Vertex Tires|47698129879229": ["78038a5704", "The LT295/60R20 LRE load range delivers robust load capacity at 126/123S speed rating. Advanced tread design balances on-road comfort with off-road traction, while reinforced sidewalls provide durability against punctures and impacts. The compound maintains grip in wet and dry conditions, reducing the need for seasonal swaps."],
+  "Vertex Tires|47698131550397": ["cf8470a747", "The TOYO OPEN COUNTRY A/T III delivers aggressive tread design for grip on mud, rock, and gravel while maintaining highway stability. LT35X12.50R20 sizing provides ground clearance and load capacity. Load Range E (LRE) rated for heavy-duty applications."],
+  "Vertex Tires|47698133156029": ["2cc1cc3126", "The TOYO OPEN COUNTRY A/T III delivers aggressive tread design for enhanced grip on rocky, muddy, and uneven terrain while maintaining highway stability. LT33x12.50R20 sizing provides ground clearance and load capacity. Load Range F (LRF) rating supports heavy payloads and towing. 119Q speed rating balances performance with durability."],
+  "Vertex Tires|47698134925501": ["05589f406a", "The Toyo Open Country A/T III is for trucks and SUVs tackling both highway and off-road terrain. The aggressive tread pattern provides enhanced grip on gravel, mud, and snow while maintaining stability on pavement. Size 265/75R16 with 116T rating supports heavy-duty applications and sustained highway speeds."],
+  "Vertex Tires|47698155307197": ["b2301b064d", "This is an all-season performance tire engineered for balanced handling, comfort, and durability across changing weather conditions. The Toyo Extensa A/S II delivers responsive steering and traction on wet and dry roads. It is built with advanced compound technology for extended tread life and fuel efficiency. Load index 94 supports mid-size sedans and crossovers. Speed rating H ensures safe performance up to 210 km/h."],
+  "Vertex Tires|47698156912829": ["78fd35cd7b", "The Toyo Extensa A/S II delivers all-season performance for everyday driving. Engineered with a balanced tread design, this tire provides grip in wet, dry, and light winter conditions. The 195/65R15 91H sizing suits compact sedans and crossovers, offering a smooth ride with predictable handling."],
+  "Vertex Tires|47698159894717": ["3fe6afa39b", "The Toyo Celsius II BL is for diverse weather conditions. Engineered with advanced grip technology, this tire excels on wet, dry, and light snow surfaces while maintaining responsive handling and stability. The optimized tread pattern reduces rolling resistance for improved fuel efficiency, and reinforced sidewalls enhance durability. Size: 225/60R17, Load Index: 99V."],
+  "Vertex Tires|47698161041597": ["99ca923fe3", "The Toyo Celsius Cargo BL LT235/65R16 LRE 121/119R is a light truck tire engineered for year-round performance. It is for commercial and fleet use, with blackwall construction and enhanced durability."],
+  "Vertex Tires|47698162745533": ["758d93e5f9", "This is a heavy-duty light truck tire engineered for year-round performance. The TOYO M-55 delivers traction on highways, gravel, and mixed surfaces with its aggressive tread pattern and reinforced sidewalls. LRE load rating provides carrying capacity for commercial and recreational applications. All-season compound maintains grip in cold, wet, and dry conditions."],
+  "Vertex Tires|47739016478909": ["438192c811", "This tire is engineered to reduce road noise and vibration, ensuring a smoother and quieter driving experience. Specialized rubber compound adapts to changing temperatures, maintaining consistent grip throughout the year. Asymmetric tread design improves road contact for enhanced traction and cornering in both dry and wet conditions. Continuous tread ribs and optimized groove layout provide better steering control and driving stability. Wide circumferential grooves efficiently disperse water, helping to resist hydroplaning and maintain traction on wet roads."],
+  "Vertex Tires|47739021983933": ["3fc73c5cc5", "The Haida EX-Comfort is designed to provide a smooth, quiet driving experience all year round. With its advanced all-season compound and asymmetric tread pattern, it delivers traction, enhanced comfort, and handling for everyday driving. A specialized rubber compound maintains flexibility across a wide range of temperatures, ensuring consistent grip in various weather conditions. Wide circumferential grooves effectively channel water away, helping to reduce the risk of hydroplaning on wet roads. The comfort-oriented design is engineered to minimize road noise and vibrations, providing a quieter and more comfortable ride. Asymmetric tread pattern enhances road contact for better traction and improved cornering performance in both dry and wet conditions. Continuous tread ribs and an optimized groove layout improve steering precision and overall driving control."],
+  "Vertex Tires|47739070906557": ["3b397e2a97", "The Haida HI-SPIRIT All Season tire is for changing weather conditions. The 215/70R16 100H size fits a wide range of sedans and crossovers, providing a smooth ride and extended tread life."],
+  "Vertex Tires|47739110916285": ["449862f8d6", "The HAIDA HI-SPIRIT delivers all-season performance for everyday driving. Engineered to handle wet, dry, and light winter conditions, these tires offer balanced traction and responsive handling year-round."],
+  "Vertex Tires|47739123957949": ["4e9fe80cf9", "The HAIDA HD317 is a versatile all-season tire engineered for balanced performance across varying weather conditions. With a 235/45ZR18 size and 98Y rating, it delivers traction on wet and dry roads while maintaining fuel efficiency. The advanced tread design provides responsive handling and consistent grip."],
+  "Vertex Tires|47739127529661": ["8387daa9af", "With its 235/45ZR18 98W specification, this tire delivers traction on both wet and dry surfaces while maintaining fuel efficiency. The advanced tread pattern ensures responsive handling, reduced road noise, and extended tread life."],
+  "Vertex Tires|47739222196413": ["25012e9891", "The HAIDA HD317 XL delivers all-season performance. This 235/50R19 99V tire combines responsive handling with enhanced traction across wet, dry, and light winter conditions. The reinforced sidewalls and optimized tread pattern reduce rolling resistance while improving fuel efficiency."],
+  "Vertex Tires|47739222720701": ["ca5a5a97b5", "Designed in the 235/60R16 size with a 99V rating, this tire delivers traction across wet, dry, and light winter conditions. Built with advanced tread compound technology, the HD837 provides responsive handling and consistent grip for daily driving. The reinforced sidewalls offer enhanced durability, while the optimized tread pattern reduces road noise for a quieter ride."],
+  "Vertex Tires|47739238482109": ["8d1ce901fe", "The Haida HD317 delivers all-season performance. It is built with a balanced tread design that handles dry, wet, and light winter conditions. Symmetrical tread pattern provides consistent grip and predictable handling across changing road conditions throughout the year. Advanced siping and circumferential grooves efficiently channel water away from the tire surface, reducing hydroplaning risk on wet pavement. Optimized rubber compound and reinforced construction absorb road vibrations for a smooth, whisper-quiet driving experience. Stable shoulder blocks and precise tread geometry enhance cornering control and steering response in everyday driving situations."],
+  "Vertex Tires|47739241005245": ["99e0355647", "The HAIDA HI-SPIRIT delivers all-season performance. Engineered to handle wet, dry, and light winter conditions, these tires offer balanced traction and responsive handling year-round. The 235/60ZR18 107V sizing fits a wide range of sedans and crossovers, providing a smooth, comfortable ride with fuel efficiency. Built with durable compound technology, the HI-SPIRIT resists wear and extends tire life."],
+  "Vertex Tires|47739244118205": ["325131371d", "The HAIDA EX-COMFORT delivers all-season performance for everyday driving. Engineered to handle wet, dry, and light winter conditions, these tires offer balanced traction and responsive handling year-round. The advanced tread design promotes even wear and extended tread life, while optimized sidewall construction enhances ride comfort on various road surfaces."],
+  "Vertex Tires|47739255390397": ["a96054a1e1", "The HAIDA HI-SPIRIT delivers all-season performance for everyday driving. This 245/60R18 tire offers balanced traction in wet, dry, and light winter conditions. With a 105H load and speed rating, it handles moderate loads while maintaining stability at highway speeds."],
+  "Vertex Tires|47739260993725": ["f1c0af790a", "The HAIDA HI-SPIRIT 235/70R16 delivers all-season performance for everyday driving. This tire offers balanced traction in wet, dry, and light winter conditions. With a 106H load and speed rating, it handles moderate to heavy loads while maintaining stability at highway speeds."],
+  "Vertex Tires|47739271577789": ["b44c565bfc", "The HAIDA HI-SPIRIT delivers all-season performance. Engineered for year-round traction in wet, dry, and light winter conditions, these tires offer balanced handling and fuel efficiency. The 215/60R17 100H sizing fits a wide range of sedans and crossovers."],
+  "Vertex Tires|47739276558525": ["c2861e1770", "The HAIDA HI-SPIRIT delivers all-season performance. Engineered for balanced traction in wet, dry, and light winter conditions, these tires offer responsive handling and a comfortable ride. The 225/60R17 99V sizing fits a wide range of sedans and crossovers."],
+  "Vertex Tires|47739322466493": ["180e012982", "The HAIDA HI-SPIRIT All Season tire is engineered for balanced handling, traction, and fuel efficiency on wet, dry, and light winter roads. The durable tread design resists wear while maintaining responsive steering control."],
+  "Vertex Tires|47739325776061": ["4497d29f9c", "The HAIDA HI-SPIRIT delivers all-season performance. Engineered to handle wet, dry, and light winter conditions, these tires offer balanced traction and responsive handling year-round. The 225/55R18 98V sizing fits a wide range of sedans and crossovers, providing a smooth, quiet ride with fuel efficiency. Built with durable compound technology, the HI-SPIRIT resists wear and extends tire life."],
+  "Vertex Tires|47739331870909": ["56ab622e3c", "The HAIDA HD937 delivers all-season performance for everyday driving. This 235/50R19 tire offers balanced traction in wet and dry conditions, with a 103V speed rating suitable for most passenger vehicles."],
+  "Vertex Tires|47739335409853": ["0051824ab2", "The HAIDA HI-SPIRIT All Season tire is engineered for balanced handling, traction, and durability on wet, dry, and light winter roads."],
+  "Vertex Tires|47739336949949": ["95dbec950d", "The HAIDA HD317 delivers all-season performance. This 245/45R20 tire features a versatile tread design engineered to handle wet, dry, and light winter conditions. Built with quality construction, it offers consistent handling and a comfortable ride for everyday driving. The 103V rating ensures load capacity and speed capability for standard passenger vehicles."],
+  "Vertex Tires|47739341537469": ["599bb0cf7e", "With a 255/55R20 size and 110V speed rating, this tire delivers balanced handling, responsive braking, and traction on wet and dry roads. Designed with advanced tread patterns and durable rubber compounds, the HD937 XL provides extended tread life and reduced rolling resistance for improved fuel efficiency. The XL load index ensures robust load-carrying capacity."],
+  "Vertex Tires|47739345895613": ["926a94928c", "The HAIDA HD828 is a light truck tire engineered for versatility across diverse road conditions. With a 10-ply rating and load index of 120/117S, it delivers robust load-carrying capacity and durability. The LT265/60R18 sizing provides ground clearance and sidewall strength. The all-terrain tread pattern balances on-road comfort with off-road traction, while the reinforced construction resists punctures and impacts from rough surfaces."],
+  "Vertex Tires|47831374987453": ["ce3c0d32c7", "The BF Goodrich All-Terrain T/A KO3 delivers aggressive tread design for off-road traction while maintaining on-road stability. Load Range E rating handles heavy payloads. Reinforced sidewalls resist punctures on rocky terrain."],
+  "Vertex Tires|47832346820797": ["01892fc1ce", "The BF Goodrich All-Terrain T/A KO3 in LT275/60R20 is for trucks and SUVs tackling mixed terrain. Three-ply sidewalls and aggressive tread design provide durability and traction on gravel, mud, and rock while maintaining highway stability. Load Range D (LRD) rating handles heavy payloads."],
+  "Vertex Tires|47832479826109": ["2bbdec0b91", "This LT275/70R18 load range E tire features aggressive tread geometry and reinforced sidewalls designed to handle rocky terrain, mud, and gravel while maintaining predictable highway performance. The KO3's three-peak mountain snowflake rating confirms winter traction. Radial wall construction and optimized rubber compounds resist punctures and extend tread life across mixed driving. Load capacity of 125/122S (dual/single) supports heavy payloads and towing."],
+  "Vertex Tires|47832788893885": ["8a6075a3ce", "The BF Goodrich All-Terrain T/A KO3 is for trucks and SUVs tackling mixed terrain. The LT275/65R18 load range E rating handles heavy payloads, while reinforced sidewalls resist punctures on rocky trails. Three-peak mountain rated for winter capability. Aggressive tread pattern excels on gravel, mud, and snow."],
+  "Vertex Tires|47832871108797": ["855d36c04f", "This LT265/70R17 load range E tire delivers aggressive tread design for rocky terrain, mud, and sand while maintaining predictable highway handling. It is built with CoreGard technology to resist sidewall damage. The compound balances winter traction with summer durability. Load index 123/120S supports heavy truck payloads."],
+  "Vertex Tires|47834015367357": ["a9db15cba8", "The Kumho HA32 delivers balanced grip on wet and dry roads with enhanced winter traction. XL load rating provides extra durability for heavier vehicles."],
+  "Vertex Tires|47834032439485": ["355df41278", "The Kumho HA32 delivers balanced handling, responsive braking, and traction across wet, dry, and light winter conditions. XL load rating ensures durability for heavier vehicles."],
+  "Vertex Tires|47834082607293": ["d3ba709534", "The Kumho Solus 4S HA32 is for SUVs and crossovers. The XL load rating (103V) handles heavier vehicles with stability and control in wet, dry, and light winter conditions. Advanced tread design resists hydroplaning while maintaining responsive handling."],
+  "Vertex Tires|48943095972029": ["180e012982", "The HAIDA HI-SPIRIT All Season tire is engineered for balanced handling, traction, and fuel efficiency on wet, dry, and light winter roads. The durable tread design resists wear while maintaining responsive steering control."],
+};
+
+/**
+ * M11 (owner 2026-10-05, "Blank + check vendor"): a tire's load index must be
+ * a real one. Blanked, with the reason, when:
+ *   a) it is above 150: the vendor wrote the model code (615K, 421Q, 420S) in
+ *      its place, so the speed rating, the code's last letter, goes with it;
+ *   b) the vendor's own name states another load index (the name's speed
+ *      letter too, when that differs);
+ *   c) it is more than 15 away from the median load index of every tire of
+ *      the same size (at least 5 tires with one). A load index confirmed on a
+ *      vendor or maker page is listed in LOAD_INDEX_CONFIRMED and kept, or set.
+ * The speed rating is blanked with the load index in every case (owner/coordinator
+ * 2026-10-05): a card prints them together, so a lone speed letter would read as an error.
+ */
+const LOAD_INDEX_CONFIRMED: Record<string, { loadIndex: string; speedRating?: string; source: string }> = {
+  // The vendor's own pages are not readable (Auto Country is login-only; prowheels.ca and directautoimport.com render in the browser), so the maker's pages are the source. Read 2026-10-05, one page at a time.
+  "PW-T-F28533077": { loadIndex: "89", speedRating: "W", source: "falkentire.com/azenis/rt615k (Azenis RT615K+ 205/50R15, XL 89W; Falken part 28533077)" },
+  "PW-T-F28537681": { loadIndex: "95", speedRating: "W", source: "falkentire.com/azenis/rt615k (Azenis RT615K+ 235/40R18, XL 95W; Falken part 28537681)" },
+  "PW-T-F28538247": { loadIndex: "97", speedRating: "W", source: "falkentire.com/azenis/rt615k (Azenis RT615K+ 265/35R18, XL 97W; Falken part 28538247)" },
+  "PW-T-N210-700": { loadIndex: "107", speedRating: "W", source: "nittotires.ca/tires/nt421q-premium-crossover-tire (235/60R18XL 107W, part 210700)" },
+  "PW-T-N210-810": { loadIndex: "111", speedRating: "V", source: "nittotires.ca/tires/nt421q-premium-crossover-tire (255/55R19XL 111V, part 210810)" },
+  "PW-T-N210-740": { loadIndex: "115", speedRating: "H", source: "nittotires.ca/tires/nt421q-premium-crossover-tire (255/65R18XL 115H, part 210740)" },
+  "PW-T-N210-910": { loadIndex: "117", speedRating: "V", source: "nittotires.ca/tires/nt421q-premium-crossover-tire (275/55R20XL 117V, part 210910)" },
+  "PW-T-N202-480": { loadIndex: "111", speedRating: "V", source: "nittotire.com/media/ax4fkluy/nitto-map-schedule-july-2024.pdf (NT420S 275/55R19 111V, stock 202480)" },
+  // False positive of the size-median check (only 5 tires of this size, mixing standard and light-truck loads): the part is a real 102T.
+  "PW-T-D356070": { loadIndex: "102", speedRating: "T", source: "Toyo part 356070, Open Country A/T III P225/75R15 102T (carid.com TOYO TIRES 356070; tires-easy.com tirecode 356070)" },
+};
+const LOAD_OUTLIER = 15;
+const LOAD_MEDIAN_MIN_TIRES = 5;
+const m11Stats = { code: 0, nameConflict: 0, outlier: 0, confirmedKept: 0, confirmedSet: 0 };
+const m11Rows: { rowId: string; why: string; before: string; kind: string }[] = [];
+/** Listings whose load index M11 blanked; a merged product left with a lone speed letter from another vendor loses it too. */
+const m11Blanked = new Set<string>();
+const m11SpeedLogged = new Set<string>();
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1 ? (sorted[mid] ?? 0) : ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
+}
+const firstLoad = (value: string): number | null => {
+  const n = /^(\d{1,3})/.exec(value)?.[1];
+  return n === undefined ? null : Number(n);
+};
+
+function checkLoadIndexes(tires: Listing[]): void {
+  const bySize = new Map<string, number[]>();
+  for (const listing of tires) {
+    const load = firstLoad(listing.fields[F.loadIndex] ?? "");
+    const size = listing.fields[F.tireSize] ?? "";
+    if (load !== null && load <= 150 && size !== "") bySize.set(size, [...(bySize.get(size) ?? []), load]);
+  }
+  for (const listing of tires) {
+    const f = listing.fields;
+    const value = f[F.loadIndex] ?? "";
+    const load = firstLoad(value);
+    if (load === null) continue;
+    const name = (f[F.name] ?? "").replace(f[F.tireSize] ?? "\u0000", " ");
+    const named = [...name.matchAll(/(?<![\w/.+])(\d{2,3}(?:\/\d{2,3})?)([A-Z])(?![\w/.+])/g)].filter(
+      (m) => SPEED_SYMBOLS.has(m[2] ?? "") && (firstLoad(m[1] ?? "") ?? 0) >= 60 && (firstLoad(m[1] ?? "") ?? 0) <= 150,
+    );
+    const sizeLoads = bySize.get(f[F.tireSize] ?? "") ?? [];
+    let kind = "";
+    let why = "";
+    if (load > 150) {
+      kind = "code";
+      why = `load index ${value} cannot be real (the highest is 150); it is the model code in the vendor's name "${f[F.name]}", and its last letter ${f[F.speedRating] ?? ""} is not a speed rating either`;
+    } else if (named.length === 1 && named[0] && named[0][1] !== value) {
+      kind = "nameConflict";
+      const nameSpeed = named[0][2];
+      why = `the vendor's name "${f[F.name]}" states ${named[0][1]}${nameSpeed}; the columns say ${value}${f[F.speedRating] ?? ""}`;
+    } else if (sizeLoads.length >= LOAD_MEDIAN_MIN_TIRES && Math.abs(load - median(sizeLoads)) > LOAD_OUTLIER) {
+      kind = "outlier";
+      why = `load index ${value} is ${Math.abs(load - median(sizeLoads))} away from the median ${median(sizeLoads)} of the ${sizeLoads.length} tires of size ${f[F.tireSize]} (limit ${LOAD_OUTLIER})`;
+    }
+    if (kind === "") continue;
+    const confirmed = LOAD_INDEX_CONFIRMED[listing.primary.rowId];
+    if (confirmed) {
+      const same = confirmed.loadIndex === value && (confirmed.speedRating === undefined || confirmed.speedRating === (f[F.speedRating] ?? ""));
+      if (same) {
+        m11Stats.confirmedKept += 1;
+        logChange("M11 confirmed", idsOf(listing), F.loadIndex, value, value, `${why}; but ${confirmed.source} confirms it, so it is kept`);
+      } else {
+        m11Stats.confirmedSet += 1;
+        editField("M11 confirmed", listing, F.loadIndex, confirmed.loadIndex, `${why}; corrected from ${confirmed.source}`);
+        if (confirmed.speedRating !== undefined) editField("M11 confirmed", listing, F.speedRating, confirmed.speedRating, `corrected from ${confirmed.source}`);
+      }
+      continue;
+    }
+    m11Stats[kind as "code" | "nameConflict" | "outlier"] += 1;
+    m11Rows.push({ rowId: listing.primary.rowId, why, before: `${value}${f[F.speedRating] ?? ""}`, kind });
+    m11Blanked.add(listing.primary.rowId);
+    editField("M11", listing, F.loadIndex, "", `${why}; blanked (owner 2026-10-05: blank, then check the vendor or maker page)`);
+    editField("M11", listing, F.speedRating, "", `${why}; the speed rating is blanked with it (a card would read the size plus a lone speed letter)`);
+  }
+}
+
+/**
+ * M12 (owner 2026-10-05, "Fix both"): a lug whose vendor Model is BOLT is a
+ * lug bolt, never a lug nut. Retyped, and "Lug Nuts" in the name becomes
+ * "Lug Bolts". Vendor titles that merely mention a bolt are NOT retyped; they
+ * are listed in changes-review.csv as "M12 not retyped".
+ */
+const lugBoltLookAlikes: { rowIds: string[]; title: string; vendorTitle: string }[] = [];
+let lugBoltsRetyped = 0;
+function retypeLugBolts(listing: Listing): void {
+  const f = listing.fields;
+  if ((f[F.accessoryType] ?? "") !== "Lug Nuts") return;
+  const model = listing.extra.find(([label]) => label === "Model")?.[1] ?? "";
+  if (/^bolts?$/i.test(model.trim())) {
+    lugBoltsRetyped += 1;
+    editField("M12", listing, F.accessoryType, "Lug Bolts", `the vendor's Model is "${model}", so this is a lug bolt (vendor title: "${listing.primary.cells.vendor_title ?? ""}")`);
+    const name = f[F.name] ?? "";
+    const renamed = name.replace(/\bLug Nuts\b/i, "Lug Bolts");
+    if (renamed !== name) editField("M12", listing, F.name, renamed, "the name said Lug Nuts for a lug bolt");
+  } else if (/(?<![\w])bolts?(?![\w])/i.test(listing.primary.cells.vendor_title ?? "")) {
+    lugBoltLookAlikes.push({ rowIds: idsOf(listing), title: f[F.name] ?? "", vendorTitle: listing.primary.cells.vendor_title ?? "" });
+  }
 }
 
 /* --- Matching: M1, M2, M3 ------------------------------------------------------- */
@@ -2039,6 +2777,16 @@ function productRecord(product: Product): Record<string, string> {
   const winner = product.listings[0]!;
   const record: Record<string, string> = { ...(product.fields ?? winner.fields) };
   record[F.gtin] = "";
+  // M11: a blanked load index never leaves its speed letter behind, even one a merge filled in from another vendor.
+  if (product.category === "tires" && (record[F.loadIndex] ?? "") === "" && (record[F.speedRating] ?? "") !== "" && product.listings.some((l) => m11Blanked.has(l.primary.rowId))) {
+    const ids = product.listings.flatMap((l) => idsOf(l));
+    const left = record[F.speedRating] ?? "";
+    record[F.speedRating] = "";
+    if (!m11SpeedLogged.has(ids.join(";"))) {
+      m11SpeedLogged.add(ids.join(";"));
+      logChange("M11", ids, F.speedRating, left, "", "the product has no load index after M11 (blanked on one listing) and its speed letter came from another vendor; a card would read the size plus a lone speed letter, so it is blanked too");
+    }
+  }
   // D142: Part number and Mud & snow ride through the merge as extras, so
   // M3's identity and the vendor-own-code rule above see them as before, and
   // leave here for columns of their own. A tire's Part number is dropped
@@ -2182,15 +2930,21 @@ async function main(): Promise<void> {
   // sizes (M5, M7) and descriptions (M9). Then the matching (M1, M2, M3).
   const apparel = [...valid.tires, ...valid.wheels];
   for (const listing of apparel) applyDataFixes(listing);
+  checkLoadIndexes(valid.tires);
   foldFinishSpellings(valid.wheels);
   const modelsBorrowed = borrowModels(valid.wheels);
   for (const listing of apparel) modelFromName(listing);
   for (const listing of apparel) foldModel(listing);
   for (const listing of valid.accessories) {
+    const brandFix = ACCESSORY_BRAND_FIXES[listing.primary.sku];
+    if (brandFix) editField("LA06", listing, F.brand, brandFix.to, brandFix.reason);
     cleanAccessoryName(listing);
     fixPackSizes(listing);
+    retypeLugBolts(listing);
   }
+  for (const s of seasonByMaker) reseasoned.add(s.rowId);
   for (const category of CATEGORIES) for (const listing of valid[category]) cleanDescription(listing);
+  for (const category of CATEGORIES) for (const listing of valid[category]) cleanDescriptionM10(listing);
 
   let products: Product[] = [
     ...mergeCategory(valid.tires),
@@ -2265,6 +3019,7 @@ async function main(): Promise<void> {
       pairsSeen.add(id);
     }
   }
+  for (const v of m10Stats.violations) failures.push(`description trim: ${v}`);
   const allowed: [string, Set<string>][] = [
     [F.season, new Set(Object.values(SEASONS))],
     [F.serviceType, SERVICE_TYPES],
@@ -2280,6 +3035,16 @@ async function main(): Promise<void> {
     F.plyRating, F.lugCount, F.loadRatingLbs, F.packQuantity, ...Object.keys(DECIMALS),
     ...Array.from({ length: MAX_SOURCES }, (_, i) => sourceColumn("price", i + 1)),
   ]);
+  for (const record of records) {
+    if (/[\u2013\u2014]/.test(record[F.description] ?? "")) failures.push(`row ${record.row_id}: the description has an em or en dash`);
+    if (record[F.category] === "tires") {
+      const load = firstLoad(record[F.loadIndex] ?? "");
+      if (load !== null && load > 150) failures.push(`row ${record.row_id}: load index ${record[F.loadIndex]} is above 150`);
+    }
+    if (record[F.accessoryType] === "Lug Nuts" && /(?:^|\|)\s*Model:\s*BOLT\s*(?:\||$)/i.test(record[F.extraSpecs] ?? "")) {
+      failures.push(`row ${record.row_id}: a lug whose Model is BOLT is typed Lug Nuts`);
+    }
+  }
   for (const record of records) {
     const category = record[F.category] as Category;
     for (const [column, values] of allowed) {
@@ -2401,6 +3166,9 @@ async function main(): Promise<void> {
   for (const left of blankModelLeft) {
     reviewRows.push({ rule: "M6 model left blank", rowIds: left.rowIds, field: F.model, before: "", after: "", reason: `nothing meaningful is left of "${left.name}" once brand, size, bolt pattern, offset and finish are taken out` });
   }
+  for (const look of lugBoltLookAlikes) {
+    reviewRows.push({ rule: "M12 not retyped", rowIds: look.rowIds, field: F.accessoryType, before: "Lug Nuts", after: "(unchanged)", reason: `vendor title "${look.vendorTitle}" mentions a bolt but the vendor's Model is not BOLT; not retyped` });
+  }
   for (const alias of MODEL_NOT_FOLDED) {
     reviewRows.push({ rule: "M4 not folded", rowIds: [], field: F.model, before: `${alias.brand}: ${alias.models}`, after: "(unchanged)", reason: alias.why });
   }
@@ -2514,6 +3282,10 @@ async function main(): Promise<void> {
     `  M7 pack sizes: pack_quantity set ${changeCount("M7", F.packQuantity)}; redundant or contradicting "Quantity per box" / "Pieces per pack" specs dropped ${changeCount("M7", "extra_specs: Quantity per box") + changeCount("M7", "extra_specs: Pieces per pack")}`,
     `  M8 a TIS widths ${changeCount("M8a", F.wheelWidth)}; b bolt ${changeCount("M8b", F.boltPatterns)}; c brand ${changeCount("M8c")}; d lug count ${changeCount("M8d")}; e backspacing recomputed ${changeCount("M8e")} (listed but not changed: ${changeCount("M8e (not changed)")}); f season ${changeCount("M8f")}; g Nanoi ${changeCount("M8g", F.wheelFinish)}; h finish spellings ${changeCount("M8h", F.wheelFinish)}; i dual load swapped ${changeCount("M8i", F.loadIndex)}; j load/speed from name ${changeCount("M8j", F.loadIndex)}`,
     `  M9 descriptions edited: ${descriptionsEdited} (${changeCount("M9") } written to changes-review.csv; blanked: ${changes.filter((c) => c.rule === "M9" && c.after === "").length})`,
+    `  M10 descriptions (D152): ${m10Stats.edited} listings edited (${m10Stats.curated} by the curated table, ${m10Stats.automatic} by the automatic fallback), ${m10Stats.blank.length} left blank; ${m10Stats.differentTire.length} removed because they describe another tire (${m10Stats.differentTire.join(", ")}); fallback: pasted Key Features blocks ${m10Stats.pasted}, sentences dropped ${m10Stats.droppedSentences}; descriptions with dashes replaced ${m10Stats.dashes}; word check violations ${m10Stats.violations.length}`,
+    ...m10Stats.blank.map((b) => `     blank: ${b}`),
+    `  M11 load index blanked (D152): model code ${m11Stats.code}, name conflict ${m11Stats.nameConflict}, outlier ${m11Stats.outlier}; confirmed on a vendor or maker page and kept ${m11Stats.confirmedKept}, corrected ${m11Stats.confirmedSet}`,
+    `  M12 lug bolts retyped from Lug Nuts: ${lugBoltsRetyped}; vendor titles mentioning a bolt but not retyped: ${lugBoltLookAlikes.length}`,
     `Ambiguous groups (two or more listings from one vendor, nothing merged): ${ambiguous.length}`,
     `  of which another vendor was also in the group (a cross-vendor merge held back): ${ambiguous.filter((l) => new Set(l.sources.map((s) => s.slice(0, s.lastIndexOf(" ")))).size > 1).length}`,
     "",

@@ -88,6 +88,26 @@ function PhoneIcon({ size }: { size: number }) {
   );
 }
 
+/* The h1's type step by name length (launch audit, D145, UI-CRITIQUE). The
+   artboards draw `Antarctica Sport` (16 characters) at 56px / 88px, and every
+   name up to 24 characters keeps exactly that. A vendor accessory name can
+   run past 60 (`Center Cap Silver Multi-Fit R132 R192 R322 R42 R61 R62 R72`):
+   at 56px that is four or five lines on a phone and pushed `Add to cart`
+   below the fold. Longer names step down through the display scale the site
+   already uses (48 / 56 to 40 characters, 36 / 48 beyond), never a new size.
+   Characters, not measured width: the server cannot measure, and the display
+   face is condensed enough that length tracks line count closely.
+   DEVIATIONS (D151 row). */
+const TITLE_DRAWN_MAX = 24;
+const TITLE_LONG_MAX = 40;
+
+function titleSize(model: string): string {
+  const length = model.trim().length;
+  if (length <= TITLE_DRAWN_MAX) return "text-display-56 sm:text-display-88";
+  if (length <= TITLE_LONG_MAX) return "text-display-48 sm:text-display-56";
+  return "text-display-36 sm:text-display-48";
+}
+
 export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
   const { product } = view;
 
@@ -135,7 +155,7 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
             (`Ganzjahresreifen` overflowed 320/375 and widened the desktop
             track, D91b NJR-8/KBD-8); every seed name fits, so no rest pixel
             moves. */}
-        <h1 className="display text-ink text-display-56 wrap-anywhere sm:text-display-88">
+        <h1 className={`display text-ink wrap-anywhere ${titleSize(product.model)}`}>
           {product.model}
         </h1>
 

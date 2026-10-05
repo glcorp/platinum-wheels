@@ -12,7 +12,13 @@ import { PRIMARY_CONTACT } from "@/lib/site";
    `RouteErrorPanel` action pair (same classes, `route-error.tsx`) — a way
    back into the catalogue and the `tel:` CTA. The apostrophes are the ASCII
    `'` the rest of the copy uses (`&apos;`, as in `winter-promo.tsx`). */
-export const metadata: Metadata = { title: "Page not found" };
+/* `robots: null` clears the site-wide `robots` from the root layout (D112) on
+   this page. Next already writes `<meta name="robots" content="noindex">` on
+   every 404 (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/not-found.md`
+   "Metadata"), so with the flag on the layout's `index, follow` was a second,
+   contradictory tag (launch audit D145, GAP-indexing-flag-on-build; D151).
+   Now the 404 carries exactly one: Next's `noindex`. */
+export const metadata: Metadata = { title: "Page not found", robots: null };
 
 export default function NotFound() {
   return (

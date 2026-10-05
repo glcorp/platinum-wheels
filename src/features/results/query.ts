@@ -37,7 +37,7 @@ import {
   normalizeBoltPattern,
 } from "@/features/catalog/size";
 import type { ProductCategory } from "@/features/catalog/types";
-import { isFinderVehicle } from "@/features/finder/data";
+import { isFinderVehicle, partialVehicle } from "@/features/finder/data";
 import {
   ALL_BRANDS,
   DEFAULT_SORT,
@@ -234,6 +234,9 @@ export function parseResultsQuery(
   return {
     category,
     vehicle,
+    /* LA-05 P2: what a part-filled submit kept, so the toolbar can ask for the
+       rest. `null` for a whole vehicle and for none. */
+    partialVehicle: vehicle === null ? partialVehicle(year, make, model) : null,
     size,
     chips,
     brands,

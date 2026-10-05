@@ -13,7 +13,7 @@ entire site loses its type or its palette at once.
   below predate the D92b motion block and are approximate.
   Two labelled blocks from 2026-10-03: "Brand marquee (D129)" (`brand-marquee`) and the D128 block
   (`@custom-variant fold-short / fold-cramped / fold-minimal`, `hero-fit`, `finder-cta-label`).
-- [`layout.tsx`](layout.tsx) — root layout. Metadata (D112): `metadataBase` (`SITE_URL`), `title.default` +
+- [`layout.tsx`](layout.tsx) — root layout. Emits `<link rel="preconnect">` to the origin of `PHOTOS_BASE_URL` (via `react-dom` `preconnect()`, read by `photosBaseUrl()`; none when unset; deliberately **no `crossorigin`**, because card and gallery photos are plain `<img>` without it, so a CORS connection would not be reused; D153, launch audit). Metadata (D112): `metadataBase` (`SITE_URL`), `title.default` +
   `template: "%s · Platinum Wheels"`, the site description, `robots` from the indexing flag
   (`siteRobots()`) and the site card as the default preview. **No `alternates.canonical` here**: every
   page would inherit `/`. `viewport` `themeColor: "#0B0B0D"`, `colorScheme: "dark"`
@@ -29,8 +29,19 @@ entire site loses its type or its palette at once.
   persists across navigations and the bar must outlive the page that started it.
 - [`fonts.ts`](fonts.ts) (29 ln) — Barlow Condensed 600/700 and Barlow 400/500/700, self-hosted via
   `next/font/google`, `display: "swap"`, `adjustFontFallback` (**D20**; `docs/decisions.md:99`).
-- `favicon.ico` — App Router file convention. It lives here, **not** in `public/`.
+- `favicon.ico`, `icon.png`, `apple-icon.png` — App Router file conventions; they live here, **not** in
+  `public/`. Since the launch audit (D145; D151) all three are the brand badge
+  (`design/assets/logo/platinum-wheels-logo-transparent.png`, trimmed and centred on a square) instead
+  of the create-next-app default: `favicon.ico` holds 16, 32 and 48 px PNG frames, `icon.png` is 192 px
+  transparent, `apple-icon.png` is 180 px on `--bg` `#0B0B0D` (iOS fills transparency with black). Made
+  once with `sharp` by a throwaway script (not committed); regenerate the same way if the logo changes.
+  No SVG: the logo exists only as a raster, and a traced vector would be a new mark. **At 16 px the
+  badge reads as a round dark disc, not as the logo**; at 32 px the wheel shape shows and the lettering
+  does not. A simpler mark for small sizes is the owner's call.
 - [`not-found.tsx`](not-found.tsx) — global 404 on `PageStub`; one of the undrawn states (`design/manifest.md`).
+  Its metadata sets `robots: null`, which removes the layout's site-wide `robots` on the 404, because
+  Next already writes `noindex` on every 404; with the indexing flag on the page carried two
+  contradictory robots tags (launch audit D145; D151).
   **D93b:** passes the owner-approved lede ("That link doesn't lead anywhere. Start from the catalogue, or
   call us and we'll find it.") and the `Shop tires` + `tel:` action pair.
 - [`global-error.tsx`](global-error.tsx) — **D93b**, owner *"Add a branded global-error"*. `"use client"`

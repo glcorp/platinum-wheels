@@ -2,7 +2,7 @@ import Image from "next/image";
 import { ViewTransition } from "react";
 
 import { ProductPhotoPlaceholder } from "@/features/catalog/components/product-photo-placeholder";
-import { photoSource } from "@/features/catalog/photo-files";
+import { photoSized, photoSource } from "@/features/catalog/photo-files";
 import { productImageSrc, type AccessoryType } from "@/features/catalog/types";
 
 import { Badge } from "@/components/ui/badge";
@@ -51,9 +51,12 @@ import { productName } from "@/lib/product-name";
    so they never pair at all. `share` must be explicit because with
    `default="none"` and no `share` the pair silently never morphs;
    `default="none"` keeps the photo out of every other transition on the
-   page — a `?qty=` click must not crossfade the gallery. Only the `<img>` is
-   named; the frame, vignette and badge row stay part of the page and do not
-   travel.
+   page — a `?qty=` click must not crossfade the gallery. The named element is
+   a wrapper holding the picture (or tile), the card-size underlay and the
+   vignette, so the arriving snapshot holds a picture from its first frame
+   and nothing changes when the morph ends (owner, 2026-10-04, "the image
+   transition is not smooth"; `globals.css` `.morph`). The frame and the
+   mobile badge row stay part of the page and do not travel.
    --------------------------------------------------------------------------- */
 
 export interface PdpGalleryProps {
@@ -95,45 +98,90 @@ export function PdpGallery({
           full-bleed and a border would sit flush against the viewport edge.
           It becomes the drawn 704px framed box only once the split activates
           (the same crossover the split itself takes — see `page.tsx`). */}
-      <div className="relative mt-4 aspect-square overflow-hidden md:mt-0 md:border md:border-border md:bg-bg">
+      {/* `pdp-gallery-band` (globals.css): from 720 to 1099 the box is still
+          full-bleed and square, so on a tablet or small laptop it was
+          768-1099px tall and the title and `Add to cart` sat a whole screen
+          below it. It caps the height at 60dvh in that band only, where no
+          artboard draws the page (D41, DEVIATIONS #39); the photo stays whole
+          (`object-contain`) inside the shorter box. Launch audit, D145.
+          The same utility caps the box below 720 at `100svh - 482px` (never
+          under 240px), so `Add to cart` ends on the first screen of a phone:
+          the stack under the gallery is ~470px, so a full-width square pushed
+          it below the fold (owner, 2026-10-05, "Yes, shorter photo";
+          D153, DEVIATIONS row in `pdp-gallery-band`'s comment). */}
+      <div className="pdp-gallery-band relative mt-4 aspect-square overflow-hidden md:mt-0 md:border md:border-border md:bg-bg">
         <ViewTransition
           name={`product-photo-${slug}`}
           share="morph"
           default="none"
         >
-          {photo === null ? (
-            /* No photo on record: the placeholder tile (D108b). One resolver
-               for the card and the gallery (`productImageSrc`), so a product
-               cannot show a photo in the grid and a placeholder on its own
-               page. */
-            <ProductPhotoPlaceholder
-              brand={brand}
-              accessoryType={accessoryType}
-              context="gallery"
+          {/* The morph's named element is this wrapper (owner, 2026-10-04:
+              "the image transition is not smooth"), so everything that should
+              travel travels as one: a `<ViewTransition>` names each host child,
+              and two named children would break the pair. The vignette is in
+              it too: left outside, it belonged to the page under the flying
+              photo and darkened the box in one step as the morph ended. */}
+          <div className="relative h-full w-full">
+            {photo === null ? (
+              /* No photo on record: the placeholder tile (D108b). One resolver
+                 for the card and the gallery (`productImageSrc`), so a product
+                 cannot show a photo in the grid and a placeholder on its own
+                 page. */
+              <ProductPhotoPlaceholder
+                brand={brand}
+                accessoryType={accessoryType}
+                context="gallery"
+              />
+            ) : (
+              <>
+                <Image
+                  {...photoSource(photo, "full")}
+                  alt={productName(brand, model)}
+                  width={1000}
+                  height={1000}
+                  /* The box is 704px only once the split activates at `md:`
+                     1100 (see the frame comment above); from 0 to 1099 the
+                     gallery is full-bleed, so it is `100vw` there. Declaring
+                     704px from 720 made the browser pick a candidate ~1/3 the
+                     rendered width in the 720-1099 band and upscale it.
+                     Crossover must match the frame's, not the type's. */
+                  sizes="(min-width: 1100px) 704px, 100vw"
+                  loading="eager"
+                  fetchPriority="high"
+                  className="photo-inset-gallery peer relative z-10 block h-full w-full object-contain"
+                />
+                {/* Underlay. The card shows the 480px file; this box shows the
+                    1000px one, which is rarely loaded when the card's photo
+                    morphs in, so the arriving snapshot was empty: the photo
+                    faded to nothing mid-flight and popped in ~200ms after the
+                    morph ended (measured on production). The card's own file
+                    is already in the browser's cache from the grid, so it
+                    paints in the first frame and the morph lands on a photo;
+                    the sharp file covers it when it arrives (the snapshot is
+                    live), and the underlay hides once it has (`data-loaded`
+                    comes from the image bootstrap in `layout.tsx`). On a direct
+                    visit it is a small first paint before the sharp file. A
+                    local image has no `card` file and gets none. */}
+                {photoSized(photo, "card") === null ? null : (
+                  <Image
+                    {...photoSource(photo, "card")}
+                    alt=""
+                    aria-hidden="true"
+                    width={1000}
+                    height={1000}
+                    loading="eager"
+                    decoding="sync"
+                    className="photo-inset-gallery absolute inset-0 block h-full w-full object-contain peer-data-loaded:invisible"
+                  />
+                )}
+              </>
+            )}
+            <div
+              aria-hidden="true"
+              className="photo-vignette-gallery absolute inset-0 z-10"
             />
-          ) : (
-            <Image
-              {...photoSource(photo, "full")}
-              alt={productName(brand, model)}
-              width={1000}
-              height={1000}
-              /* The box is 704px only once the split activates at `md:` 1100
-                 (see the frame comment above); from 0 to 1099 the gallery is
-                 full-bleed, so it is `100vw` there. Declaring 704px from 720
-                 made the browser pick a candidate ~1/3 the rendered width in
-                 the 720-1099 band and upscale it. Crossover must match the
-                 frame's, not the type's. */
-              sizes="(min-width: 1100px) 704px, 100vw"
-              loading="eager"
-              fetchPriority="high"
-              className="photo-inset-gallery block h-full w-full object-contain"
-            />
-          )}
+          </div>
         </ViewTransition>
-        <div
-          aria-hidden="true"
-          className="photo-vignette-gallery absolute inset-0"
-        />
         {/* `position:absolute;top:16px;left:16px;display:flex;gap:6px`
             (`product-mobile.html:91`), mobile only — desktop's badge row
             lives in the buy panel. The mobile 3PMSF instance drops the

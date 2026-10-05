@@ -14,6 +14,7 @@
 import {
   ACCESSORY_LABEL,
   accessoryParam,
+  expandWith,
   signedOffset,
   timesSign,
   toProduct,
@@ -24,6 +25,7 @@ import type {
   TireSeason,
 } from "@/features/catalog/catalog-types";
 import { configFor, type CategoryConfig } from "@/features/catalog/categories";
+import { siblingFacts } from "@/features/catalog/siblings";
 import type { Product } from "@/features/catalog/types";
 /* The one cross-feature import outside `catalog/` (D37), on the precedent of
    `results/search.ts`: the finder's list is the only authority on what counts
@@ -110,6 +112,28 @@ function measure(value: number | null, unit: string): string | null {
   return value === null ? null : `${value} ${unit}`;
 }
 
+/**
+ * The wheel's `Bolt pattern` row. A wheel with no pattern on record is an
+ * undrilled blank: the vendors list it that way (PRO WHEELS' own field reads
+ * `BLANK`, Auto Country's names say `blank`), and all 386 such wheels in the
+ * catalogue are exactly those, so the row says what it is rather than leaving
+ * a gap. No vendor shows a filter for it, so this row is all there is (owner,
+ * 2026-10-05; launch audit, D145; D153).
+ */
+const UNDRILLED = "Undrilled, drilled to order";
+
+function boltPatternValue(
+  patterns: readonly string[] | undefined,
+): string | null {
+  if (patterns === undefined) return null;
+  return patterns.length === 0 ? UNDRILLED : patterns.map(timesSign).join(" / ");
+}
+
+/** The vendors' `W/` read as "with" in any finish text (D145; D153). */
+function finishText(value: string | null | undefined): string | null {
+  return value ? expandWith(value) : null;
+}
+
 /** `Winter (studdable)` is artboard-verbatim (`product.md` §2.5 row 4);
  *  `All-weather` is new copy (D105b), in the chip's own spelling. */
 function seasonLabel(season: TireSeason | null, studdable: boolean): string {
@@ -193,11 +217,11 @@ function buildSpecs(
       ...lead,
       ["Size", wheel && `${wheel.diameter}×${wheel.width}`],
       /* ASCII `x` in the database and the URL, U+00D7 on screen. */
-      ["Bolt pattern", specs?.boltPatterns.map(timesSign).join(" / ")],
+      ["Bolt pattern", boltPatternValue(specs?.boltPatterns)],
       ["Offset", offsetMm(specs?.offsetMm ?? null, signedOffset)],
       /* The vendor's own wording, as it arrived (D105b): no finish filter, so
          nothing groups or renames it. */
-      ["Finish", specs?.finish],
+      ["Finish", finishText(specs?.finish)],
       /* D125, the vendor sheets' own grouping and wording, as given. */
       /* The sheets' grouping of the finish; shown only when it adds something
          (D135). */
@@ -206,10 +230,10 @@ function buildSpecs(
         specs?.finishFamily &&
         specs.finishFamily.trim().toLowerCase() !==
           (specs.finish ?? "").trim().toLowerCase()
-          ? specs.finishFamily
+          ? finishText(specs.finishFamily)
           : null,
       ],
-      ["Colour", specs?.color],
+      ["Colour", finishText(specs?.color)],
       ["Lug count", specs?.lugCount == null ? null : String(specs.lugCount)],
       ["Centre bore", measure(specs?.centerBoreMm ?? null, "mm")],
       ["Backspacing", backspacing(specs?.backspacing ?? null)],
@@ -233,7 +257,7 @@ function buildSpecs(
     ["Part type", specs?.partType],
     ["Thread size", specs?.threadSize && timesSign(specs.threadSize)],
     ["Seat type", specs?.seatType],
-    ["Finish", specs?.finish],
+    ["Finish", finishText(specs?.finish)],
     /* A pack of one says nothing (D135). */
     [
       "Pack quantity",
@@ -377,7 +401,9 @@ function buildBackHref(params: ProductSearchParams, route: string): string {
  * @param detail   the product, as `getProductBySlug()` returned it
  * @param rows     the two product rows under the page, as the catalogue
  *                 returned them: `similar` (`getSimilarProducts`) and
- *                 `otherSizes` (`getOtherSizes`)
+ *                 `otherSizes` (`getOtherSizes`); and `siblings`
+ *                 (`getTitleSiblings`), the products that would otherwise
+ *                 share this page's title. Omitted, nothing is added.
  */
 export function productView(
   detail: CatalogProductDetail,
@@ -385,12 +411,25 @@ export function productView(
   rows: {
     similar: readonly CatalogProduct[];
     otherSizes: readonly CatalogProduct[];
+    siblings?: readonly CatalogProduct[];
   },
 ): ProductView {
   const product = toProduct(detail);
   const config = configFor(product);
   const { sizeCode, loadSpeed } = splitSize(detail, product);
-  const sizeLine = loadSpeed === "" ? sizeCode : `${sizeCode} ${loadSpeed}`;
+  /* What sets this product apart from the ones that share its name and size
+     (`Left side`, `Centre bore 72.6 mm`, `Part number …`, `Load range E`),
+     only when such products exist (launch audit D145; D151). Appended
+     here, so the buy panel's size line and the page title (`toProductSeo`
+     reads `sizeLine`) say the same thing. The card's own size line is
+     unchanged: showing it there waits on an owner ruling. */
+  const facts = siblingFacts(detail, rows.siblings ?? []);
+  const sizeLine = [
+    loadSpeed === "" ? sizeCode : `${sizeCode} ${loadSpeed}`,
+    ...facts,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const fullName = productName(product.brand, product.model);
   const season = productSeason(product);
   const vehicle = parseVehicle(searchParams);

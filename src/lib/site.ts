@@ -18,7 +18,7 @@ export const SITE_URL = "https://platinumwheels.ca";
 
 export const SITE = {
   name: "Platinum Wheels",
-  legalName: "Platinum Wheels and Tire Solutions",
+  legalName: "Platinum Wheels and Tire Solutions Inc.",
   tagline: "Wheels, tires & accessories in Brampton, ON",
   city: "Brampton",
   province: "ON",

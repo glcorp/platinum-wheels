@@ -3,10 +3,13 @@ import type { Metadata } from "next";
 import { CONTACTS, SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
-   /pay/done — where `/pay/return` lands a customer it could not match to a
-   link (Converge sent no usable transaction or invoice number). Nothing about
-   the payment is known here, so it claims nothing, and nothing will look the
-   payment up later (D108): the copy sends the customer to the shop.
+   /pay/done — where `/pay/return` lands every return it will not send to a
+   link page: no `pw_pay` cookie (expired after 30 minutes, another browser,
+   or not a customer at all), or a cookie that names no link (LA-01/LA-02,
+   D145 audit). The return's own fields never pick a link page, so this page
+   knows nothing about the payment and claims nothing. Nothing looks the
+   payment up later from here (D108), though `/pay/notify` may still settle it
+   (D119): the copy sends the customer to the shop.
    --------------------------------------------------------------------------- */
 
 export const metadata: Metadata = {
@@ -19,18 +22,17 @@ export default function PayDonePage() {
   return (
     <main id="main" tabIndex={-1} className="w-full flex-1 px-4 pt-14 pb-20 sm:px-8">
       <div className="bg-surface border-border-strong mx-auto flex w-full max-w-measure flex-col gap-4 border p-5 sm:p-8">
-        <h1 className="display text-ink text-display-28 sm:text-display-40">Thanks. One more step.</h1>
+        <h1 className="display text-ink text-display-28 sm:text-display-40">We couldn&apos;t confirm your payment</h1>
         <p className="text-ink-muted text-15 leading-body">
-          We couldn&apos;t match this visit to a payment link. Open the link from your email again to see its status.
-          If you were charged and it still shows as unpaid, please don&apos;t pay again: call {contact.name} at{" "}
+          If you finished paying, please don&apos;t pay again. Call {contact.name} at{" "}
           <a className="text-ink underline" href={`tel:${contact.tel}`}>
             {contact.display}
           </a>{" "}
           or email{" "}
           <a className="text-ink underline" href={`mailto:${SITE.email}`}>
             {SITE.email}
-          </a>
-          .
+          </a>{" "}
+          and we&apos;ll check it for you. You can also open the payment link from your email to see where it stands.
         </p>
       </div>
     </main>

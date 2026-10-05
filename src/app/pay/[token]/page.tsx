@@ -87,9 +87,12 @@ export default async function PayPage({ params }: { params: Promise<{ token: str
               <dt className="label text-ink-dim text-11 tracking-12 sm:text-12">Amount</dt>
               <dd className="numeral text-ink text-22 leading-flat">{`${amount} CAD`}</dd>
             </div>
-            <div className="flex flex-col gap-0.5">
+            {/* `wrap-anywhere` + `min-w-0`: staff type this text, and one long
+                unbroken word (a pasted part number or URL) otherwise widens the
+                page past the viewport (D145 audit, A11Y-AUTO / UI-RESPONSIVE). */}
+            <div className="flex min-w-0 flex-col gap-0.5">
               <dt className="label text-ink-dim text-11 tracking-12 sm:text-12">For</dt>
-              <dd className="text-ink text-15 leading-body sm:text-16">{link.description}</dd>
+              <dd className="text-ink min-w-0 text-15 leading-body wrap-anywhere sm:text-16">{link.description}</dd>
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <dt className="label text-ink-dim text-11 tracking-12 sm:text-12">Reference</dt>

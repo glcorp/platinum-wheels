@@ -14,7 +14,13 @@
    What it does, in order:
      1. reads the sheet and checks every row: the file exists, the photo
         order of each product is 0..n-1 with at most 8, the alt text is there.
-        Any problem stops the run, before anything is touched.
+        Any problem stops the run, before anything is touched. A row whose
+        file is a known vendor placeholder graphic ("Image not available",
+        LA-06) is not a problem: it is skipped, listed in
+        `placeholder-skipped.csv`, and the product's other photos close up
+        to 0..n-1. A product left with none gets no row, so the storefront
+        draws its no-photo tile. The match is on the file's bytes (SHA-256),
+        so a renamed copy is caught too.
      2. `--upload`: stores each FILE once, however many products use it, at
         `catalog/<category>/<hash>-1000.webp` (the vendor's file, byte for
         byte) and `-480.webp` (the card size, made here). A file already in
@@ -50,8 +56,9 @@
      --out <dir>        report folder (default photo-report/<timestamp>)
    --------------------------------------------------------------------------- */
 
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs, parseEnv } from "node:util";
 
@@ -80,6 +87,27 @@ const MAX_ALT = 300;
 const CATEGORIES = new Set(["tires", "wheels", "accessories"]);
 const FILE_PATTERN = /^images\/(tires|wheels|accessories)\/([0-9a-f]{16})\.webp$/;
 const REQUIRED = ["slug", "category", "sort_order", "file", "alt", "vendor", "vendor_sku"] as const;
+
+/** Vendor placeholder graphics that are not product photos (LA-06, D145 audit;
+ *  D150). Keyed on the SHA-256 of the file's bytes; the hand-off names a
+ *  file by the first 16 hex of that same hash, so the name is checked too.
+ *  `cd5df080…`: a grey wheel outline over the words "Image not available",
+ *  the same bytes under tires/, wheels/ and accessories/ (2026-10-04 hand-off:
+ *  367 rows). Add a new one only after looking at the picture. */
+const PLACEHOLDER_SHA256 = new Map<string, string>([
+  [
+    "cd5df080e7e3ade51e3ff37d9c8b3ebaab4abb6dbb6720bfa7da785f7175e26a",
+    "vendor placeholder: Image not available",
+  ],
+]);
+
+function placeholderReason(hash: string, content: Buffer): string | undefined {
+  const digest = createHash("sha256").update(content).digest("hex");
+  const byContent = PLACEHOLDER_SHA256.get(digest);
+  if (byContent) return byContent;
+  for (const [known, reason] of PLACEHOLDER_SHA256) if (known.startsWith(hash)) return reason;
+  return undefined;
+}
 
 const { values: flags, positionals } = parseArgs({
   allowPositionals: true,
@@ -140,6 +168,8 @@ interface PhotoRow {
   category: string;
   hash: string;
   path: string;
+  /** Why this row is not loaded (a placeholder graphic), or null. */
+  skip: string | null;
 }
 
 interface StoredFile {
@@ -154,6 +184,8 @@ interface StoredFile {
 const problems: string[][] = [];
 const problem = (line: number, slug: string, reason: string) =>
   problems.push([String(line), slug, reason]);
+/** Rows left out on purpose: line, slug, file, reason, what the product keeps. */
+const placeholderSkips: string[][] = [];
 
 function readSheet(): { rows: PhotoRow[]; files: Map<string, StoredFile> } {
   let records: Record<string, string>[];
@@ -174,6 +206,8 @@ function readSheet(): { rows: PhotoRow[]; files: Map<string, StoredFile> } {
 
   const rows: PhotoRow[] = [];
   const files = new Map<string, StoredFile>();
+  /** Placeholder files: path → reason. Never stored, never linked. */
+  const placeholders = new Map<string, string>();
   records.forEach((record, index) => {
     const line = index + 2;
     const cell = (column: (typeof REQUIRED)[number]) => (record[column] ?? "").trim();
@@ -191,22 +225,27 @@ function readSheet(): { rows: PhotoRow[]; files: Map<string, StoredFile> } {
 
     const [, category, hash] = file as unknown as [string, string, string];
     const path = join(folder, file[0]);
-    if (!files.has(path)) {
-      let bytes = 0;
+    if (!files.has(path) && !placeholders.has(path)) {
+      let content: Buffer;
       try {
-        bytes = statSync(path).size;
+        content = readFileSync(path);
       } catch {
         return problem(line, slug, `file ${file[0]} is missing`);
       }
-      if (bytes === 0) return problem(line, slug, `file ${file[0]} is empty`);
-      files.set(path, {
-        category,
-        hash,
-        path,
-        bytes,
-        fullKey: catalogPhotoKey(category, hash, "full"),
-        cardKey: catalogPhotoKey(category, hash, "card"),
-      });
+      if (content.length === 0) return problem(line, slug, `file ${file[0]} is empty`);
+      const reason = placeholderReason(hash, content);
+      if (reason) {
+        placeholders.set(path, reason);
+      } else {
+        files.set(path, {
+          category,
+          hash,
+          path,
+          bytes: content.length,
+          fullKey: catalogPhotoKey(category, hash, "full"),
+          cardKey: catalogPhotoKey(category, hash, "card"),
+        });
+      }
     }
     rows.push({
       line,
@@ -218,6 +257,7 @@ function readSheet(): { rows: PhotoRow[]; files: Map<string, StoredFile> } {
       category,
       hash,
       path,
+      skip: placeholders.get(path) ?? null,
     });
   });
 
@@ -239,7 +279,20 @@ function readSheet(): { rows: PhotoRow[]; files: Map<string, StoredFile> } {
       problem(head.line, head.slug, "rows disagree on vendor + vendor_sku");
     }
   }
-  return { rows, files };
+
+  // The checks above ran on the sheet as given. Now leave the placeholder
+  // rows out and close up each product's photo order, so its first real
+  // photo becomes the main one.
+  const kept: PhotoRow[] = [];
+  for (const group of groupBySlug(rows).values()) {
+    const real = group.filter((row) => !row.skip).sort((a, b) => a.sortOrder - b.sortOrder);
+    real.forEach((row, index) => kept.push({ ...row, sortOrder: index }));
+    const keeps = real.length > 0 ? `keeps ${real.length} photo${real.length === 1 ? "" : "s"}` : "no photo left";
+    for (const row of group) {
+      if (row.skip) placeholderSkips.push([String(row.line), row.slug, relative(folder, row.path), row.skip, keeps]);
+    }
+  }
+  return { rows: kept, files };
 }
 
 function groupBySlug(rows: readonly PhotoRow[]): Map<string, PhotoRow[]> {
@@ -473,13 +526,23 @@ async function main(): Promise<void> {
       allFiles.filter((file) => file.category === category).length
     } files`;
   const megabytes = Math.round(allFiles.reduce((sum, file) => sum + file.bytes, 0) / 1024 / 1024);
+  const skippedProducts = new Set(placeholderSkips.map(([, slug]) => slug));
+  const leftBare = new Set(placeholderSkips.filter((skip) => skip[4] === "no photo left").map(([, slug]) => slug));
   const summary = [
-    `Sheet: ${rows.length} photo rows, ${groups.size} products, ${allFiles.length} files (${megabytes} MB)`,
+    `Sheet: ${rows.length} photo rows, ${groups.size} products, ${allFiles.length} files (${megabytes} MB) to load`,
     ...[...CATEGORIES].map(perCategory),
+    `Skipped, vendor placeholder graphic (LA-06): ${placeholderSkips.length} rows on ${skippedProducts.size} products; ` +
+      `${skippedProducts.size - leftBare.size} keep another photo, ${leftBare.size} get the no-photo tile`,
     `Problems: ${problems.length}`,
   ].join("\n");
   console.log(summary);
   writeFileSync(join(dir, "summary.txt"), `${summary}\n`);
+  if (placeholderSkips.length > 0) {
+    writeFileSync(
+      join(dir, "placeholder-skipped.csv"),
+      csvText(["line", "slug", "file", "reason", "product"], placeholderSkips),
+    );
+  }
   if (problems.length > 0) {
     writeFileSync(join(dir, "problems.csv"), csvText(["line", "slug", "problem"], problems));
     for (const [line, slug, reason] of problems.slice(0, 20)) console.error(`  line ${line} ${slug}: ${reason}`);

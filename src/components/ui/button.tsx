@@ -99,6 +99,21 @@ const sizePad: Record<ButtonSize, string> = {
   load: "md:px-10",
 };
 
+/* `primary` only: the same pads less the 1px transparent border it now
+   carries (below), so its border box is the drawn one to the pixel. A
+   `secondary` / `accent` button draws its 1px border on top of the full pad,
+   as the artboards do; `primary` draws none, so the border has to come out of
+   the pad. Heights are fixed (`h-*`, border-box), so only the width needed it.
+   Launch audit, D145. `load` has no pad below `md:` and is always `fullWidth`
+   there, so its width is fixed too. */
+const sizePadPrimary: Record<ButtonSize, string> = {
+  panel: "px-9.75",
+  card: "px-4.75",
+  compact: "px-4.75",
+  promo: "px-5.75 sm:px-6.75",
+  load: "md:px-9.75",
+};
+
 /* Variant table — DESIGN.md §4 "Button". The exports contain no `:focus`,
    `:active` or `:disabled` rule at all (product.md §6, results.md §6 #27), so
    those three rows are authored from §4 and logged as DEVIATIONS #9. Only the
@@ -142,7 +157,11 @@ const sizePad: Record<ButtonSize, string> = {
    #F4F4F5, since nothing in Track Night is pure white (results.md §6 #6). */
 const variantClass: Record<ButtonVariant, string> = {
   primary: [
-    "bg-accent text-on-accent",
+    /* `border-transparent`: invisible on every screen, but forced colours
+       paint every border in the system colour, so the button keeps its edge
+       there once its `--accent` fill is repainted as `Canvas` (launch audit,
+       D145, A11Y-MANUAL). Its 1px comes out of the pad (`sizePadPrimary`). */
+    "border border-transparent bg-accent text-on-accent",
     "hover:bg-accent-hover",
     "active:translate-y-px active:bg-accent",
     "disabled:translate-y-0 disabled:bg-surface disabled:text-ink-dim",
@@ -196,7 +215,9 @@ function buttonClasses(
     sizeBox[size],
     /* A text button carries no box, so it keeps the flush-left edge its
        column shares (.claude/rules/ui.md, "Flush-left"). */
-    variant !== "tertiary" && sizePad[size],
+    variant === "primary"
+      ? sizePadPrimary[size]
+      : variant !== "tertiary" && sizePad[size],
     variantClass[variant],
     fullWidth && "w-full",
     className,

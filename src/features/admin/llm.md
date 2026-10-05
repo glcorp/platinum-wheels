@@ -20,7 +20,9 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   (D105). A pure function with no imports, so it is testable without Next; `src/proxy.ts` is its only
   caller. On an admin host every path is rewritten into `src/app/admin/`; `/admin/**` is a 404 everywhere.
   `ADMIN_HOST`, `DEV_ADMIN_HOST` and `PAY_HOST` are duplicated as literals in the proxy's `matcher` and
-  `next.config.ts` (and `PAY_HOST` in `src/features/payments/config.ts`). Change them together.
+  `next.config.ts` (and `PAY_HOST` in `src/features/payments/config.ts`). Change them together. A
+  stray path on the pay host is rewritten to `PAY_NOT_FOUND_PATH` (`/pay`), which renders the pay host's
+  own 404 (`src/app/pay/not-found.tsx`; D145 audit; D151).
 - [`types.ts`](types.ts) — the contract. Route map, field names, form-state unions, validation ceilings.
   Written by the coordinator before any implementation file (D25). Both actions and both forms code
   against it; nothing here invents a field name.
@@ -32,7 +34,9 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   session, logs, redirects) and `signOut` (`requireAdminAction()`, then clears the cookie).
 - [`payment-link-actions.ts`](payment-link-actions.ts) — `"use server"`, two actions, each calling
   `requireAdminAction()` first. `createPaymentLink` validates amount, description and expiry, then
-  creates the link (idempotent on a per-render key). `cancelPaymentLink` serves the links list
+  creates the link (idempotent on a per-render key). A reused key whose stored link holds another
+  amount or description returns `reused` and creates nothing; a matching one shows the stored row's
+  values, never the form's (D145 audit, SEC-AUTH; D151). `cancelPaymentLink` serves the links list
   (D106). There is no check-payment action: the admin never calls the gateway (D108).
 - [`product-types.ts`](product-types.ts) — the product admin contract (D105b): `PRODUCT_ID_FIELD`,
   `PRODUCT_STATUS_FIELD`, `ProductFormState`, `ProductStatusState`, `ProductListQuery`. The product's
@@ -92,7 +96,8 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
 - [`components/admin-top-bar.tsx`](components/admin-top-bar.tsx) — logo (links home), `Admin` label, the
   two section links (D118), sign out.
 - [`components/payment-link-form.tsx`](components/payment-link-form.tsx) — client island. Amount,
-  description, expiry (D103), plus the hidden idempotency key.
+  description, expiry (D103), plus the hidden idempotency key. The `reused` state is an accent alert
+  that takes focus, names the existing link and reloads the form (the key changes only on a reload).
 - [`components/payment-link-success.tsx`](components/payment-link-success.tsx) — authored success state:
   the link, reference, amount, expiry, and the **test mode** notice while the gateway is the demo (D107).
 - [`components/payment-link-list.tsx`](components/payment-link-list.tsx) — the latest 50 links as stacked
@@ -173,6 +178,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
 | D126b | 2026-10-03 | Photos move to Cloudflare R2 in two sizes (480 / 1000 WebP); signed `PUT`, staging key, sized on the server; Blob removed | Hobby Blob locks for 30 days past 2,000 uploads; 5,000 resizes a month | Owner |
 | D118 | 2026-10-01 | Admin home greeting + tiles; builder at `/payment-links`; top bar nav; Brampton time everywhere | Owner: *"all times used in application need to be brampton time zone"* | Owner |
 | D127b | 2026-10-03 | `Full name` + title preview; category-scoped brands; vendor / type / rim / no-photo filters; Go to page; list index; bulk count in SQL | An audit of the admin against the loaded D125 catalogue | Owner |
+| D151 | 2026-10-04 | Payment-link description wraps anywhere (`wrap-anywhere` + `min-w-0`) in the list card and success panel; a reused idempotency key with other values is refused (`reused`), a matching one answers from the stored row; pay-host strays rewrite to `/pay` | D145 audit (UI-ADMIN, SEC-AUTH, COPY): one long word scrolled the page sideways; the success panel showed new values beside an old link; the pay host's 404 was the storefront's | Owner, "Apply all code items" (launch-fixes.md Batch 2) |
 
 Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced by ID, never restated.
 

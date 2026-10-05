@@ -4,18 +4,25 @@
  */
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
-/** One PDP per category, plus each category's drawn unavailable SKU. These
- *  were the slugs of the sample catalogue (`src/features/catalog/data.ts`,
- *  deleted by D108b). The suite is parked until a fixture database carries
- *  them again (D111, `tests/llm.md` Open). */
+import fixture from "./fixture/slugs.json";
+
+/** The fixture's products (`tests/fixture/`, `tests/llm.md`): one PDP per
+ *  category, each category's discontinued SKU, and a hidden one. The slugs are
+ *  the importer's, written once in `tests/fixture/slugs.json`, which the
+ *  fixture's seeding reads too, so a rename cannot desync the two. */
 export const SLUG = {
-  tire: "zeta-antarctica-sport",
-  wheel: "touren-tr76-18x8",
-  accessory: "gorilla-lug-nuts-acorn",
-  tireUnavailable: "zmax-winterhawk-215-50r17",
-  wheelUnavailable: "spec1-sp51-20x9",
-  accessoryUnavailable: "sentali-centre-cap-black",
+  tire: fixture.tire,
+  wheel: fixture.wheel,
+  accessory: fixture.accessory,
+  tireUnavailable: fixture.tireUnavailable,
+  wheelUnavailable: fixture.wheelUnavailable,
+  accessoryUnavailable: fixture.accessoryUnavailable,
+  /** Status `hidden` in the fixture: the storefront answers a real 404 (D111). */
+  hidden: fixture.hidden,
 } as const;
+
+/** The fixture's payment links, one per state a customer can meet. */
+export const PAY_TOKEN = fixture.pay;
 
 export const VEHICLE = "year=2021&make=Honda&model=Civic";
 

@@ -107,6 +107,16 @@ export type CatalogProduct = {
   updatedAt: Date;
   /** The first image by sort order: the card's photo. */
   image: CatalogImage | null;
+  /**
+   * What tells this product from the look-alikes that share its card (name
+   * and size line): `["Centre bore 57.1 mm"]`, `["Left side"]`, `["Part
+   * number X"]`. Set only by the storefront listing reads in `queries.ts`
+   * (`withTellingFacts`), and only when such a sibling exists; absent
+   * everywhere else (the product page, the admin), where it would say
+   * nothing. `adapter.ts` `toProduct()` appends it to the card's size line
+   * (launch audit D145; D153).
+   */
+  tellingFacts?: readonly string[];
 } & CatalogSpecs;
 
 /** The product page: every image, in order. */

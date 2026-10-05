@@ -56,9 +56,11 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
      `sales@platinumwheels.ca` (the sender and the alert inbox) and `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` =
      `false`, so nothing is sent yet. Whether the key is **Sending access** restricted to
      `platinumwheels.ca` (owner ruling 2026-09-23) cannot be seen from Vercel; confirm in Resend.
+   - **When:** at the cut-over, in item 14 (owner, 2026-10-05: *"At cut-over (todo 14)"*).
    - **How:** once the code is on production and the form has been tested there, set the flag to
-     exactly `true` and **redeploy**: env changes only reach a new deployment. Setting it back to
-     `false` and redeploying stops the emails again.
+     exactly `true` for **Production only** (Preview stays `false`, so a preview never mails anyone)
+     and **redeploy**: env changes only reach a new deployment. Setting it back to `false` and
+     redeploying stops the emails again.
    - **Done when:** one real test enquiry with the flag on delivers both emails (alert in `sales@`,
      auto-reply in the tester's inbox, neither in spam).
    - **Never** commit the key or paste it into a chat. For local testing it goes in `.env.local`
@@ -73,13 +75,13 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
 5. **Watch the Resend free quota:** 100 emails a day and 3,000 a month, **shared by the goodwill site
    and the storefront**. Each quote sends 2 emails, so the ceiling is about 50 quotes a day across both
    sites. The fix is Resend Pro.
-9. **Reset the Neon database password.**
-   - **Why:** the `neondb_owner` connection string was pasted into a chat on 2026-09-30 to run the
-     catalogue load (D113), and again on 2026-10-03 to empty the catalogue and load the D125 one, so it is no longer a secret
-     only Vercel holds.
-   - **How:** in the Neon console, reset the password for role `neondb_owner`. The Vercel Neon
-     integration owns `DATABASE_URL` and `DATABASE_URL_UNPOOLED`; check both changed there, then
-     **redeploy**, because env changes only reach a new deployment.
+9. **Reset the Neon database password, again.**
+   - **Why:** the `neondb_owner` connection string was read into a chat on 2026-10-05 (a settings file
+     attached to a message), after the earlier reset.
+   - **How:** do it **after** the Batch 3 data update (`design/reports/launch-fixes.md`) has run. In the
+     Neon console, reset the password for role `neondb_owner`; the Vercel Neon integration owns
+     `DATABASE_URL` and `DATABASE_URL_UNPOOLED`, so check both changed, then **redeploy**. Delete
+     `~/Downloads/.platinum-photos.env` and `~/.pw-prod-db.env`, or write the new string into a new file.
    - **Done when:** the old string is refused and the production storefront still lists products.
 
 ## Owner — payments (Converge demo; design in `docs/payments.md`)
@@ -110,6 +112,67 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
 
 ## Owner, at launch (when the storefront replaces the goodwill site)
 
+14. **Cut the storefront over to `platinumwheels.ca` and `www`, in this order.** This item puts items 2,
+    6, 10, S1 and S2 in the order they must happen.
+    - **Why:** the apex and `www` are proxied CNAMEs to the goodwill site on Cloudflare Pages
+      (`pw-temp-landing-page.pages.dev`, D96) and are not attached to the Vercel project (launch audit,
+      P2 GAP-indexing-flag-on-build). Page `noindex` is fixed when the site is built, so switching DNS onto
+      a build made with indexing off tells Google to drop the domain that ranks today (D112).
+    - **Never:** move the nameservers to Vercel, proxy (orange cloud) a record that points at Vercel, or
+      touch MX, SPF, DMARC, any DKIM record, or the `admin`, `pay`, `photos` and `send` records (D96).
+    - **Before the switch:**
+      1. Write down the current Cloudflare records for `@` and `www` (type, target, proxy state). They
+         are the rollback.
+      2. In Vercel, **Production only**, set `SEARCH_INDEXING_ENABLED` = `true` (S1, D112),
+         `STOREFRONT_URL` = `https://platinumwheels.ca` (item 10, D116) and
+         `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` = `true` (item 2, D104, launch audit LA-07). Each flag is on
+         only at exactly `true`, lower case. Leave Preview as it is, so testing on a preview sends no
+         email (D104).
+      3. **Redeploy production once.** Settings reach only a new deployment, and the page `noindex` is
+         baked in at build time (D112).
+    - **Pre-cutover check**, on `https://platinum-wheels-one.vercel.app`, before any DNS change:
+      - The new deployment is **Ready** in Vercel. Every build applies the database migrations first and
+        fails if one fails, so Ready also means they applied (D101).
+      - Every setting the code reads exists in Production. The launch audit found none missing on
+        2026-10-04 (OPS); recheck the three set in step 2.
+      - The page source of `/`, `/about`, `/privacy` and `/terms` has
+        `<meta name="robots" content="index, follow, …">`, and `/cart` still says `noindex` (launch audit,
+        P3 GAP-indexing-flag-on-build). `robots.txt` here still says `Disallow: /`: it opens only on
+        `platinumwheels.ca` (D112).
+      - One test enquiry sent from `/cart` delivers both emails: the alert in `sales@`, the auto-reply in
+        the tester's inbox, neither in spam (item 2, LA-07).
+      - `https://admin.platinumwheels.ca/` answers 307 to `/login` (D115) and
+        `https://pay.platinumwheels.ca/pay/done` answers 200 (D105).
+    - **The switch:**
+      4. Vercel, platinum-wheels, Settings, Domains: add `platinumwheels.ca`, then add
+         `www.platinumwheels.ca` set to **Redirect to `platinumwheels.ca`** (S2).
+      5. Cloudflare DNS: change `@` and `www` to the target Vercel shows for them (the `admin` and `pay`
+         records point at `b3b61a760d17a44c.vercel-dns-017.com`, D96), **DNS only** (grey cloud, item 6).
+         A proxied record stops Vercel issuing its certificate, and requests then fail with 525 (D96).
+      6. Wait until Vercel shows both domains as valid, with a certificate.
+    - **After the switch:** run the "Done when" checks of S1 and S2 on the apex, ask Search Console for a
+      fresh `robots.txt` read (S1), then do S3. Recheck the admin and pay lines above, and that
+      `dig +short MX platinumwheels.ca` still returns Google (D96).
+    - **Rollback:** in Cloudflare, put `@` and `www` back to the records written down in step 1
+      (proxied CNAMEs to `pw-temp-landing-page.pages.dev`, D96). A bad deploy on its own is rolled back
+      in Vercel: on Hobby only the previous production deployment can be restored, and database
+      migrations do not roll back (launch audit, P2 OPS).
+    - **Done when:** every check above passes on the apex. Then delete this item together with items 2,
+      6, 10, S1 and S2.
+    - **Questions for the owner** (no decision covers these yet):
+      - Does Vercel offer a CNAME for the apex, or only an A record? Cloudflare flattens a CNAME at the
+        apex, so either can work. Use what Vercel shows, and record which.
+      - Rollback assumes the Cloudflare Pages project keeps `platinumwheels.ca` and `www` as its custom
+        domains while the records point at Vercel. Check in Pages before the switch; if it drops them,
+        rollback also means adding them back there.
+      - The goodwill site's inquiry form goes away with it (launch audit evidence, OPS). Does anyone need
+        telling?
+      - After the switch, should `platinum-wheels-one.vercel.app` redirect to the apex? With the flag on
+        it serves `index` pages, though its `robots.txt` blocks crawlers (launch audit, P3 SEC-EDGE and
+        P3 GAP-indexing-flag-on-build).
+      - Which other items must land before the switch? The audit's P1 list put the Neon password
+        (done, owner 2026-10-05), the quote-form firewall rule (item 7; owner 2026-10-05: *"Not now"*)
+        and the Vercel plan (root `llm.md` §7.24; owner 2026-10-05: *"not needed now"*) before launch.
 6. **Set the website records in Cloudflare to DNS only (grey cloud)** once `@`/`www` point at Vercel.
    - **Why:** Vercel advises against a proxy in front of it, because the proxy hides traffic from
      Vercel's Firewall and item 7 depends on that.
@@ -156,8 +219,14 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       (bucket; `photos.platinumwheels.ca` connected, status Active; CORS for `https://admin.platinumwheels.ca`
       PUT + Content-Type; lifecycle rule "Clear abandoned admin uploads", `uploads/`, 1 day), plus an R2
       budget alert at **$1 USD** to `platinumwheelsca@gmail.com` (owner, 2026-10-04). Vercel holds
-      `R2_ACCOUNT_ID`, `R2_BUCKET` and `PHOTOS_BASE_URL`. **Still the owner's:** step 6 (the API token)
-      and the two Sensitive keys in step 7, then the redeploy.
+      `R2_ACCOUNT_ID`, `R2_BUCKET` and `PHOTOS_BASE_URL`.
+    - **Checked 2026-10-05:** the API token exists and Vercel holds both Sensitive keys (Production and
+      Preview, added 2026-10-04); the bulk catalogue photos are loaded and the two LA-06 photos (Dovroad
+      YS716, Habilead H206) were added on 2026-10-05 with `catalog-photos.ts`; a stored file answers `200`
+      with the immutable cache header. **Left for the owner:** the first photo added through the admin edit
+      page (the "Done when" below), and **rotate the R2 API token**: its secret was read into a chat on
+      2026-10-05 (the settings file was attached to a message). Put the new pair in Vercel and in the
+      settings file, then redeploy.
     - **How** (Cloudflare dashboard, the account that holds `platinumwheels.ca`):
       1. **R2 Object Storage → turn R2 on.** Cloudflare asks for a payment method even on the free tier
          (10 GB, 1M writes and 10M reads a month, no charge for downloads). Owner only.
@@ -195,7 +264,7 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       (`chmod 600`), holding the five R2 settings and `IMPORT_DATABASE_URL` (direct Neon address), one
       `KEY=value` per line. The coordinator runs `npm run catalog:photos -- ~/Downloads/photos-for-cloudflare
       --env <that file>`: dry run, then `--upload`, then `--link`, each only on the owner's go, then a
-      redeploy so cached listings show the photos. Delete the file afterwards and do item 9 (Neon password).
+      redeploy so cached listings show the photos. Delete the file afterwards.
     - **After the bulk load is proven:** delete the empty Vercel Blob store `platninum-wheels`
       (Vercel → Storage); its `BLOB_*` settings go with it. Nothing reads them since D126b.
 
@@ -222,7 +291,7 @@ S1. **Turn search indexing on in the same deploy that goes onto the apex.**
      off stays `noindex` wherever it is served. **`platinumwheels.ca` ranks today with the goodwill
      site.** Pointing it at a flag-off build tells Google to drop it.
    - **How:** in Vercel, set `SEARCH_INDEXING_ENABLED` to exactly `true` for **Production only**
-     (lower case, no spaces; anything else is off) and **redeploy**. Only then move the apex (item 6).
+     (lower case, no spaces; anything else is off) and **redeploy**. Only then move the apex (item 14).
    - **Google keeps a copy of `robots.txt` for up to a day.** After the switch, ask for a fresh read in
      Search Console (Settings, robots.txt, "Request a recrawl"), and repeat the checks below daily for
      the first week: the classic failure is a site that launched still saying `noindex`.
@@ -259,8 +328,6 @@ S4. **Decide how customers receive their goods.**
      installation); an online-only business is not eligible.
    - **Then:** if they do, create the profile as a service-area business with the **address hidden** and
      Brampton as the area, and the site links to it. If they do not, create none.
-S5. **Confirm the legal name.** The storefront says `Platinum Wheels and Tire Solutions`; the goodwill
-   site's markup says `… Inc.`. The value is `SITE.legalName` in `src/lib/site.ts`.
 
 ## Later — search (D112)
 
@@ -273,3 +340,4 @@ S6. **Add prices to the product structured data** once the owner settles the pri
 8. **Street address.** The email footer ships with `Brampton, ON` for now (owner ruling 2026-09-23).
    A full mailing address becomes **mandatory before any marketing email** (CASL, SOR/2012-36). Same
    ask as root `llm.md` §7.11.
+

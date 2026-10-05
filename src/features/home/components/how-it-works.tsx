@@ -126,8 +126,11 @@ export function HowItWorks() {
               </span>
               <div className="flex flex-col gap-1.5 md:gap-5">
                 {/* `<h3>` under the section `<h2>` above — same reason, same
-                    zero visual change. D67. */}
-                <h3 className="font-display font-bold uppercase leading-display text-display-24 md:display md:text-display-28">
+                    zero visual change. D67. `text-ink`: both artboards leave
+                    this title on the page colour, `html,body{color:var(--text)}`
+                    (home-desktop.html:43), while our `body` is `--text-muted`,
+                    so without it the title rendered grey. Launch audit (D145). */}
+                <h3 className="font-display font-bold uppercase leading-display text-ink text-display-24 md:display md:text-display-28">
                   {step.title}
                 </h3>
                 <span className="text-14 leading-body text-ink-muted md:text-15">

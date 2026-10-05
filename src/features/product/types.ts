@@ -123,7 +123,10 @@ export interface ProductView {
   /** `97T XL` — the half after it. Spec row 5. */
   loadSpeed: string;
   /** `215/55R16 97T XL` — space-joined, the buy panel's numeral under the
-   *  `<h1>` (`product.md` §3.2). The cards keep the ` · ` form. */
+   *  `<h1>` (`product.md` §3.2). The cards keep the ` · ` form. When other
+   *  products share this name and size, the facts that tell them apart follow
+   *  after ` · ` (`Left side`, `Centre bore 72.6 mm`; `catalog/siblings.ts`,
+   *  launch audit D145). The page title is built from this string. */
   sizeLine: string;
   /** `Zeta Antarctica Sport` — brand + model, the desktop breadcrumb leaf.
    *  Mobile's leaf is `product.model`. */

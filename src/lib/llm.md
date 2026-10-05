@@ -29,9 +29,11 @@ the next session guesses which of the two phone numbers is real.
     (so this file stays import-free). **Owner marketing lines, not catalogue prices:** they show whatever
     `PRICES_VISIBLE` says, and keep the owner's cents and `ea`, which `docs/decisions.md` §7's catalogue
     format (`from`, no cents) does not govern. Change a price here, nowhere else.
+    **The two amounts are real** (owner, 2026-10-05, asked whether to keep them unbacked: *"Keep both
+    (record source)"*; the owner confirmed both prices are true; D153). The source is the owner's word.
   - `CONTACT_HOURS` — `SITE.hours` as data (days, `09:00`, `20:00`) for structured data only. **Phone
     hours, not opening hours**: there is no shop (owner, 2026-09-30).
-  - `SITE` — `name`, `legalName`, `tagline`, `city`, `province`, `email`, `hours`, `hoursLabel`, and
+  - `SITE` — `name`, `legalName` (`Platinum Wheels and Tire Solutions Inc.`, with the `Inc.`; owner, 2026-10-05; print it as is and append nothing), `tagline`, `city`, `province`, `email`, `hours`, `hoursLabel`, and
     `priceNote` (`Brampton, Ontario · Prices in CAD, before tax`, the footer line required by
     `docs/decisions.md` §7). **Load-bearing (D77):** prices render a bare `$` with no currency code,
     so this string is the only place the site states its currency — it may not be removed, shortened
@@ -73,6 +75,15 @@ the next session guesses which of the two phone numbers is real.
   `finder-category-store.ts` holds the in-memory value (`get` / `set` with a `user` | `restore`
   reason / `reset` / `subscribe`) and `useFinderCategory()` through `useSyncExternalStore`, server
   snapshot `tires`, and only client islands import it. No URL write, no storage.
+- [`rate-limit.ts`](rate-limit.ts) — server only (LA-03, D145 audit). `createRateLimiter({ windows,
+  maxKeys })` returns `isLimited(key)` (looks) and `hit(key)` (counts): sliding windows in memory, a key's
+  recent times capped at the largest limit, the map bounded by dropping expired then least recently counted
+  keys. `clientIpFrom(headers)` reads `x-real-ip`, then the first `x-forwarded-for`, else `"unknown"`; it
+  takes the headers object so the file imports nothing. **Per server instance**, so an IP can get through
+  once per warm instance and a cold start forgets; the file header lists what it does not stop. Its one
+  caller is the cart's quote action (`src/features/cart/actions.ts`). The admin keeps its own
+  `clientIp()` in `src/features/admin/session.ts` (`x-forwarded-for` first, for logs); this file may not
+  import a feature (D37), so they are not shared.
 - [`routes.ts`](routes.ts) — `ROUTES` (every internal href; `ROUTES.cart` since D122), `PRODUCT_PATH`, `productRoute()`. `quoteRoute()` and the PDP's `#quote` anchor went with D122. The
   one place a path literal lives (D39); components import from here, never write `/tires` themselves.
   **The tire category is `ROUTES.tires` = `/tires` since D112**; the old `ROUTES.results` key and the
@@ -111,7 +122,8 @@ at render, so no `year` constant belongs here), **D22** (one DOM at all widths �
 constants).
 
 ## Connects to
-- **Depends on:** nothing. No imports at all (`site.ts` has none) — deliberately, so it can be read from
+- **Depends on:** nothing. No imports at all (`site.ts` has none; `rate-limit.ts` takes the request
+  headers as an argument rather than importing `next/headers`) — deliberately, so it can be read from
   a Server Component, a client island or a script without pulling anything in.
 - **Depended on by:** `src/app/(storefront)/page.tsx:1` (`PRIMARY_CONTACT`, `SITE`) — currently the
   throwaway token smoke test (`HANDOFF.md` §4), to be replaced wholesale at `page home`. Will be

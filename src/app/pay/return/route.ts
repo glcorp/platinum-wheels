@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { getNotifyCredentials, PAY_RETURN_COOKIE, PaymentsNotConfiguredError } from "@/features/payments/config";
+import { getNotifyCredentials, PAY_RETURN_COOKIE } from "@/features/payments/config";
 import { convergeGateway } from "@/features/payments/converge";
 import { handleReturn } from "@/features/payments/service";
 
@@ -9,13 +9,17 @@ import { handleReturn } from "@/features/payments/service";
 
    One URL for every link: Converge takes its Redirect URL, Decline button
    link and Cancel link from the account's web settings, not per request
-   (`docs/payments.md` §10). So the link is found from the transaction, not
-   from the path.
+   (`docs/payments.md` §10). So the link is found from the browser's `pw_pay`
+   cookie, not from the path, and the attempt from the gateway's answer.
 
-   Everything that arrives here is UNTRUSTED (`docs/payments.md` §5.2).
-   `ssl_txn_id` is only used to ask Converge, server-side, what happened;
-   `ssl_invoice_number` only to find the customer's page when that query
-   cannot run. Converge may GET or POST (form body) this URL, so both work.
+   Everything that arrives here is UNTRUSTED (`docs/payments.md` §5.2), and
+   anyone can call this URL. So (LA-01/LA-02, D145 audit; `handleReturn`):
+   Converge is asked only when the browser's own `pw_pay` cookie, set when it
+   pressed Pay, names a link with an open attempt, at most a few times per
+   attempt; and the 303 goes to `/pay/<token>` only for the link that cookie
+   names. Every other return lands on `/pay/done`, whatever it carries: a
+   sequential invoice number must never lead to someone else's link page.
+   Converge may GET or POST (form body) this URL, so both work.
 
    While `/pay/notify` is enabled (D119), the export script may already have
    settled the transaction: then no query is made. The route waits up to
@@ -60,24 +64,25 @@ async function respond(request: NextRequest, fields: URLSearchParams, source: Re
     const value = read(key);
     if (value !== null) values[key] = value.slice(0, 120);
   }
-  console.info(JSON.stringify({ at: "pay.return", ...source, fields: [...new Set(fields.keys())], values }));
+  // The cookie's value is a capability: logged as present or absent, never by value.
+  const cookieToken = request.cookies.get(PAY_RETURN_COOKIE)?.value ?? null;
+  console.info(
+    JSON.stringify({ at: "pay.return", ...source, cookie: cookieToken !== null, fields: [...new Set(fields.keys())], values }),
+  );
 
+  // Only ever the token of the link the browser's own cookie names (LA-02).
   let publicToken: string | null = null;
   try {
     publicToken = await handleReturn(
       { txnId: read("ssl_txn_id"), invoiceNumber: read("ssl_invoice_number") },
-      convergeGateway(),
+      () => convergeGateway(),
       undefined,
-      {
-        notifyGraceMs: getNotifyCredentials() ? NOTIFY_GRACE_MS : 0,
-        fallbackToken: request.cookies.get(PAY_RETURN_COOKIE)?.value ?? null,
-      },
+      { notifyGraceMs: getNotifyCredentials() ? NOTIFY_GRACE_MS : 0, cookieToken },
     );
   } catch (error) {
-    // A misconfiguration or database error must still land the customer on a
-    // page that tells them what to do, not on a stack trace.
-    const detail = error instanceof PaymentsNotConfiguredError || error instanceof Error ? error.message : "unknown";
-    console.error(JSON.stringify({ at: "pay.return", detail }));
+    // A database error must still land the customer on a page that tells
+    // them what to do, not on a stack trace.
+    console.error(JSON.stringify({ at: "pay.return", detail: error instanceof Error ? error.message : "unknown" }));
   }
 
   if (!publicToken) console.warn(JSON.stringify({ at: "pay.return", unmatched: true }));
