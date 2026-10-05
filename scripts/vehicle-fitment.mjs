@@ -34,6 +34,28 @@
  *     which applies the precedence: exact-year ANKUSI row, then generation
  *     row, then the D48(4) placeholder, then nothing.
  *
+ * Auto Country (D155). `scripts/vehicle-fitment-autocountry.mjs` turns the saved
+ * answers of Auto Country's vehicle lookup into scripts/data/vehicle-fitment-
+ * autocountry.csv (one row per model year: bolt patterns, bore, thread, factory
+ * tire and wheel sizes, stock ranges) and scripts/data/vehicle-aliases.csv
+ * (which of its models are ours under another name). This script reads both
+ * (and, when present, scripts/data/vehicle-fitment-vendors.csv: the same columns
+ * plus `source` d|p|m|s|w (+ optional 1), and optional source_url columns, for gap fills from other vendors, makers and the web)
+ * and writes, besides the exports above:
+ *   - VEHICLE_SPECS in vehicle-fitment-data.ts: per entry, per year range, one
+ *     record of ten `;`-joined fields (bolts, bore, thread, fastener, offset,
+ *     tires, wheels, tire range, wheel range, source). Auto Country's fields are
+ *     never overwritten by another source; a gap is filled only where it is blank.
+ *   - VEHICLE_ALIASES: our old or other spelling -> the entry's canonical name.
+ *   - vehicle-list.ts as the UNION of Auto Country's list and vehicles.csv in
+ *     canonical names ("union of both is best. dont lose data.", owner 2026-10-06).
+ *   - design/reports/fitment-overrides.csv: every make + model + year where an
+ *     Auto Country value disagrees with what the older sheets say.
+ * The older sheets (VEHICLE_FITMENT_DATA, _GENERATIONS, _THREADS, _WHEEL_SIZES,
+ * VEHICLE_TYPES) are re-keyed to the canonical entry names, so one key finds
+ * every source for a car; where two of our models are one entry the first
+ * source in sheet order wins a year.
+ *
  * scripts/data/vehicle-fitment-generations.csv is hand-kept (never written by
  * this script): one row per make + model + generation year range, added only
  * when two independent free sources on two different websites agree on the
@@ -69,12 +91,19 @@
  *     staggered front/rear) never becomes a row.
  */
 
+import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const VEHICLES = "scripts/data/vehicles.csv";
 const FITMENT = "scripts/data/vehicle-fitment.csv";
 const GENERATIONS = "scripts/data/vehicle-fitment-generations.csv";
+const THREADS = "scripts/data/vehicle-thread-generations.csv";
+const WHEEL_SIZES = "scripts/data/vehicle-wheel-sizes.csv";
+const AC_FITMENT = "scripts/data/vehicle-fitment-autocountry.csv";
+const ALIAS_FILE = "scripts/data/vehicle-aliases.csv";
+const VENDOR_FILE = "scripts/data/vehicle-fitment-vendors.csv";
+const OVERRIDES = "design/reports/fitment-overrides.csv";
 const GENERATION_REVIEW = "import-report/vehicle-fitment-generation-review.csv";
 const LIST_MODULE = "src/features/finder/vehicle-list.ts";
 const FITMENT_MODULE = "src/features/finder/vehicle-fitment-data.ts";
@@ -269,6 +298,7 @@ async function readVehicles() {
     make: row.make,
     model: row.model,
     years: row.years,
+    types: row.types,
     yearSet: yearSet(row.years),
   }));
 }
@@ -453,14 +483,14 @@ async function buildFitment(ankusiPath, reviewPath, vehicles) {
 
 /* --- Generation rows (hand-kept) -------------------------------------------- */
 
-/** Sites whose data is Wheel-Size's, or whose terms ban what this does. Owner, 2026-10-05. */
-const BANNED_SOURCES = [
-  "wheel-size.com", "wheel-sizes.com", "tirerack.com", "tiresize.com", "teoalida.com",
-  "faultpedia.com",
-  /* Its make list (Aiways, Arcfox, Avatr, Ciimo, Dorcen ...) is Wheel-Size's
-     own, so its data is treated as Wheel-Size-derived (LA-05, 2026-10-05). */
-  "tirewheelguide.com",
-];
+/**
+ * Sites refused as a source. Empty since 2026-10-06: the owner lifted the ban on
+ * Wheel-Size-derived sites (wheel-size.com, wheel-sizes.com, tirerack.com,
+ * tiresize.com, teoalida.com, faultpedia.com, tirewheelguide.com) with "we have
+ * permisiion to view and use data from them so go ahead" (recorded as the
+ * owner's statement; no document is on file). Add a host here to refuse it again.
+ */
+const BANNED_SOURCES = [];
 
 /** Sites that share a template, wording and errors count as one source. */
 const SAME_OPERATOR = {
@@ -571,6 +601,132 @@ async function readGenerations(vehicles) {
   return out;
 }
 
+/** `12x1.5`, `14x2.0`, `1/2x20`, `9/16x18`: the thread a lug fastener is cut to. */
+const THREAD = /^(?:\d{1,2}(?:\.\d)?|\d{1,2}\/\d{1,2})x\d{1,2}(?:\.\d{1,2})?$/;
+
+/**
+ * Lug thread per make + model + year range, from the hand-kept
+ * scripts/data/vehicle-thread-generations.csv. Same rules as the generation
+ * sheet: two independent free sources on two different websites agree, none of
+ * them a banned one. A vehicle with no row here narrows no lug nut.
+ */
+async function readThreads(vehicles) {
+  const text = await readFile(THREADS, "utf8");
+  const rows = parseCsv(text);
+  const problems = [];
+  const byName = new Map(vehicles.map((v) => [`${v.make}|${v.model}`, v]));
+  const seen = new Map();
+  const out = [];
+  rows.forEach((row, index) => {
+    const where = `${THREADS}:${index + 2} (${row.make} ${row.model} ${row.year_from}-${row.year_to})`;
+    const fail = (message) => problems.push(`${where}: ${message}`);
+    const key = `${row.make}|${row.model}`;
+    if (!byName.has(key)) {
+      fail("make + model is not in vehicles.csv (spell it exactly as vehicles.csv does)");
+      return;
+    }
+    const from = Number(row.year_from);
+    const to = Number(row.year_to);
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1990 || to > 2035 || from > to) {
+      fail("year_from and year_to must be whole years, from <= to");
+      return;
+    }
+    if (!THREAD.test(row.thread)) fail(`thread "${row.thread}" is not like 12x1.5 or 1/2x20`);
+    if (row.fastener !== "nut" && row.fastener !== "bolt") fail('fastener must be "nut" or "bolt"');
+    const sites = [];
+    for (const field of ["source_1", "source_2"]) {
+      const host = hostOf(row[field]);
+      if (host === null) {
+        fail(`${field} must be a full http(s) URL`);
+        continue;
+      }
+      if (BANNED_SOURCES.some((banned) => host === banned || host.endsWith(`.${banned}`))) {
+        fail(`${field} is a banned source (${host})`);
+      }
+      const site = siteOf(host);
+      sites.push(SAME_OPERATOR[site] ?? site);
+    }
+    if (sites.length === 2 && sites[0] === sites[1]) {
+      fail("source_1 and source_2 are on the same website or sister sites; two independent sites are required");
+    }
+    const ranges = seen.get(key) ?? [];
+    for (const other of ranges) {
+      if (from <= other.to && other.from <= to) fail(`overlaps the row for ${other.from}-${other.to}`);
+    }
+    ranges.push({ from, to });
+    seen.set(key, ranges);
+    out.push({ make: row.make, model: row.model, from, to, thread: row.thread, fastener: row.fastener });
+  });
+  if (problems.length > 0) {
+    throw new Error(`${THREADS} has ${problems.length} problem(s):\n  ${problems.join("\n  ")}`);
+  }
+  return out;
+}
+
+/** `16x7;17x7.5`: factory wheel sizes, diameter x width in inches. */
+const WHEEL_SIZE_LIST = /^\d{2}(?:\.\d)?x\d{1,2}(?:\.\d)?(?:;\d{2}(?:\.\d)?x\d{1,2}(?:\.\d)?)*$/;
+
+/**
+ * Every factory wheel size per make + model + year range, the union across
+ * trims and option packages, from the hand-kept
+ * scripts/data/vehicle-wheel-sizes.csv. A row needs a manufacturer page, or
+ * two independent free websites; banned sources are refused. The tire fit
+ * (`finder/tire-fit.ts`) is derived from these. A vehicle with no row here and
+ * no ANKUSI rim narrows no tire.
+ */
+async function readWheelSizes(vehicles) {
+  const text = await readFile(WHEEL_SIZES, "utf8");
+  const rows = parseCsv(text);
+  const problems = [];
+  const byName = new Map(vehicles.map((v) => [`${v.make}|${v.model}`, v]));
+  const seen = new Map();
+  const out = [];
+  rows.forEach((row, index) => {
+    const where = `${WHEEL_SIZES}:${index + 2} (${row.make} ${row.model} ${row.year_from}-${row.year_to})`;
+    const fail = (message) => problems.push(`${where}: ${message}`);
+    const key = `${row.make}|${row.model}`;
+    if (!byName.has(key)) {
+      fail("make + model is not in vehicles.csv (spell it exactly as vehicles.csv does)");
+      return;
+    }
+    const from = Number(row.year_from);
+    const to = Number(row.year_to);
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1990 || to > 2035 || from > to) {
+      fail("year_from and year_to must be whole years, from <= to");
+      return;
+    }
+    if (!WHEEL_SIZE_LIST.test(row.wheel_sizes)) fail(`wheel_sizes "${row.wheel_sizes}" is not like 16x7;17x7.5`);
+    const sites = [];
+    for (const field of ["source_1", "source_2"]) {
+      if (field === "source_2" && row[field] === "") continue;
+      const host = hostOf(row[field]);
+      if (host === null) {
+        fail(`${field} must be a full http(s) URL`);
+        continue;
+      }
+      if (BANNED_SOURCES.some((banned) => host === banned || host.endsWith(`.${banned}`))) {
+        fail(`${field} is a banned source (${host})`);
+      }
+      const site = siteOf(host);
+      sites.push(SAME_OPERATOR[site] ?? site);
+    }
+    if (sites.length === 2 && sites[0] === sites[1]) {
+      fail("source_1 and source_2 are on the same website or sister sites");
+    }
+    const ranges = seen.get(key) ?? [];
+    for (const other of ranges) {
+      if (from <= other.to && other.from <= to) fail(`overlaps the row for ${other.from}-${other.to}`);
+    }
+    ranges.push({ from, to });
+    seen.set(key, ranges);
+    out.push({ make: row.make, model: row.model, from, to, sizes: row.wheel_sizes.split(";") });
+  });
+  if (problems.length > 0) {
+    throw new Error(`${WHEEL_SIZES} has ${problems.length} problem(s):\n  ${problems.join("\n  ")}`);
+  }
+  return out;
+}
+
 /**
  * Lists every offered model year where a generation row and an exact-year
  * ANKUSI row both exist and disagree on the bolt pattern. Nothing is
@@ -617,17 +773,378 @@ async function reportGenerationConflicts(generations, vehicles) {
   return { conflicts: conflicts.length, shadowed };
 }
 
+/* --- Entries: the union list, canonical names, specs (D155) ------------------ */
+
+const tireOrder = (a, b) => {
+  const key = (size) => {
+    const metric = /^(\d{3})\/(\d{2,3})R(\d{2}(?:\.\d)?)$/.exec(size);
+    if (metric) return [Number(metric[3]), Number(metric[1]), Number(metric[2])];
+    const flot = /^(\d{2}(?:\.\d)?)x(\d{1,2}\.\d{2})R(\d{2}(?:\.\d)?)$/.exec(size);
+    return flot ? [Number(flot[3]), Number(flot[2]) * 25.4, 0] : [0, 0, 0];
+  };
+  const [x, y] = [key(a), key(b)];
+  return x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+};
+const wheelOrder = (a, b) => {
+  const [ad, aw] = a.split("x").map(Number);
+  const [bd, bw] = b.split("x").map(Number);
+  return ad - bd || aw - bw;
+};
+
+function mostCommon(values, larger = false) {
+  const counts = new Map();
+  for (const value of values) {
+    if (value === "" || value === null || value === undefined) continue;
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  let best = "";
+  let bestCount = 0;
+  for (const [value, count] of counts) {
+    if (count > bestCount || (larger && count === bestCount && Number(value) > Number(best))) {
+      best = value;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+const splitList = (text) => (text ?? "").split(";").filter(Boolean);
+const unique = (list) => [...new Set(list)];
+const yearsToText = (years) => {
+  const sorted = [...years].sort((a, b) => a - b);
+  const parts = [];
+  for (const year of sorted) {
+    const last = parts[parts.length - 1];
+    if (last && year === last[1] + 1) last[1] = year;
+    else parts.push([year, year]);
+  }
+  return parts.map(([from, to]) => (from === to ? String(from) : `${from}-${to}`)).join(";");
+};
+
+/**
+ * One make + model year of Auto Country (or another source) as spec fields.
+ * `rows` are CSV rows of vehicle-fitment-autocountry.csv shape that contribute
+ * to one entry in one year (several for a family: the union).
+ */
+function mergeRows(rows, primaryName = null) {
+  const bounds = (minKey, maxKey) => {
+    const mins = rows.map((r) => r[minKey]).filter((v) => v !== "" && v !== undefined).map(Number);
+    const maxs = rows.map((r) => r[maxKey]).filter((v) => v !== "" && v !== undefined).map(Number);
+    return [mins.length ? Math.min(...mins) : "", maxs.length ? Math.max(...maxs) : ""];
+  };
+  const range = (pairs) => {
+    const values = pairs.flatMap(([a, b]) => [a, b]);
+    return values.every((v) => v !== "") ? values.join(",") : "";
+  };
+  /* A family entry that unites models on different hubs (Express 1500 and 2500,
+     Silverado 1500 and 1500 HD) has no single bore, thread or offset: those
+     take the value of the model that carries the entry's own name, or stay
+     blank. Otherwise the most common value across the rows. */
+  const mixed = new Set(rows.map((r) => r.bolt_patterns).filter(Boolean)).size > 1 && rows.length > 1;
+  const primary = mixed && primaryName !== null ? rows.find((r) => r.model === primaryName) : undefined;
+  const scalar = (key, larger = false) =>
+    !mixed ? mostCommon(rows.map((r) => r[key]), larger) : primary ? (primary[key] ?? "") : "";
+  const fastener = scalar("fastener");
+  return {
+    bolts: unique(rows.flatMap((r) => splitList(r.bolt_patterns))).join(","),
+    bore: scalar("centre_bore", true),
+    thread: scalar("thread"),
+    fastener: fastener === "nut" ? "n" : fastener === "bolt" ? "b" : "",
+    offset: scalar("offset"),
+    tires: unique(rows.flatMap((r) => splitList(r.tire_sizes))).sort(tireOrder).join(","),
+    wheels: unique(rows.flatMap((r) => splitList(r.wheel_sizes))).sort(wheelOrder).join(","),
+    tireRange: range([bounds("tire_dia_min", "tire_dia_max"), bounds("tire_width_min", "tire_width_max")]),
+    wheelRange: range([
+      bounds("wheel_dia_min", "wheel_dia_max"),
+      bounds("wheel_width_min", "wheel_width_max"),
+      bounds("offset_min", "offset_max"),
+    ]),
+  };
+}
+
+const SPEC_FIELDS = ["bolts", "bore", "thread", "fastener", "offset", "tires", "wheels", "tireRange", "wheelRange"];
+
+/**
+ * Reads Auto Country's CSV, the aliases and the optional vendor gap fill, and
+ * decides every entry (canonical make + model) of the finder's list.
+ */
+async function buildEntries(vehicles) {
+  const have = existsSync(AC_FITMENT) && existsSync(ALIAS_FILE);
+  const acRows = have ? parseCsv(await readFile(AC_FITMENT, "utf8")) : [];
+  const aliasRows = have ? parseCsv(await readFile(ALIAS_FILE, "utf8")) : [];
+  const vendorRows = existsSync(VENDOR_FILE) ? parseCsv(await readFile(VENDOR_FILE, "utf8")) : [];
+
+  const ourMakes = new Map(vehicles.map((v) => [norm(v.make), v.make]));
+  const canonMake = (make) => ourMakes.get(norm(make)) ?? make;
+
+  /* our model -> entry name (the `same` rows; the most years wins) */
+  const ourVotes = new Map();
+  /* "<make>|<Auto Country name>" -> rows deciding where its data goes */
+  const acIndex = new Map();
+  for (const row of aliasRows) {
+    const from = Number(row.year_from);
+    const to = Number(row.year_to);
+    const span = to - from + 1;
+    if (row.relation === "same") {
+      const key = `${row.canonical_make}|${row.model}`;
+      if (!ourVotes.has(key)) ourVotes.set(key, new Map());
+      const votes = ourVotes.get(key);
+      votes.set(row.canonical_model, (votes.get(row.canonical_model) ?? 0) + span);
+    }
+    if (row.relation === "ours-only") continue;
+    const acName = row.relation === "same" ? row.canonical_model : row.model;
+    const key = `${row.canonical_make}|${acName}`;
+    if (!acIndex.has(key)) acIndex.set(key, []);
+    acIndex.get(key).push({ from, to, relation: row.relation, canonical: row.canonical_model });
+  }
+  const entryOfOurs = (make, model) => {
+    const votes = ourVotes.get(`${make}|${model}`);
+    if (!votes) return model;
+    return [...votes.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  };
+  const targetsOfAc = (make, acName, year) => {
+    const targets = new Set();
+    for (const r of acIndex.get(`${make}|${acName}`) ?? []) {
+      if (year < r.from || year > r.to) continue;
+      if (r.relation === "member") targets.add(r.canonical);
+      else if (r.relation === "split") {
+        targets.add(acName);
+        targets.add(r.canonical);
+      } else targets.add(r.relation === "same" ? r.canonical : acName);
+    }
+    if (targets.size === 0) targets.add(acName);
+    return [...targets];
+  };
+
+  /** "<make>|<entry>" -> { make, model, years, types, rows: Map(year -> AC rows), vendor: Map(year -> rows) } */
+  const entries = new Map();
+  const entry = (make, model) => {
+    const key = `${make}|${model}`;
+    let item = entries.get(key);
+    if (!item) {
+      item = { make, model, years: new Set(), types: new Set(), rows: new Map(), vendor: new Map(), ours: false };
+      entries.set(key, item);
+    }
+    return item;
+  };
+  for (const v of vehicles) {
+    const item = entry(v.make, entryOfOurs(v.make, v.model));
+    item.ours = true;
+    for (const year of v.yearSet) item.years.add(year);
+    for (const type of splitList(v.types)) item.types.add(type);
+  }
+  for (const row of acRows) {
+    const make = canonMake(row.make);
+    const year = Number(row.year);
+    for (const target of targetsOfAc(make, row.model, year)) {
+      const item = entry(make, target);
+      item.years.add(year);
+      if (!item.ours) for (const c of splitList(row.classes)) item.types.add(c);
+      if (row.bolt_patterns !== "" || row.tire_sizes !== "" || row.wheel_sizes !== "") {
+        if (!item.rows.has(year)) item.rows.set(year, []);
+        item.rows.get(year).push(row);
+      }
+    }
+  }
+
+  /* Alias map: only same + member names, never an entry itself, never chained. */
+  const aliasVotes = new Map();
+  for (const row of aliasRows) {
+    if (row.relation !== "same" && row.relation !== "member") continue;
+    if (row.model === row.canonical_model) continue;
+    const key = `${row.canonical_make}|${row.model}`;
+    if (!aliasVotes.has(key)) aliasVotes.set(key, new Map());
+    const votes = aliasVotes.get(key);
+    const span = Number(row.year_to) - Number(row.year_from) + 1;
+    votes.set(row.canonical_model, (votes.get(row.canonical_model) ?? 0) + span);
+  }
+  const aliases = {};
+  const aliasStats = { total: 0, shadowedByEntry: 0, conflicts: 0 };
+  for (const [key, votes] of aliasVotes) {
+    const [make] = key.split("|");
+    if (entries.has(key)) {
+      aliasStats.shadowedByEntry += 1;
+      continue;
+    }
+    const ranked = [...votes.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    if (ranked.length > 1) aliasStats.conflicts += 1;
+    aliases[key] = `${make}|${ranked[0][0]}`;
+    aliasStats.total += 1;
+  }
+  const resolveName = (make, model) => {
+    const key = `${canonMake(make)}|${model}`;
+    return entries.has(key) ? key : (aliases[key] ?? key);
+  };
+
+  /* Vendor, maker and web gap fills (optional): the same columns plus `source`. */
+  let vendorUsed = 0;
+  const vendorUnmatched = [];
+  for (const row of vendorRows) {
+    const key = resolveName(row.make, row.model);
+    const item = entries.get(key);
+    if (!item) {
+      vendorUnmatched.push(`${row.make} ${row.model} ${row.year}`);
+      continue;
+    }
+    const year = Number(row.year);
+    if (!Number.isInteger(year)) continue;
+    item.years.add(year);
+    if (!item.vendor.has(year)) item.vendor.set(year, []);
+    item.vendor.get(year).push(row);
+    vendorUsed += 1;
+  }
+
+  return { entries, aliases, aliasStats, entryOfOurs, resolveName, canonMake, counts: { ac: acRows.length, vendorUsed, vendorUnmatched } };
+}
+
+/** What the gap fill did: fields filled into Auto Country rows, and years it stood in for. */
+const gapStats = { filledFields: {}, filledYears: 0, standaloneYears: {}, standaloneRows: 0 };
+const TRUST = ["d", "p", "m", "s", "w"];
+
+/**
+ * One record per entry year (ten `;`-joined fields), consecutive equal years
+ * collapsed. Auto Country's fields are never overwritten: a vendor, maker or
+ * web row (`source` d p m s w, a trailing 1 for one source) only fills a blank,
+ * or stands in for a year Auto Country lacks.
+ */
+function specsFor(item) {
+  const years = [...new Set([...item.rows.keys(), ...item.vendor.keys()])].sort((a, b) => a - b);
+  const parts = [];
+  for (const year of years) {
+    const acRows = item.rows.get(year) ?? [];
+    const fromAc = acRows.length > 0 ? mergeRows(acRows, item.model) : null;
+    const vendorRows = item.vendor.get(year) ?? [];
+    let fields = fromAc;
+    let source = "a";
+    if (vendorRows.length > 0) {
+      const sourceOf = (r) => /^([dpmsw])(1?)$/.exec(r.source ?? "") ?? ["", "w", ""];
+      const letters = [...new Set(vendorRows.map((r) => sourceOf(r)[1]))].sort(
+        (a, b) => TRUST.indexOf(a) - TRUST.indexOf(b),
+      );
+      const vendor = mergeRows(vendorRows);
+      if (fields === null) {
+        fields = vendor;
+        const single = vendorRows.length === 1 && sourceOf(vendorRows[0])[2] === "1";
+        source = `${letters.join("")}${single ? "1" : ""}`;
+        gapStats.standaloneRows += 1;
+        for (const letter of letters) gapStats.standaloneYears[letter] = (gapStats.standaloneYears[letter] ?? 0) + 1;
+      } else {
+        fields = { ...fields };
+        let filled = false;
+        for (const name of SPEC_FIELDS) {
+          if (fields[name] === "" && vendor[name] !== "") {
+            fields[name] = vendor[name];
+            filled = true;
+            for (const letter of letters) gapStats.filledFields[letter] = (gapStats.filledFields[letter] ?? 0) + 1;
+          }
+        }
+        if (filled) gapStats.filledYears += 1;
+      }
+    }
+    if (fields === null || SPEC_FIELDS.every((name) => fields[name] === "")) continue;
+    const record = [...SPEC_FIELDS.map((name) => fields[name]), source].join(";");
+    const last = parts[parts.length - 1];
+    if (last && last.record === record && last.to === year - 1) last.to = year;
+    else parts.push({ from: year, to: year, record });
+  }
+  return parts.map((p) => `${p.from}-${p.to}:${p.record}`).join(" ");
+}
+
+/**
+ * Every make + model + year where an Auto Country value disagrees with what
+ * the older committed sheets say. Auto Country wins at runtime; this is the
+ * list of what changed (D155: "if there is any disagreement ... put auto
+ * country data first", owner 2026-10-06).
+ */
+async function writeOverrides(names, generations, threads, wheelSizes) {
+  const { entries, entryOfOurs } = names;
+  const rows = [];
+  const exactRows = parseCsv(await readFile(FITMENT, "utf8"));
+  /** "<entry key>|<year>" -> list of { field, value, source } the older sheets state */
+  const existing = new Map();
+  const add = (make, model, year, field, value, source) => {
+    if (value === "" || value === undefined) return;
+    const key = `${make}|${entryOfOurs(make, model)}|${year}`;
+    if (!existing.has(key)) existing.set(key, []);
+    existing.get(key).push({ field, value, source });
+  };
+  for (const row of exactRows) {
+    const year = Number(row.year);
+    add(row.make, row.model, year, "bolt", row.bolt_pattern, "vehicle-fitment.csv (ANKUSI, exact year)");
+    add(row.make, row.model, year, "bore", row.centre_bore_mm, "vehicle-fitment.csv (ANKUSI, exact year)");
+    if (row.oe_wheel_diameter !== "" && row.oe_wheel_width !== "") {
+      add(row.make, row.model, year, "wheel", `${Number(row.oe_wheel_diameter)}x${Number(row.oe_wheel_width)}`, "vehicle-fitment.csv (ANKUSI, exact year)");
+    }
+  }
+  for (const gen of generations) {
+    for (let year = gen.from; year <= gen.to; year += 1) {
+      if (gen.bolt !== null) add(gen.make, gen.model, year, "bolt", gen.bolt, "vehicle-fitment-generations.csv");
+      add(gen.make, gen.model, year, "bore", gen.bore, "vehicle-fitment-generations.csv");
+    }
+  }
+  for (const t of threads) {
+    for (let year = t.from; year <= t.to; year += 1) {
+      add(t.make, t.model, year, "thread", t.thread, "vehicle-thread-generations.csv");
+      add(t.make, t.model, year, "fastener", t.fastener === "nut" ? "n" : "b", "vehicle-thread-generations.csv");
+    }
+  }
+  for (const w of wheelSizes) {
+    for (let year = w.from; year <= w.to; year += 1) {
+      for (const size of w.sizes) add(w.make, w.model, year, "wheel", size.replace(";", ""), "vehicle-wheel-sizes.csv");
+    }
+  }
+  for (const item of entries.values()) {
+    for (const [year, acRows] of item.rows) {
+      const ac = mergeRows(acRows, item.model);
+      const known = existing.get(`${item.make}|${item.model}|${year}`) ?? [];
+      const seen = new Set();
+      for (const fact of known) {
+        let differs = false;
+        let shown = "";
+        if (fact.field === "bolt") {
+          differs = ac.bolts !== "" && !ac.bolts.split(",").includes(fact.value);
+          shown = ac.bolts;
+        } else if (fact.field === "bore") {
+          differs = ac.bore !== "" && Math.abs(Number(ac.bore) - Number(fact.value)) > 0.15;
+          shown = ac.bore;
+        } else if (fact.field === "thread") {
+          differs = ac.thread !== "" && ac.thread !== fact.value;
+          shown = ac.thread;
+        } else if (fact.field === "fastener") {
+          differs = ac.fastener !== "" && ac.fastener !== fact.value;
+          shown = ac.fastener;
+        } else if (fact.field === "wheel") {
+          differs = ac.wheels !== "" && !ac.wheels.split(",").includes(fact.value);
+          shown = ac.wheels;
+        }
+        if (!differs) continue;
+        const id = `${fact.field}|${fact.value}|${fact.source}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        rows.push({
+          make: item.make, model: item.model, year, field: fact.field,
+          auto_country: shown, existing: fact.value, existing_source: fact.source,
+        });
+      }
+    }
+  }
+  rows.sort((a, b) => a.make.localeCompare(b.make) || a.model.localeCompare(b.model) || a.year - b.year || a.field.localeCompare(b.field));
+  await mkdir(path.dirname(OVERRIDES), { recursive: true });
+  await writeFile(OVERRIDES, toCsv(["make", "model", "year", "field", "auto_country", "existing", "existing_source"], rows));
+  return rows;
+}
+
 /* --- App modules ------------------------------------------------------------ */
 
 const GENERATED =
   "/* GENERATED by scripts/vehicle-fitment.mjs. Do not edit: change the CSV it\n" +
   " * is built from (or the script) and re-run `node scripts/vehicle-fitment.mjs`. */\n";
 
-async function writeListModule(vehicles) {
+async function writeListModule(names) {
   const makes = new Map();
-  for (const v of vehicles) {
-    if (!makes.has(v.make)) makes.set(v.make, []);
-    makes.get(v.make).push([v.model, v.years]);
+  for (const item of names.entries.values()) {
+    if (!makes.has(item.make)) makes.set(item.make, []);
+    makes.get(item.make).push([item.model, yearsToText(item.years)]);
   }
   const lines = [...makes.keys()]
     .sort((a, b) => a.localeCompare(b))
@@ -644,8 +1161,10 @@ async function writeListModule(vehicles) {
     `${GENERATED}
 /**
  * Every make the finder offers, each with its models and the model years each
- * was built ("2005-2011;2019-2027"), from scripts/data/vehicles.csv (NHTSA
- * vPIC, D110). Makes A to Z; models in natural order. Client-safe: no fitment.
+ * was built ("2005-2011;2019-2027"): the union of Auto Country's list and
+ * scripts/data/vehicles.csv (NHTSA vPIC, D110), in canonical names (D155; see
+ * scripts/data/vehicle-aliases.csv). Makes A to Z; models in natural order.
+ * Client-safe: no fitment.
  */
 export const VEHICLE_LIST: ReadonlyArray<
   readonly [make: string, models: ReadonlyArray<readonly [model: string, years: string]>]
@@ -656,22 +1175,39 @@ ${lines.join("\n")}
   );
 }
 
-async function writeFitmentModule(generations) {
+/**
+ * One exact-year value: `<bolt>[/<bore>[/<diameter>/<width>]]`. A blank bore
+ * keeps its slot (`5x114.3//17/7.0`) so the factory rim size can follow it.
+ * The rim size is the one ANKUSI publishes for that year (same front and
+ * rear, one size); it feeds the tire fit (`finder/fitment.ts`).
+ */
+function exactFit(row) {
+  const rim = row.oe_wheel_diameter !== "" && row.oe_wheel_width !== "";
+  const parts = [row.bolt_pattern, row.centre_bore_mm];
+  if (rim) parts.push(row.oe_wheel_diameter, row.oe_wheel_width);
+  while (parts.length > 1 && parts[parts.length - 1] === "") parts.pop();
+  return parts.join("/");
+}
+
+async function writeFitmentModule(generations, threads, names, wheelSizes) {
+  /* Every older sheet is keyed by the canonical entry name, so one key finds all
+     sources for a car (D155). Two of our models that are one entry share a key. */
+  const keyOf = (make, model) => `${make}|${names.entryOfOurs(make, model)}`;
   const rows = parseCsv(await readFile(FITMENT, "utf8"));
   const byVehicle = new Map();
   for (const row of rows) {
-    const key = `${row.make}|${row.model}`;
-    if (!byVehicle.has(key)) byVehicle.set(key, []);
-    byVehicle
-      .get(key)
-      .push(`${row.year}:${row.bolt_pattern}${row.centre_bore_mm === "" ? "" : `/${row.centre_bore_mm}`}`);
+    const key = keyOf(row.make, row.model);
+    if (!byVehicle.has(key)) byVehicle.set(key, new Map());
+    const years = byVehicle.get(key);
+    if (!years.has(row.year)) years.set(row.year, exactFit(row));
   }
   const lines = [...byVehicle.entries()].map(
-    ([key, years]) => `  ${JSON.stringify(key)}: ${JSON.stringify(years.join(" "))},`,
+    ([key, years]) =>
+      `  ${JSON.stringify(key)}: ${JSON.stringify([...years].map(([year, fit]) => `${year}:${fit}`).join(" "))},`,
   );
   const byGeneration = new Map();
   for (const gen of generations) {
-    const key = `${gen.make}|${gen.model}`;
+    const key = keyOf(gen.make, gen.model);
     if (!byGeneration.has(key)) byGeneration.set(key, []);
     byGeneration
       .get(key)
@@ -683,15 +1219,54 @@ async function writeFitmentModule(generations) {
       list.sort((a, b) => a.gen.from - b.gen.from);
       return `  ${JSON.stringify(key)}: ${JSON.stringify(list.map((item) => item.text).join(" "))},`;
     });
+  const byThread = new Map();
+  for (const row of threads) {
+    const key = keyOf(row.make, row.model);
+    if (!byThread.has(key)) byThread.set(key, []);
+    byThread.get(key).push({ from: row.from, text: `${row.from}-${row.to}:${row.thread}/${row.fastener === "nut" ? "n" : "b"}` });
+  }
+  const threadLines = [...byThread.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, list]) => {
+      list.sort((a, b) => a.from - b.from);
+      return `  ${JSON.stringify(key)}: ${JSON.stringify(list.map((item) => item.text).join(" "))},`;
+    });
+  const bySizes = new Map();
+  for (const row of wheelSizes) {
+    const key = keyOf(row.make, row.model);
+    if (!bySizes.has(key)) bySizes.set(key, []);
+    bySizes.get(key).push({ from: row.from, text: `${row.from}-${row.to}:${row.sizes.join(",")}` });
+  }
+  const sizeLines = [...bySizes.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, list]) => {
+      list.sort((a, b) => a.from - b.from);
+      return `  ${JSON.stringify(key)}: ${JSON.stringify(list.map((item) => item.text).join(" "))},`;
+    });
+  const typeLines = [...names.entries.values()]
+    .map((item) => [`${item.make}|${item.model}`, ["car", "mpv", "truck"].filter((t) => item.types.has(t)).join(";")])
+    .filter(([, types]) => types !== "")
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, types]) => `  ${JSON.stringify(key)}: ${JSON.stringify(types)},`);
+  const specLines = [...names.entries.values()]
+    .map((item) => [`${item.make}|${item.model}`, specsFor(item)])
+    .filter(([, text]) => text !== "")
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, text]) => `  ${JSON.stringify(key)}: ${JSON.stringify(text)},`);
+  const aliasLines = Object.entries(names.aliases)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `  ${JSON.stringify(key)}: ${JSON.stringify(value)},`);
   await writeFile(
     FITMENT_MODULE,
     `${GENERATED}
 /**
  * Real wheel fitment per vehicle and model year, from
  * scripts/data/vehicle-fitment.csv (ANKUSI wheel fitment dataset, LA-05).
- * Keyed "<Make>|<Model>" as vehicles.csv spells them; each value is a
- * space-separated list of "<year>:<bolt pattern>[/<centre bore mm>]". Only
- * the years the source publishes; a missing year has no row on purpose.
+ * Keyed "<Make>|<Model>" in the canonical spelling of \`vehicle-list.ts\`
+ * (D155: where Auto Country's name won, our old name resolves through
+ * \`VEHICLE_ALIASES\`); each value is a
+ * space-separated list of "<year>:<bolt pattern>[/<centre bore mm>[/<diameter>/<width>]]".
+ * Only the years the source publishes; a missing year has no row on purpose.
  * Server only: read through \`fitment.ts\`, never from a client island.
  */
 export const VEHICLE_FITMENT_DATA: Readonly<Record<string, string>> = {
@@ -708,6 +1283,64 @@ ${lines.join("\n")}
  */
 export const VEHICLE_FITMENT_GENERATIONS: Readonly<Record<string, string>> = {
 ${generationLines.join("\n")}
+};
+
+/**
+ * Lug fastener per vehicle and year range, from
+ * scripts/data/vehicle-thread-generations.csv (hand-kept; two independent free
+ * sources agree). Same keys; each value is a space-separated list of
+ * "<from>-<to>:<thread>/<n|b>" (n = lug nut, b = lug bolt). A vehicle with no
+ * entry narrows no lug nut.
+ */
+export const VEHICLE_THREADS: Readonly<Record<string, string>> = {
+${threadLines.join("\n")}
+};
+
+/**
+ * Every factory wheel size per vehicle and year range, the union across trims,
+ * from scripts/data/vehicle-wheel-sizes.csv (hand-kept). Same keys; each value
+ * is a space-separated list of "<from>-<to>:<DxW>,<DxW>" (inches, \`16x7\`). It
+ * adds to the single size ANKUSI states, which comes from one trim.
+ */
+export const VEHICLE_WHEEL_SIZES: Readonly<Record<string, string>> = {
+${sizeLines.join("\n")}
+};
+
+/**
+ * vPIC's body classes per vehicle ("car", "mpv", "truck", joined by ";"),
+ * which set how tall a tire the finder offers for the car (the tire fit,
+ * \`fitment.ts\`). Same keys.
+ */
+export const VEHICLE_TYPES: Readonly<Record<string, string>> = {
+${typeLines.join("\n")}
+};
+
+/**
+ * Auto Country's lookup (D155), one entry of \`vehicle-list.ts\` per key:
+ * "<Make>|<Model>" in canonical spelling -> space-separated
+ * "<from>-<to>:<record>" (consecutive years with an identical record collapsed;
+ * only years a source states). A record is ten ";"-joined fields, empty = unknown:
+ * bolts (comma list, "5x114.3,5x120" = trims differ), bore mm, thread ("12x1.5",
+ * "1/2x20"), fastener (n stud and nut, b hub bolt), offset mm, tires (comma list,
+ * union across trims, bodies and axles, flotation as "33x12.50R15"), wheels
+ * (comma list "16x6.5,17x7"), tireRange ("dmin,dmax,wmin,wmax": overall tire
+ * diameter in and section width mm at stock height), wheelRange
+ * ("dmin,dmax,wmin,wmax,omin,omax": diameter in, width in, offset mm), and src
+ * (a Auto Country, d Direct Auto Import, p PRO WHEELS, m maker, s older sheets,
+ * w other web; a trailing 1 = one source). Server only; read through \`fitment.ts\`.
+ */
+export const VEHICLE_SPECS: Readonly<Record<string, string>> = {
+${specLines.join("\n")}
+};
+
+/**
+ * "<Make>|<other spelling>" -> "<Make>|<canonical model>": our old names (where
+ * Auto Country's name won) and Auto Country's variant names (where our family
+ * name stayed), so old URLs and both lists' spellings resolve. Never chains and
+ * never names an entry that exists in \`vehicle-list.ts\`.
+ */
+export const VEHICLE_ALIASES: Readonly<Record<string, string>> = {
+${aliasLines.join("\n")}
 };
 `,
   );
@@ -733,6 +1366,28 @@ console.log(
     `${new Set(generations.map((g) => `${g.make}|${g.model}`)).size} models; ` +
     `${shadowed} offered years also have an exact row (exact wins), ${conflicts} of them disagree.`,
 );
-await writeListModule(vehicles);
-await writeFitmentModule(generations);
+const names = await buildEntries(vehicles);
+await writeListModule(names);
+const threads = await readThreads(vehicles);
+console.log(`${THREADS}: ${threads.length} thread rows, ${new Set(threads.map((t) => `${t.make}|${t.model}`)).size} models.`);
+const wheelSizes = await readWheelSizes(vehicles);
+console.log(`${WHEEL_SIZES}: ${wheelSizes.length} wheel-size rows, ${new Set(wheelSizes.map((t) => `${t.make}|${t.model}`)).size} models.`);
+await writeFitmentModule(generations, threads, names, wheelSizes);
+const overrides = await writeOverrides(names, generations, threads, wheelSizes);
+const byField = {};
+for (const row of overrides) byField[row.field] = (byField[row.field] ?? 0) + 1;
+const specCount = [...names.entries.values()].filter((item) => item.rows.size > 0 || item.vendor.size > 0).length;
+console.log(
+  `entries: ${names.entries.size} (vehicles.csv models: ${vehicles.length}); ${specCount} with Auto Country or gap-fill specs; ` +
+    `aliases: ${names.aliasStats.total} (${names.aliasStats.shadowedByEntry} left out because the name is itself an entry, ` +
+    `${names.aliasStats.conflicts} names mapped to different entries in different years); ${names.counts.ac} Auto Country model-years, ` +
+    `${names.counts.vendorUsed} gap-fill rows used, ${names.counts.vendorUnmatched.length} rows named no entry` +
+    `${names.counts.vendorUnmatched.length ? ` (${names.counts.vendorUnmatched.slice(0, 8).join("; ")})` : ""}.`,
+);
+console.log(
+  `gap fill: ${gapStats.standaloneRows} entry-years stand alone (no Auto Country row) by source letter ` +
+    `${JSON.stringify(gapStats.standaloneYears)}; ${gapStats.filledYears} Auto Country entry-years had blanks filled, ` +
+    `fields by source letter ${JSON.stringify(gapStats.filledFields)}.`,
+);
+console.log(`${OVERRIDES}: ${overrides.length} overrides ${JSON.stringify(byField)}`);
 console.log(`wrote ${LIST_MODULE} and ${FITMENT_MODULE}`);

@@ -35,6 +35,47 @@ from `design/assets/`, and parity becomes eyeballing — which
   sources on two different sites, none of the banned ones; a bad row throws), lists any year where a
   generation row disagrees with an exact ANKUSI row, accepts `bolt_pattern=unknown` rows (they block the app's nearest-year rule), and compiles the committed CSVs into
   `src/features/finder/vehicle-list.ts` and `vehicle-fitment-data.ts`. No dependencies, no network.
+  **Since D155** it also reads [`data/vehicle-fitment-autocountry.csv`](data/llm.md),
+  [`data/vehicle-aliases.csv`](data/llm.md) and, if present, `data/vehicle-fitment-vendors.csv` (gap fills,
+  `source` d/p/m/s/w) and writes `VEHICLE_SPECS` and `VEHICLE_ALIASES` into `vehicle-fitment-data.ts`, makes
+  `vehicle-list.ts` the **union** of Auto Country's list and `vehicles.csv` in canonical names, re-keys every
+  older sheet (`VEHICLE_FITMENT_DATA`, `_GENERATIONS`, `_THREADS`, `_WHEEL_SIZES`, `VEHICLE_TYPES`) to those
+  canonical names, and writes `design/reports/fitment-overrides.csv` (every year where an Auto Country value
+  disagrees with an older sheet; it prints the count). The field layout of a spec record is documented above
+  `VEHICLE_SPECS` in the generated file. If the two Auto Country CSVs are absent it falls back to
+  `vehicles.csv` alone and empty `VEHICLE_SPECS` / `VEHICLE_ALIASES`.
+- [`vehicle-fitment-merge-gaps.mjs`](vehicle-fitment-merge-gaps.mjs) — `node
+  scripts/vehicle-fitment-merge-gaps.mjs <folder with gapfill-*.csv>` (**D155**). Merges the gap-fill sheets
+  (`gapfill-1..5.csv` and the vendor sheet `gapfill-vendor.csv`; header and `source` letters d/p/m/s/w + `1`
+  in the file's header comment) into [`data/vehicle-fitment-vendors.csv`](data/llm.md), the file
+  `vehicle-fitment.mjs` reads. Per field the highest-trust row wins (d > p > m > s > w, two sources beat one),
+  values are cleaned like Auto Country's, and `source_url` columns are kept for provenance. Writes
+  `import-report/vehicle-gapfill-{empty,conflicts,dropped}.csv`. Safe to re-run when a sheet changes.
+- [`vehicle-fitment-autocountry.mjs`](vehicle-fitment-autocountry.mjs) — `node
+  scripts/vehicle-fitment-autocountry.mjs [--raw <dir>]` (**D155**). Reads the saved Auto Country lookup
+  answers (outside the repo: `~/Platinum Wheels Vendor Data/Individual Vendors/Auto Country/_working/nero/raw/`,
+  written by `autocountry-crawl.mjs`, the only code that calls Auto Country; this script makes no request) and
+  writes [`data/vehicle-fitment-autocountry.csv`](data/llm.md) (one row per Auto Country make + model + year)
+  and [`data/vehicle-aliases.csv`](data/llm.md) (what becomes of each name), plus the git-ignored
+  `import-report/vehicle-alias-review.csv` (pairs the rules could not decide). Safe to re-run while the crawl
+  is still going: it rewrites both CSVs from whatever years are saved. The name rules (`same`, `member`,
+  `split`, `ac-only`, `ours-only`), the hand tables `SAME` and `FAMILY` and the reading rules for options and
+  ranges (staggered and flotation sizes, UNF threads, a body on another chassis) are in the file's header
+  comment. It also routes a trim that is a separate model of ours (Civic Type R, Lancer Evolution, 300C) to
+  that model's row, and writes `import-report/vehicle-trim-routing.csv` and
+  `import-report/vehicle-fitment-missing-trims.csv` (model years with a slash-named trim that cannot be
+  fetched). It blanks Auto Country's junk (ten or more lugs, bore 0, `Peg` thread) into
+  `import-report/vehicle-fitment-junk.csv` and restores 19.5 / 17.5 / 16.5 inch wheel diameters from the tire's
+  rim. Run it, then `node scripts/vehicle-fitment.mjs`.
+- [`fitment-coverage.ts`](fitment-coverage.ts) — `npx tsx scripts/fitment-coverage.ts <catalogue.csv> [--out
+  <dir>]` (**D155**, TypeScript). Offline coverage counter: for every model-year `vehicle-list.ts` offers it
+  counts the Best and Similar results on `/tires`, `/wheels` and `/accessories` (default page, no other
+  filter) and, turned round, which products no narrowing vehicle reaches. Reads the finder's own
+  `findFitment` / `tireFit` / `wheelFit` and the importer's `planImport`; the matching is **re-implemented in
+  JS from the SQL in `catalog/queries.ts`**, so a disagreement with `searchResults` is a bug on one side (keep
+  the two in step by hand). No database, no network. Writes `per-vehicle.csv`, `reverse.csv` and
+  `summary.json` to `import-report/fitment-coverage/` (git-ignored); about 3 s. Stubs `server-only`, which
+  is not installed.
 - [`db-migrate.mjs`](db-migrate.mjs) — applies `drizzle/*.sql` via `DATABASE_URL_UNPOOLED`. Runs first in
   `npm run build`, so every Vercel build migrates its own Neon branch (preview) or main (production)
   before `next build`. Exits 1 on Vercel with no URL; skips locally. Also `npm run db:migrate`.
@@ -134,7 +175,7 @@ from `design/assets/`, and parity becomes eyeballing — which
 - **It is the second TypeScript script, for the same reason as the import:** it runs the importer's own
   `planImport()` and `IMPORT_MAPPING`, so the CSV it writes is one the import accepts by construction.
   Its outputs hold vendor prices and go outside the repo (`--out`), never into it.
-- **Plain Node, not application source** (all scripts but `catalog-import.ts`, `catalog-csv-build.ts` and `catalog-photos.ts`). `.mjs` and `.js` are outside tsc's scope — `tsconfig.json:25-32`
+- **Plain Node, not application source** (all scripts but `catalog-import.ts`, `catalog-csv-build.ts`, `catalog-photos.ts` and `fitment-coverage.ts`). `.mjs` and `.js` are outside tsc's scope — `tsconfig.json:25-32`
   includes `**/*.ts`, `**/*.tsx` and `**/*.mts` only, so `npm run typecheck` never sees these files.
   `eslint .` (`package.json:10`) *does* lint them: `scripts/` is not in the ignore list
   (`eslint.config.mjs:9-19`).

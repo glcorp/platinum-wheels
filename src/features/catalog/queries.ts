@@ -275,13 +275,244 @@ function vehicleThread(filters: ProductFilters): string | null {
   return thread ? thread : null;
 }
 
+/** Millimetres either side of a hub bore the vendors' own rounding allows
+ *  (`54.1`, `54.15`, `54.0`): a hub ring's inner diameter, and a wheel's
+ *  centre bore against the hub. */
+const BORE_TOLERANCE = 0.15;
+
+/** True for a hub ring whose inner diameter is another size than the
+ *  vehicle's hub bore. A ring states the bore it fits as its inner diameter,
+ *  so it is the one fact both sides state. A ring with no inner diameter, and
+ *  every other accessory, never contradicts. */
+function contradictsBore(bore: number): SQL {
+  return sql`coalesce(${accessorySpecs.accessoryType} = 'hub_rings' and ${accessorySpecs.innerDiameterMm} is not null and abs(${accessorySpecs.innerDiameterMm} - ${bore}) > ${BORE_TOLERANCE}, false)`;
+}
+
+/** True for the fastener the vehicle cannot take: a lug nut on a hub-bolt
+ *  car, a lug bolt on a stud-and-nut one. Decided by the product's type
+ *  alone (D155). */
+function contradictsFastener(fastener: "nut" | "bolt"): SQL {
+  const wrong = fastener === "bolt" ? "lug_nuts" : "lug_bolts";
+  return sql`coalesce(${accessorySpecs.accessoryType} = ${wrong}, false)`;
+}
+
+/** What a vehicle's own facts rule out among accessories, or `null` when it
+ *  has no fact an accessory could contradict. */
+function accessoryContradiction(filters: ProductFilters): SQL | null {
+  if (filters.category !== "accessories") return null;
+  const parts: SQL[] = [];
+  const thread = vehicleThread(filters);
+  if (thread !== null) parts.push(contradictsThread(thread));
+  const fastener = filters.accessory?.fastener;
+  if (fastener === "nut" || fastener === "bolt") {
+    parts.push(contradictsFastener(fastener));
+  }
+  const bore = measure(filters.accessory?.hubBore);
+  if (bore !== undefined) parts.push(contradictsBore(bore));
+  return parts.length === 0 ? null : (or(...parts) ?? null);
+}
+
+/* A vehicle's tires (`finder/tire-fit.ts`, D155). Metric tires carry
+   `width` and `aspect_ratio`; flotation ones carry `overall_diameter` and
+   `section_width`. The measuring rim width a tire is built for is its section
+   width times a ratio that grows as the sidewall shortens (about .70 on a
+   70-series, .85 on a 35), over 25.4 for inches. */
+const MEASURING_RIM_RATIO = sql`(case when ${tireSpecs.aspectRatio} >= 70 then 0.70 when ${tireSpecs.aspectRatio} >= 60 then 0.75 when ${tireSpecs.aspectRatio} >= 50 then 0.78 when ${tireSpecs.aspectRatio} >= 40 then 0.82 else 0.85 end)`;
+const MEASURING_RIM_IN = sql`(${tireSpecs.width} * ${MEASURING_RIM_RATIO} / 25.4)`;
+const SIDEWALL_MM = sql`(${tireSpecs.width} * ${tireSpecs.aspectRatio} / 100.0)`;
+/** Overall diameter in inches: stored on a flotation tire, worked out from the
+ *  rim and the two sidewalls on a metric one (NULL without an aspect ratio). */
+const OVERALL_DIAMETER_IN = sql`coalesce(${tireSpecs.overallDiameter}, ${tireSpecs.rimDiameter} + 2 * ${tireSpecs.width} * ${tireSpecs.aspectRatio} / 2540.0)`;
+/** Section width in mm on either format. */
+const SECTION_WIDTH_MM = sql`coalesce(${tireSpecs.width}::numeric, ${tireSpecs.sectionWidth} * 25.4)`;
+
+/** Inches either side of the wheel's width a tire may sit: the approved range
+ *  is wider than the measuring width, and the ratio above is an estimate. */
+const FIT_WIDTH = { best: 0.75, near: 1.25 } as const;
+/** The plus sizes: one inch down, two up, same sidewall band. */
+const FIT_RIM = { down: 1, up: 2 } as const;
+/** How far outside the stock envelope's overall diameter a similar tire may
+ *  be. The vendors round the envelope to whole inches, so half an inch is the
+ *  rounding, not a plus size. */
+const FIT_DIAMETER_SLACK = 0.5;
+
+type TireFitInput = NonNullable<NonNullable<ProductFilters["tire"]>["vehicleFit"]>;
+
+/** How many factory sizes, flotation sizes and wheels one query carries. The
+ *  data is generated, never typed by a visitor, so these only bound the SQL;
+ *  the largest Auto Country model-year measured had under 40 sizes (D155). */
+const MAX_FACTORY_SIZES = 48;
+const MAX_FLOTATION_SIZES = 16;
+const MAX_FACTORY_RIMS = 32;
+
+/** The rim rule (no factory sizes; `tire-fit.ts` always sends an envelope
+ *  with sizes, so the no-envelope branch is only a defence): a tire that
+ *  suits any of the vehicle's wheels, `best` on the wheel's own diameter and
+ *  `near` on the plus sizes with a wider width range. */
+function rimRule(fit: TireFitInput, kind: "best" | "near"): SQL {
+  const min = measure(fit.sidewallMinMm);
+  const max = measure(fit.sidewallMaxMm);
+  /* A tire suits the vehicle when it suits any of its factory wheels. */
+  const perRim: SQL[] = [];
+  for (const rim of fit.rims.slice(0, MAX_FACTORY_RIMS)) {
+    const rimDiameter = measure(rim.diameter);
+    const rimWidth = measure(rim.width);
+    if (rimDiameter === undefined || rimWidth === undefined) continue;
+    const diameter =
+      kind === "best"
+        ? eq(tireSpecs.rimDiameter, rimDiameter)
+        : between(
+            tireSpecs.rimDiameter,
+            rimDiameter - FIT_RIM.down,
+            rimDiameter + FIT_RIM.up,
+          );
+    perRim.push(
+      sql`(${diameter} and abs(${MEASURING_RIM_IN} - ${rimWidth}) <= ${FIT_WIDTH[kind]})`,
+    );
+  }
+  if (min === undefined || max === undefined || perRim.length === 0) return NOTHING;
+  return sql`coalesce(${SIDEWALL_MM} between ${min} and ${max} and (${sql.join(perRim, sql` or `)}), false)`;
+}
+
+/** A tire whose size is one of the vehicle's factory sizes. */
+function factorySize(fit: TireFitInput): SQL {
+  const parts: SQL[] = [];
+  for (const size of fit.sizes.slice(0, MAX_FACTORY_SIZES)) {
+    const width = wholeNumber(size.width);
+    const profile = wholeNumber(size.profile);
+    const rim = measure(size.rim);
+    if (width === undefined || profile === undefined || rim === undefined) continue;
+    const match = and(
+      eq(tireSpecs.width, width),
+      eq(tireSpecs.aspectRatio, profile),
+      eq(tireSpecs.rimDiameter, rim),
+    );
+    if (match) parts.push(match);
+  }
+  for (const size of fit.flotation.slice(0, MAX_FLOTATION_SIZES)) {
+    const diameter = measure(size.diameter);
+    const section = measure(size.section);
+    const rim = measure(size.rim);
+    if (diameter === undefined || section === undefined || rim === undefined) continue;
+    const match = and(
+      eq(tireSpecs.overallDiameter, diameter),
+      eq(tireSpecs.sectionWidth, section),
+      eq(tireSpecs.rimDiameter, rim),
+    );
+    if (match) parts.push(match);
+  }
+  if (parts.length === 0) return NOTHING;
+  return sql`coalesce(${or(...parts)}, false)`;
+}
+
+/** A tire inside the vehicle's stock envelope. */
+function stockEnvelope(range: NonNullable<TireFitInput["range"]>): SQL {
+  const dMin = measure(range.diameterMin);
+  const dMax = measure(range.diameterMax);
+  const wMin = measure(range.widthMin);
+  const wMax = measure(range.widthMax);
+  if (dMin === undefined || dMax === undefined || wMin === undefined || wMax === undefined) {
+    return NOTHING;
+  }
+  const rMin = measure(range.rimMin ?? undefined);
+  const rMax = measure(range.rimMax ?? undefined);
+  const rim =
+    rMin !== undefined && rMax !== undefined
+      ? sql` and ${tireSpecs.rimDiameter} between ${rMin} and ${rMax}`
+      : sql``;
+  return sql`coalesce(${OVERALL_DIAMETER_IN} between ${dMin - FIT_DIAMETER_SLACK} and ${dMax + FIT_DIAMETER_SLACK} and ${SECTION_WIDTH_MM} between ${wMin} and ${wMax}${rim}, false)`;
+}
+
+function hasFactorySizes(fit: TireFitInput): boolean {
+  return fit.sizes.length > 0 || fit.flotation.length > 0;
+}
+
+/** The vehicle's best tires: its factory sizes, else the rim rule's best. */
+function tireVehicleBest(fit: TireFitInput): SQL {
+  return hasFactorySizes(fit) ? factorySize(fit) : rimRule(fit, "best");
+}
+
+/** The vehicle's similar tires, never one of the best: inside the stock
+ *  envelope when there are factory sizes and an envelope, else the rim rule's
+ *  near list. */
+function tireVehicleNear(fit: TireFitInput): SQL {
+  const best = tireVehicleBest(fit);
+  const near =
+    hasFactorySizes(fit) && fit.range !== null
+      ? stockEnvelope(fit.range)
+      : rimRule(fit, "near");
+  return and(near, not(best)) ?? NOTHING;
+}
+
+/* A vehicle's wheels (`finder/tire-fit.ts` `wheelFit`, D155). */
+type WheelFitInput = NonNullable<NonNullable<ProductFilters["wheel"]>["vehicleFit"]>;
+
+/** A wheel drilled for any of the vehicle's bolt patterns. `null` when none
+ *  of them is a bolt pattern, which means the vehicle narrows no wheel. */
+function wheelBolt(fit: WheelFitInput): SQL | null {
+  const patterns: string[] = [];
+  for (const raw of fit.boltPatterns.slice(0, 6)) {
+    const pattern = normalizeBoltPattern(raw);
+    if (pattern !== null && !patterns.includes(pattern)) patterns.push(pattern);
+  }
+  return patterns.length === 0 ? null : arrayOverlaps(wheelSpecs.boltPatterns, patterns);
+}
+
+/** The vehicle's best wheels: the right bolt pattern, and with an envelope
+ *  also inside it (a wheel with no offset on record is not outside it) and
+ *  with a centre bore at least the hub's. A bore the wheel does not state
+ *  passes only when there is no envelope. */
+function wheelVehicleBest(fit: WheelFitInput): SQL {
+  const bolt = wheelBolt(fit);
+  if (bolt === null) return sql`true`;
+  const parts: SQL[] = [bolt];
+  const range = fit.range;
+  if (range !== null) {
+    const dMin = measure(range.diameterMin);
+    const dMax = measure(range.diameterMax);
+    const wMin = measure(range.widthMin);
+    const wMax = measure(range.widthMax);
+    if (dMin === undefined || dMax === undefined || wMin === undefined || wMax === undefined) {
+      return NOTHING;
+    }
+    parts.push(between(wheelSpecs.diameter, dMin, dMax));
+    parts.push(between(wheelSpecs.width, wMin, wMax));
+    const oMin = signedMeasure(range.offsetMin ?? undefined);
+    const oMax = signedMeasure(range.offsetMax ?? undefined);
+    if (oMin !== undefined && oMax !== undefined) {
+      parts.push(
+        sql`(${wheelSpecs.offsetMm} is null or ${wheelSpecs.offsetMm} between ${oMin} and ${oMax})`,
+      );
+    }
+  }
+  const bore = measure(fit.hubBore ?? undefined);
+  if (bore !== undefined) {
+    parts.push(
+      sql`coalesce(${wheelSpecs.centerBoreMm} >= ${bore - BORE_TOLERANCE}, ${range === null ? sql`true` : sql`false`})`,
+    );
+  }
+  return sql`coalesce(${and(...parts)}, false)`;
+}
+
+/** The vehicle's similar wheels: the right bolt pattern and not a best match
+ *  (outside the envelope, a bore too small, or, with an envelope, a bore not
+ *  stated). */
+function wheelVehicleNear(fit: WheelFitInput): SQL {
+  const bolt = wheelBolt(fit);
+  if (bolt === null) return NOTHING;
+  return and(bolt, not(wheelVehicleBest(fit))) ?? NOTHING;
+}
+
 /** Every size part given, matched exactly. `null` = no size part given. */
 function exactSize(filters: ProductFilters): SQL | null {
   const parts: SQL[] = [];
-  const thread = vehicleThread(filters);
-  if (thread !== null) parts.push(not(contradictsThread(thread)));
+  const contradiction = accessoryContradiction(filters);
+  if (contradiction !== null) parts.push(not(contradiction));
   if (filters.category === "tires") {
     const tire = sizeParts(filters).tire;
+    if (filters.tire?.vehicleFit) {
+      parts.push(tireVehicleBest(filters.tire.vehicleFit));
+    }
     const width = tireWidthIs(tire);
     const profile = tireProfileIs(tire);
     if (width !== undefined) parts.push(width);
@@ -292,6 +523,9 @@ function exactSize(filters: ProductFilters): SQL | null {
   }
   if (filters.category === "wheels") {
     const { diameter, width, boltPattern } = sizeParts(filters).wheel;
+    if (filters.wheel?.vehicleFit) {
+      parts.push(wheelVehicleBest(filters.wheel.vehicleFit));
+    }
     if (diameter !== undefined) parts.push(eq(wheelSpecs.diameter, diameter));
     if (width !== undefined) parts.push(eq(wheelSpecs.width, width));
     if (boltPattern === null) parts.push(NOTHING);
@@ -315,8 +549,17 @@ function exactSize(filters: ProductFilters): SQL | null {
  * (`33` with `45`) matches nothing.
  */
 function nearSize(filters: ProductFilters): SQL {
-  const thread = vehicleThread(filters);
-  if (thread !== null) return contradictsThread(thread);
+  const contradiction = accessoryContradiction(filters);
+  if (contradiction !== null) return contradiction;
+
+  /* A vehicle's own fit decides the similar row on its own terms (D155): it
+     is never sent beside an explicit size part. */
+  if (filters.category === "tires" && filters.tire?.vehicleFit) {
+    return tireVehicleNear(filters.tire.vehicleFit);
+  }
+  if (filters.category === "wheels" && filters.wheel?.vehicleFit) {
+    return wheelVehicleNear(filters.wheel.vehicleFit);
+  }
 
   const exact = exactSize(filters);
   if (exact === null) return NOTHING;

@@ -11,7 +11,10 @@ import { Price } from "@/components/ui/price";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
-import { ResultsEmpty } from "@/features/results/components/results-grid";
+import {
+  BoltChoiceNote,
+  ResultsEmpty,
+} from "@/features/results/components/results-grid";
 import { QuoteErrorSummary } from "@/features/cart/components/quote-error-summary";
 import { PageTransition } from "@/components/site/page-transition";
 import { LoaderMark } from "@/components/site/nav-progress";
@@ -627,6 +630,18 @@ export default function StyleguidePage() {
                 the grid shell supplies it — so the demo box adds it back. */}
             <div className="border-border-strong border md:p-6">
               <ResultsEmpty clearHref={ROUTES.tires} as="h2" />
+            </div>
+          </div>
+
+          {/* Two bolt patterns (D155). `/wheels` with a vehicle whose model year
+              came with two: wheels for both are listed and this line asks the
+              buyer to check their trim. Rendered from the real component. */}
+          <div className="mt-10">
+            <p className="numeral text-12 text-ink-dim mb-4">
+              Two bolt patterns · src/features/results/components/results-grid.tsx
+            </p>
+            <div className="border-border-strong border p-4">
+              <BoltChoiceNote patterns={["5x114.3", "5x120"]} />
             </div>
           </div>
 

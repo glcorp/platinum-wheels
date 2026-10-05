@@ -3,15 +3,15 @@ Acura,ILX,2013,2022,5x114.3,64.1,https://www.autofiles.com/wheels/acura/ilx/,htt
 Acura,MDX,2005,2006,5x114.3,64.1,https://www.autofiles.com/wheels/acura/mdx/,https://boltpatternhq.com/acura/mdx/2018/
 Acura,MDX,2007,2013,5x120,64.1,https://www.autofiles.com/wheels/acura/mdx/,https://boltpatternhq.com/acura/mdx/2018/
 Acura,MDX,2014,2016,5x114.3,64.1,https://www.factorywheelreplacement.com/products/new-19-2014-2016-acura-mdx-machined-and-grey-replacement-alloy-wheel-71820,https://www.autofiles.com/wheels/acura/mdx/
-Acura,MDX,2017,2017,unknown,,https://www.factorywheelreplacement.com/products/new-19-2014-2016-acura-mdx-machined-and-grey-replacement-alloy-wheel-71820,
+Acura,MDX,2017,2017,5x120,,https://boltpatternhq.com/acura/mdx/2017/,https://allusedrims.com/products/afw71845-acura-mdx-2017-2020
 Acura,MDX,2018,2020,5x120,64.1,https://www.autofiles.com/wheels/acura/mdx/,https://boltpatternhq.com/acura/mdx/2018/
-Acura,NSX,2005,2005,unknown,,https://boltpatternhq.com/acura/nsx/2018/,
+Acura,NSX,2005,2005,5x114.3,,https://boltpatternhq.com/acura/nsx/2005/,https://www.f2suspension.com/acura-nsx-na1-na2-chassis-guide/
 Acura,RDX,2007,2018,5x114.3,64.1,https://www.autofiles.com/wheels/acura/rdx/,https://boltpatternhq.com/acura/rdx/2018/
 Acura,RLX,2014,2019,5x120,,https://www.autofiles.com/wheels/acura/rlx/,https://boltpatternhq.com/acura/rlx/2018/
 Acura,TL,2005,2008,5x114.3,64.1,https://www.autofiles.com/wheels/acura/tl/,https://boltpatternhq.com/acura/tl/2010/
 Acura,TL,2009,2014,5x120,64.1,https://www.autofiles.com/wheels/acura/tl/,https://boltpatternhq.com/acura/tl/2010/
 Acura,TLX,2015,2020,5x114.3,64.1,https://www.autofiles.com/wheels/acura/tlx/,https://boltpatternhq.com/acura/tlx/2018/
-Acura,ZDX,2010,2013,unknown,,https://www.autofiles.com/wheels/acura/zdx/,
+Acura,ZDX,2010,2013,5x120,,https://www.autofiles.com/wheels/acura/zdx/,https://allusedrims.com/collections/zdx/products/afwrac512019m20-0072-acura-wheels
 Audi,A3,2006,2013,5x112,57.1,https://www.autofiles.com/wheels/audi/a3/,https://boltpatternhq.com/audi/a3/2015/
 Audi,A3,2015,2020,5x112,57.1,https://www.autofiles.com/wheels/audi/a3/,https://boltpatternhq.com/audi/a3/2015/
 Audi,A3,2022,2023,5x112,57.1,https://www.autofiles.com/wheels/audi/a3/,https://boltpatternhq.com/audi/a3/2015/
@@ -75,7 +75,8 @@ Audi,RS Q8,2020,2020,5x112,,https://www.hubcentric-rings.com/car_models/audi/q8/
 Audi,RS Q8,2021,2023,5x112,66.5,https://www.autofiles.com/wheels/audi/rs-q8/,https://boltpatternhq.com/audi/rs-q8/2023/
 Audi,RS Q8,2024,2024,5x112,,https://boltpatternhq.com/audi/rs-q8/2023/,https://www.hubcentric-rings.com/car_models/audi/q8/
 Audi,RS e-tron GT,2022,2022,5x130,71.6,https://www.autofiles.com/wheels/audi/rs-e-tron-gt/,https://boltpatternhq.com/audi/rs-e-tron-gt/2023/
-Audi,RS e-tron GT,2023,2024,unknown,,https://boltpatternhq.com/audi/rs-e-tron-gt/2023/,
+Audi,RS e-tron GT,2023,2023,5x130,,https://www.autofiles.com/wheels/audi/rs-e-tron-gt/,https://allusedrims.com/collections/2023-audi-e-tron-wheels
+Audi,RS e-tron GT,2024,2024,unknown,,https://boltpatternhq.com/audi/rs-e-tron-gt/2023/,
 Audi,S3,2015,2019,5x112,57.1,https://www.autofiles.com/wheels/audi/s3/,https://boltpatternhq.com/audi/s3/2019/
 Audi,S3,2020,2020,5x112,,https://www.hubcentric-rings.com/car_models/audi/a3/,https://www.stocktonwheel.com/audi-bolt-pattern/
 Audi,S3,2022,2023,5x112,,https://www.autofiles.com/wheels/audi/s3/,https://boltpatternhq.com/audi/s3/2019/
@@ -120,18 +121,19 @@ Audi,allroad,2005,2005,5x112,57.1,https://www.autofiles.com/wheels/audi/allroad/
 Audi,e-tron,2019,2019,5x112,66.6,https://www.autofiles.com/wheels/audi/e-tron/,https://boltpatternhq.com/audi/e-tron/2022/
 Audi,e-tron,2021,2023,5x112,66.6,https://www.autofiles.com/wheels/audi/e-tron/,https://boltpatternhq.com/audi/e-tron/2022/
 Audi,e-tron GT,2022,2022,5x130,71.6,https://www.autofiles.com/wheels/audi/e-tron-gt/,https://boltpatternhq.com/audi/e-tron-gt/2023/
-Audi,e-tron GT,2023,2024,unknown,,https://boltpatternhq.com/audi/e-tron-gt/2023/,
+Audi,e-tron GT,2023,2023,5x130,,https://www.autofiles.com/wheels/audi/e-tron-gt/,https://allusedrims.com/collections/2023-audi-e-tron-wheels
+Audi,e-tron GT,2024,2024,unknown,,https://boltpatternhq.com/audi/e-tron-gt/2023/,
 Audi,e-tron Sportback,2021,2022,5x112,66.6,https://www.autofiles.com/wheels/audi/e-tron/,https://boltpatternhq.com/audi/e-tron-sportback/2022/
 BMW,128i,2008,2013,5x120,72.6,https://www.autofiles.com/wheels/bmw/128/,https://boltpatternhq.com/bmw/1-series/2011/
 BMW,135i,2008,2013,5x120,72.6,https://www.autofiles.com/wheels/bmw/135/,https://boltpatternhq.com/bmw/1-series/2011/
 BMW,1M,2011,2011,5x120,72.6,https://www.autofiles.com/wheels/bmw/1-series-m/,https://boltpatternhq.com/bmw/1-series/2011/
 BMW,228i,2014,2016,5x120,72.6,https://www.autofiles.com/wheels/bmw/228/,https://boltpatternhq.com/bmw/2-series/2019/
 BMW,228i,2017,2017,5x120,,https://boltpatternhq.com/bmw/2-series/2019/,https://www.stocktonwheel.com/bmw-bolt-pattern/
-BMW,228i,2018,2018,unknown,,https://boltpatternhq.com/bmw/2-series/2019/,
-BMW,228i,2020,2021,unknown,,https://boltpatternhq.com/bmw/2-series/2019/,
+BMW,228i,2018,2018,5x120,,https://www.originalwheels.com/bmw-wheels/230i2018rims.php,https://www.autofiles.com/wheels/bmw/230/
+BMW,228i,2020,2021,5x120,,https://allusedrims.com/products/afw86512u46-bmw-230i-bmw-m240i-2020,https://www.originalwheels.com/bmw-wheels/230i2021rims.php
 BMW,228i,2022,2024,5x112,,https://boltpatternhq.com/bmw/2-series/2019/,https://www.hubcentric-rings.com/car_models/bmw/2-sarja/
 BMW,230i,2017,2018,5x120,,https://www.autofiles.com/wheels/bmw/230/,https://boltpatternhq.com/bmw/2-series/2019/
-BMW,230i,2019,2021,unknown,,https://www.autofiles.com/wheels/bmw/230/,
+BMW,230i,2019,2021,5x120,,https://www.originalwheels.com/bmw-wheels/230i2019rims.php,https://www.autofiles.com/wheels/bmw/230/
 BMW,230i,2022,2023,5x112,66.6,https://www.autofiles.com/wheels/bmw/230/,https://boltpatternhq.com/bmw/2-series/2019/
 BMW,230i,2024,2024,5x112,,https://boltpatternhq.com/bmw/2-series/2019/,https://www.hubcentric-rings.com/car_models/bmw/2-sarja/
 BMW,320i,2013,2018,5x120,,https://www.autofiles.com/wheels/bmw/320/,https://boltpatternhq.com/bmw/3-series/2008/
@@ -157,12 +159,12 @@ BMW,335i,2016,2017,5x120,,https://boltpatternhq.com/bmw/3-series/2008/,https://w
 BMW,335is,2011,2015,5x120,72.6,https://www.autofiles.com/wheels/bmw/335/,https://boltpatternhq.com/bmw/3-series/2008/
 BMW,335xi,2007,2008,5x120,72.6,https://www.autofiles.com/wheels/bmw/335/,https://boltpatternhq.com/bmw/3-series/2008/
 BMW,340i,2016,2018,5x120,,https://www.autofiles.com/wheels/bmw/340/,https://boltpatternhq.com/bmw/3-series/2008/
-BMW,340i,2019,2019,unknown,,https://www.autofiles.com/wheels/bmw/340/,
+BMW,340i,2019,2019,5x120,,https://wheelsamerica.com/product/bmw-340i-xdrive-2016-2019-19-oem-wheel-rim/,https://www.bonoss.com/product/bonoss-bolt-pattern-5x120-cb72-5-hub-centric-wheel-spacers-al6061-t6-for-bmw-3-series-f30-f31-f34-320i-xdrive-328d-xdrive-328i-xdrive-340i-xdrive-2011-2019
 BMW,340i,2023,2024,5x112,,https://boltpatternhq.com/bmw/3-series/2008/,https://www.hubcentric-rings.com/car_models/bmw/3-sarja/
 BMW,428i,2014,2016,5x120,,https://www.autofiles.com/wheels/bmw/428/,https://boltpatternhq.com/bmw/4-series/2019/
 BMW,430i,2017,2018,5x120,,https://www.autofiles.com/wheels/bmw/430/,https://boltpatternhq.com/bmw/4-series/2019/
 BMW,430i,2019,2019,5x120,,https://www.autofiles.com/wheels/bmw/430/,https://www.hubcentric-rings.com/car_models/bmw/4-sarja/
-BMW,430i,2020,2020,unknown,,https://www.autofiles.com/wheels/bmw/430/,
+BMW,430i,2020,2020,5x120,,https://www.originalwheels.com/bmw-wheels/430i2020rims.php,https://www.autofiles.com/wheels/bmw/430/
 BMW,430i,2021,2023,5x112,66.6,https://www.autofiles.com/wheels/bmw/430/,https://boltpatternhq.com/bmw/4-series/2019/
 BMW,430i,2024,2024,5x112,,https://boltpatternhq.com/bmw/4-series/2019/,https://www.hubcentric-rings.com/car_models/bmw/4-sarja/
 BMW,435i,2014,2016,5x120,,https://www.autofiles.com/wheels/bmw/435/,https://boltpatternhq.com/bmw/4-series/2019/
@@ -183,7 +185,7 @@ BMW,535d,2014,2015,5x120,72.6,https://www.autofiles.com/wheels/bmw/535d/,https:/
 BMW,535d,2016,2016,5x120,,https://www.autofiles.com/wheels/bmw/535d/,https://www.hubcentric-rings.com/car_models/bmw/5-sarja/
 BMW,535i,2008,2015,5x120,72.6,https://www.autofiles.com/wheels/bmw/535/,https://boltpatternhq.com/bmw/5-series/2009/
 BMW,535i,2016,2016,5x120,,https://www.autofiles.com/wheels/bmw/535/,https://www.hubcentric-rings.com/car_models/bmw/5-sarja/
-BMW,535i,2017,2017,unknown,,https://boltpatternhq.com/bmw/5-series/2009/,
+BMW,535i,2017,2017,5x120,,https://wheelsamerica.com/product/bmw-535i-gt-2010-2017-19-oem-wheel-rim-4/,"https://www.autofiles.com/wheels/bmw/535-gran-turismo/ (535i GT; page lists no years, same F07 chassis as 550 GT 2010-2017)"
 BMW,535xi,2008,2008,5x120,72.6,https://www.autofiles.com/wheels/bmw/535/,https://boltpatternhq.com/bmw/5-series/2009/
 BMW,540d,2018,2019,5x112,,https://www.autofiles.com/wheels/bmw/540d/,https://boltpatternhq.com/bmw/5-series/2009/
 BMW,540i,2017,2023,5x112,,https://www.autofiles.com/wheels/bmw/540/,https://boltpatternhq.com/bmw/5-series/2009/
@@ -191,13 +193,13 @@ BMW,540i,2024,2024,5x112,,https://boltpatternhq.com/bmw/5-series/2009/,https://w
 BMW,545i,2005,2005,5x120,72.6,https://www.autofiles.com/wheels/bmw/545/,https://boltpatternhq.com/bmw/5-series/2009/
 BMW,550i,2006,2015,5x120,72.6,https://www.autofiles.com/wheels/bmw/550/,https://boltpatternhq.com/bmw/5-series/2009/
 BMW,550i,2016,2016,5x120,,https://www.autofiles.com/wheels/bmw/550/,https://www.hubcentric-rings.com/car_models/bmw/5-sarja/
-BMW,550i,2017,2017,unknown,,https://boltpatternhq.com/bmw/5-series/2009/,
+BMW,550i,2017,2017,5x120,,https://wheelsamerica.com/product/bmw-550i-gt-2010-2017-20-oem-wheel-rim-6/,https://www.autofiles.com/wheels/bmw/550-gran-turismo/
 BMW,640i,2012,2017,5x120,,https://www.autofiles.com/wheels/bmw/640/,https://boltpatternhq.com/bmw/6-series/2012/
 BMW,640i,2019,2019,unknown,,https://boltpatternhq.com/bmw/6-series/2012/,
 BMW,645Ci,2005,2005,5x120,72.6,https://www.autofiles.com/wheels/bmw/645/,https://boltpatternhq.com/bmw/6-series/2012/
 BMW,650i,2006,2010,5x120,,https://www.autofiles.com/wheels/bmw/650/,https://boltpatternhq.com/bmw/6-series/2012/
 BMW,650i,2012,2018,5x120,,https://www.autofiles.com/wheels/bmw/650/,https://boltpatternhq.com/bmw/6-series/2012/
-BMW,650i,2019,2019,unknown,,https://boltpatternhq.com/bmw/6-series/2012/,
+BMW,650i,2019,2019,5x120,,https://www.originalwheels.com/bmw-wheels/650i2019rims.php,https://wheelsamerica.com/product/bmw-650i-xdrive-2018-2019-19-oem-wheel-rim/ ; https://wheelsamerica.com/product/bmw-650i-2010-2019-19-oem-wheel-rim-6/
 BMW,650xi,2012,2015,5x120,72.6,https://www.autofiles.com/wheels/bmw/650/,https://boltpatternhq.com/bmw/6-series/2012/
 BMW,740Li,2011,2015,5x120,72.6,https://www.autofiles.com/wheels/bmw/740/,https://boltpatternhq.com/bmw/7-series/2008/
 BMW,740Li,2022,2022,5x112,66.6,https://www.autofiles.com/wheels/bmw/740/,https://boltpatternhq.com/bmw/7-series/2008/
@@ -241,12 +243,12 @@ BMW,M2,2022,2022,unknown,,https://www.autofiles.com/wheels/bmw/m2/,
 BMW,M2,2023,2023,5x112,,https://www.hubcentric-rings.com/car_models/bmw/2-sarja/,https://www.stocktonwheel.com/bmw-bolt-pattern/
 BMW,M2,2024,2024,5x112,,https://boltpatternhq.com/bmw/m2/2019/,https://www.hubcentric-rings.com/car_models/bmw/2-sarja/
 BMW,M235i,2014,2016,5x120,72.6,https://www.autofiles.com/wheels/bmw/m235/,https://boltpatternhq.com/bmw/2-series/2019/
-BMW,M235i,2020,2021,unknown,,https://www.autofiles.com/wheels/bmw/m235/,
+BMW,M235i,2020,2021,5x112,,https://www.originalwheels.com/bmw-wheels/m235i2020rims.php ; https://www.originalwheels.com/bmw-wheels/m235i2021rims.php,https://wheelsamerica.com/product/2020-2023-bmw-228i-18-oem-wheel-rim/ ; https://ankusiwheels.com/fitment-guide/bmw-m235i-xdrive-gran-coupe-f44-2020/
 BMW,M235i,2022,2024,5x112,,https://boltpatternhq.com/bmw/2-series/2019/,https://www.hubcentric-rings.com/car_models/bmw/2-sarja/
-BMW,M240i,2017,2018,5x120,,https://www.autofiles.com/wheels/bmw/m240/,https://boltpatternhq.com/bmw/2-series/2019/
-BMW,M240i,2019,2021,unknown,,https://www.autofiles.com/wheels/bmw/m240/,
-BMW,M240i,2022,2022,5x112,66.6,https://www.autofiles.com/wheels/bmw/m240/,https://boltpatternhq.com/bmw/2-series/2019/
-BMW,M240i,2023,2024,5x112,,https://boltpatternhq.com/bmw/2-series/2019/,https://www.hubcentric-rings.com/car_models/bmw/2-sarja/
+BMW,M240i,2017,2018,5x120,,https://wheelsamerica.com/product/bmw-m240i-2017-2021-18-oem-wheel-rim-8/,https://www.originalwheels.com/bmw-wheels/m240i2019rims.php
+BMW,M240i,2019,2021,5x120,72.6,https://wheelsamerica.com/product/bmw-m240i-2017-2021-18-oem-wheel-rim-8/,https://www.originalwheels.com/bmw-wheels/m240i2019rims.php
+BMW,M240i,2022,2022,5x112,66.6,https://wheelsamerica.com/product/bmw-m240i-2017-2021-18-oem-wheel-rim-8/,https://www.originalwheels.com/bmw-wheels/m240i2019rims.php
+BMW,M240i,2023,2024,5x112,,https://wheelsamerica.com/product/bmw-m240i-2017-2021-18-oem-wheel-rim-8/,https://www.originalwheels.com/bmw-wheels/m240i2019rims.php
 BMW,M3,2005,2006,5x120,,https://www.autofiles.com/wheels/bmw/m3/,https://boltpatternhq.com/bmw/m3/2009/
 BMW,M3,2008,2013,5x120,,https://www.autofiles.com/wheels/bmw/m3/,https://boltpatternhq.com/bmw/m3/2009/
 BMW,M3,2015,2018,5x120,,https://www.autofiles.com/wheels/bmw/m3/,https://boltpatternhq.com/bmw/m3/2009/
@@ -272,7 +274,7 @@ BMW,M5,2021,2023,5x112,66.6,https://www.autofiles.com/wheels/bmw/m5/,https://bol
 BMW,M550i,2018,2023,5x112,,https://www.autofiles.com/wheels/bmw/m550/,https://boltpatternhq.com/bmw/5-series/2009/
 BMW,M6,2006,2010,5x120,,https://www.autofiles.com/wheels/bmw/m6/,https://boltpatternhq.com/bmw/m6/2013/
 BMW,M6,2012,2018,5x120,,https://www.autofiles.com/wheels/bmw/m6/,https://boltpatternhq.com/bmw/m6/2013/
-BMW,M6,2019,2019,unknown,,https://boltpatternhq.com/bmw/m6/2013/,
+BMW,M6,2019,2019,5x120,,https://www.originalwheels.com/bmw-wheels/m62019rims.php,https://wheelsamerica.com/product/bmw-m6-2011-2019-20-oem-wheel-rim-13/
 BMW,M760Li,2022,2022,5x112,66.6,https://www.autofiles.com/wheels/bmw/m760/,https://boltpatternhq.com/bmw/7-series/2008/
 BMW,M760i,2017,2021,5x112,,https://www.autofiles.com/wheels/bmw/m760/,https://boltpatternhq.com/bmw/7-series/2008/
 BMW,M8,2020,2020,5x112,,https://www.autofiles.com/wheels/bmw/m8/,https://www.hubcentric-rings.com/car_models/bmw/8-sarja/
@@ -289,7 +291,7 @@ BMW,X1,2023,2024,5x112,,https://boltpatternhq.com/bmw/x1/2019/,https://www.hubce
 BMW,X2,2018,2023,5x112,66.6,https://www.autofiles.com/wheels/bmw/x2/,https://boltpatternhq.com/bmw/x2/2021/
 BMW,X2,2024,2024,5x112,,https://boltpatternhq.com/bmw/x2/2021/,https://www.hubcentric-rings.com/car_models/bmw/x2/
 BMW,X3,2005,2017,5x120,72.6,https://www.autofiles.com/wheels/bmw/x3/,https://boltpatternhq.com/bmw/x3/2014/
-BMW,X3,2018,2018,unknown,,https://www.autofiles.com/wheels/bmw/x3/,
+BMW,X3,2018,2018,5x112,,https://www.originalwheels.com/bmw-wheels/x32018rims.php,https://ankusiwheels.com/fitment-guide/bmw-x3-g01-2018/
 BMW,X3,2019,2020,5x112,,https://boltpatternhq.com/bmw/x3/2014/,https://www.hubcentric-rings.com/car_models/bmw/x3/
 BMW,X3,2021,2023,5x112,66.6,https://www.autofiles.com/wheels/bmw/x3/,https://boltpatternhq.com/bmw/x3/2014/
 BMW,X3,2024,2024,5x112,,https://boltpatternhq.com/bmw/x3/2014/,https://www.hubcentric-rings.com/car_models/bmw/x3/
@@ -301,7 +303,7 @@ BMW,X5,2005,2018,5x120,,https://www.autofiles.com/wheels/bmw/x5/,https://boltpat
 BMW,X5,2019,2023,5x112,66.6,https://www.autofiles.com/wheels/bmw/x5/,https://boltpatternhq.com/bmw/x5/2012/
 BMW,X5,2024,2024,5x112,,https://boltpatternhq.com/bmw/x5/2012/,https://www.hubcentric-rings.com/car_models/bmw/x5/
 BMW,X6,2008,2018,5x120,,https://www.autofiles.com/wheels/bmw/x6/,https://boltpatternhq.com/bmw/x6/2016/
-BMW,X6,2019,2019,unknown,,https://www.autofiles.com/wheels/bmw/x6/,
+BMW,X6,2019,2019,5x120,,https://www.originalwheels.com/bmw-wheels/x62019rims.php,https://wheelsamerica.com/product/bmw-x6-2014-2019-21-oem-wheel-rim-8/
 BMW,X6,2020,2023,5x112,66.6,https://www.autofiles.com/wheels/bmw/x6/,https://boltpatternhq.com/bmw/x6/2016/
 BMW,X6,2024,2024,5x112,,https://boltpatternhq.com/bmw/x6/2016/,https://www.hubcentric-rings.com/car_models/bmw/x6/
 BMW,X7,2019,2022,5x112,66.6,https://www.autofiles.com/wheels/bmw/x7/,https://boltpatternhq.com/bmw/x7/2022/
@@ -324,11 +326,11 @@ BMW,iX,2022,2023,5x112,66.6,https://www.autofiles.com/wheels/bmw/ix/,https://bol
 BMW,iX,2024,2024,5x112,,https://boltpatternhq.com/bmw/ix/2023/,https://www.hubcentric-rings.com/car_models/bmw/ix/
 Buick,Century,2005,2005,5x115,,https://www.autofiles.com/wheels/buick/century/,https://boltpatternhq.com/buick/century/2005/
 Buick,Enclave,2008,2017,6x132,,https://www.autofiles.com/wheels/buick/enclave/,https://boltpatternhq.com/buick/enclave/2024/
-Buick,Enclave,2018,2018,unknown,,https://www.autofiles.com/wheels/buick/enclave/,
+Buick,Enclave,2018,2018,6x120,,https://www.originalwheels.com/buick-wheels/enclave2018rims.php,https://ankusiwheels.com/fitment-guide/buick-enclave-ii-2018/
 Buick,Enclave,2019,2023,6x120,,https://www.autofiles.com/wheels/buick/enclave/,https://boltpatternhq.com/buick/enclave/2024/
 Buick,Encore,2013,2022,5x105,,https://www.autofiles.com/wheels/buick/encore/,https://boltpatternhq.com/buick/encore/2023/
 Buick,LaCrosse,2005,2009,5x115,,https://www.autofiles.com/wheels/buick/lacrosse/,https://boltpatternhq.com/buick/lacrosse/2019/
-Buick,LaCrosse,2010,2010,unknown,,https://www.autofiles.com/wheels/buick/lacrosse/,
+Buick,LaCrosse,2010,2010,5x120,,https://www.originalwheels.com/buick-wheels/lacrosse2010rims.php,https://wheelsamerica.com/product/buick-lacrosse-2010-2013-18-oem-wheel-rim/ ; https://ankusiwheels.com/fitment-guide/buick-lacrosse-ii-2010/
 Buick,LaCrosse,2011,2016,5x120,,https://www.autofiles.com/wheels/buick/lacrosse/,https://boltpatternhq.com/buick/lacrosse/2019/
 Buick,LeSabre,2005,2005,5x115,,https://www.autofiles.com/wheels/buick/lesabre/,https://boltpatternhq.com/buick/lesabre/2005/
 Buick,Park Avenue,2005,2005,5x115,,https://www.autofiles.com/wheels/buick/park-avenue/,https://boltpatternhq.com/buick/park-avenue/2005/
@@ -370,10 +372,10 @@ Chevrolet,Equinox,2005,2009,5x115,,https://www.autofiles.com/wheels/chevrolet/eq
 Chevrolet,Equinox,2011,2017,5x120,,https://www.autofiles.com/wheels/chevrolet/equinox/,https://boltpatternhq.com/chevrolet/equinox/2024/
 Chevrolet,Equinox,2019,2023,5x115,,https://www.autofiles.com/wheels/chevrolet/equinox/,https://boltpatternhq.com/chevrolet/equinox/2024/
 Chevrolet,Impala,2005,2011,5x115,,https://www.autofiles.com/wheels/chevrolet/impala/,https://boltpatternhq.com/chevrolet/impala/2020/
-Chevrolet,Impala,2012,2013,unknown,,https://www.autofiles.com/wheels/chevrolet/impala/,
+Chevrolet,Impala,2012,2013,5x115,,https://www.originalwheels.com/chevrolet-wheels/impala2012rims.php ; https://www.originalwheels.com/chevrolet-wheels/impala2013rims.php,https://wheelsamerica.com/product/chevrolet-impala-2006-2013-17-oem-wheel-rim/
 Chevrolet,Impala,2014,2020,5x120,,https://www.autofiles.com/wheels/chevrolet/impala/,https://boltpatternhq.com/chevrolet/impala/2020/
 Chevrolet,Malibu,2006,2010,5x110,,https://www.autofiles.com/wheels/chevrolet/malibu/,https://boltpatternhq.com/chevrolet/malibu/2024/
-Chevrolet,Malibu,2011,2012,unknown,,https://www.autofiles.com/wheels/chevrolet/malibu/,
+Chevrolet,Malibu,2011,2012,5x110,,https://www.originalwheels.com/chevrolet-wheels/malibu2011rims.php ; https://www.originalwheels.com/chevrolet-wheels/malibu2012rims.php,https://wheelsamerica.com/product/chevrolet-malibu-2008-2012-18-oem-wheel-rim-2/
 Chevrolet,Malibu,2013,2015,5x120,,https://www.autofiles.com/wheels/chevrolet/malibu/,https://boltpatternhq.com/chevrolet/malibu/2024/
 Chevrolet,Malibu,2019,2023,5x115,,https://www.autofiles.com/wheels/chevrolet/malibu/,https://boltpatternhq.com/chevrolet/malibu/2024/
 Chevrolet,Monte Carlo,2005,2007,5x115,,https://www.autofiles.com/wheels/chevrolet/monte-carlo/,https://boltpatternhq.com/chevrolet/monte-carlo/2007/
@@ -381,16 +383,17 @@ Chevrolet,SSR,2005,2006,6x127,,https://www.autofiles.com/wheels/chevrolet/ssr/,h
 Chevrolet,Silverado 1500,2005,2024,6x139.7,,https://hardrockoffroad.com/fitment-guides/chevy-silverado-1500/,https://boltpatternhq.com/chevrolet/silverado-1500-crew-cab/2024/
 Chevrolet,Silverado 2500HD,2005,2006,8x165.1,,https://www.autofiles.com/wheels/chevrolet/silverado-2500hd/,https://boltpatternhq.com/chevrolet/silverado-2500-hd-crew-cab/2024/
 Chevrolet,Silverado 2500HD,2008,2008,8x165.1,,https://www.autofiles.com/wheels/chevrolet/silverado-2500hd/,https://boltpatternhq.com/chevrolet/silverado-2500-hd-crew-cab/2024/
-Chevrolet,Silverado 2500HD,2009,2011,unknown,,https://www.autofiles.com/wheels/chevrolet/silverado-2500hd/,
+Chevrolet,Silverado 2500HD,2009,2010,8x165.1,,"https://www.originalwheels.com/chevrolet-wheels/silverado2009rims.php ; https://www.originalwheels.com/chevrolet-wheels/silverado2010rims.php (8 lug, 6.5in)","https://wheelsamerica.com/product/chevrolet-silverado-2500-2007-2010-17-oem-wheel-rim/ (8 lug, 6.5in)"
+Chevrolet,Silverado 2500HD,2011,2011,8x180,,https://ankusiwheels.com/fitment-guide/chevrolet-silverado-hd-2011/,https://wheelsamerica.com/product/chevrolet-silverado-2500-hd-2011-2019-17-oem-wheel-rim/
 Chevrolet,Silverado 2500HD,2012,2023,8x180,,https://www.autofiles.com/wheels/chevrolet/silverado-2500hd/,https://boltpatternhq.com/chevrolet/silverado-2500-hd-crew-cab/2024/
 Chevrolet,Silverado 3500HD,2008,2010,8x165.1,,https://www.autofiles.com/wheels/chevrolet/silverado-3500hd/,https://boltpatternhq.com/chevrolet/silverado-3500-hd-crew-cab/2024/
-Chevrolet,Silverado 3500HD,2011,2011,unknown,,https://www.autofiles.com/wheels/chevrolet/silverado-3500hd/,
+Chevrolet,Silverado 3500HD,2011,2011,8x180,,https://www.mtnviewchevy.com/chevy-silverado-lug-pattern-guide/,https://www.americantrucks.com/wheel-bolt-pattern-guide-at-tech-guides.html
 Chevrolet,Silverado 3500HD,2012,2023,8x180,,https://www.autofiles.com/wheels/chevrolet/silverado-3500hd/,https://boltpatternhq.com/chevrolet/silverado-3500-hd-crew-cab/2024/
 Chevrolet,Sonic,2012,2020,5x105,,https://www.autofiles.com/wheels/chevrolet/sonic/,https://boltpatternhq.com/chevrolet/sonic/2020/
 Chevrolet,Spark,2013,2022,4x100,,https://www.autofiles.com/wheels/chevrolet/spark/,https://boltpatternhq.com/chevrolet/spark/2023/
 Chevrolet,Suburban,2016,2023,6x139.7,,https://www.autofiles.com/wheels/chevrolet/suburban/,https://boltpatternhq.com/chevrolet/suburban/2025/
 Chevrolet,Tahoe,2005,2023,6x139.7,,https://www.autofiles.com/wheels/chevrolet/tahoe/,https://boltpatternhq.com/chevrolet/tahoe/2025/
-Chevrolet,Trailblazer,2005,2009,unknown,,https://www.autofiles.com/wheels/chevrolet/trailblazer/,
+Chevrolet,Trailblazer,2005,2009,6x127,78.1,https://www.performanceplustire.com/Blog/what-cars-have-6x127-bolt-pattern,https://www.autofiles.com/wheels/chevrolet/trailblazer/
 Chevrolet,Traverse,2009,2017,6x132,,https://www.autofiles.com/wheels/chevrolet/traverse/,https://boltpatternhq.com/chevrolet/traverse/2024/
 Chevrolet,Traverse,2019,2023,6x120,,https://www.autofiles.com/wheels/chevrolet/traverse/,https://boltpatternhq.com/chevrolet/traverse/2024/
 Chevrolet,Trax,2015,2022,5x105,,https://www.autofiles.com/wheels/chevrolet/trax/,https://boltpatternhq.com/chevrolet/trax/2024/
@@ -442,7 +445,7 @@ Ford,Ecosport,2018,2022,4x108,,https://www.autofiles.com/wheels/ford/ecosport/,h
 Ford,Edge,2007,2014,5x114.3,,https://www.kipardoracing.com/ford-edge-wheel-bolt-pattern-guide-2007-2026-specs-offset-hub-bore-wheel-fitment/,https://boltpatternhq.com/ford/edge/2024/
 Ford,Edge,2016,2024,5x108,,https://www.kipardoracing.com/ford-edge-wheel-bolt-pattern-guide-2007-2026-specs-offset-hub-bore-wheel-fitment/,https://boltpatternhq.com/ford/edge/2024/
 Ford,Escape,2005,2011,5x114.3,,https://www.autofiles.com/wheels/ford/escape/,https://boltpatternhq.com/ford/escape/2024/
-Ford,Escape,2012,2012,unknown,,https://www.autofiles.com/wheels/ford/escape/,
+Ford,Escape,2012,2012,5x114.3,67.1,https://www.autofiles.com/wheels/ford/escape/,https://www.oemrimshop.com/blogs/news/ford-escape-bolt-pattern-5x108-5x114-3-by-year-full-guide
 Ford,Escape,2013,2024,5x108,,https://www.teamford.ca/tools-resources/ford-escape-suv-bolt-pattern-guide-across-generations,https://boltpatternhq.com/ford/escape/2024/
 Ford,Excursion,2005,2005,8x170,,https://www.autofiles.com/wheels/ford/excursion/,https://boltpatternhq.com/ford/excursion/2005/
 Ford,Expedition,2005,2022,6x135,,https://www.autofiles.com/wheels/ford/expedition/,https://boltpatternhq.com/ford/expedition/2024/
@@ -459,17 +462,19 @@ Ford,Fiesta,2011,2019,4x108,,https://www.autofiles.com/wheels/ford/fiesta/,https
 Ford,Five Hundred,2005,2007,5x114.3,,https://www.autofiles.com/wheels/ford/five-hundred/,https://boltpatternhq.com/ford/five-hundred/2007/
 Ford,Flex,2009,2019,5x114.3,,https://www.autofiles.com/wheels/ford/flex/,https://boltpatternhq.com/ford/flex/2019/
 Ford,Focus,2005,2005,4x108,,https://www.autofiles.com/wheels/ford/focus/,https://boltpatternhq.com/ford/focus/2018/
-Ford,Focus,2006,2011,unknown,,https://www.autofiles.com/wheels/ford/focus/,
+Ford,Focus,2006,2010,4x108,,https://www.autofiles.com/wheels/ford/focus/,https://www.fordfocusforum.com/threads/ford-focus-wheel-tire-information.1992/
+Ford,Focus,2011,2011,unknown,,https://www.autofiles.com/wheels/ford/focus/,
 Ford,Focus,2012,2018,5x108,,https://www.autofiles.com/wheels/ford/focus/,https://boltpatternhq.com/ford/focus/2018/
 Ford,Freestar,2005,2007,5x114.3,,https://www.autofiles.com/wheels/ford/freestar/,https://boltpatternhq.com/ford/freestar-cargo/2007/
 Ford,Fusion,2006,2012,5x114.3,,https://www.autofiles.com/wheels/ford/fusion/,https://boltpatternhq.com/ford/fusion/2020/
 Ford,Fusion,2013,2020,5x108,,https://www.autofiles.com/wheels/ford/fusion/,https://boltpatternhq.com/ford/fusion/2020/
 Ford,Mustang,2005,2022,5x114.3,,https://www.autofiles.com/wheels/ford/mustang/,https://boltpatternhq.com/ford/mustang/2024/
 Ford,Mustang,2023,2024,5x114.3,,https://project6gr.com/s650-ford-mustang-wheels/,https://boltpatternhq.com/ford/mustang/2024/
-Ford,Mustang Mach-E,2023,2024,unknown,,https://boltpatternhq.com/ford/mustang-mach-e/2024/,
+Ford,Mustang Mach-E,2023,2024,5x108,63.4,https://hubcentric-rings.com/car_models/ford/mustang-mach-e/,https://curvaconcepts.com/fitment-guides/ford-mustang-mach-e/
 Ford,Ranger,2019,2024,6x139.7,,https://hardrockoffroad.com/fitment-guides/ford-ranger/,https://boltpatternhq.com/ford/ranger-supercab/2023/
 Ford,Taurus,2005,2006,5x108,,https://www.autofiles.com/wheels/ford/taurus/,https://boltpatternhq.com/ford/taurus/2019/
-Ford,Taurus,2007,2009,unknown,,https://www.autofiles.com/wheels/ford/taurus/,
+Ford,Taurus,2007,2007,5x108,,https://thedriveradviser.com/the-exact-bolt-pattern-of-a-ford-taurus/,https://www.boltpattern-crossreference.com/brand/ford/taurus/
+Ford,Taurus,2008,2009,5x114.3,,https://thedriveradviser.com/the-exact-bolt-pattern-of-a-ford-taurus/,https://www.boltpattern-crossreference.com/brand/ford/taurus/
 Ford,Taurus,2010,2017,5x114.3,,https://www.autofiles.com/wheels/ford/taurus/,https://boltpatternhq.com/ford/taurus/2019/
 Ford,Thunderbird,2005,2005,5x108,,https://www.autofiles.com/wheels/ford/thunderbird/,https://boltpatternhq.com/ford/thunderbird/2005/
 Ford,Transit Connect,2019,2022,5x108,,https://www.autofiles.com/wheels/ford/transit-connect/,https://boltpatternhq.com/ford/transit-connect-cargo/2019/
@@ -482,10 +487,10 @@ GMC,Envoy,2005,2009,6x127,,https://www.autofiles.com/wheels/gmc/envoy/,https://b
 GMC,Safari,2005,2005,6x139.7,,https://www.autofiles.com/wheels/gmc/safari/,https://boltpatternhq.com/gmc/safari-cargo/2005/
 GMC,Sierra 1500,2005,2023,6x139.7,,https://www.autofiles.com/wheels/gmc/sierra-1500/,https://boltpatternhq.com/gmc/sierra-1500-crew-cab/2024/
 GMC,Sierra 2500HD,2005,2006,8x165.1,,https://www.autofiles.com/wheels/gmc/sierra-2500hd/,https://boltpatternhq.com/gmc/sierra-2500-hd-crew-cab/2024/
-GMC,Sierra 2500HD,2007,2010,unknown,,https://www.autofiles.com/wheels/gmc/sierra-2500hd/,
+GMC,Sierra 2500HD,2007,2010,8x165.1,,https://www.performanceplustire.com/Blog/8x180-bolt-pattern-vehicles-fitment-guide,https://www.americantrucks.com/wheel-bolt-pattern-guide-at-tech-guides.html
 GMC,Sierra 2500HD,2011,2022,8x180,,https://www.autofiles.com/wheels/gmc/sierra-2500hd/,https://boltpatternhq.com/gmc/sierra-2500-hd-crew-cab/2024/
 GMC,Sierra 3500HD,2008,2010,8x165.1,,https://www.autofiles.com/wheels/gmc/sierra-3500hd/,https://boltpatternhq.com/gmc/sierra-3500-hd-crew-cab/2024/
-GMC,Sierra 3500HD,2011,2014,unknown,,https://www.autofiles.com/wheels/gmc/sierra-3500hd/,
+GMC,Sierra 3500HD,2011,2014,8x180,,https://www.performanceplustire.com/Blog/8x180-bolt-pattern-vehicles-fitment-guide,https://www.americantrucks.com/wheel-bolt-pattern-guide-at-tech-guides.html
 GMC,Sierra 3500HD,2015,2022,8x180,,https://www.autofiles.com/wheels/gmc/sierra-3500hd/,https://boltpatternhq.com/gmc/sierra-3500-hd-crew-cab/2024/
 GMC,Terrain,2010,2017,5x120,,https://www.autofiles.com/wheels/gmc/terrain/,https://boltpatternhq.com/gmc/terrain/2024/
 GMC,Terrain,2021,2022,5x115,,https://www.autofiles.com/wheels/gmc/terrain/,https://boltpatternhq.com/gmc/terrain/2024/
@@ -501,7 +506,7 @@ Honda,Accord Crosstour,2010,2011,5x114.3,64.1,https://www.autofiles.com/wheels/h
 Honda,CR-V,2005,2022,5x114.3,64.1,https://www.autofiles.com/wheels/honda/cr-v/,https://boltpatternhq.com/honda/cr-v/2018/
 Honda,CR-Z,2011,2016,5x114.3,64.1,https://www.autofiles.com/wheels/honda/cr-z/,https://boltpatternhq.com/honda/cr-z/2014/
 Honda,Civic,2006,2022,5x114.3,64.1,https://www.autofiles.com/wheels/honda/civic/,https://boltpatternhq.com/honda/civic/2018/
-Honda,Civic Type R,2024,2024,unknown,,https://boltpatternhq.com/honda/civic-type-r/2018/,
+Honda,Civic Type R,2024,2024,5x120,64.1,https://curvaconcepts.com/fitment-guides/honda-civic-type-r/,https://www.wheelprice.com/resources/vehicle-fitment/honda/civic-type-r-fl5
 Honda,Crosstour,2014,2015,5x114.3,64.1,https://www.autofiles.com/wheels/honda/crosstour/,https://boltpatternhq.com/honda/crosstour/2014/
 Honda,Element,2005,2011,5x114.3,64.1,https://www.autofiles.com/wheels/honda/element/,https://boltpatternhq.com/honda/element/2008/
 Honda,Fit,2007,2009,4x100,56.1,https://www.autofiles.com/wheels/honda/fit/,https://boltpatternhq.com/honda/fit/2018/
@@ -516,7 +521,7 @@ Honda,S2000,2005,2007,5x114.3,64.1,https://www.autofiles.com/wheels/honda/s2000/
 Hyundai,Accent,2005,2012,4x100,54.1,https://www.autofiles.com/wheels/hyundai/accent/,https://boltpatternhq.com/hyundai/accent/2022/
 Hyundai,Azera,2006,2017,5x114.3,67.1,https://www.autofiles.com/wheels/hyundai/azera/,https://boltpatternhq.com/hyundai/azera/2017/
 Hyundai,Elantra,2005,2006,4x114.3,,https://www.autofiles.com/wheels/hyundai/elantra/,https://boltpatternhq.com/hyundai/elantra/2024/
-Hyundai,Elantra,2007,2007,unknown,,https://www.autofiles.com/wheels/hyundai/elantra/,
+Hyundai,Elantra,2007,2007,5x114.3,,https://www.factorywheelreplacement.com/products/2007-2010hyundaielantra70740u20,https://www.oemrimshop.com/blogs/news/hyundai-elantra-bolt-pattern-5x114-3-fitment-guide-by-year
 Hyundai,Elantra,2008,2023,5x114.3,67.1,https://www.autofiles.com/wheels/hyundai/elantra/,https://boltpatternhq.com/hyundai/elantra/2024/
 Hyundai,Elantra GT,2017,2020,5x114.3,67.1,https://www.autofiles.com/wheels/hyundai/elantra-gt/,https://boltpatternhq.com/hyundai/elantra-gt/2020/
 Hyundai,Elantra N,2022,2022,5x114.3,67.1,https://www.autofiles.com/wheels/hyundai/elantra-n/,https://boltpatternhq.com/hyundai/elantra-n/2022/
@@ -586,13 +591,14 @@ Jaguar,XJ,2010,2010,5x108,,https://www.autofiles.com/wheels/jaguar/xj/,https://w
 Jaguar,XJ,2011,2019,5x108,63.4,https://www.autofiles.com/wheels/jaguar/xj/,https://boltpatternhq.com/jaguar/xj/2005/
 Jaguar,XJR,2005,2007,5x108,,https://boltpatternhq.com/jaguar/xj/2005/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/jaguar-xjr.html
 Jaguar,XK,2005,2005,5x120.65,,https://boltpatternhq.com/jaguar/xk/2006/,https://www.kipardoracing.com/jaguar-bolt-pattern-guide-complete-specs-fitment-sizes-compatibility-2026/
-Jaguar,XK,2006,2006,unknown,,https://boltpatternhq.com/jaguar/xk/2006/,
+Jaguar,XK,2006,2006,5x120.65,,https://www.originalwheels.com/jaguar-wheels/xk82006rims.php,https://allusedrims.com/products/afwrja512020u78f-0072-jaguar-wheels
 Jaguar,XK,2007,2015,5x108,63.4,https://www.autofiles.com/wheels/jaguar/xk/,https://boltpatternhq.com/jaguar/xk/2006/
 Jeep,Cherokee,2009,2011,unknown,,https://www.autofiles.com/wheels/jeep/cherokee/,
 Jeep,Cherokee,2014,2022,5x110,65.1,https://www.autofiles.com/wheels/jeep/cherokee/,https://boltpatternhq.com/jeep/cherokee/2022/
 Jeep,Commander,2006,2010,5x127,,https://www.autofiles.com/wheels/jeep/commander/,https://boltpatternhq.com/jeep/commander/2010/
 Jeep,Compass,2007,2016,5x114.3,67.1,https://www.autofiles.com/wheels/jeep/compass/,https://boltpatternhq.com/jeep/compass/2024/
-Jeep,Compass,2017,2018,unknown,,https://www.autofiles.com/wheels/jeep/compass/,
+Jeep,Compass,2017,2017,unknown,,https://www.autofiles.com/wheels/jeep/compass/,
+Jeep,Compass,2018,2018,5x110,,https://www.finishlinewheels.com/products/jeep-compass-18x7-oem-alloy-rim-2017-2021-a-9190-pb01-ffpib,https://factorywheelwarehouse.com/2017-2021-jeep-compass-mp-aluminium-18-factory-oem-black-wheel-09190u90.html
 Jeep,Compass,2019,2022,5x110,65.1,https://www.autofiles.com/wheels/jeep/compass/,https://boltpatternhq.com/jeep/compass/2024/
 Jeep,Gladiator,2020,2022,5x127,71.5,https://www.autofiles.com/wheels/jeep/gladiator/,https://boltpatternhq.com/jeep/gladiator/2024/
 Jeep,Grand Cherokee,2005,2022,5x127,,https://www.autofiles.com/wheels/jeep/grand-cherokee/,https://boltpatternhq.com/jeep/grand-cherokee/2024/
@@ -602,7 +608,7 @@ Jeep,Liberty,2005,2012,5x114.3,,https://www.autofiles.com/wheels/jeep/liberty/,h
 Jeep,Patriot,2007,2017,5x114.3,67.1,https://www.autofiles.com/wheels/jeep/patriot/,https://boltpatternhq.com/jeep/patriot/2017/
 Jeep,Renegade,2015,2022,5x110,65.1,https://www.autofiles.com/wheels/jeep/renegade/,https://boltpatternhq.com/jeep/renegade/2023/
 Jeep,Wrangler,2005,2005,5x114.3,,https://www.autofiles.com/wheels/jeep/wrangler/,https://boltpatternhq.com/jeep/wrangler/2024/
-Jeep,Wrangler,2006,2006,unknown,,https://www.autofiles.com/wheels/jeep/wrangler/,
+Jeep,Wrangler,2006,2006,5x114.3,,https://www.4wheelparts.com/articles/jeep-wheel-compatibility-explained-wheel-fitment,https://jeepdecalstore.com/blogs/jds-blog/jeep-wheel-bolt-pattern-torque-specs-by-generation
 Jeep,Wrangler,2007,2023,5x127,,https://www.autofiles.com/wheels/jeep/wrangler/,https://boltpatternhq.com/jeep/wrangler/2024/
 Kia,Amanti,2005,2009,5x114.3,67.1,https://www.autofiles.com/wheels/kia/amanti/,https://boltpatternhq.com/kia/amanti/2009/
 Kia,Cadenza,2014,2019,5x114.3,67.1,https://www.autofiles.com/wheels/kia/cadenza/,https://boltpatternhq.com/kia/cadenza/2020/
@@ -612,13 +618,13 @@ Kia,K5,2021,2022,5x114.3,67.1,https://www.autofiles.com/wheels/kia/k5/,https://b
 Kia,K900,2015,2017,5x114.3,67.1,https://www.autofiles.com/wheels/kia/k900/,https://boltpatternhq.com/kia/k900/2020/
 Kia,K900,2019,2020,5x114.3,67.1,https://www.autofiles.com/wheels/kia/k900/,https://boltpatternhq.com/kia/k900/2020/
 Kia,Niro,2017,2022,5x114.3,,https://www.autofiles.com/wheels/kia/niro/,https://boltpatternhq.com/kia/niro/2024/
-Kia,Optima,2005,2005,unknown,,https://www.autofiles.com/wheels/kia/optima/,
+Kia,Optima,2005,2005,4x114.3,,https://factorywheelwarehouse.com/2003-2006-kia-optima-2001-06-aluminium-15-factory-oem-silver-wheel-74564u20.html,https://autorimshop.com/products/2005-kia-optima-15-oem-wheel-rim-w74564ms
 Kia,Optima,2007,2020,5x114.3,67.1,https://www.autofiles.com/wheels/kia/optima/,https://boltpatternhq.com/kia/optima/2020/
 Kia,Rio,2005,2017,4x100,54.1,https://www.autofiles.com/wheels/kia/rio/,https://boltpatternhq.com/kia/rio/2023/
-Kia,Rio,2023,2023,unknown,,https://boltpatternhq.com/kia/rio/2023/,
+Kia,Rio,2023,2023,4x100,,https://www.originalwheels.com/kia-wheels/rio2023rims.php,https://allusedrims.com/products/afw74776-kia-rio-2018-2022
 Kia,Rondo,2007,2009,5x114.3,67.1,https://www.autofiles.com/wheels/kia/rondo/,https://boltpatternhq.com/kia/rondo/2010/
 Kia,Sedona,2005,2005,5x114.3,,https://www.autofiles.com/wheels/kia/sedona/,https://boltpatternhq.com/kia/sedona/2021/
-Kia,Sedona,2006,2006,unknown,,https://www.autofiles.com/wheels/kia/sedona/,
+Kia,Sedona,2006,2006,6x139.7,,https://autorimshop.com/products/2006-kia-sedona-17-oem-wheel-rim-w74582s,https://allusedrims.com/products/afw74582-kia-sedona-2006-2011
 Kia,Sedona,2007,2012,6x139.7,,https://www.autofiles.com/wheels/kia/sedona/,https://boltpatternhq.com/kia/sedona/2021/
 Kia,Sedona,2014,2014,6x139.7,,https://www.autofiles.com/wheels/kia/sedona/,https://boltpatternhq.com/kia/sedona/2021/
 Kia,Sedona,2016,2021,5x114.3,67.1,https://www.autofiles.com/wheels/kia/sedona/,https://boltpatternhq.com/kia/sedona/2021/
@@ -634,7 +640,7 @@ Land Rover,Defender,2021,2022,5x120,72.6,https://www.autofiles.com/wheels/land-r
 Land Rover,Defender,2023,2024,5x120,,https://boltpatternhq.com/land-rover/defender-110/2022/,https://www.hubcentric-rings.com/car_models/land-rover/defender/
 Land Rover,Discovery,2017,2017,5x120,72.6,https://www.autofiles.com/wheels/land-rover/discovery/,https://boltpatternhq.com/land-rover/discovery/2017/
 Land Rover,Discovery,2018,2022,5x120,,https://www.autofiles.com/wheels/land-rover/discovery/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/land-rover-discovery.html
-Land Rover,Discovery,2023,2024,unknown,,https://boltpatternhq.com/land-rover/discovery/2017/,
+Land Rover,Discovery,2023,2024,5x120,,https://www.originalwheels.com/landrover-wheels/discovery2023rims.php,https://www.alloyhub.com/alloy-wheels/land-rover/discovery/discovery-5/
 Land Rover,Discovery Sport,2015,2017,5x108,63.4,https://www.autofiles.com/wheels/land-rover/discovery-sport/,https://boltpatternhq.com/land-rover/discovery-sport/2020/
 Land Rover,Discovery Sport,2018,2020,5x108,,https://boltpatternhq.com/land-rover/discovery-sport/2020/,https://www.hubcentric-rings.com/car_models/land-rover/discovery-sport/
 Land Rover,Discovery Sport,2021,2022,5x108,63.4,https://www.autofiles.com/wheels/land-rover/discovery-sport/,https://boltpatternhq.com/land-rover/discovery-sport/2020/
@@ -671,7 +677,7 @@ Lexus,HS,2010,2012,5x114.3,60.1,https://www.autofiles.com/wheels/lexus/hs-250h/,
 Lexus,IS,2005,2022,5x114.3,60.1,https://www.autofiles.com/wheels/lexus/is-300/,https://boltpatternhq.com/lexus/is/2018/
 Lexus,LC,2018,2022,5x120,60.1,https://www.autofiles.com/wheels/lexus/lc-500/,https://boltpatternhq.com/lexus/lc/2018/
 Lexus,LS,2005,2005,5x114.3,60.1,https://www.autofiles.com/wheels/lexus/ls-430/,https://boltpatternhq.com/lexus/ls/2018/
-Lexus,LS,2006,2006,unknown,,https://www.autofiles.com/wheels/lexus/ls-430/,
+Lexus,LS,2006,2006,5x114.3,,https://www.originalwheels.com/lexus-wheels/ls4302006rims.php,https://www.autofiles.com/wheels/lexus/ls-430/
 Lexus,LS,2007,2022,5x120,60.1,https://www.autofiles.com/wheels/lexus/ls-460/,https://boltpatternhq.com/lexus/ls/2018/
 Lexus,LX,2005,2011,5x150,,https://www.autofiles.com/wheels/lexus/lx-470/,https://boltpatternhq.com/lexus/lx/2018/
 Lexus,LX,2013,2021,5x150,,https://www.autofiles.com/wheels/lexus/lx-570/,https://boltpatternhq.com/lexus/lx/2018/
@@ -684,17 +690,20 @@ Lincoln,Navigator,2005,2022,6x135,,https://www.autofiles.com/wheels/lincoln/navi
 Lincoln,Navigator L,2017,2017,6x135,,https://www.autofiles.com/wheels/lincoln/navigator-l/,https://boltpatternhq.com/lincoln/navigator-l/2024/
 Lincoln,Navigator L,2019,2022,6x135,,https://www.autofiles.com/wheels/lincoln/navigator-l/,https://boltpatternhq.com/lincoln/navigator-l/2024/
 MINI,Clubman,2013,2013,4x100,56.1,https://autofiles.com/wheels/mini/clubman/,https://boltpatternhq.com/mini/clubman/2017/
-MINI,Clubman,2014,2014,unknown,,https://autofiles.com/wheels/mini/clubman/,
+MINI,Clubman,2014,2014,4x100,,https://www.originalwheels.com/minicooper-wheels/clubman2014rims.php,https://autofiles.com/wheels/mini/clubman/
 MINI,Clubman,2016,2022,5x112,,https://autofiles.com/wheels/mini/clubman/,https://boltpatternhq.com/mini/clubman/2017/
 MINI,Cooper,2005,2008,4x100,56.1,https://autofiles.com/wheels/mini/cooper/,https://boltpatternhq.com/mini/cooper/2008/
-MINI,Cooper Convertible,2014,2019,unknown,,https://boltpatternhq.com/mini/convertible/2016/,
-MINI,Cooper Convertible,2021,2024,unknown,,https://boltpatternhq.com/mini/convertible/2016/,
+MINI,Cooper Convertible,2014,2015,4x100,,https://www.allmagautoparts.com/products/mini-cooper-17-silver-shield-wheel-set-r117-36116789797-2002-2015-r5x-558,https://www.originalwheels.com/minicooper-wheels/mini2015rims.php
+MINI,Cooper Convertible,2016,2019,5x112,,https://www.allmagautoparts.com/products/mini-cooper-15-silver-heli-spoke-wheel-set-492-36116855101-14-24-f55-f56-f57-554,https://lf-ind.com/pages/mini-cooper-f56-f57-fitment-guide
+MINI,Cooper Convertible,2021,2024,5x112,,https://www.allmagautoparts.com/products/mini-cooper-15-silver-heli-spoke-wheel-set-492-36116855101-14-24-f55-f56-f57-554,https://lf-ind.com/pages/mini-cooper-f56-f57-fitment-guide
 MINI,Countryman,2013,2016,5x120,72.6,https://autofiles.com/wheels/mini/countryman/,https://boltpatternhq.com/mini/countryman/2019/
 MINI,Countryman,2018,2022,5x112,,https://autofiles.com/wheels/mini/countryman/,https://boltpatternhq.com/mini/countryman/2019/
-MINI,Hardtop,2009,2012,unknown,,https://boltpatternhq.com/mini/hardtop/2009/,
+MINI,Hardtop,2009,2012,4x100,56.1,https://boltpatternhq.com/mini/hardtop/2009/,https://hubcentric-rings.com/car_models/mini/mini-hatch/
 MINI,Hardtop,2014,2014,5x112,66.6,https://autofiles.com/wheels/mini/hardtop/,https://boltpatternhq.com/mini/hardtop/2009/
 MINI,Paceman,2013,2016,5x120,72.6,https://autofiles.com/wheels/mini/paceman/,https://boltpatternhq.com/mini/paceman/2016/
-Maserati,Granturismo,2014,2026,unknown,,https://ankusiwheels.com/wp-content/uploads/dataset/ankusi-wheel-fitment.csv,
+Maserati,Granturismo,2014,2019,5x114.3,67.1,https://boltpatternhq.com/maserati/granturismo/2014/,https://autofiles.com/wheels/maserati/granturismo/
+Maserati,Granturismo,2020,2022,unknown,,https://ankusiwheels.com/wp-content/uploads/dataset/ankusi-wheel-fitment.csv,
+Maserati,Granturismo,2023,2026,5x110,65.1,https://brightstoneengineering.com/products/maserati-granturismo-2023-wheel-spacers-5x110-65-1mm-bore,https://ankusiwheels.com/wp-content/uploads/dataset/ankusi-wheel-fitment.csv
 Mazda,CX-3,2016,2021,5x114.3,67.1,https://autofiles.com/wheels/mazda/cx-3/,https://boltpatternhq.com/mazda/cx-3/2019/
 Mazda,CX-30,2020,2024,5x114.3,67.1,https://boltpatternhq.com/mazda/cx-30/2024/,https://www.hubcentric-rings.com/car_models/mazda/cx-30/
 Mazda,CX-5,2013,2022,5x114.3,67.1,https://autofiles.com/wheels/mazda/cx-5/,https://boltpatternhq.com/mazda/cx-5/2020/
@@ -702,7 +711,7 @@ Mazda,CX-5,2023,2024,5x114.3,67.1,https://boltpatternhq.com/mazda/cx-5/2020/,htt
 Mazda,CX-7,2007,2012,5x114.3,67.1,https://autofiles.com/wheels/mazda/cx-7/,https://boltpatternhq.com/mazda/cx-7/2010/
 Mazda,CX-9,2007,2022,5x114.3,67.1,https://autofiles.com/wheels/mazda/cx-9/,https://boltpatternhq.com/mazda/cx-9/2015/
 Mazda,MPV,2005,2006,5x114.3,67.1,https://autofiles.com/wheels/mazda/mpv/,https://boltpatternhq.com/mazda/mpv/2006/
-Mazda,MX-5,2005,2005,unknown,,https://boltpatternhq.com/mazda/mx-5-miata/2016/,
+Mazda,MX-5,2005,2005,4x100,54.1,https://boltpatternhq.com/mazda/mx-5-miata/2005/,https://www.kipardoracing.com/mazda-miata-bolt-pattern-na-nb-fitment-guide/
 Mazda,MX-5,2007,2008,5x114.3,67.1,https://autofiles.com/wheels/mazda/mx-5/,https://boltpatternhq.com/mazda/mx-5-miata/2016/
 Mazda,MX-5,2016,2016,5x114.3,,https://boltpatternhq.com/mazda/mx-5-miata/2016/,https://www.hubcentric-rings.com/car_models/mazda/mx-5/
 Mazda,Mazda2,2011,2014,4x100,54.1,https://autofiles.com/wheels/mazda/mazda2/,https://boltpatternhq.com/mazda/mazda2/2011/
@@ -806,9 +815,10 @@ Nissan,350Z,2005,2009,5x114.3,66.1,https://autofiles.com/wheels/nissan/350z/,htt
 Nissan,370Z,2009,2020,5x114.3,66.1,https://autofiles.com/wheels/nissan/370z/,https://boltpatternhq.com/nissan/370z/2016/
 Nissan,Altima,2005,2022,5x114.3,66.1,https://autofiles.com/wheels/nissan/altima/,https://boltpatternhq.com/nissan/altima/2016/
 Nissan,Armada,2005,2015,6x139.7,,https://autofiles.com/wheels/nissan/armada/,https://boltpatternhq.com/nissan/armada/2017/
-Nissan,Armada,2023,2024,unknown,,https://boltpatternhq.com/nissan/armada/2017/,
-Nissan,Cube,2009,2009,unknown,,https://autofiles.com/wheels/nissan/cube/,
-Nissan,Cube,2011,2014,unknown,,https://autofiles.com/wheels/nissan/cube/,
+Nissan,Armada,2023,2023,6x139.7,,https://www.originalwheels.com/nissan-wheels/armada2023rims.php,https://autorimshop.com/products/2023-nissan-armada-20-oem-wheel-rim-w97731mc
+Nissan,Armada,2024,2024,6x139.7,,https://www.originalwheels.com/nissan-wheels/armada2024rims.php,https://autorimshop.com/products/2024-nissan-armada-18-oem-wheel-rim-w62737s
+Nissan,Cube,2009,2009,4x114.3,,https://boltpatternhq.com/nissan/cube/2011/,https://www.originalwheels.com/nissan-wheels/cube2009rims.php
+Nissan,Cube,2011,2014,4x114.3,,https://boltpatternhq.com/nissan/cube/2011/,"https://www.originalwheels.com/nissan-wheels/cube2011rims.php (2012, 2013, 2014 pages cube2012rims.php, cube2013rims.php, cube2014rims.php agree)"
 Nissan,Frontier,2005,2022,6x114.3,66.1,https://autofiles.com/wheels/nissan/frontier/,https://boltpatternhq.com/nissan/frontier-crew-cab/2016/
 Nissan,GT-R,2009,2021,5x114.3,66.1,https://autofiles.com/wheels/nissan/gt-r/,https://boltpatternhq.com/nissan/gt-r/2017/
 Nissan,Juke,2011,2017,5x114.3,66.1,https://autofiles.com/wheels/nissan/juke/,https://boltpatternhq.com/nissan/juke/2015/
@@ -822,7 +832,7 @@ Nissan,Murano,2005,2007,5x114.3,66.1,https://autofiles.com/wheels/nissan/murano/
 Nissan,Murano,2009,2022,5x114.3,66.1,https://autofiles.com/wheels/nissan/murano/,https://boltpatternhq.com/nissan/murano/2017/
 Nissan,NV200,2013,2021,5x114.3,66.1,https://autofiles.com/wheels/nissan/nv200/,https://boltpatternhq.com/nissan/nv200/2019/
 Nissan,Pathfinder,2007,2011,6x114.3,66.1,https://autofiles.com/wheels/nissan/pathfinder/,https://boltpatternhq.com/nissan/pathfinder/2016/
-Nissan,Pathfinder,2012,2012,unknown,,https://autofiles.com/wheels/nissan/pathfinder/,
+Nissan,Pathfinder,2012,2012,6x114.3,,https://boltpatternhq.com/nissan/pathfinder/2012/,https://www.originalwheels.com/nissan-wheels/pathfinder2012rims.php
 Nissan,Pathfinder,2014,2020,5x114.3,66.1,https://autofiles.com/wheels/nissan/pathfinder/,https://boltpatternhq.com/nissan/pathfinder/2016/
 Nissan,Pathfinder,2022,2022,5x114.3,66.1,https://autofiles.com/wheels/nissan/pathfinder/,https://boltpatternhq.com/nissan/pathfinder/2016/
 Nissan,Qashqai,2017,2020,5x114.3,66.1,https://boltpatternhq.com/nissan/rogue-sport/2020/,https://www.hubcentric-rings.com/car_models/nissan/qashqai/
@@ -836,7 +846,7 @@ Nissan,Sentra,2012,2012,unknown,,https://autofiles.com/wheels/nissan/sentra/,
 Nissan,Sentra,2013,2022,5x114.3,66.1,https://autofiles.com/wheels/nissan/sentra/,https://boltpatternhq.com/nissan/sentra/2016/
 Nissan,Titan,2005,2015,6x139.7,,https://autofiles.com/wheels/nissan/titan/,https://boltpatternhq.com/nissan/titan-crew-cab/2015/
 Nissan,Titan,2017,2022,6x139.7,,https://autofiles.com/wheels/nissan/titan/,https://boltpatternhq.com/nissan/titan-crew-cab/2015/
-Nissan,Versa,2008,2011,unknown,,https://autofiles.com/wheels/nissan/versa/,
+Nissan,Versa,2008,2011,4x114.3,,https://autofiles.com/wheels/nissan/versa/,https://www.originalwheels.com/nissan-wheels/versa2010rims.php
 Nissan,Versa,2012,2022,4x100,,https://autofiles.com/wheels/nissan/versa/,https://boltpatternhq.com/nissan/versa/2016/
 Nissan,Versa Note,2016,2019,4x100,,https://autofiles.com/wheels/nissan/versa-note/,https://boltpatternhq.com/nissan/versa-note/2017/
 Nissan,Xterra,2005,2015,6x114.3,66.1,https://autofiles.com/wheels/nissan/xterra/,https://boltpatternhq.com/nissan/xterra/2010/
@@ -851,7 +861,8 @@ Pontiac,Solstice,2006,2009,5x110,,https://boltpatternhq.com/pontiac/solstice/200
 Pontiac,Sunfire,2005,2005,5x100,,https://boltpatternhq.com/pontiac/sunfire/2000/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/pontiac-sunfire.html
 Pontiac,Torrent,2006,2009,5x115,,https://boltpatternhq.com/pontiac/torrent/2008/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/pontiac-torrent.html
 Pontiac,Vibe,2005,2007,5x100,,https://boltpatternhq.com/pontiac/vibe/2007/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/pontiac-vibe.html
-Pontiac,Vibe,2008,2010,unknown,,https://boltpatternhq.com/pontiac/vibe/2007/,
+Pontiac,Vibe,2008,2008,5x100,,https://www.originalwheels.com/pontiac-wheels/vibe2008rims.php,https://forums.genvibe.com/phpBB3/viewtopic.php?t=41400
+Pontiac,Vibe,2009,2010,unknown,,https://boltpatternhq.com/pontiac/vibe/2007/,
 Porsche,718 Boxster,2017,2019,5x130,71.6,https://www.autofiles.com/wheels/porsche/718-boxster/,https://boltpatternhq.com/porsche/718-boxster/2020/
 Porsche,718 Boxster,2020,2020,5x130,,https://boltpatternhq.com/porsche/718-boxster/2020/,https://www.hubcentric-rings.com/car_models/porsche/boxster/
 Porsche,718 Boxster,2021,2022,5x130,71.6,https://www.autofiles.com/wheels/porsche/718-boxster/,https://boltpatternhq.com/porsche/718-boxster/2020/
@@ -907,7 +918,7 @@ Saturn,L300,2005,2005,5x110,,https://boltpatternhq.com/saturn/l-series/2003/,htt
 Saturn,Outlook,2007,2009,6x132,,https://boltpatternhq.com/saturn/outlook/2009/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/saturn-outlook.html
 Saturn,Sky,2007,2009,5x110,,https://boltpatternhq.com/saturn/sky/2008/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/saturn-sky.html
 Saturn,Vue,2005,2007,5x115,,https://boltpatternhq.com/saturn/vue/2006/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/saturn-vue.html
-Saturn,Vue,2008,2010,unknown,,https://boltpatternhq.com/saturn/vue/2006/,
+Saturn,Vue,2008,2010,5x115,,https://www.carsandcollectibles.com/bolt-patterns/vehicles/saturn-vue.html,https://www.factorywheelreplacement.com/products/17-2008-2010-saturn-vue-silver-reconditioned-original-alloy-wheel-7055
 Scion,FR-S,2013,2016,5x100,,https://www.autofiles.com/wheels/scion/fr-s/,https://boltpatternhq.com/scion/fr-s/2015/
 Scion,iA,2016,2016,4x100,,https://www.autofiles.com/wheels/scion/ia/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/scion-ia.html
 Scion,iM,2016,2016,5x114.3,,https://www.autofiles.com/wheels/scion/im/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/scion-im.html
@@ -936,7 +947,7 @@ Subaru,Legacy,2005,2014,5x100,56.1,https://autofiles.com/wheels/subaru/legacy/,h
 Subaru,Legacy,2015,2015,5x114.3,,https://www.factorywheelreplacement.com/products/new-18-2015-2019-subaru-legacy-machined-charcoal-replacement-alloy-wheel-68825,https://autofiles.com/wheels/subaru/legacy/
 Subaru,Legacy,2016,2022,5x114.3,56.1,https://autofiles.com/wheels/subaru/legacy/,https://boltpatternhq.com/subaru/legacy/2015/
 Subaru,Outback,2005,2013,5x100,56.1,https://autofiles.com/wheels/subaru/outback/,https://boltpatternhq.com/subaru/outback/2016/
-Subaru,Outback,2014,2014,unknown,,https://autofiles.com/wheels/subaru/outback/,
+Subaru,Outback,2014,2014,5x100,,https://www.carsandcollectibles.com/bolt-patterns/vehicles/subaru-outback.html,https://www.conleysubaru.com/subaru-research/subaru-outback-bolt-pattern/
 Subaru,Outback,2015,2015,5x114.3,,https://www.factorywheelreplacement.com/products/2015-2017subaruoutback68826u30,https://autofiles.com/wheels/subaru/outback/
 Subaru,Outback,2016,2022,5x114.3,56.1,https://autofiles.com/wheels/subaru/outback/,https://boltpatternhq.com/subaru/outback/2016/
 Subaru,Outback,2023,2024,5x114.3,56.1,https://boltpatternhq.com/subaru/outback/2016/,https://www.hubcentric-rings.com/car_models/subaru/outback/
@@ -953,7 +964,7 @@ Suzuki,Reno,2005,2008,4x114.3,,https://www.autofiles.com/wheels/suzuki/reno/,htt
 Suzuki,SX4,2007,2013,5x114.3,60.1,https://www.autofiles.com/wheels/suzuki/sx4/,https://boltpatternhq.com/suzuki/sx4/2010/
 Suzuki,Verona,2005,2006,4x114.3,,https://www.autofiles.com/wheels/suzuki/verona/,https://www.carsandcollectibles.com/bolt-patterns/vehicles/suzuki-verona.html
 Suzuki,XL7,2005,2005,5x139.7,,https://www.autofiles.com/wheels/suzuki/xl-7/,https://boltpatternhq.com/suzuki/xl-7/2004/
-Tesla,Cybertruck,2026,2027,unknown,,https://www.hubcentric-rings.com/car_models/tesla/cybertruck/,
+Tesla,Cybertruck,2026,2027,6x139.7,,https://unpluggedperformance.com/cybertruck/wheel-and-tire-guide/,https://tsportline.com/blogs/tesla-aftermarket-support/the-tesla-cybertruck-wheel-guide
 Tesla,Model 3,2018,2024,5x114.3,64.1,https://boltpatternhq.com/tesla/model-3/2022/,https://www.hubcentric-rings.com/car_models/tesla/model-3/
 Tesla,Model S,2012,2022,5x120,64.1,https://autofiles.com/wheels/tesla/model-s/,https://boltpatternhq.com/tesla/model-s/2019/
 Tesla,Model S,2023,2024,5x120,64.1,https://boltpatternhq.com/tesla/model-s/2019/,https://www.hubcentric-rings.com/car_models/tesla/model-s/
@@ -971,18 +982,19 @@ Toyota,Echo,2005,2005,4x100,54.1,https://www.autofiles.com/wheels/toyota/echo/,h
 Toyota,Highlander,2006,2022,5x114.3,60.1,https://www.autofiles.com/wheels/toyota/highlander/,https://boltpatternhq.com/toyota/highlander/2018/
 Toyota,Land Cruiser,2017,2021,5x150,,https://www.autofiles.com/wheels/toyota/land-cruiser/,https://boltpatternhq.com/toyota/land-cruiser/2018/
 Toyota,Mirai,2017,2019,5x114.3,60.1,https://www.autofiles.com/wheels/toyota/mirai/,https://boltpatternhq.com/toyota/mirai/2018/
-Toyota,Mirai,2020,2021,unknown,,https://www.autofiles.com/wheels/toyota/mirai/,
+Toyota,Mirai,2020,2020,5x114.3,,https://allusedrims.com/collections/mirai,https://boltpatternhq.com/toyota/mirai/2021/
+Toyota,Mirai,2021,2021,5x120,,https://autofiles.com/wheels/toyota/mirai/,https://allusedrims.com/collections/mirai
 Toyota,Mirai,2024,2024,unknown,,https://boltpatternhq.com/toyota/mirai/2018/,
 Toyota,Prius,2005,2022,5x100,54.1,https://www.autofiles.com/wheels/toyota/prius/,https://boltpatternhq.com/toyota/prius/2018/
 Toyota,Prius Prime,2018,2022,5x100,54.1,https://www.autofiles.com/wheels/toyota/prius-prime/,https://boltpatternhq.com/toyota/prius-prime/2018/
-Toyota,Prius Prime,2024,2024,unknown,,https://boltpatternhq.com/toyota/prius-prime/2018/,
+Toyota,Prius Prime,2024,2024,5x114.3,60.1,https://boltpatternhq.com/toyota/prius-prime/2024/,https://www.bonoss.com/2023-toyota-prius-wheel-spacers-legal-chz306.html
 Toyota,RAV4,2005,2022,5x114.3,60.1,https://www.autofiles.com/wheels/toyota/rav4/,https://boltpatternhq.com/toyota/rav4/2018/
 Toyota,RAV4 Prime,2022,2022,5x114.3,60.1,https://www.autofiles.com/wheels/toyota/rav4-prime/,https://boltpatternhq.com/toyota/rav4-prime/2024/
 Toyota,Sequoia,2005,2007,6x139.7,106.1,https://www.autofiles.com/wheels/toyota/sequoia/,https://boltpatternhq.com/toyota/sequoia/2018/
 Toyota,Sequoia,2010,2022,5x150,,https://www.autofiles.com/wheels/toyota/sequoia/,https://boltpatternhq.com/toyota/sequoia/2018/
 Toyota,Sienna,2005,2020,5x114.3,60.1,https://www.autofiles.com/wheels/toyota/sienna/,https://boltpatternhq.com/toyota/sienna/2018/
 Toyota,Tacoma,2018,2021,6x139.7,,https://hardrockoffroad.com/fitment-guides/toyota-tacoma/,https://www.autofiles.com/wheels/toyota/tacoma/
-Toyota,Tundra,2005,2006,unknown,,https://www.autofiles.com/wheels/toyota/tundra/,
+Toyota,Tundra,2005,2006,6x139.7,,https://www.carsandcollectibles.com/bolt-patterns/vehicles/toyota-tundra.html,https://www.autofiles.com/wheels/toyota/tundra/
 Toyota,Tundra,2008,2021,5x150,,https://hardrockoffroad.com/fitment-guides/toyota-tundra/,https://www.autofiles.com/wheels/toyota/tundra/
 Toyota,Tundra,2023,2026,6x139.7,,https://hardrockoffroad.com/fitment-guides/toyota-tundra/,https://www.kipardoracing.com/toyota-tundra-bolt-pattern-guide-wheel-sizes-offset-lug-nut-specs-fitment-by-year-2000-2026/
 Toyota,Venza,2010,2015,5x114.3,60.1,https://www.autofiles.com/wheels/toyota/venza/,https://boltpatternhq.com/toyota/venza/2015/
@@ -998,7 +1010,7 @@ Volkswagen,CC,2014,2017,5x112,57.1,https://autofiles.com/wheels/volkswagen/cc/,h
 Volkswagen,Eos,2007,2016,5x112,57.1,https://autofiles.com/wheels/volkswagen/eos/,https://boltpatternhq.com/volkswagen/eos/2012/
 Volkswagen,GLI,2008,2009,5x112,57.1,https://autofiles.com/wheels/volkswagen/gli/,https://boltpatternhq.com/volkswagen/gli/2009/
 Volkswagen,GTI,2005,2005,5x100,57.1,https://autofiles.com/wheels/volkswagen/gti/,https://boltpatternhq.com/volkswagen/gti/2011/
-Volkswagen,GTI,2006,2006,unknown,,https://autofiles.com/wheels/volkswagen/gti/,
+Volkswagen,GTI,2006,2006,5x112,,https://www.wheelprice.com/resources/vehicle-fitment/volkswagen/mk5-gti,https://konigwheels.com/blogs/fit-check/volkswagen-gti-2006-2025-mk5-mk8-fit-check
 Volkswagen,GTI,2007,2014,5x112,57.1,https://autofiles.com/wheels/volkswagen/gti/,https://boltpatternhq.com/volkswagen/gti/2011/
 Volkswagen,Golf,2010,2021,5x112,57.1,https://autofiles.com/wheels/volkswagen/golf/,https://boltpatternhq.com/volkswagen/golf/2015/
 Volkswagen,Golf Alltrack,2017,2019,5x112,57.1,https://autofiles.com/wheels/volkswagen/golf-alltrack/,https://boltpatternhq.com/volkswagen/golf-alltrack/2019/
@@ -1029,7 +1041,7 @@ Volkswagen,e-Golf,2019,2019,5x112,57.1,https://autofiles.com/wheels/volkswagen/e
 Volvo,C30,2008,2013,5x108,63.4,https://autofiles.com/wheels/volvo/c30/,https://boltpatternhq.com/volvo/c30/2010/
 Volvo,C40,2022,2024,5x108,63.4,https://boltpatternhq.com/volvo/c40-recharge/2023/,https://www.hubcentric-rings.com/car_models/volvo/c40/
 Volvo,C70,2006,2013,5x108,,https://autofiles.com/wheels/volvo/c70/,https://boltpatternhq.com/volvo/c70/2010/
-Volvo,EX30,2026,2027,unknown,,https://www.hubcentric-rings.com/car_models/volvo/ex30/,
+Volvo,EX30,2026,2027,5x108,63.4,https://www.hubcentric-rings.com/car_models/volvo/ex30/,https://autostw.com.au/blogs/news/volvo-ex30-tyre-size-guide-wheel-pcd-centre-bore-torque-specs
 Volvo,S40,2006,2011,5x108,,https://autofiles.com/wheels/volvo/s40/,https://boltpatternhq.com/volvo/s40/2008/
 Volvo,S60,2005,2009,5x108,65.1,https://autofiles.com/wheels/volvo/s60/,https://boltpatternhq.com/volvo/s60/2016/
 Volvo,S60,2011,2022,5x108,,https://autofiles.com/wheels/volvo/s60/,https://boltpatternhq.com/volvo/s60/2016/

@@ -298,6 +298,13 @@ export interface ResultsView {
    */
   best: readonly Product[];
   similar: readonly Product[];
+  /**
+   * The bolt patterns of a vehicle whose model year came with two or more,
+   * when the vehicle is what narrows the wheels (`/wheels`, no explicit size);
+   * empty otherwise. Wheels for every one of them are listed, and the page
+   * tells the buyer to check their trim (D155).
+   */
+  boltChoice: readonly string[];
   /** How many products each list holds in all, of which the arrays above are
    *  the first few. `N matches · M similar`. */
   bestTotal: number;

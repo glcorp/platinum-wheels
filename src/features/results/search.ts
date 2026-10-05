@@ -51,6 +51,7 @@ import {
 } from "@/features/catalog/queries";
 import type { ProductCategory } from "@/features/catalog/types";
 import { findFitment, type VehicleFitment } from "@/features/finder/fitment";
+import { tireFit, wheelFit } from "@/features/finder/tire-fit";
 import {
   parseResultsQuery,
   withOffsetBounds,
@@ -76,41 +77,8 @@ import {
 
 type SizeFilter = Readonly<Record<string, string | null>>;
 
-const NO_SIZE: SizeFilter = {};
-
 function hasSize(size: SizeFilter): boolean {
   return Object.values(size).some((value) => value !== null);
-}
-
-/**
- * A vehicle in the URL with every size select still at `Any` borrows a size
- * from `finder/fitment.ts` (LA-05, D145 audit). An unknown vehicle resolves to
- * no size, so the page behaves exactly as it does with no vehicle at all
- * (D110).
- *
- * Per category, because a car determines different things for different
- * goods (owner, 2026-09-21): **tires** derive `width`/`profile`/`rim` from the
- * D48(4) placeholder (owner, 2026-10-04: "Keep placeholder for tires");
- * **wheels** derive `bolt` only, real for the exact model year where the
- * ANKUSI data has it, else the placeholder; diameter and width are the
- * buyer's choice, not the car's; **accessories** derive no size at all and
- * narrow on the lug thread instead (D67), below.
- */
-function fitmentSize(
-  category: ProductCategory,
-  fit: VehicleFitment | null,
-): SizeFilter {
-  if (fit === null) return NO_SIZE;
-  switch (category) {
-    case "tires":
-      return fit.tireSize === null
-        ? NO_SIZE
-        : { width: fit.tireSize.width, profile: fit.tireSize.profile, rim: fit.tireSize.rim };
-    case "wheels":
-      return fit.boltPattern === null ? NO_SIZE : { bolt: fit.boltPattern };
-    case "accessories":
-      return NO_SIZE;
-  }
 }
 
 /** A select's value as the number its column holds, or `undefined` for `Any`
@@ -140,16 +108,27 @@ function sizeFilters(size: SizeFilter): Pick<ProductFilters, "tire" | "wheel"> {
   };
 }
 
+/** A vehicle's lug thread as the catalogue spells it: metric as researched
+ *  (`14x1.5`), inch threads as the vendors write them (`1/2x20` -> `1/2 UNF`;
+ *  lug hardware is always UNF). */
+function catalogueThread(thread: string | null): string | undefined {
+  if (thread === null) return undefined;
+  const inch = /^(\d{1,2}\/\d{1,2})x\d{1,2}$/.exec(thread);
+  return inch ? `${inch[1]} UNF` : thread;
+}
+
 /**
  * The URL's filters as the catalogue reads them.
  *
- * Accessories and a vehicle (D67): an accessory has no size, but lug nuts and
- * wheel locks thread onto the car's studs, so the vehicle's thread is what
- * narrows them. The rule is asymmetric on purpose and lives in
- * `queries.ts` `contradictsThread()`: a product is demoted to `similar` only
- * when it STATES a different thread. Stating nothing keeps it a best match.
- * TPMS frequency, the other half of D67, is not a column in the catalogue, so
- * a sensor states nothing and stays a best match.
+ * Accessories and a vehicle (D67, D155): an accessory has no size, but lug
+ * nuts, lug bolts and wheel locks thread onto the car's hub, so the vehicle's
+ * thread narrows them, its fastener (stud and nut, or hub bolt) rules out the
+ * wrong one of lug nuts and lug bolts, and its hub bore decides hub rings.
+ * The rule is asymmetric on purpose and lives in `queries.ts`
+ * `accessoryContradiction()`: a product is demoted to `similar` only when it
+ * STATES something that contradicts the vehicle. Stating nothing keeps it a
+ * best match. TPMS frequency is not a column in the catalogue (owner,
+ * 2026-10-06: TPMS off), so a sensor states nothing and stays a best match.
  */
 function catalogFilters(
   query: ResultsQuery,
@@ -158,6 +137,17 @@ function catalogFilters(
   price: PriceFacet,
 ): ProductFilters {
   const { tire, wheel } = sizeFilters(size);
+  /* A vehicle in the URL narrows tires and wheels only while every size select
+     is still at `Any`: an explicit size always wins (D48, LA-05). What it
+     lends is per category, because a car determines different things for
+     different goods (owner, 2026-09-21): tires get its factory sizes and
+     stock envelope, wheels its bolt patterns, envelope and hub bore, and
+     accessories (no size group) its lug thread, fastener and hub bore, below
+     (D67, D155). An unknown vehicle resolves to nothing, so the page behaves
+     exactly as with no vehicle at all (D110). */
+  const free = !hasSize(size);
+  const tireVehicle = query.category === "tires" && free ? tireFit(fit) : null;
+  const wheelVehicle = query.category === "wheels" && free ? wheelFit(fit) : null;
   return {
     category: query.category,
     brands: query.brands,
@@ -172,9 +162,11 @@ function catalogFilters(
       ...tire,
       seasons: query.category === "tires" ? query.chips.map(seasonFromParam) : [],
       loadIndexMin: numeric(query.loadMin),
+      vehicleFit: tireVehicle ?? undefined,
     },
     wheel: {
       ...wheel,
+      vehicleFit: wheelVehicle ?? undefined,
       offsetMin: query.offsetMin ?? undefined,
       offsetMax: query.offsetMax ?? undefined,
       centerBore: numeric(query.bore),
@@ -185,7 +177,9 @@ function catalogFilters(
         query.category === "accessories"
           ? query.chips.map(accessoryFromParam)
           : [],
-      thread: fit?.thread ?? undefined,
+      thread: catalogueThread(fit?.thread ?? null),
+      fastener: fit?.fastener ?? undefined,
+      hubBore: numeric(fit?.centreBore),
       threads: query.threads,
     },
   };
@@ -685,26 +679,31 @@ async function readCatalogue(
 ): Promise<{ view: ResultsView; catalog: StorefrontFacets }> {
   const { category } = query;
 
-  /* The vehicle's fitment, read once: real bolt pattern for the model year
-     where known, placeholder for the rest (`finder/fitment.ts`, LA-05).
-     `null` for no vehicle and for a vehicle neither source covers. */
+  /* The vehicle's fitment, read once (`finder/fitment.ts`, D155): `null` for
+     no vehicle and for a vehicle no source covers. `query` is NOT mutated:
+     the rail's size selects stay `Any`, because a derived fit is not a user
+     filter. */
   const fit =
     query.vehicle === null
       ? null
       : findFitment(query.vehicle.year, query.vehicle.make, query.vehicle.model);
-
-  /* An explicit size in the URL always wins; otherwise a vehicle may lend
-     one, mapped per category (D48(4)). `query` is NOT mutated: the rail's
-     size selects stay `Any`, because a derived fitment is not a user filter. */
-  const size = hasSize(query.size) ? query.size : fitmentSize(category, fit);
+  const size = query.size;
 
   const price = buildPrice(query, bounds);
   const filters = catalogFilters(query, size, fit, price);
 
-  /* Something narrows when a size is in play, or when a vehicle's thread is
-     (accessories). With nothing narrowing, every match is a best match and
-     the similar row does not render (D47(8)), so it is not even asked for. */
-  const narrows = hasSize(size) || (category === "accessories" && (fit?.thread ?? null) !== null);
+  /* Something narrows when a size is in play, when a vehicle fits tires or
+     wheels, or when its thread, fastener or hub bore does (accessories). With
+     nothing narrowing, every match is a best match and the similar row does
+     not render (D47(8)), so it is not even asked for. */
+  const narrows =
+    hasSize(size) ||
+    filters.tire?.vehicleFit !== undefined ||
+    filters.wheel?.vehicleFit !== undefined ||
+    (category === "accessories" &&
+      ((fit?.thread ?? null) !== null ||
+        (fit?.fastener ?? null) !== null ||
+        (fit?.centreBore ?? null) !== null));
   const expanded = query.show > RESULTS_WINDOW.best;
 
   const [best, similar, catalog] = await Promise.all([
@@ -732,6 +731,12 @@ async function readCatalogue(
       facets: buildFacets(query, catalog, price),
       best: best.items.map(toProduct),
       similar: similar.items.map(toProduct),
+      /* The patterns of a vehicle that came with two, only while the vehicle
+         is what narrows the wheels (D155): the page says to check the trim. */
+      boltChoice:
+        (filters.wheel?.vehicleFit?.boltPatterns.length ?? 0) > 1
+          ? (filters.wheel?.vehicleFit?.boltPatterns ?? [])
+          : [],
       bestTotal: best.total,
       similarTotal: similar.total,
       total: best.total + similar.total,

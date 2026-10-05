@@ -1,0 +1,5 @@
+make,model,years,reason,best_guess,source_1
+Audi,S6,2027,No spec page found for 2027 model year (cars.com has no wheel data),21x8.5 (carry-over guess),https://www.cars.com/research/audi-s6-2025/specs/
+Audi,SQ8,2024-2027,Optional 23in wheel width unverified (tire 285/35R23),23x10 or 23x10.5,https://www.cars.com/research/audi-sq8-2025/specs/
+Audi,SQ9,2027,"Optional 23in wheel widths unverified (tires 285/35R23 F, 315/30R23 R)",23x10;23x11.5,https://www.cars.com/research/audi-sq9-2027/specs/
+Scion,xB,2007,"No 2007 xB model year exists (first generation ended 2006, second began 2008); finder lists 2005-2015 as one span",n/a,https://www.cars.com/research/scion-xb-2006/specs/

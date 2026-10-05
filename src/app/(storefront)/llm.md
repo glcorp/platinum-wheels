@@ -82,6 +82,9 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   an empty no-photo tile, same row height.
 
 ## Rules
+- **The four routes that read a vehicle from the URL redirect old model names first** (D155, *derived*): `tires`,
+  `wheels`, `accessories` and `products/[slug]` call `redirectToCanonicalVehicle` before any other work
+  (`src/features/finder/canonical.ts`; 308, same path, params kept in order).
 - **Every indexable page builds its metadata with `pageMetadata()`** (`src/features/seo/metadata.ts`,
   D112): title, description, the clean canonical path, Open Graph and Twitter in one call. `/`, the three
   category pages and the product page also render `JsonLd`, outside `PageTransition`. `/styleguide` and

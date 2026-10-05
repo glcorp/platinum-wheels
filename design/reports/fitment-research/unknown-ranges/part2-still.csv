@@ -1,0 +1,3 @@
+make,model,year_from,year_to,reason
+BMW,M2,2022,2022,"No such North American model year: F87 M2 production ended 2021 (5x120 per ankusi F87 2016-2020, stocktonwheel F87 2015-2021), G87 started MY2023 (5x112). Wikipedia BMW_M2 gives F87 2016-2021 and G87 2023-present. Nothing to resolve; no wheel retailer lists a 2022 M2 (originalwheels m22022rims.php is 404). Suggest dropping 2022 for M2 from the finder or leaving unknown."
+BMW,M5,2017,2017,"No such North American model year: F10 M5 ended Oct 2016 (MY2016, 5x120), F90 M5 started MY2018 (5x112); Wikipedia BMW_M5 lists F90 as model years 2018-2023. originalwheels m52017rims.php is 404. Nothing to resolve; consider dropping 2017 for M5."
