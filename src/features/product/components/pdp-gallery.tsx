@@ -109,7 +109,7 @@ export function PdpGallery({
           the stack under the gallery is ~470px, so a full-width square pushed
           it below the fold (owner, 2026-10-05, "Yes, shorter photo";
           D153, DEVIATIONS row in `pdp-gallery-band`'s comment). */}
-      <div className="pdp-gallery-band relative mt-4 aspect-square overflow-hidden md:mt-0 md:border md:border-border md:bg-bg">
+      <div className="pdp-gallery-band relative mt-4 overflow-hidden md:aspect-square md:mt-0 md:border md:border-border md:bg-bg">
         <ViewTransition
           name={`product-photo-${slug}`}
           share="morph"
