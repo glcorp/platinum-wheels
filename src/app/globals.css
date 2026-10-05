@@ -811,14 +811,20 @@
    `Add to cart`), so the square pushed `Add to cart` past the first screen;
    the cap leaves that stack plus 12px on screen. `svh`, not `dvh`, so it holds
    with the browser toolbars showing and never resizes during a scroll.
-   1100+ never matches. The box is `overflow-hidden`, so its aspect-ratio
-   minimum is zero and the cap holds; the photo stays whole (`object-contain`). */
+   1100+ never matches; the square there is `md:aspect-square` on the box.
+   The height is set outright, never as `aspect-square` + `max-height`: a
+   percentage height on a child does not resolve against an aspect-ratio box
+   whose height was clamped by `max-height`, so the photo wrapper kept the full
+   square's height inside the shorter box, the photo sat off-centre and its
+   bottom was cut off under the badge (owner, 2026-10-05, "it overlaps and
+   spills"). `min(100vw, ...)` keeps the old square when the cap is larger.
+   The photo stays whole (`object-contain`). */
 @utility pdp-gallery-band {
   @media (max-width: 719.98px) {
-    max-height: max(240px, calc(100svh - 482px));
+    height: min(100vw, max(240px, calc(100svh - 482px)));
   }
   @media (min-width: 720px) and (max-width: 1099.98px) {
-    max-height: 60dvh;
+    height: min(100vw, 60dvh);
   }
 }
 
