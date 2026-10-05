@@ -74,14 +74,17 @@ the owner, what was done meanwhile, and a recommendation. Delete an item once ru
 - **Recommendation:** keep the maker's own capitals (LYRIQ, TITAN are the makers' styling), but show
   `Mazda3`/`Model 3` style names for the bare numbers. It is one display table in the generator.
 
-## 9. Auto Country values that look wrong
+## 9. One Auto Country value the market questions
 
-- **What:** Buick Terraza 2006-07 reads 6x115 at Auto Country; the GM minivans of that generation are usually
-  listed as 5x115. Two Porsche rows carry `15x130` (blanked as centre-lock junk). Maserati MCPura: our older
-  sheet says 5x114.3, two websites say 5x110 (the MC20's), Auto Country has no row.
-- **Why you:** the owner ruled Auto Country first, so a doubtful Auto Country value stands.
-- **Meanwhile:** Auto Country's value is loaded; every override is listed in `fitment-overrides.csv`.
-- **Recommendation:** ask Auto Country about Terraza only if a Terraza enquiry ever arrives.
+- **What:** Toyota Tacoma 2015 reads 6x139.7 only; two websites put the base 4x2 four-cylinder on 5x114.3
+  (bore 60.1), as Auto Country itself has for 2005-2014. Market checks on 2026-10-06
+  (`fitment-research/phase7-market-check.md`) **confirmed** the other two doubts in Auto Country's favour:
+  Buick Terraza 2006-07 is 6x115, and Acura MDX 2014-16 is 5x114.3. The Porsche `15x130` rows are blanked as
+  centre-lock junk.
+- **Why you:** the owner ruled Auto Country first where sources disagree.
+- **Meanwhile:** Auto Country's 6x139.7 stands for the 2015 Tacoma.
+- **Recommendation:** add 5x114.3 for 2015 so the base truck sees its wheels (a two-pattern year, like
+  2005-2014). One row in the gap-fill sheet.
 
 ## 10. Finder years with no North American car
 
@@ -116,4 +119,9 @@ the owner, what was done meanwhile, and a recommendation. Delete an item once ru
   wheels) are never reached from the finder (`fitment-coverage.md`).
 - **Why you:** reaching them needs the lift selector (#2) or a UTV/ATV make list, both scope changes.
 - **Meanwhile:** they stay findable through the filters and search; the finder does not show them.
+- **Market check (Phase 7):** the other unreached patterns fit no car the finder offers: 5x135 is the F-150
+  and Expedition up to 2004, 6x165.1 the 1981-94 Ram Van, 5x101.6 the 1963-76 Dart, 10x285.75 Class 7-8
+  trucks, 10x170 no factory vehicle (a vendor label), and 4x110 ATVs. 7x150 is the F-150's 2004-14 Heavy Duty
+  Payload package; it is **not** added, because it would put a two-pattern line on every 2005-14 F-150 for two
+  wheels. The 11 small tire sizes (12" and 13", 155/65R14) were factory on no 2005-2027 North American car.
 - **Recommendation:** add Auto Country's lift ranges when lifted-truck enquiries justify the selector.

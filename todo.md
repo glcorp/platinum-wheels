@@ -335,6 +335,14 @@ S6. **Add prices to the product structured data** once the owner settles the pri
    prices are shown publicly. Until then a product's markup has no offer, by ruling, and so does not
    qualify for Google's product rich result. `src/features/seo/schema.ts`.
 
+## Owner — vehicle finder fit data (D155)
+
+15. **Ask Direct Auto Import for a fitment export, or confirm targeted lookups are fine.**
+   - **Why:** DAI's `robots.txt` names AI crawlers; its public lookup was used only for about 1,300 targeted
+     requests to fill gaps Auto Country left (`design/reports/fitment-parked.md` #7). A feed from the shop's
+     own supplier is the clean way to keep the finder current.
+   - **Check:** DAI's answer is recorded in root `llm.md` (a new row) and parked item #7 is deleted.
+
 ## Client, via the owner
 
 8. **Street address.** The email footer ships with `Brampton, ON` for now (owner ruling 2026-09-23).
