@@ -54,7 +54,10 @@ Built at `page home`, 2026-09-20.
   platform). A year inside a `?` range borrows nothing. `yearSource` is `nearest` when any group was
   borrowed. `VEHICLE_ALIASES` resolves an old model name to the canonical car first. Two bolt patterns
   are kept as two (owner, 2026-10-06: *"Two bolt patterns in one model-year: Show wheels for both
-  patterns."*). A vehicle in none returns `null` and filters nothing (D110).
+  patterns."*). A range bound that is missing or 0 is read as unbounded on that side (kept as 0 in
+  `TireRange` / `WheelRange`; an offset bound stays `null` when missing, since 0 mm is real), so a range with
+  one blank side is still a range (D155, coordinator 2026-10-06). A vehicle in none returns `null` and
+  filters nothing (D110).
 - [`canonical.ts`](canonical.ts) — `server-only`. `canonicalVehicleHref()` / `redirectToCanonicalVehicle()`
   (D155, *derived*): when `year`/`make`/`model` in a URL fail `isFinderVehicle` but `VEHICLE_ALIASES` maps the
   asked `make|model` to a canonical vehicle that passes it for that year, the three category routes and

@@ -77,7 +77,8 @@ export interface FactoryFlotationTire {
   rim: number;
 }
 
-/** The stock tire envelope: overall diameter in inches, section width in mm. */
+/** The stock tire envelope: overall diameter in inches, section width in mm.
+ *  A bound of 0 means the source states none on that side (unbounded). */
 export interface TireRange {
   diameterMin: number;
   diameterMax: number;
@@ -85,8 +86,10 @@ export interface TireRange {
   widthMax: number;
 }
 
-/** The stock wheel envelope: diameter and width in inches, offset in mm
- *  (`null` when the source states none). */
+/** The stock wheel envelope: diameter and width in inches, offset in mm. A
+ *  diameter or width bound of 0 means the source states none on that side
+ *  (unbounded); an offset bound is `null` when none is stated, because 0 mm is
+ *  a real offset. */
 export interface WheelRange {
   diameterMin: number;
   diameterMax: number;
@@ -226,22 +229,33 @@ function parseRecord(text: string): SpecRecord {
     const [diameter, width] = size.split("x").map(Number);
     if (diameter && width) wheels.push({ diameter, width, source: "specs" });
   }
-  const tr = list(f[7]).map(Number);
+  /* A bound that is missing or 0 is unbounded on that side (D155,
+     coordinator 2026-10-06: Lucid Air 2022-26 states a wheel width minimum of
+     0). It is kept as 0, which the queries' `measure()` reads as "not given".
+     `split`, not `list`: dropping an empty field would shift the rest. An
+     offset keeps `null` for a missing bound, because 0 mm is a real offset. */
+  const bound = (text: string | undefined): number => {
+    const value = num(text);
+    return value !== null && value > 0 ? value : 0;
+  };
+  const tr = (f[7] ?? "").split(",").map(bound);
   const tireRange =
-    tr.length === 4 && tr.every(Number.isFinite)
-      ? { diameterMin: tr[0]!, diameterMax: tr[1]!, widthMin: tr[2]!, widthMax: tr[3]! }
+    tr.some((value) => value > 0)
+      ? { diameterMin: tr[0] ?? 0, diameterMax: tr[1] ?? 0, widthMin: tr[2] ?? 0, widthMax: tr[3] ?? 0 }
       : null;
   const wr = (f[8] ?? "").split(",");
-  const [wd0, wd1, ww0, ww1] = [num(wr[0]), num(wr[1]), num(wr[2]), num(wr[3])];
+  const offsetMin = num(wr[4]);
+  const offsetMax = num(wr[5]);
+  const wheelBounds = wr.slice(0, 4).map(bound);
   const wheelRange =
-    wd0 !== null && wd1 !== null && ww0 !== null && ww1 !== null
+    wheelBounds.some((value) => value > 0) || offsetMin !== null || offsetMax !== null
       ? {
-          diameterMin: wd0,
-          diameterMax: wd1,
-          widthMin: ww0,
-          widthMax: ww1,
-          offsetMin: num(wr[4]),
-          offsetMax: num(wr[5]),
+          diameterMin: wheelBounds[0] ?? 0,
+          diameterMax: wheelBounds[1] ?? 0,
+          widthMin: wheelBounds[2] ?? 0,
+          widthMax: wheelBounds[3] ?? 0,
+          offsetMin,
+          offsetMax,
         }
       : null;
   const fastener = f[3] === "b" ? "bolt" : f[3] === "n" ? "nut" : null;

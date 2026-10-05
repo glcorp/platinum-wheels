@@ -284,7 +284,8 @@ for (const product of plan.products) {
 const FIT_WIDTH = { best: 0.75, near: 1.25 } as const;
 const FIT_RIM = { down: 1, up: 2 } as const;
 const FIT_DIAMETER_SLACK = 0.5;
-const BORE_TOLERANCE = 0.15;
+const BORE_TOLERANCE = 0.5;
+const WHEEL_WIDTH_SLACK = 0.5;
 
 const tireStamp = new Int32Array(tires.length);
 let tireStampId = 0;
@@ -374,29 +375,28 @@ function evalTires(fit: TireVehicleFit): TireOutcome {
   const similarIdx: number[] = [];
   let near: ((i: number) => boolean) | null;
   if (hasSizes && fit.range !== null) {
+    /* stockEnvelope(): a bound `measure` reads as "not given" (missing or 0)
+       is unbounded on that side. */
     const r = fit.range;
     const dMin = measure(r.diameterMin);
     const dMax = measure(r.diameterMax);
     const wMin = measure(r.widthMin);
     const wMax = measure(r.widthMax);
-    if (dMin === undefined || dMax === undefined || wMin === undefined || wMax === undefined) {
-      near = null;
-    } else {
-      const rMin = measure(r.rimMin ?? undefined);
-      const rMax = measure(r.rimMax ?? undefined);
-      const lo = dMin - FIT_DIAMETER_SLACK;
-      const hi = dMax + FIT_DIAMETER_SLACK;
-      near = (i) => {
-        const d = tOverallIn[i]!;
-        const w = tSectionMm[i]!;
-        if (!(d >= lo && d <= hi && w >= wMin && w <= wMax)) return false;
-        if (rMin !== undefined && rMax !== undefined) {
-          const rim = tRim[i]!;
-          if (!(rim >= rMin && rim <= rMax)) return false;
-        }
-        return true;
-      };
-    }
+    const rMin = measure(r.rimMin ?? undefined);
+    const rMax = measure(r.rimMax ?? undefined);
+    const lo = dMin === undefined ? -Infinity : dMin - FIT_DIAMETER_SLACK;
+    const hi = dMax === undefined ? Infinity : dMax + FIT_DIAMETER_SLACK;
+    near = (i) => {
+      const d = tOverallIn[i]!;
+      const w = tSectionMm[i]!;
+      if (!(d >= lo && d <= hi)) return false;
+      if (wMin !== undefined && !(w >= wMin)) return false;
+      if (wMax !== undefined && !(w <= wMax)) return false;
+      const rim = tRim[i]!;
+      if (rMin !== undefined && !(rim >= rMin)) return false;
+      if (rMax !== undefined && !(rim <= rMax)) return false;
+      return true;
+    };
   } else {
     near = rimRulePredicate(fit, "near");
   }
@@ -455,41 +455,29 @@ function evalWheels(fit: WheelVehicleFit): WheelOutcome {
     }
   }
   const range = fit.range;
-  let rangeBroken = false;
-  let dMin = 0;
-  let dMax = 0;
-  let wMin = 0;
-  let wMax = 0;
-  let oMin: number | undefined;
-  let oMax: number | undefined;
-  if (range !== null) {
-    const a = measure(range.diameterMin);
-    const b = measure(range.diameterMax);
-    const c = measure(range.widthMin);
-    const d = measure(range.widthMax);
-    if (a === undefined || b === undefined || c === undefined || d === undefined) {
-      rangeBroken = true;
-    } else {
-      [dMin, dMax, wMin, wMax] = [a, b, c, d];
-    }
-    oMin = signedMeasure(range.offsetMin);
-    oMax = signedMeasure(range.offsetMax);
-  }
+  /* wheelVehicleBest(): a bound that is missing or 0 is unbounded on that
+     side; the width gets WHEEL_WIDTH_SLACK beyond each stated bound. */
+  const dMin = measure(range?.diameterMin);
+  const dMax = measure(range?.diameterMax);
+  const wMinRaw = measure(range?.widthMin);
+  const wMaxRaw = measure(range?.widthMax);
+  const wMin = wMinRaw === undefined ? undefined : wMinRaw - WHEEL_WIDTH_SLACK;
+  const wMax = wMaxRaw === undefined ? undefined : wMaxRaw + WHEEL_WIDTH_SLACK;
+  const oMin = signedMeasure(range?.offsetMin);
+  const oMax = signedMeasure(range?.offsetMax);
   const bore = measure(fit.hubBore);
   const bestIdx: number[] = [];
   const similarIdx: number[] = [];
   for (const i of candidates) {
     const w = wheels[i]!;
-    let best = !rangeBroken;
-    if (best && range !== null) {
-      best =
-        w.diameter >= dMin &&
-        w.diameter <= dMax &&
-        w.width >= wMin &&
-        w.width <= wMax;
-      if (best && oMin !== undefined && oMax !== undefined) {
-        best = Number.isNaN(w.offset) || (w.offset >= oMin && w.offset <= oMax);
-      }
+    let best = true;
+    if (range !== null) {
+      if (dMin !== undefined && !(w.diameter >= dMin)) best = false;
+      if (dMax !== undefined && !(w.diameter <= dMax)) best = false;
+      if (wMin !== undefined && !(w.width >= wMin)) best = false;
+      if (wMax !== undefined && !(w.width <= wMax)) best = false;
+      if (oMin !== undefined && !Number.isNaN(w.offset) && !(w.offset >= oMin)) best = false;
+      if (oMax !== undefined && !Number.isNaN(w.offset) && !(w.offset <= oMax)) best = false;
     }
     if (best && bore !== undefined) {
       // coalesce(center_bore >= bore - tolerance, range === null)
@@ -797,10 +785,11 @@ async function main(): Promise<void> {
     for (const s of f.flotation) carRims.add(s.rim);
     for (const r of f.rims) for (let d = r.diameter - 1; d <= r.diameter + 2; d += 1) carRims.add(d);
     if (f.range !== null) {
-      envDMin = Math.min(envDMin, f.range.diameterMin - FIT_DIAMETER_SLACK);
-      envDMax = Math.max(envDMax, f.range.diameterMax + FIT_DIAMETER_SLACK);
-      envWMin = Math.min(envWMin, f.range.widthMin);
-      envWMax = Math.max(envWMax, f.range.widthMax);
+      /* A bound of 0 is unbounded on that side (queries.ts). */
+      envDMin = Math.min(envDMin, f.range.diameterMin > 0 ? f.range.diameterMin - FIT_DIAMETER_SLACK : -Infinity);
+      envDMax = Math.max(envDMax, f.range.diameterMax > 0 ? f.range.diameterMax + FIT_DIAMETER_SLACK : Infinity);
+      envWMin = Math.min(envWMin, f.range.widthMin > 0 ? f.range.widthMin : -Infinity);
+      envWMax = Math.max(envWMax, f.range.widthMax > 0 ? f.range.widthMax : Infinity);
       if (f.range.rimMin !== null && f.range.rimMax !== null) {
         for (let d = Math.ceil(f.range.rimMin); d <= f.range.rimMax; d += 1) carRims.add(d);
       }
@@ -813,8 +802,8 @@ async function main(): Promise<void> {
       carPatterns.add(pattern);
       const list = envByPattern.get(pattern) ?? [];
       list.push({
-        dMin: fit.range?.diameterMin ?? NaN,
-        dMax: fit.range?.diameterMax ?? NaN,
+        dMin: fit.range && fit.range.diameterMin > 0 ? fit.range.diameterMin : -Infinity,
+        dMax: fit.range && fit.range.diameterMax > 0 ? fit.range.diameterMax : Infinity,
         ranged: fit.range !== null,
       });
       envByPattern.set(pattern, list);

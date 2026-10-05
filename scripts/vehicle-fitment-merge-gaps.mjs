@@ -137,6 +137,9 @@ function clean(row, field, value) {
       if (metric) return `${metric[1]}x${metric[2]}`;
       const inch = /^(\d{1,2}\/\d{1,2})(?:\s*UNF)?$/i.exec(first);
       if (inch && UNF_PITCH[inch[1]]) return `${inch[1]}x${UNF_PITCH[inch[1]]}`;
+      /* Already in the finder's own inch form ("1/2x20"). */
+      const written = /^(\d{1,2}\/\d{1,2})x(\d{2})$/.exec(first);
+      if (written) return `${written[1]}x${written[2]}`;
       return drop("unreadable thread");
     }
     case "fastener": {

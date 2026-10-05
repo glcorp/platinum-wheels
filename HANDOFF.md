@@ -9,7 +9,7 @@ names redirect. Tires, wheels and accessories split Best and Similar by spec; a 
   never in parallel), then `node scripts/vehicle-fitment-autocountry.mjs`,
   `node scripts/vehicle-fitment-merge-gaps.mjs <gap-fill folder>` (only with new gap fills) and
   `node scripts/vehicle-fitment.mjs`; check with `npx tsx scripts/fitment-coverage.ts <catalogue.csv>`.
-- **Checked:** the offline counter equals the page's SQL (about 920 comparisons; 18 cars on all three pages
+- **Checked:** the offline counter equals the page's SQL (about 920 comparisons; 21 cars on all three pages
   of a production build against a local Postgres holding the built catalogue); 390 and 1440 in the browser
   (no overflow, no console errors, Add to cart hit-tests); `npm run check`; `npm run test:e2e:fixture`
   (128 passed, 2 skipped; 32 with indexing on).

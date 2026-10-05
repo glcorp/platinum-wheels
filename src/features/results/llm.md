@@ -52,8 +52,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   patterns of a vehicle that came with two, only while the vehicle is what narrows `/wheels`.
   **Owner, 2026-10-06:** *"priority is vendor then factory. use best and similar both techniques."* and
   *"Two bolt patterns in one model-year: Show wheels for both patterns."* (the rest is *derived*, D155:
-  the 0.5 in slack, the unstated-offset-is-not-outside rule, the unstated-bore rule, the 0.15 mm bore
-  tolerance, the rim-rule fallbacks). Wheel and tire sizes the buyer picks themselves still win over the
+  the 0.5 in tire diameter slack, the unstated-offset-is-not-outside rule, the unstated-bore rule, the
+  0.5 mm bore tolerance and the 0.5 in slack beyond the stock wheel width (coordinator, 2026-10-06, after a
+  vendor spot check: DAI's fit lists run wider than the stock range and list GM 78.1 hubs with 77.8 wheels;
+  "we have only commit a loose fit to the client"), a range bound of 0 or missing meaning unbounded on that
+  side, the rim-rule fallback). Wheel and tire sizes the buyer picks themselves still win over the
   vehicle (the vehicle's bolt pattern is then not applied; whether it should be is open, #10)
   (D67 asymmetry unchanged: a product is demoted only when it STATES a contradiction).
   **What D108b changed, because 9 products and 45,000 behave differently:** a size now *filters*

@@ -35,18 +35,18 @@ model-year offered before still resolves, directly or through an old name.
 
 | Fact | Before (origin/main, D149 and the handoff) | After |
 |---|---|---|
-| Bolt pattern | ~91% (502 no data, 167 unknown of 7,528) | **99.5%** (8,839) |
+| Bolt pattern | ~91% (502 no data, 167 unknown of 7,528) | **99.6%** |
 | Centre bore | under half | **99.0%** |
 | Lug thread | placeholder (D48) | **99.4%** |
 | Nut or bolt | none | **97.7%** |
 | Factory tire sizes | placeholder (D48) | **99.4%** |
 | Factory wheel sizes | about a third (35% after range borrowing) | **99.6%** |
-| Stock tire range | none | **97.8%** |
-| Stock wheel range (diameter, width, offset) | none | **96.9%** |
+| Stock tire range | none | **97.7%** |
+| Stock wheel range (diameter, width, offset) | none | **96.8%** |
 
-Year source: 8,183 exact, 681 the model's nearest real year (the D149 rule; mostly 2027, which Auto Country
-does not list yet), 18 none. Bolt pattern source: Auto Country 8,577; ANKUSI 108; generation sheet 54;
-vendor lookups 53; other web 44; maker 1; our sheets 2; none 43.
+Most model-years are exact; about 680 take the model's nearest real year (the D149 rule; mostly 2027, which
+Auto Country does not list yet); 13 have no fact at all. Bolt pattern source: Auto Country 8,577; ANKUSI 101;
+vendor lookups 89; generation sheet 51; other web 25; maker 1; none 38.
 
 ## Overrides of live data
 
@@ -60,29 +60,29 @@ Nut", bore `0`, thread "Peg": 148 values) were blanked, not loaded (`import-repo
 ## Gap fill
 
 357 model-years had a blank after the crawl. Six agents filled them: one on the vendor lookups, five on maker
-pages and the web, on disjoint car lists. 406 rows on 338 model-years went into
-`scripts/data/vehicle-fitment-vendors.csv`; fields won by source: Direct Auto Import 330, PRO WHEELS 239,
-maker 15, our sheets 139, other web 705. 65 fields where sources disagreed are listed in
+pages and the web, on disjoint car lists. Rows on 338 model-years went into
+`scripts/data/vehicle-fitment-vendors.csv` (369 rows); fields won by source: Direct Auto Import 1,134, PRO
+WHEELS 58, maker 15, our sheets 50, other web 436. 198 fields where sources disagreed are listed in
 `import-report/vehicle-gapfill-conflicts.csv` (highest trust won). 29 model-years are cars that were not sold
 in North America that year (`fitment-parked.md` #10).
 
-**What is still blank:** 18 model-years have no fact at all (GMC Canyon 2013-14, Maserati GranTurismo 2020-22,
-VinFast VF 6, Ford GT MKII, BMW M2 2022, Chrysler Cirrus 2006, Mitsubishi Diamante 2005: all model-years with
-no North American car). 43 have no bolt pattern: those 18 plus centre-lock exotics (Spyker C8 and C12, Saleen
+**What is still blank:** 13 model-years have no fact at all (GMC Canyon 2013-14, Maserati GranTurismo 2020-22,
+VinFast VF 6, Ford GT MKII and the like: model-years with no North American car). 38 have no bolt pattern:
+those plus centre-lock exotics (Spyker C8 and C12, Saleen
 S7, Porsche Carrera GT, Lamborghini Centenario) and VinFast VF 7. A car with no data filters nothing, as before.
 
 ## What the pages show (Best and Similar)
 
 Rules (`src/features/finder/llm.md`, D155): tires Best = a factory size of that model-year, Similar = inside
-the stock range; wheels Best = the car's bolt pattern and inside the stock diameter, width, offset and hub
-bore, Similar = the bolt pattern only; lug hardware by thread and nut or bolt; hub rings by bore.
+the stock range; wheels Best = the car's bolt pattern and inside the stock diameter, width (±0.5") and offset,
+with a bore at least the hub's (−0.5 mm), Similar = the bolt pattern only; lug hardware by thread and nut or bolt; hub rings by bore.
 
-- Median Best per narrowed model-year: **119 tires, 432 wheels**. Lug hardware: no model-year has zero Best.
+- Median Best per narrowed model-year: **116 tires, 552 wheels**. Lug hardware: no model-year has zero Best.
 - **26 model-years show zero Best tires**: sizes the catalogue does not carry (Cadillac Escalade IQ/IQL 24",
   Lamborghini Revuelto, G63 4x4 Squared, Scion iQ 175/60R16, 2005-07 Land Cruiser, Isuzu i-350/i-370,
   Freightliner Sprinter 3500, VPG MV-1). Their Similar row still shows tires.
 - **21 model-years show zero wheels at all**: bolt patterns no wheel in the catalogue has (Smart Fortwo 3x112,
-  Chevrolet LCF 3500 6x222.25, Bentley Arnage, Think City). 260 more show Similar wheels only.
+  Chevrolet LCF 3500 6x222.25, Bentley Arnage, Think City). 217 more show Similar wheels only.
 
 ## Products no car reaches
 
@@ -91,25 +91,31 @@ everything).
 
 | Category | Best | Similar only | Never |
 |---|---|---|---|
-| Tires (8,386) | 7,347 | 859 | 180 |
-| Wheels (29,838) | 25,124 | 3,864 | 850 |
+| Tires (8,386) | 7,346 | 860 | 180 |
+| Wheels (29,838) | 25,481 | 3,507 | 850 |
 | Accessories (1,726) | 1,726 | 0 | 0 |
 
 - **Tires never reached (180):** 158 flotation or off-road sizes of 33" overall and up (lift sizes, parked
   #2), 13 sizes inside the ranges that fit no stock car, 4 other flotation, 2 very low profile, 2 metric
-  off-road over 33", 1 with no aspect ratio. Similar-only (859): sizes that are never a factory size.
+  off-road over 33", 1 with no aspect ratio. Similar-only (860): sizes that are never a factory size.
 - **Wheels never reached (850):** 386 undrilled or blank (drilled to order), 464 bolt patterns no car in the
   list has: 4x156 (197) and 4x137 (183) are UTV/side-by-side patterns, 4x110 (45) ATV, 10x285.75 (11) and
   10x170 (7) heavy truck, 6x165.1 (8), 5x135 (5), 4x137/4x156 (5), 7x150 (2), 5x101.6 (1). Similar-only
-  (3,864): right bolt pattern but outside every stock range (3,196 on width, offset or bore; 668 on diameter).
+  (3,507): right bolt pattern but outside every stock range on width, offset, bore or diameter.
 - **Accessories:** all reached. 1,117 state nothing a car could contradict (universal parts) and stay Best.
 
 ## Checked
 
 - **Counter against the page's SQL:** exact match on 39 named and about 880 random comparisons (every rule
-  path), and again on the final data for 18 cars on all three pages in a production build against a local
-  Postgres holding the same catalogue (54 of 54).
-- **Vendor spot check:** see the section below.
+  path), and on the final data for 21 cars on all three pages of a production build against a local Postgres
+  holding the same catalogue (63 of 63).
+- **Vendor spot check** (`fitment-research/vendor-spotcheck.md`): 50 of our wheels from Direct Auto Import,
+  looked up by DAI's own SKU; DAI lists 272 cars for them. **99.3%** of those cars see the wheel on our page
+  (Best or Similar), 61% as Best before the loosening below. Most misses were wheels 0.5 to 1 inch wider than
+  the stock range, plus and minus sizes, and GM 78.1 mm hubs against 77.8 mm wheel bores. Reverse: of 30 cars
+  we show a wheel as Best for, DAI lists 16; the rest are makes or years DAI does not list for that wheel.
+  After the check, Best was loosened (*derived*, owner: *"loose is also fine"*): 0.5 inch either side of the
+  stock width, bore at least the hub's minus 0.5 mm, and a missing or zero range bound counts as open.
 
 ## Not checked
 

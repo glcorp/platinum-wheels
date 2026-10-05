@@ -275,10 +275,15 @@ function vehicleThread(filters: ProductFilters): string | null {
   return thread ? thread : null;
 }
 
-/** Millimetres either side of a hub bore the vendors' own rounding allows
- *  (`54.1`, `54.15`, `54.0`): a hub ring's inner diameter, and a wheel's
- *  centre bore against the hub. */
-const BORE_TOLERANCE = 0.15;
+/** Millimetres either side of a hub bore that still counts as fitting: a hub
+ *  ring's inner diameter, and a wheel's centre bore against the hub. 0.5 mm
+ *  (loose fit, owner 2026-10-06; coordinator, derived): vendors list GM's
+ *  78.1 hub with 77.8 wheels as fitting. */
+const BORE_TOLERANCE = 0.5;
+/** Inches beyond the stock wheel width, either side, a wheel is still a best
+ *  match (loose fit; derived): most wheels a vendor lists for a car and the
+ *  stock range misses are 0.5 to 1 inch over. */
+const WHEEL_WIDTH_SLACK = 0.5;
 
 /** True for a hub ring whose inner diameter is another size than the
  *  vehicle's hub bore. A ring states the bore it fits as its inner diameter,
@@ -405,22 +410,24 @@ function factorySize(fit: TireFitInput): SQL {
   return sql`coalesce(${or(...parts)}, false)`;
 }
 
-/** A tire inside the vehicle's stock envelope. */
+/** A tire inside the vehicle's stock envelope. A bound that is missing or 0
+ *  (`measure` reads both as "not given") is unbounded on that side. */
 function stockEnvelope(range: NonNullable<TireFitInput["range"]>): SQL {
   const dMin = measure(range.diameterMin);
   const dMax = measure(range.diameterMax);
   const wMin = measure(range.widthMin);
   const wMax = measure(range.widthMax);
-  if (dMin === undefined || dMax === undefined || wMin === undefined || wMax === undefined) {
-    return NOTHING;
-  }
   const rMin = measure(range.rimMin ?? undefined);
   const rMax = measure(range.rimMax ?? undefined);
-  const rim =
-    rMin !== undefined && rMax !== undefined
-      ? sql` and ${tireSpecs.rimDiameter} between ${rMin} and ${rMax}`
-      : sql``;
-  return sql`coalesce(${OVERALL_DIAMETER_IN} between ${dMin - FIT_DIAMETER_SLACK} and ${dMax + FIT_DIAMETER_SLACK} and ${SECTION_WIDTH_MM} between ${wMin} and ${wMax}${rim}, false)`;
+  const parts: SQL[] = [];
+  if (dMin !== undefined) parts.push(sql`${OVERALL_DIAMETER_IN} >= ${dMin - FIT_DIAMETER_SLACK}`);
+  if (dMax !== undefined) parts.push(sql`${OVERALL_DIAMETER_IN} <= ${dMax + FIT_DIAMETER_SLACK}`);
+  if (wMin !== undefined) parts.push(sql`${SECTION_WIDTH_MM} >= ${wMin}`);
+  if (wMax !== undefined) parts.push(sql`${SECTION_WIDTH_MM} <= ${wMax}`);
+  if (rMin !== undefined) parts.push(gte(tireSpecs.rimDiameter, rMin));
+  if (rMax !== undefined) parts.push(lte(tireSpecs.rimDiameter, rMax));
+  if (parts.length === 0) return sql`true`;
+  return sql`coalesce(${and(...parts)}, false)`;
 }
 
 function hasFactorySizes(fit: TireFitInput): boolean {
@@ -468,21 +475,25 @@ function wheelVehicleBest(fit: WheelFitInput): SQL {
   const parts: SQL[] = [bolt];
   const range = fit.range;
   if (range !== null) {
+    /* A diameter or width bound that is missing or 0 is unbounded on that
+       side; the width gets `WHEEL_WIDTH_SLACK` beyond each stated bound. */
     const dMin = measure(range.diameterMin);
     const dMax = measure(range.diameterMax);
     const wMin = measure(range.widthMin);
     const wMax = measure(range.widthMax);
-    if (dMin === undefined || dMax === undefined || wMin === undefined || wMax === undefined) {
-      return NOTHING;
-    }
-    parts.push(between(wheelSpecs.diameter, dMin, dMax));
-    parts.push(between(wheelSpecs.width, wMin, wMax));
+    if (dMin !== undefined) parts.push(gte(wheelSpecs.diameter, dMin));
+    if (dMax !== undefined) parts.push(lte(wheelSpecs.diameter, dMax));
+    if (wMin !== undefined) parts.push(gte(wheelSpecs.width, wMin - WHEEL_WIDTH_SLACK));
+    if (wMax !== undefined) parts.push(lte(wheelSpecs.width, wMax + WHEEL_WIDTH_SLACK));
+    /* A wheel with no offset on record is not outside the range; a missing
+       offset bound is unbounded on that side (0 mm is a real offset). */
     const oMin = signedMeasure(range.offsetMin ?? undefined);
     const oMax = signedMeasure(range.offsetMax ?? undefined);
-    if (oMin !== undefined && oMax !== undefined) {
-      parts.push(
-        sql`(${wheelSpecs.offsetMm} is null or ${wheelSpecs.offsetMm} between ${oMin} and ${oMax})`,
-      );
+    if (oMin !== undefined) {
+      parts.push(sql`(${wheelSpecs.offsetMm} is null or ${wheelSpecs.offsetMm} >= ${oMin})`);
+    }
+    if (oMax !== undefined) {
+      parts.push(sql`(${wheelSpecs.offsetMm} is null or ${wheelSpecs.offsetMm} <= ${oMax})`);
     }
   }
   const bore = measure(fit.hubBore ?? undefined);
