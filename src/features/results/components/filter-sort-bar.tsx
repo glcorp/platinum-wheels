@@ -43,7 +43,7 @@ export function FilterSortBar({ view }: FilterSortBarProps) {
     >
       {/* Left cell: the trigger; its `<dialog>` is `position:fixed`, so it is
           out of flow and never takes a grid track. */}
-      <FilterSheet view={view} />
+      <FilterSheet view={{ query: view.query, facets: view.facets }} />
       {HAS_SORT_CHOICE ? (
         <SortSelect variant="bar" id="results-sort-bar" query={view.query} />
       ) : null}
