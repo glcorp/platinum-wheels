@@ -127,8 +127,10 @@ function catalogueThread(thread: string | null): string | undefined {
  * The rule is asymmetric on purpose and lives in `queries.ts`
  * `accessoryContradiction()`: a product is demoted to `similar` only when it
  * STATES something that contradicts the vehicle. Stating nothing keeps it a
- * best match. TPMS frequency is not a column in the catalogue (owner,
- * 2026-10-06: TPMS off), so a sensor states nothing and stays a best match.
+ * best match. TPMS (D156): only on or off, never the frequency (owner,
+ * 2026-10-06: "not focus on the frequency that is out of our scope"); a TPMS
+ * sensor or tool is demoted for a car the data says has no TPMS, and stays a
+ * best match when the car has it or the data is silent.
  */
 function catalogFilters(
   query: ResultsQuery,
@@ -180,6 +182,7 @@ function catalogFilters(
       thread: catalogueThread(fit?.thread ?? null),
       fastener: fit?.fastener ?? undefined,
       hubBore: numeric(fit?.centreBore),
+      tpms: fit?.tpms === false ? false : undefined,
       threads: query.threads,
     },
   };
@@ -703,7 +706,8 @@ async function readCatalogue(
     (category === "accessories" &&
       ((fit?.thread ?? null) !== null ||
         (fit?.fastener ?? null) !== null ||
-        (fit?.centreBore ?? null) !== null));
+        (fit?.centreBore ?? null) !== null ||
+        fit?.tpms === false));
   const expanded = query.show > RESULTS_WINDOW.best;
 
   const [best, similar, catalog] = await Promise.all([

@@ -47,8 +47,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   with a bore too small, or with an envelope and no bore stated; with no envelope the pattern alone
   decides and only a narrower bore demotes. **Accessories**: lug nuts, lug bolts and wheel locks by thread,
   lug nuts against a hub-bolt car and lug bolts against a stud-and-nut one by type (`fastener`), hub rings
-  by hub bore; a product that states nothing stays best (`queries.ts` `accessoryContradiction()`). TPMS
-  frequency is not a catalogue column (owner, 2026-10-06: TPMS off). `ResultsView.boltChoice` carries the
+  by hub bore, and **since D156 TPMS sensors and tools by the car's TPMS on or off**: every product of the
+  `tpms_sensors_tools` type goes to similar for a car whose `tpms` is `false`, and nothing changes for a car
+  with TPMS or no data (`filters.accessory.tpms`, wired in `search.ts` and counted in `narrows`); a product
+  that states nothing stays best (`queries.ts` `accessoryContradiction()`). The sensor's frequency is not
+  modelled. Owner, 2026-10-06, verbatim: *"for TM or TP MS frequency if auto country is giving on and off for car we can do the same and not focus on the frequency that is out of our scope"*. `ResultsView.boltChoice` carries the
   patterns of a vehicle that came with two, only while the vehicle is what narrows `/wheels`.
   **Owner, 2026-10-06:** *"priority is vendor then factory. use best and similar both techniques."* and
   *"Two bolt patterns in one model-year: Show wheels for both patterns."* (the rest is *derived*, D155:
@@ -241,7 +244,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 ## Open
 1. ~~Vehicle params drive the split through the placeholder `FITMENT` map.~~ **Closed by D155** (2026-10-06):
    the map is gone; the split reads the real fit data (`finder/llm.md`). The fit data is as complete as the
-   generated `VEHICLE_SPECS`; TPMS has no source.
+   generated `VEHICLE_SPECS`; TPMS is on or off only since D156 (no frequency).
 2. ~~Stub links~~ (moot, **D71** removed `Category`, #60) and ~~no-JS mobile sheet~~ (D48(1): `showModal()`
    still needs JS to open it, but its footer `Apply` works without JS once open — the rail's own
    no-JS path went with `Apply`, #71, and isn't owed back).

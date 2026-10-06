@@ -265,9 +265,9 @@ Lincoln,Zephyr,2006,bore,70.6,67.1,"vehicle-fitment.csv (ANKUSI, exact year)"
 Maserati,GranTurismo,2024,bore,67.1,65.1,vehicle-fitment-generations.csv
 Maserati,GranTurismo,2025,bore,67.1,65.1,vehicle-fitment-generations.csv
 Maserati,GranTurismo,2026,bore,67.1,65.1,vehicle-fitment-generations.csv
-Mazda,5,2013,wheel,"16x6.5,17x7",17x6.5,"vehicle-fitment.csv (ANKUSI, exact year)"
 Mazda,CX-9,2009,wheel,"18x7.5,20x7.5",20x8,"vehicle-fitment.csv (ANKUSI, exact year)"
 Mazda,CX-9,2016,wheel,"18x8,20x8",20x8.5,"vehicle-fitment.csv (ANKUSI, exact year)"
+Mazda,Mazda5,2013,wheel,"16x6.5,17x7",17x6.5,"vehicle-fitment.csv (ANKUSI, exact year)"
 Mazda,MX-5 Miata,2006,wheel,"16x6.5,17x6.5",17x7,"vehicle-fitment.csv (ANKUSI, exact year)"
 Mazda,MX-5 Miata,2013,wheel,"16x6.5,17x6.5",17x7,"vehicle-fitment.csv (ANKUSI, exact year)"
 Mercedes-Benz,A-Class,2019,wheel,"17x6.5,18x7.5",17x7.5,"vehicle-fitment.csv (ANKUSI, exact year)"

@@ -15,8 +15,10 @@ names redirect. Tires, wheels and accessories split Best and Similar by spec; a 
   (128 passed, 2 skipped; 32 with indexing on).
 - **Not checked:** Neon or Vercel; Safari and Firefox; each Auto Country value beyond the overrides list and
   the vendor spot check (`design/reports/fitment-coverage.md`).
-- **Owed:** the owner's calls in `design/reports/fitment-parked.md`; `glcorp` merges with **Create a merge
-  commit**.
+- **Owner rulings applied (D156):** familiar model names (`Mazda3`, `Model 3`), 2015 Tacoma 5x114.3, 25
+  no-North-American-car years dropped (8,857 model-years), TPMS sensors to Similar on a TPMS-off car (blank
+  before 2008 reads off), spacers and lift sizes not for launch.
+- **Owed:** `glcorp` merges with **Create a merge commit**.
 
 **Last updated 2026-10-04 (the two open PRs combined into one branch for a single `glcorp` merge, D143,
 branch `integrate/prs-39-42`).** The branch brings **#39** the catalogue photo loader (D139b) and **#42** part

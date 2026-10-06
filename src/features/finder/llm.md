@@ -32,7 +32,7 @@ Built at `page home`, 2026-09-20.
   are another make's or were not built that year (each option carries `data-years`). An `optgroup`'s
   `hidden` does not hide its options, so both attributes go on the options too. Resets a Make or Model
   the change orphans, and focuses `focusId` once on mount (the part-filled vehicle, below).
-- [`data.ts`](data.ts) — client-safe. `FINDER_MAKES` (47 makes, 843 models, each with its model years)
+- [`data.ts`](data.ts) — client-safe. `FINDER_MAKES` (72 makes, 1,058 models since D155 and D156, each with its model years; Mazda and Tesla list as `Mazda3`, `Model 3` and so on, D156: the bare `3`, `S`, `X`, `Y` spellings are aliases only)
   from the generated `vehicle-list.ts`; `finderYears()` (next model year down to 2005, **computed on
   call**, D32/D66); `isFinderVehicle()` (D91b: a listed year, make, and a model of that make **built in
   that year**); `partialVehicle()` (LA-05 P2: what a part-filled submit kept and lacks, only ever list
@@ -42,7 +42,7 @@ Built at `page home`, 2026-09-20.
   notation. Separate so the island reads ranges without bundling the vehicle list.
 - [`fitment.ts`](fitment.ts) — `server-only`. `findFitment(year, make, model)` → `VehicleFitment`
   (`boltPatterns[]`, `centreBore`, `boltSource`, `offset`, `tireSizes[]`, `flotationSizes[]`,
-  `tireRange`, `rims[]`, `wheelRange`, `classes`, `thread`, `fastener`, `yearSource`; all D155). **Per
+  `tireRange`, `rims[]`, `wheelRange`, `classes`, `thread`, `fastener`, `tpms`, `yearSource`; all D155, `tpms` D156). **Per
   field, in order (owner, 2026-10-06: "priority is vendor then factory"):** `VEHICLE_SPECS` for the exact
   year (the generated table, Auto Country first), then the older sheets for the exact year (the ANKUSI
   rows `VEHICLE_FITMENT_DATA`, the hand-kept generation rows `VEHICLE_FITMENT_GENERATIONS` where a range
@@ -51,7 +51,10 @@ Built at `page home`, 2026-09-20.
   later year, no distance cap), then nothing. The nearest-year step runs per **group** (mount: bolts,
   bore, offset; lug: thread, fastener; wheels; tires), and the lug, wheel and tire groups borrow only
   from a year with the same bolt patterns as the settled mount (*derived*: a new pattern is a new
-  platform). A year inside a `?` range borrows nothing. `yearSource` is `nearest` when any group was
+  platform). A year inside a `?` range borrows nothing. `tpms` (**D156**, `true` / `false` / `null`; field 11 of a
+  `VEHICLE_SPECS` record, an older 10-field record reads `null`) is resolved like the lug group (exact year,
+  else the nearest year with the same bolt patterns) but a borrowed `tpms` does not make the year `nearest`
+  (*derived*, so that headline count does not move for a flag). `yearSource` is `nearest` when any other group was
   borrowed. `VEHICLE_ALIASES` resolves an old model name to the canonical car first. Two bolt patterns
   are kept as two (owner, 2026-10-06: *"Two bolt patterns in one model-year: Show wheels for both
   patterns."*). A range bound that is missing or 0 is read as unbounded on that side (kept as 0 in
@@ -133,6 +136,7 @@ Built at `page home`, 2026-09-20.
 | D91b | 2026-09-29 | `isFinderVehicle(year, make, model)` in `data.ts` is the one authority on what counts as a vehicle; `results/query.ts` and `product/view.ts` both call it, and anything else is "no vehicle". | The URL vehicle was printed verbatim in the results chip, the best-none note and the PDP quote chip, so any link could write its own text and phone number onto the page (escaped, never executed). Narrows D79. | Owner, 2026-09-29: "Accept finder vehicles only" |
 | D149, D151 | 2026-10-04 | The finder lists NHTSA vPIC's 47 makes and 843 models, Model narrowed by Year and Make (D110's approved design); wheel bolt pattern and centre bore come from the ANKUSI dataset for the exact model year; tire size, lug thread and TPMS stay the D48(4) placeholder (**superseded by D155**: the placeholder is gone); a part-filled submit reopens the finder with a prompt. | LA-05 and two P2 rows of the D145 audit: placeholder bolt patterns wrong for 21 of 60 vehicles, 45 impossible year combinations, a part-filled vehicle silently dropped. | Owner, 2026-10-04: fix the fit data *"as per vendors and market data"* with *"free data avaialable no payments"*; ANKUSI *"use but give no credit. we have agreed on mail with them"*; *"Keep placeholder for tires"*; fit labels *"No, keep until replaced"* |
 | D155 | 2026-10-06 | `findFitment` resolves each fact from the generated `VEHICLE_SPECS` first, then the older sheets, then the nearest real year (per group, same bolt patterns); old model names resolve through `VEHICLE_ALIASES`; two bolt patterns are kept and both are listed; `tire-fit.ts` turns the fitment into the tire and wheel filters (best = factory size / inside the stock wheel envelope, similar = inside the stock tire envelope / outside the wheel envelope). | The finder's wheel and tire results need more than one bolt pattern and one rim. | Owner, 2026-10-06: *"priority is vendor then factory. use best and similar both techniques."*; *"Two bolt patterns in one model-year: Show wheels for both patterns."*; *"we have only commit a loose fit to the client. So you don't have to be precise to the last spec if major of the filters work correctly then it's good"*. Everything else in the row is *derived* (see `results/llm.md`, `catalog/llm.md`). |
+| D156 | 2026-10-06 | `VehicleFitment.tpms` (`boolean | null`) says whether the car has a tyre pressure sensor system; it feeds only the accessory split (a TPMS sensor or tool is similar for a car with none). On and off only, no frequency. | Auto Country carries `chassis.tpms` per trim; the owner ruled the frequency out of scope. | Owner, 2026-10-06, verbatim: *"for TM or TP MS frequency if auto country is giving on and off for car we can do the same and not focus on the frequency that is out of our scope"*. *Derived:* `off` before the 2008 model year when no trim says on (Auto Country never says off). |
 | D128 | 2026-10-03 | On `/` the header switches the hero finder between tires, wheels and accessories (`switchable`, `FinderSwitchSubmit`); the CTA aligns to its row's end from `sm:`; the hero panel compacts on short phones so it sits above the fold. | Owner: the CTA was "off if we change the resolution" (1084×1116), "visible only after scroll in the mobile view", and header Wheels / Accessories "should stay on the home page and refresh that part only". | Owner, 2026-10-03; D128 |
 Governing: **D27, D28, D33, D39, D79**.
 
@@ -157,8 +161,9 @@ Governing: **D27, D28, D33, D39, D79**.
 ## Don't
 - Don't derive makes, models, years, bolt patterns, thread pitches or TPMS frequencies from the wheel
   CSV (D9). Makes, models and years come from vPIC (`scripts/data/vehicles.csv`); every other fact comes
-  from the generated `VEHICLE_SPECS` or the older sheets named under `fitment.ts` above. TPMS has no source
-  and is off (owner, 2026-10-06).
+  from the generated `VEHICLE_SPECS` or the older sheets named under `fitment.ts` above. **TPMS is on or off
+  only (D156):** never derive a sensor frequency (owner, 2026-10-06, verbatim: *"for TM or TP MS frequency if auto country is giving on and off for car we can do the same and not focus on the frequency that is out of our scope"*). Auto Country says
+  `on` or nothing and never `off`, so `off` is *derived* for a model year before 2008 (`scripts/data/llm.md`).
 - Don't edit `vehicle-list.ts` or `vehicle-fitment-data.ts`; change the CSV or the script and re-run it.
 - Don't import `fitment.ts` from anything a client island imports (it is `server-only` on purpose).
 - Don't turn the centre bore into a hard filter: aftermarket wheels are bored large and fitted with hub
@@ -193,8 +198,9 @@ options). Same streaming mechanism as **D80**, seen from the other side. Verify 
 ## Open
 - **Fit data is real since D149 and D155, and still partial.** Bolt pattern, hub bore, wheel and tire
   envelopes and factory sizes are as complete as the generated `VEHICLE_SPECS` is; a model-year it lacks
-  borrows the nearest real year of the same platform, and a `?` range borrows nothing. Not built: TPMS
-  frequency (no source, owner 2026-10-06), wheel spacers, and the parked question of hiding a wheel whose
+  borrows the nearest real year of the same platform, and a `?` range borrows nothing. TPMS is on or off
+  since D156 (166 of 8,857 model-years unknown, 147 off). Not built: TPMS frequency (out of scope, owner
+  2026-10-06), wheel spacers, and the parked question of hiding a wheel whose
   bore is narrower than the hub. The old placeholder half is gone. Co-founder.
 - ~~Whether `/tires` reads the three params or ignores them.~~ Answered: it parses `year`/`make`/`model`
   (all three or none) into `ResultsQuery.vehicle` (`src/features/results/query.ts:82-84,113`) and uses it

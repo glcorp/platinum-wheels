@@ -58,6 +58,8 @@
  *   - Per model year the centre bore, thread, fastener and offset are the most
  *     common value across trims (a tie takes the larger bore, and the first
  *     seen for the others); bolt_patterns lists every distinct pattern.
+ *   - `tpms` (D156): "on" when any trim of the year says on, else "off" for a
+ *     year before 2008 (see `tpmsOf`), else blank. Auto Country never says off.
  *
  * Trim routing (derived, coordinator 2026-10-06): when one of OUR models is an
  * Auto Country model plus a trim word that matches an Auto Country submodel of
@@ -135,7 +137,7 @@ const FIT_HEADER = [
   "make", "model", "year", "trims", "bodies", "bolt_patterns", "centre_bore", "thread", "fastener",
   "offset", "tire_sizes", "wheel_sizes", "tire_dia_min", "tire_dia_max", "tire_width_min",
   "tire_width_max", "wheel_dia_min", "wheel_dia_max", "wheel_width_min", "wheel_width_max",
-  "offset_min", "offset_max", "classes", "routed_from",
+  "offset_min", "offset_max", "classes", "routed_from", "tpms",
 ];
 const ALIAS_HEADER = [
   "make", "model", "year_from", "year_to", "canonical_make", "canonical_model", "relation", "note",
@@ -160,10 +162,6 @@ const SAME = [
   ["Nissan", "Qashqai", "Rogue Sport", "Rogue Sport is the North American Qashqai (vehicles-fetch.mjs RENAMED)"],
   ["Chevrolet", "Astro Van", "Astro", "spelling"],
   ["GMC", "Jimmy Utility", "Jimmy", "spelling"],
-  ["Tesla", "Model 3", "3", "Auto Country drops the word Model"],
-  ["Tesla", "Model S", "S", "Auto Country drops the word Model"],
-  ["Tesla", "Model X", "X", "Auto Country drops the word Model"],
-  ["Tesla", "Model Y", "Y", "Auto Country drops the word Model"],
   ["Toyota", "Supra", "GR Supra", "the 2020 Supra is sold as GR Supra by Auto Country, Supra by vPIC"],
   ["BMW", "1M", "1 Series M", "same car: the 2011 1 Series M Coupe"],
   ["BMW", "B7", "Alpina B7", "same car: Alpina B7 (vPIC drops the make word)"],
@@ -178,6 +176,31 @@ const SAME = [
   ["Mitsubishi", "Lancer SportBack", "Lancer", "the Sportback is a Lancer body on the same hub"],
   ["Suzuki", "Grand Vitara XL-7", "XL-7", "the 2006-2008 XL-7 is vPIC's Grand Vitara XL-7"],
   ["Alfa Romeo", "8C Competizione Spider", "8C", "the 8C Competizione and its Spider"],
+];
+
+/**
+ * Familiar display names (D156, owner 2026-10-06: "Familiar names
+ * (Recommended)"). Where Auto Country's model name is a bare number or letter
+ * that the maker itself markets with a prefix, the finder shows the familiar
+ * name and Auto Country's spelling becomes an alias (so `model=3` in an old URL
+ * still resolves). This is the one exception to "Auto Country's name wins"
+ * (D155); maker capitals (LYRIQ, TITAN, ESCALADE IQ) and real numeric names
+ * (Ram 1500, Chrysler 300, Fiat 500, Porsche 911, BMW 328i) are not touched.
+ * [make, Auto Country model, name the finder shows, reason]. Applied to the
+ * Auto Country rows before anything is decided, so the fitment CSV, the alias
+ * rows and every later step see the familiar name; one alias row per entry
+ * records the old spelling. A member such as "3 Sport" then folds into the
+ * familiar name by the FAMILY rules.
+ */
+const DISPLAY = [
+  ["Mazda", "2", "Mazda2", "Mazda markets the model as Mazda2; Auto Country lists the bare 2"],
+  ["Mazda", "3", "Mazda3", "Mazda markets the model as Mazda3; Auto Country lists the bare 3"],
+  ["Mazda", "5", "Mazda5", "Mazda markets the model as Mazda5; Auto Country lists the bare 5"],
+  ["Mazda", "6", "Mazda6", "Mazda markets the model as Mazda6; Auto Country lists the bare 6"],
+  ["Tesla", "3", "Model 3", "Tesla's name is Model 3; Auto Country drops the word Model"],
+  ["Tesla", "S", "Model S", "Tesla's name is Model S; Auto Country drops the word Model"],
+  ["Tesla", "X", "Model X", "Tesla's name is Model X; Auto Country drops the word Model"],
+  ["Tesla", "Y", "Model Y", "Tesla's name is Model Y; Auto Country drops the word Model"],
 ];
 
 /**
@@ -477,7 +500,7 @@ async function loadRaw(raw, ours, canonicalMake) {
       item = {
         make, model, year,
         trims: [], bodies: new Set(), classes: new Set(),
-        bolt: [], bore: [], thread: [], fastener: [], offset: [],
+        bolt: [], bore: [], thread: [], fastener: [], offset: [], tpms: [],
         tires: new Set(), wheels: new Set(),
         otherChassis: new Map(), ranges: {},
         hasOptions: false, routedFrom: new Set(),
@@ -591,6 +614,7 @@ async function loadRaw(raw, ours, canonicalMake) {
     if (thread === "" && chassis.threadType) junk("thread", chassis.threadType);
     item.thread.push(thread);
     item.fastener.push(chassis.nutOrBolt === "nut" || chassis.nutOrBolt === "bolt" ? chassis.nutOrBolt : "");
+    item.tpms.push(chassis.tpms === "on" || chassis.tpms === "off" ? chassis.tpms : "");
     item.offset.push(chassis.rimOffset !== null && chassis.rimOffset !== undefined && chassis.rimOffset !== ""
       && Number.isFinite(Number(chassis.rimOffset)) ? String(Math.round(Number(chassis.rimOffset))) : "");
     const vehicles = data.vehicles ?? [];
@@ -689,6 +713,24 @@ function distinctByCount(values) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([value]) => value);
 }
 
+/**
+ * Does the model year carry a tyre pressure sensor (D156)? Auto Country's
+ * `chassis.tpms` is "on" or null in all 31,974 saved answers, never "off". A
+ * model year is "on" when any trim says on (a car with a sensor on some trim
+ * needs sensors). "off" is stated only when no trim says on AND the model year
+ * is before TPMS_ABSENT_MEANS_OFF_BEFORE: before the 2008 model year (the US
+ * mandate; Canada followed) a blank is a car without the system, while a blank
+ * in 2025 or 2026 is Auto Country not having filled the year in yet, so it
+ * stays blank (unknown). Derived by the coordinator, vetoable: set the
+ * constant to 0 to state "off" only where Auto Country says "off".
+ */
+const TPMS_ABSENT_MEANS_OFF_BEFORE = 2008;
+function tpmsOf(item) {
+  if (item.tpms.includes("on")) return "on";
+  if (item.tpms.includes("off")) return "off";
+  return item.hasOptions && item.year < TPMS_ABSENT_MEANS_OFF_BEFORE ? "off" : "";
+}
+
 function toRow(item) {
   const range = (key, side, digits = 1) =>
     item.ranges[key] && Number.isFinite(item.ranges[key][side])
@@ -719,6 +761,7 @@ function toRow(item) {
     offset_max: range("offset", "max", 0),
     classes: ["car", "mpv", "truck"].filter((c) => item.classes.has(c)).join(";"),
     routed_from: [...item.routedFrom].join(";"),
+    tpms: tpmsOf(item),
   };
 }
 
@@ -1156,10 +1199,45 @@ const rows = [...years.values()]
   .map(toRow)
   .sort((a, b) => a.make.localeCompare(b.make) || a.model.localeCompare(b.model) || a.year - b.year);
 if (rows.length === 0) throw new Error(`no Auto Country answers found under ${raw}`);
+/* Familiar display names (DISPLAY above): rename before anything is decided. */
+const displayYears = new Map();
+for (const row of rows) {
+  const hit = DISPLAY.find(([make, from]) => canonicalMake(row.make) === make && row.model === from);
+  if (!hit) continue;
+  const key = `${hit[0]}|${hit[1]}`;
+  if (!displayYears.has(key)) displayYears.set(key, new Set());
+  displayYears.get(key).add(Number(row.year));
+  row.model = hit[2];
+}
+rows.sort((a, b) => a.make.localeCompare(b.make) || a.model.localeCompare(b.model) || a.year - b.year);
 await writeFile(OUT_FITMENT, toCsv(FIT_HEADER, rows));
 
 const { out: aliasRows, review } = decideNames(rows, ours, canonicalMake);
 const aliases = collapseAliasRows(aliasRows);
+/* One alias row per renamed entry: Auto Country's bare spelling -> the familiar name,
+   over every year the entry is offered (Auto Country's years plus ours). */
+for (const [make, from, to, reason] of DISPLAY) {
+  const entryYears = new Set(displayYears.get(`${make}|${from}`) ?? []);
+  for (const v of ours.vehicles) if (v.make === make && v.model === to) for (const y of v.years) entryYears.add(y);
+  if (!displayYears.has(`${make}|${from}`)) {
+    console.warn(`display rule matched nothing: ${make} ${from}`);
+    continue;
+  }
+  for (const [yearFrom, yearTo] of yearRanges([...entryYears])) {
+    aliases.push({
+      make, model: from, year_from: yearFrom, year_to: yearTo, canonical_make: make,
+      canonical_model: to, relation: "same", note: `display table (D156): ${reason}`,
+    });
+  }
+}
+const relationOrder = { same: 0, member: 1, split: 2, "ac-only": 3, "ours-only": 4 };
+aliases.sort(
+  (a, b) =>
+    a.make.localeCompare(b.make) ||
+    a.model.localeCompare(b.model) ||
+    relationOrder[a.relation] - relationOrder[b.relation] ||
+    a.year_from - b.year_from,
+);
 await writeFile(OUT_ALIASES, toCsv(ALIAS_HEADER, aliases));
 await mkdir(path.dirname(OUT_REVIEW), { recursive: true });
 await writeFile(

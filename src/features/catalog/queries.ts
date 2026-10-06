@@ -301,6 +301,12 @@ function contradictsFastener(fastener: "nut" | "bolt"): SQL {
   return sql`coalesce(${accessorySpecs.accessoryType} = ${wrong}, false)`;
 }
 
+/** True for a TPMS sensor or tool when the vehicle has no TPMS (D156). Decided
+ *  by the type alone: `part_type` is empty on every product of the type, so
+ *  the catalogue cannot tell a sensor from a programming tool, and a car with
+ *  no sensor system needs neither. */
+const CONTRADICTS_NO_TPMS = sql`coalesce(${accessorySpecs.accessoryType} = 'tpms_sensors_tools', false)`;
+
 /** What a vehicle's own facts rule out among accessories, or `null` when it
  *  has no fact an accessory could contradict. */
 function accessoryContradiction(filters: ProductFilters): SQL | null {
@@ -314,6 +320,7 @@ function accessoryContradiction(filters: ProductFilters): SQL | null {
   }
   const bore = measure(filters.accessory?.hubBore);
   if (bore !== undefined) parts.push(contradictsBore(bore));
+  if (filters.accessory?.tpms === false) parts.push(CONTRADICTS_NO_TPMS);
   return parts.length === 0 ? null : (or(...parts) ?? null);
 }
 

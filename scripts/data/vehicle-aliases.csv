@@ -1304,7 +1304,11 @@ Maserati,Quattroporte,2005,2024,Maserati,Quattroporte,same,same spelling
 Maserati,Spyder,2005,2006,Maserati,Spyder,same,same spelling
 Maybach,57,2005,2012,Maybach,57,ac-only,no counterpart in vehicles.csv
 Maybach,62,2005,2012,Maybach,62,ac-only,no counterpart in vehicles.csv
-Mazda,3 Sport,2009,2025,Mazda,3,member,hand table: 3 Sport is the Mazda3 hatchback; one bolt pattern across the family
+Mazda,2,2011,2021,Mazda,Mazda2,same,display table (D156): Mazda markets the model as Mazda2; Auto Country lists the bare 2
+Mazda,3,2005,2027,Mazda,Mazda3,same,display table (D156): Mazda markets the model as Mazda3; Auto Country lists the bare 3
+Mazda,3 Sport,2009,2025,Mazda,Mazda3,member,hand table: 3 Sport is the Mazda3 hatchback; one bolt pattern across the family
+Mazda,5,2006,2017,Mazda,Mazda5,same,display table (D156): Mazda markets the model as Mazda5; Auto Country lists the bare 5
+Mazda,6,2005,2021,Mazda,Mazda6,same,display table (D156): Mazda markets the model as Mazda6; Auto Country lists the bare 6
 Mazda,B2300,2005,2010,Mazda,B-Series,member,"hand table: B2300, B3000, B4000 are B-Series trucks; one bolt pattern across the family"
 Mazda,B3000,2005,2008,Mazda,B-Series,member,"hand table: B2300, B3000, B4000 are B-Series trucks; one bolt pattern across the family"
 Mazda,B4000,2005,2010,Mazda,B-Series,member,"hand table: B2300, B3000, B4000 are B-Series trucks; one bolt pattern across the family"
@@ -1321,14 +1325,14 @@ Mazda,CX-70,2027,2027,Mazda,CX-70,same,no Auto Country listing this year; name f
 Mazda,CX-9,2007,2023,Mazda,CX-9,same,same spelling
 Mazda,CX-90,2024,2026,Mazda,CX-90,same,same spelling
 Mazda,CX-90,2027,2027,Mazda,CX-90,same,no Auto Country listing this year; name follows 2026
-Mazda,Mazda2,2011,2014,Mazda,2,same,spelling
-Mazda,Mazda2,2015,2021,Mazda,2,same,no Auto Country listing this year; name follows 2014
-Mazda,Mazda3,2005,2026,Mazda,3,same,spelling
-Mazda,Mazda3,2027,2027,Mazda,3,same,no Auto Country listing this year; name follows 2026
-Mazda,Mazda5,2006,2010,Mazda,5,same,spelling
-Mazda,Mazda5,2011,2011,Mazda,5,same,no Auto Country listing this year; name follows 2012
-Mazda,Mazda5,2012,2017,Mazda,5,same,spelling
-Mazda,Mazda6,2005,2021,Mazda,6,same,spelling
+Mazda,Mazda2,2011,2014,Mazda,Mazda2,same,same spelling
+Mazda,Mazda2,2015,2021,Mazda,Mazda2,same,no Auto Country listing this year; name follows 2014
+Mazda,Mazda3,2005,2026,Mazda,Mazda3,same,same spelling
+Mazda,Mazda3,2027,2027,Mazda,Mazda3,same,no Auto Country listing this year; name follows 2026
+Mazda,Mazda5,2006,2010,Mazda,Mazda5,same,same spelling
+Mazda,Mazda5,2011,2011,Mazda,Mazda5,same,no Auto Country listing this year; name follows 2012
+Mazda,Mazda5,2012,2017,Mazda,Mazda5,same,same spelling
+Mazda,Mazda6,2005,2021,Mazda,Mazda6,same,same spelling
 Mazda,Miata,2005,2005,Mazda,MX-5 Miata,member,"Auto Country spells MX-5 ""Miata"" this year and ""MX-5 Miata"" in most years"
 Mazda,MPV,2005,2006,Mazda,MPV,same,same spelling
 Mazda,MX-30 EV,2022,2024,Mazda,MX-30,member,the Auto Country name starts with our model name; one bolt pattern across the family
@@ -1919,18 +1923,22 @@ Suzuki,SX4 Crossover,2012,2012,Suzuki,SX4,member,the Auto Country name starts wi
 Suzuki,Verona,2005,2006,Suzuki,Verona,same,same spelling
 Suzuki,Verona,2007,2008,Suzuki,Verona,same,no Auto Country listing this year; name follows 2006
 Suzuki,XL7,2005,2009,Suzuki,XL-7,same,spelling
+Tesla,3,2017,2027,Tesla,Model 3,same,display table (D156): Tesla's name is Model 3; Auto Country drops the word Model
 Tesla,Cybertruck,2024,2026,Tesla,Cybertruck,same,same spelling
 Tesla,Cybertruck,2027,2027,Tesla,Cybertruck,same,no Auto Country listing this year; name follows 2026
-Tesla,Model 3,2017,2025,Tesla,3,same,hand table: Auto Country drops the word Model
-Tesla,Model 3,2026,2027,Tesla,3,same,no Auto Country listing this year; name follows 2025
-Tesla,Model S,2012,2025,Tesla,S,same,hand table: Auto Country drops the word Model
-Tesla,Model S,2026,2026,Tesla,S,same,no Auto Country listing this year; name follows 2025
-Tesla,Model X,2016,2025,Tesla,X,same,hand table: Auto Country drops the word Model
-Tesla,Model X,2026,2026,Tesla,X,same,no Auto Country listing this year; name follows 2025
-Tesla,Model Y,2020,2025,Tesla,Y,same,hand table: Auto Country drops the word Model
-Tesla,Model Y,2026,2027,Tesla,Y,same,no Auto Country listing this year; name follows 2025
+Tesla,Model 3,2017,2025,Tesla,Model 3,same,same spelling
+Tesla,Model 3,2026,2027,Tesla,Model 3,same,no Auto Country listing this year; name follows 2025
+Tesla,Model S,2012,2025,Tesla,Model S,same,same spelling
+Tesla,Model S,2026,2026,Tesla,Model S,same,no Auto Country listing this year; name follows 2025
+Tesla,Model X,2016,2025,Tesla,Model X,same,same spelling
+Tesla,Model X,2026,2026,Tesla,Model X,same,no Auto Country listing this year; name follows 2025
+Tesla,Model Y,2020,2025,Tesla,Model Y,same,same spelling
+Tesla,Model Y,2026,2027,Tesla,Model Y,same,no Auto Country listing this year; name follows 2025
 Tesla,Roadster,2008,2011,Tesla,Roadster,same,same spelling
 Tesla,Roadster,2012,2012,Tesla,Roadster,same,no Auto Country listing this year; name follows 2011
+Tesla,S,2012,2026,Tesla,Model S,same,display table (D156): Tesla's name is Model S; Auto Country drops the word Model
+Tesla,X,2016,2026,Tesla,Model X,same,display table (D156): Tesla's name is Model X; Auto Country drops the word Model
+Tesla,Y,2020,2027,Tesla,Model Y,same,display table (D156): Tesla's name is Model Y; Auto Country drops the word Model
 Think,City,2011,2011,Think,City,ac-only,no counterpart in vehicles.csv
 Toyota,4Runner,2005,2026,Toyota,4Runner,same,same spelling
 Toyota,4Runner,2027,2027,Toyota,4Runner,same,no Auto Country listing this year; name follows 2026

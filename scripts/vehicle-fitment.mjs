@@ -43,8 +43,8 @@
  * plus `source` d|p|m|s|w (+ optional 1), and optional source_url columns, for gap fills from other vendors, makers and the web)
  * and writes, besides the exports above:
  *   - VEHICLE_SPECS in vehicle-fitment-data.ts: per entry, per year range, one
- *     record of ten `;`-joined fields (bolts, bore, thread, fastener, offset,
- *     tires, wheels, tire range, wheel range, source). Auto Country's fields are
+ *     record of eleven `;`-joined fields (bolts, bore, thread, fastener, offset,
+ *     tires, wheels, tire range, wheel range, source, tpms y|n|empty; D156). Auto Country's fields are
  *     never overwritten by another source; a gap is filled only where it is blank.
  *   - VEHICLE_ALIASES: our old or other spelling -> the entry's canonical name.
  *   - vehicle-list.ts as the UNION of Auto Country's list and vehicles.csv in
@@ -103,6 +103,8 @@ const WHEEL_SIZES = "scripts/data/vehicle-wheel-sizes.csv";
 const AC_FITMENT = "scripts/data/vehicle-fitment-autocountry.csv";
 const ALIAS_FILE = "scripts/data/vehicle-aliases.csv";
 const VENDOR_FILE = "scripts/data/vehicle-fitment-vendors.csv";
+const EXCLUSIONS = "scripts/data/vehicle-exclusions.csv";
+const ADDED_PATTERNS = "scripts/data/vehicle-added-patterns.csv";
 const OVERRIDES = "design/reports/fitment-overrides.csv";
 const GENERATION_REVIEW = "import-report/vehicle-fitment-generation-review.csv";
 const LIST_MODULE = "src/features/finder/vehicle-list.ts";
@@ -851,6 +853,10 @@ function mergeRows(rows, primaryName = null) {
     thread: scalar("thread"),
     fastener: fastener === "nut" ? "n" : fastener === "bolt" ? "b" : "",
     offset: scalar("offset"),
+    /* TPMS (D156): y when any row says on, else n when any says off, else
+       blank. Not a SPEC_FIELDS member: a vendor or web gap fill never states
+       it, so it is never filled from them. */
+    tpms: rows.some((r) => r.tpms === "on") ? "y" : rows.some((r) => r.tpms === "off") ? "n" : "",
     tires: unique(rows.flatMap((r) => splitList(r.tire_sizes))).sort(tireOrder).join(","),
     wheels: unique(rows.flatMap((r) => splitList(r.wheel_sizes))).sort(wheelOrder).join(","),
     tireRange: range([bounds("tire_dia_min", "tire_dia_max"), bounds("tire_width_min", "tire_width_max")]),
@@ -997,12 +1003,97 @@ async function buildEntries(vehicles) {
   return { entries, aliases, aliasStats, entryOfOurs, resolveName, canonMake, counts: { ac: acRows.length, vendorUsed, vendorUnmatched } };
 }
 
+/**
+ * Model-years the finder does not offer (scripts/data/vehicle-exclusions.csv,
+ * D156): the car was not sold in North America that year. Each row names an
+ * entry (canonical make + model) and one year; the year leaves the entry, and
+ * an entry left with no years leaves the list with its aliases. A row that
+ * names no entry or no offered year, or a year that carries Auto Country or
+ * gap-fill data, is an error: an exclusion never throws data away silently.
+ */
+async function applyExclusions(names) {
+  if (!existsSync(EXCLUSIONS)) return { rows: 0, removedYears: 0, removedEntries: [] };
+  const rows = parseCsv(await readFile(EXCLUSIONS, "utf8"));
+  const seen = new Set();
+  const problems = [];
+  let removedYears = 0;
+  for (const row of rows) {
+    const key = `${row.make}|${row.model}`;
+    const year = Number(row.year);
+    const item = names.entries.get(key);
+    if (!item) throw new Error(`${EXCLUSIONS}: ${row.make} ${row.model} is not an entry of the finder list`);
+    if (!Number.isInteger(year) || !item.years.has(year)) {
+      throw new Error(`${EXCLUSIONS}: ${row.make} ${row.model} ${row.year} is not an offered model year`);
+    }
+    for (const field of ["reason", "source"]) {
+      if (!row[field]?.trim()) throw new Error(`${EXCLUSIONS}: ${row.make} ${row.model} ${row.year} has no ${field}`);
+    }
+    if (seen.has(`${key}|${year}`)) throw new Error(`${EXCLUSIONS}: ${row.make} ${row.model} ${row.year} appears twice`);
+    seen.add(`${key}|${year}`);
+    const stated = [...(item.rows.get(year) ?? []), ...(item.vendor.get(year) ?? [])].filter(
+      (r) => r.bolt_patterns !== "" || r.tire_sizes !== "" || r.wheel_sizes !== "",
+    );
+    if (stated.length > 0) {
+      problems.push(`${row.make} ${row.model} ${row.year} carries fit data`);
+      continue;
+    }
+    item.years.delete(year);
+    item.rows.delete(year);
+    item.vendor.delete(year);
+    removedYears += 1;
+  }
+  if (problems.length > 0) throw new Error(`${EXCLUSIONS}: fix the data or the row: ${problems.join("; ")}`);
+  const removedEntries = [];
+  for (const [key, item] of [...names.entries]) {
+    if (item.years.size > 0) continue;
+    names.entries.delete(key);
+    removedEntries.push(key);
+  }
+  for (const [alias, target] of Object.entries(names.aliases)) {
+    if (!names.entries.has(target)) delete names.aliases[alias];
+  }
+  return { rows: rows.length, removedYears, removedEntries };
+}
+
+/**
+ * Extra bolt patterns a car is known to have, beyond the ones Auto Country
+ * states (scripts/data/vehicle-added-patterns.csv, D156). Rows are per entry
+ * and year range, each with a reason and a source URL. They only add: an
+ * Auto Country value is never removed, and a year with no Auto Country or
+ * gap-fill data is an error (the table adds to a year, it does not invent one).
+ */
+async function loadAddedPatterns(names) {
+  if (!existsSync(ADDED_PATTERNS)) return 0;
+  const rows = parseCsv(await readFile(ADDED_PATTERNS, "utf8"));
+  let count = 0;
+  for (const row of rows) {
+    const item = names.entries.get(`${row.make}|${row.model}`);
+    if (!item) throw new Error(`${ADDED_PATTERNS}: ${row.make} ${row.model} is not an entry of the finder list`);
+    if (!/^\d{1,2}x\d{2,3}(?:\.\d{1,2})?$/.test(row.bolt_pattern)) {
+      throw new Error(`${ADDED_PATTERNS}: bad bolt pattern ${row.bolt_pattern}`);
+    }
+    if (!row.reason?.trim() || !row.source?.trim()) throw new Error(`${ADDED_PATTERNS}: ${row.make} ${row.model} needs a reason and a source`);
+    const from = Number(row.year_from);
+    const to = Number(row.year_to);
+    for (let year = from; year <= to; year += 1) {
+      if (!item.years.has(year) || (!item.rows.has(year) && !item.vendor.has(year))) {
+        throw new Error(`${ADDED_PATTERNS}: ${row.make} ${row.model} ${year} has no Auto Country or gap-fill row to add to`);
+      }
+      if (!item.added) item.added = new Map();
+      if (!item.added.has(year)) item.added.set(year, []);
+      item.added.get(year).push(row.bolt_pattern);
+      count += 1;
+    }
+  }
+  return count;
+}
+
 /** What the gap fill did: fields filled into Auto Country rows, and years it stood in for. */
 const gapStats = { filledFields: {}, filledYears: 0, standaloneYears: {}, standaloneRows: 0 };
 const TRUST = ["d", "p", "m", "s", "w"];
 
 /**
- * One record per entry year (ten `;`-joined fields), consecutive equal years
+ * One record per entry year (eleven `;`-joined fields), consecutive equal years
  * collapsed. Auto Country's fields are never overwritten: a vendor, maker or
  * web row (`source` d p m s w, a trailing 1 for one source) only fills a blank,
  * or stands in for a year Auto Country lacks.
@@ -1041,8 +1132,16 @@ function specsFor(item) {
         if (filled) gapStats.filledYears += 1;
       }
     }
+    /* Hand-added bolt patterns (vehicle-added-patterns.csv, D156): appended after
+       the sources' own, never replacing one. */
+    const added = item.added?.get(year) ?? [];
+    if (fields !== null && added.length > 0) {
+      const have = fields.bolts.split(",").filter(Boolean);
+      const extra = added.filter((bolt) => !have.includes(bolt));
+      if (extra.length > 0) fields = { ...fields, bolts: [...have, ...extra].join(",") };
+    }
     if (fields === null || SPEC_FIELDS.every((name) => fields[name] === "")) continue;
-    const record = [...SPEC_FIELDS.map((name) => fields[name]), source].join(";");
+    const record = [...SPEC_FIELDS.map((name) => fields[name]), source, fields.tpms ?? ""].join(";");
     const last = parts[parts.length - 1];
     if (last && last.record === record && last.to === year - 1) last.to = year;
     else parts.push({ from: year, to: year, record });
@@ -1319,7 +1418,7 @@ ${typeLines.join("\n")}
  * Auto Country's lookup (D155), one entry of \`vehicle-list.ts\` per key:
  * "<Make>|<Model>" in canonical spelling -> space-separated
  * "<from>-<to>:<record>" (consecutive years with an identical record collapsed;
- * only years a source states). A record is ten ";"-joined fields, empty = unknown:
+ * only years a source states). A record is eleven ";"-joined fields, empty = unknown (a record with ten, from before D156, reads as no tpms):
  * bolts (comma list, "5x114.3,5x120" = trims differ), bore mm, thread ("12x1.5",
  * "1/2x20"), fastener (n stud and nut, b hub bolt), offset mm, tires (comma list,
  * union across trims, bodies and axles, flotation as "33x12.50R15"), wheels
@@ -1327,7 +1426,8 @@ ${typeLines.join("\n")}
  * diameter in and section width mm at stock height), wheelRange
  * ("dmin,dmax,wmin,wmax,omin,omax": diameter in, width in, offset mm), and src
  * (a Auto Country, d Direct Auto Import, p PRO WHEELS, m maker, s older sheets,
- * w other web; a trailing 1 = one source). Server only; read through \`fitment.ts\`.
+ * w other web; a trailing 1 = one source) and tpms (y a trim of the model year has a tyre
+ * pressure sensor system, n none, empty unknown). Server only; read through \`fitment.ts\`.
  */
 export const VEHICLE_SPECS: Readonly<Record<string, string>> = {
 ${specLines.join("\n")}
@@ -1367,6 +1467,8 @@ console.log(
     `${shadowed} offered years also have an exact row (exact wins), ${conflicts} of them disagree.`,
 );
 const names = await buildEntries(vehicles);
+const exclusions = await applyExclusions(names);
+const addedYears = await loadAddedPatterns(names);
 await writeListModule(names);
 const threads = await readThreads(vehicles);
 console.log(`${THREADS}: ${threads.length} thread rows, ${new Set(threads.map((t) => `${t.make}|${t.model}`)).size} models.`);
@@ -1388,6 +1490,11 @@ console.log(
   `gap fill: ${gapStats.standaloneRows} entry-years stand alone (no Auto Country row) by source letter ` +
     `${JSON.stringify(gapStats.standaloneYears)}; ${gapStats.filledYears} Auto Country entry-years had blanks filled, ` +
     `fields by source letter ${JSON.stringify(gapStats.filledFields)}.`,
+);
+console.log(
+  `${EXCLUSIONS}: ${exclusions.rows} model-years not offered (no North American car)` +
+    `${exclusions.removedEntries.length ? `; entries left with no year: ${exclusions.removedEntries.join(", ")}` : ""}; ` +
+    `${ADDED_PATTERNS}: ${addedYears} entry-years got an added bolt pattern.`,
 );
 console.log(`${OVERRIDES}: ${overrides.length} overrides ${JSON.stringify(byField)}`);
 console.log(`wrote ${LIST_MODULE} and ${FITMENT_MODULE}`);

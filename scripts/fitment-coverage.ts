@@ -498,6 +498,8 @@ interface AccessoryProfile {
   thread: string | undefined;
   fastener: "nut" | "bolt" | undefined;
   bore: number | undefined;
+  /** `false` = the car has no TPMS (D156); only `false` acts. */
+  tpms: boolean | undefined;
 }
 
 /** accessoryContradiction() for one product against a profile; false when the
@@ -512,6 +514,7 @@ function contradicts(a: AccessoryRow, p: AccessoryProfile): boolean {
     const wrong = p.fastener === "bolt" ? "lug_nuts" : "lug_bolts";
     if (a.type === wrong) return true;
   }
+  if (p.tpms === false && a.type === "tpms_sensors_tools") return true;
   if (p.bore !== undefined) {
     if (a.type === "hub_rings" && !Number.isNaN(a.inner) && Math.abs(a.inner - p.bore) > BORE_TOLERANCE) {
       return true;
@@ -524,7 +527,8 @@ const profileHasParts = (p: AccessoryProfile) =>
   (p.thread !== undefined && p.thread.trim() !== "") ||
   p.fastener === "nut" ||
   p.fastener === "bolt" ||
-  p.bore !== undefined;
+  p.bore !== undefined ||
+  p.tpms === false;
 
 // Accessories grouped by what the rules read, so a profile costs a few hundred checks.
 interface AccessoryGroup {
@@ -617,7 +621,7 @@ async function main(): Promise<void> {
   const perVehicle: string[] = [
     csvLine([
       "make", "model", "year",
-      "bolts", "bore", "thread", "fastener",
+      "bolts", "bore", "thread", "fastener", "tpms",
       "tire_sizes_n", "tire_range", "wheel_range", "rims_n",
       "year_source", "bolt_source",
       "tires_narrowed", "wheels_narrowed", "acc_narrowed", "tire_sizes_truncated",
@@ -631,6 +635,7 @@ async function main(): Promise<void> {
   const total = vehicles.length;
   let noFit = 0;
   const has = { bolts: 0, bore: 0, thread: 0, fastener: 0, tire_sizes: 0, tire_range: 0, wheel_range: 0, rims: 0 };
+  const byTpms = new Map<string, number>();
   const byYearSource = new Map<string, number>();
   const byBoltSource = new Map<string, number>();
   const bestTires: number[] = [];
@@ -694,11 +699,13 @@ async function main(): Promise<void> {
       thread: catalogueThread(fit?.thread ?? null),
       fastener: fit?.fastener ?? undefined,
       bore: measure(numeric(fit?.centreBore)),
+      tpms: fit?.tpms === false ? false : undefined,
     };
     const accNarrows =
       (fit?.thread ?? null) !== null ||
       (fit?.fastener ?? null) !== null ||
-      (fit?.centreBore ?? null) !== null;
+      (fit?.centreBore ?? null) !== null ||
+      fit?.tpms === false;
     const parts = profileHasParts(profile);
     const accKey = parts ? JSON.stringify(profile) : "none";
     if (!accCache.has(accKey)) {
@@ -732,6 +739,7 @@ async function main(): Promise<void> {
         fit?.centreBore ?? "",
         fit?.thread ?? "",
         fit?.fastener ?? "",
+        fit?.tpms === true ? "on" : fit?.tpms === false ? "off" : "",
         tireSizes,
         yn(fit?.tireRange != null),
         yn(fit?.wheelRange != null),
@@ -760,6 +768,7 @@ async function main(): Promise<void> {
       if (fit.wheelRange !== null) has.wheel_range += 1;
       if (fit.rims.length > 0) has.rims += 1;
     }
+    tally(byTpms, fit?.tpms === true ? "on" : fit?.tpms === false ? "off" : "unknown");
     tally(byYearSource, fit ? fit.yearSource : "none");
     tally(byBoltSource, fit ? (fit.boltSource ?? "none") : "none");
     if (tOut) { tiresNarrowed += 1; bestTires.push(tiresBest); }
@@ -961,6 +970,7 @@ async function main(): Promise<void> {
         factory_wheel_sizes: pct(has.rims),
       },
       counts_with_fact: has,
+      tpms: obj(byTpms),
       by_year_source: obj(byYearSource),
       by_bolt_source: obj(byBoltSource),
       narrowed: {

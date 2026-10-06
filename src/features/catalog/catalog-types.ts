@@ -260,6 +260,14 @@ export interface ProductFilters {
      */
     fastener?: "nut" | "bolt";
     /**
+     * Whether the vehicle has a tyre pressure sensor system (D156). Only
+     * `false` acts: a TPMS sensor or tool contradicts a car with no TPMS, by
+     * the product's type alone (the catalogue does not tell a sensor from a
+     * tool). `true` and absent change nothing. On and off only; the sensor's
+     * frequency is not modelled (owner, 2026-10-06).
+     */
+    tpms?: boolean;
+    /**
      * Thread sizes the buyer ticked (`14x1.5`, `1/2 UNF`), matched exactly as
      * the facet spells them. They narrow the lug nuts, lug bolts and wheel
      * locks ONLY: every other type passes untouched, because a centre cap has

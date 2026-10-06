@@ -43,7 +43,11 @@ from `design/assets/`, and parity becomes eyeballing — which
   canonical names, and writes `design/reports/fitment-overrides.csv` (every year where an Auto Country value
   disagrees with an older sheet; it prints the count). The field layout of a spec record is documented above
   `VEHICLE_SPECS` in the generated file. If the two Auto Country CSVs are absent it falls back to
-  `vehicles.csv` alone and empty `VEHICLE_SPECS` / `VEHICLE_ALIASES`.
+  `vehicles.csv` alone and empty `VEHICLE_SPECS` / `VEHICLE_ALIASES`. **Since D156** it also applies
+  [`data/vehicle-exclusions.csv`](data/llm.md) (model-years with no North American car leave the list; an
+  entry with no year left, with its aliases, leaves too; a row for a year that carries fit data is an error)
+  and [`data/vehicle-added-patterns.csv`](data/llm.md) (bolt patterns added beside Auto Country's; Toyota
+  Tacoma 2015), and prints both counts.
 - [`vehicle-fitment-merge-gaps.mjs`](vehicle-fitment-merge-gaps.mjs) — `node
   scripts/vehicle-fitment-merge-gaps.mjs <folder with gapfill-*.csv>` (**D155**). Merges the gap-fill sheets
   (`gapfill-1..5.csv` and the vendor sheet `gapfill-vendor.csv`; header and `source` letters d/p/m/s/w + `1`
@@ -66,7 +70,19 @@ from `design/assets/`, and parity becomes eyeballing — which
   `import-report/vehicle-fitment-missing-trims.csv` (model years with a slash-named trim that cannot be
   fetched). It blanks Auto Country's junk (ten or more lugs, bore 0, `Peg` thread) into
   `import-report/vehicle-fitment-junk.csv` and restores 19.5 / 17.5 / 16.5 inch wheel diameters from the tire's
-  rim. Run it, then `node scripts/vehicle-fitment.mjs`.
+  rim. Run it, then `node scripts/vehicle-fitment.mjs`. **Since D156** its `DISPLAY` table (eight rows, a
+  reason each) renames Auto Country's bare Mazda `2`/`3`/`5`/`6` and Tesla `3`/`S`/`X`/`Y` to `Mazda2` ...
+  and `Model 3` ... before any name is decided, and writes one `same` alias row per old spelling; the Tesla
+  rows that were in `SAME` are gone. Owner, 2026-10-06: *"Familiar names (Recommended)"* (the one exception to
+  "Auto Country's name wins").
+  **Since D156 it also writes a `tpms` column** (`on` / `off` / blank per model year) from `chassis.tpms` of
+  the saved options answers: `on` when any trim says on; Auto Country says `on` or null and **never `off`**
+  (31,294 on, 680 null in 31,974 answers), so `off` is *derived* only for a model year before 2008 with no trim
+  on (`TPMS_ABSENT_MEANS_OFF_BEFORE`; vetoable, set 0 to state `off` only where Auto Country does), and a blank
+  from 2008 on stays unknown (the 2025 to 2026 blanks are Auto Country not having filled the year in). Owner,
+  2026-10-06: *"for TM or TP MS frequency if auto country is giving on and off for car we can do the same and
+  not focus on the frequency that is out of our scope"*. `vehicle-fitment.mjs` carries it into `VEHICLE_SPECS`
+  as an 11th `;` field (`y` / `n` / empty, after the source letter); a vendor gap fill never states it.
 - [`fitment-coverage.ts`](fitment-coverage.ts) — `npx tsx scripts/fitment-coverage.ts <catalogue.csv> [--out
   <dir>]` (**D155**, TypeScript). Offline coverage counter: for every model-year `vehicle-list.ts` offers it
   counts the Best and Similar results on `/tires`, `/wheels` and `/accessories` (default page, no other
@@ -75,7 +91,9 @@ from `design/assets/`, and parity becomes eyeballing — which
   JS from the SQL in `catalog/queries.ts`**, so a disagreement with `searchResults` is a bug on one side (keep
   the two in step by hand). No database, no network. Writes `per-vehicle.csv`, `reverse.csv` and
   `summary.json` to `import-report/fitment-coverage/` (git-ignored); about 3 s. Stubs `server-only`, which
-  is not installed.
+  is not installed. **Since D156** it applies the TPMS rule too (a car whose `tpms` is `false` demotes every
+  `tpms_sensors_tools` product to Similar), writes a `tpms` column to `per-vehicle.csv` and a `tpms` on /
+  off / unknown tally to `summary.json`; its counts equal `searchResults` on every car checked.
 - [`db-migrate.mjs`](db-migrate.mjs) — applies `drizzle/*.sql` via `DATABASE_URL_UNPOOLED`. Runs first in
   `npm run build`, so every Vercel build migrates its own Neon branch (preview) or main (production)
   before `next build`. Exits 1 on Vercel with no URL; skips locally. Also `npm run db:migrate`.

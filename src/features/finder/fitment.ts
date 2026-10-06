@@ -37,7 +37,9 @@ import {
  * tire sizes still gets its tires from the nearest year that states them:
  * mount (bolt patterns, bore, offset), lug (thread, fastener), wheels
  * (factory wheel sizes, wheel range) and tires (factory tire sizes, tire
- * range). A year inside a `?` generation range borrows nothing at all (a `?`
+ * range), and tpms (does the car have a tyre pressure sensor system: yes or
+ * no only, D156; borrowed like the lug group but never marks a year `nearest`).
+ * A year inside a `?` generation range borrows nothing at all (a `?`
  * says two cars share the name, so a neighbour's facts would be the wrong
  * car's). A fact already stated for the exact year is never replaced by a
  * borrowed one.
@@ -138,6 +140,11 @@ export interface VehicleFitment {
   thread: string | null;
   /** `nut` (stud and nut) or `bolt` (hub bolt), with `thread`. */
   fastener: "nut" | "bolt" | null;
+  /** Does the car carry a tyre pressure sensor system (D156)? `true` when a
+   *  trim of the year does, `false` when the source says the year has none,
+   *  `null` = not stated. On and off only: the sensor's frequency is out of
+   *  scope (owner, 2026-10-06). */
+  tpms: boolean | null;
   /** `exact` when every fact is from the year asked for; `nearest` when any
    *  group was borrowed from the nearest real year of the model. */
   yearSource: "exact" | "nearest";
@@ -192,6 +199,8 @@ interface SpecRecord {
   bore: string | null;
   thread: string | null;
   fastener: "nut" | "bolt" | null;
+  /** Field 11 (D156); absent in a record from before it, which reads `null`. */
+  tpms: boolean | null;
   offset: number | null;
   tires: FactoryTire[];
   flotation: FactoryFlotationTire[];
@@ -264,6 +273,7 @@ function parseRecord(text: string): SpecRecord {
     bore: f[1] ? f[1] : null,
     thread: f[2] ? f[2] : null,
     fastener,
+    tpms: f[10] === "y" ? true : f[10] === "n" ? false : null,
     offset: num(f[4]),
     tires,
     flotation,
@@ -399,6 +409,7 @@ interface Facts {
   offset: number | null;
   thread: string | null;
   fastener: "nut" | "bolt" | null;
+  tpms: boolean | null;
   rims: readonly VehicleRim[];
   wheelRange: WheelRange | null;
   tires: readonly FactoryTire[];
@@ -413,6 +424,7 @@ const NO_FACTS: Facts = {
   offset: null,
   thread: null,
   fastener: null,
+  tpms: null,
   rims: [],
   wheelRange: null,
   tires: [],
@@ -481,6 +493,7 @@ function modelFacts(key: string): ModelFacts | null {
       offset: s?.offset ?? null,
       thread,
       fastener: s?.fastener ?? sheetFastener,
+      tpms: s?.tpms ?? null,
       rims,
       wheelRange: s?.wheelRange ?? null,
       tires: s?.tires ?? [],
@@ -543,11 +556,11 @@ export function findFitment(year: string, make: string, model: string): VehicleF
   let borrowed = false;
   /* A group's facts: the exact year's when it states any, else the nearest
      year that does, else nothing. A blocked year borrows nothing. */
-  const group = (has: (facts: Facts) => boolean): Facts | null => {
+  const group = (has: (facts: Facts) => boolean, marks = true): Facts | null => {
     if (has(own)) return own;
     if (blocked) return null;
     const near = nearest(data.years, built, has);
-    if (near !== null) borrowed = true;
+    if (near !== null && marks) borrowed = true;
     return near;
   };
   const mount = group((f) => f.bolts.length > 0);
@@ -560,6 +573,11 @@ export function findFitment(year: string, make: string, model: string): VehicleF
     f.bolts.length === 0 ||
     (f.bolts.length === mount.bolts.length && f.bolts.every((b) => mount.bolts.includes(b)));
   const lug = group((f) => f.thread !== null && sameMount(f));
+  /* TPMS (D156) follows the lug group's rule: the exact year's when it states
+     it, else the nearest year that does with the same bolt patterns. A
+     borrowed yes/no is not a fit fact, so it does not make the year `nearest`
+     (derived: it would otherwise move that headline count for a flag). */
+  const sensors = group((f) => f.tpms !== null && sameMount(f), false);
   const wheels = group((f) => (f.rims.length > 0 || f.wheelRange !== null) && sameMount(f));
   const tires = group(
     (f) =>
@@ -589,6 +607,7 @@ export function findFitment(year: string, make: string, model: string): VehicleF
     classes: bodyClasses(key),
     thread: lug?.thread ?? null,
     fastener: lug?.fastener ?? null,
+    tpms: sensors?.tpms ?? null,
     yearSource: borrowed ? "nearest" : "exact",
   };
 }
