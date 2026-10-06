@@ -36,17 +36,24 @@ import type { Product } from "@/features/catalog/types";
  * The row, in the order it is shown. The heading reads `Winter sets, in stock
  * now.`, so these are winter tires.
  *
- * Six winter tires from six brands in one common car size, 205/55R16, picked
- * from the D125 load (owner, 2026-10-03). Keep six or more so both desktop
- * arrows have something to scroll (D74).
+ * Seven winter tires from seven brands, each with a photo of the whole tire
+ * on a wheel (owner, 2026-10-07: "update the featured winter tires with good
+ * images … these ones are not good"). The 2026-10-03 row (six brands in
+ * 205/55R16) was mostly flat tread close-ups on white. Each slug below is a
+ * size whose photo is the whole-tire shot; another size of the same model can
+ * carry a tread close-up, so check the photo before swapping a size. Sizes
+ * are common 17" and 18" car and crossover sizes; Yokohama's whole-tire photo
+ * exists in one size only. Pirelli has no whole-tire winter photo yet. Keep
+ * six or more so both desktop arrows have something to scroll (D74).
  */
 export const FEATURED_SLUGS: readonly string[] = [
-  "continental-icecontact-xtrm-205-55r16-94",
-  "toyo-observe-g3-ice-205-55r16-91",
-  "pirelli-ice-friction-205-55r16-94",
-  "goodyear-wintercommand-ultra-205-55r16-94",
-  "yokohama-bluearth-winter-v906-205-55r16-94",
-  "general-tire-altimax-arctic-12-205-55r16-94",
+  "michelin-x-ice-snow-225-50r17-98h",
+  "bridgestone-blizzak-6-225-50r18-99",
+  "continental-vikingcontact-8-215-65r17-103h",
+  "goodyear-wintercommand-ultra-225-50r18-99",
+  "yokohama-iceguard-ig53-245-50r18-104",
+  "toyo-observe-g3-ice-225-50r17-94",
+  "general-tire-altimax-arctic-x-225-50r17",
 ];
 
 /** One cache entry per deployment. Vercel sets both; a local build has
