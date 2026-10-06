@@ -16,11 +16,20 @@ import { builtIn } from "@/features/finder/years";
  * every model, each option carrying the years it was built in `data-years`
  * (D45 chose the inline finder explicitly as "Inline finder, no JS", and the
  * plain GET submit is load-bearing on all three results routes: D44, D58,
- * D67). This island renders **nothing** and only sets two boolean attributes
- * on nodes already in the document. With scripting off the controls are the
- * full list, every model stays reachable, and a model picked for a year it was
- * not built in names no vehicle (`isFinderVehicle`), which the results page
- * then asks the visitor to finish (`partialVehicle`).
+ * D67). This island renders **nothing**. It sets two boolean attributes on
+ * nodes already in the document and, once, appends the Model list (below).
+ * With scripting off the controls are the full list, every model stays
+ * reachable, and a model picked for a year it was not built in names no
+ * vehicle (`isFinderVehicle`), which the results page then asks the visitor to
+ * finish (`partialVehicle`).
+ *
+ * The Model list is built here on the first touch of the finder, not served
+ * to a visitor with scripting. Parsing and styling ~1,100 `<option>`s on load
+ * was about a fifth of the main-thread work of `/` and `/tires`, so the page
+ * ships them as the text of a `<noscript>` (the no-JS visitor's own Model
+ * select, `vehicle-finder.tsx`) and this island turns that text into
+ * `<optgroup>`s appended after the placeholder React rendered. Nothing React
+ * owns is removed or replaced, so the D70 rule below still holds.
  *
  * Why `hidden` **and** `disabled`, and why on the `<option>`s too, rather
  * than removing or rebuilding them:
@@ -52,6 +61,13 @@ export interface FinderModelSyncProps {
   makeId: string;
   /** `id` of the Model `<select>`, whose `<optgroup label>`s are the makes. */
   modelId: string;
+  /**
+   * `id` of the `<noscript>` that holds the whole model list, when the Model
+   * select was served with only its placeholder (`vehicle-finder.tsx`); the
+   * options are built from that text on the first touch of the finder.
+   * Omitted when the select already carries them.
+   */
+  modelOptionsId?: string;
   /** `id` of a field to focus once on mount, or omitted. */
   focusId?: string;
 }
@@ -62,7 +78,13 @@ function show(node: HTMLOptionElement | HTMLOptGroupElement, visible: boolean) {
   node.disabled = !visible;
 }
 
-export function FinderModelSync({ yearId, makeId, modelId, focusId }: FinderModelSyncProps) {
+export function FinderModelSync({
+  yearId,
+  makeId,
+  modelId,
+  modelOptionsId,
+  focusId,
+}: FinderModelSyncProps) {
   useEffect(() => {
     // Located by id rather than by ref: a ref would need a rendered element,
     // and rendering nothing is what guarantees this island cannot move a
@@ -81,7 +103,31 @@ export function FinderModelSync({ yearId, makeId, modelId, focusId }: FinderMode
     const makeSelect = makeNode;
     const modelSelect = modelNode;
     const makeOptions = Array.from(makeSelect.options).filter((o) => o.value !== "");
-    const groups = Array.from(modelSelect.getElementsByTagName("optgroup"));
+    let groups = Array.from(modelSelect.getElementsByTagName("optgroup"));
+
+    /* The Model select is served with only its placeholder (see the header);
+       the whole list is the text of a `<noscript>`, which a browser with
+       scripting keeps as text and never parses into elements. It is built
+       once, by the first touch of the finder, and appended AFTER the
+       placeholder React rendered: nothing React owns is removed or replaced
+       (D70), and the chosen option stays the placeholder. */
+    const optionsNode =
+      modelOptionsId === undefined ? null : document.getElementById(modelOptionsId);
+    let built = optionsNode === null || groups.length > 0;
+    const build = () => {
+      if (built) return;
+      built = true;
+      const holder = document.createElement("template");
+      holder.innerHTML = optionsNode?.textContent ?? "";
+      const all = holder.content.querySelector("select");
+      if (all === null) return;
+      const list = document.createDocumentFragment();
+      for (const group of Array.from(all.getElementsByTagName("optgroup"))) {
+        list.appendChild(group);
+      }
+      modelSelect.appendChild(list);
+      groups = Array.from(modelSelect.getElementsByTagName("optgroup"));
+    };
 
     const fits = (node: HTMLOptionElement, year: number | null) =>
       year === null || builtIn(node.dataset.years ?? "", year);
@@ -107,17 +153,48 @@ export function FinderModelSync({ yearId, makeId, modelId, focusId }: FinderMode
       if (modelSelect.selectedOptions[0]?.hidden) modelSelect.value = "";
     };
 
-    // Once on mount as well as on change: a back/forward restore can hand the
-    // form a year or make chosen before the island existed.
-    sync();
-    if (focusId !== undefined) document.getElementById(focusId)?.focus();
-    yearSelect.addEventListener("change", sync);
-    makeSelect.addEventListener("change", sync);
-    return () => {
-      yearSelect.removeEventListener("change", sync);
-      makeSelect.removeEventListener("change", sync);
+    /* A change always needs the list: it is what gets narrowed. */
+    const onChange = () => {
+      build();
+      sync();
     };
-  }, [yearId, makeId, modelId, focusId]);
+
+    /* First touch of the finder builds the list. The Model select itself
+       needs it before its picker opens, so a touch on it builds at once; a
+       touch on Year or Make is a beat ahead of the Model select and builds on
+       the next task, so the picker the visitor just asked for is not held up
+       by it. Capture phase on the form, so it runs before any picker. */
+    const form = modelSelect.form;
+    const onTouch = (event: Event) => {
+      if (built) return;
+      if (event.target === modelSelect) {
+        build();
+        sync();
+      } else {
+        window.setTimeout(onChange, 0);
+      }
+    };
+    const touchEvents = ["pointerdown", "focusin", "keydown"] as const;
+    if (!built && form !== null) {
+      for (const type of touchEvents) form.addEventListener(type, onTouch, true);
+    }
+
+    // Once on mount as well as on change: a back/forward restore can hand the
+    // form a year or make chosen before the island existed. With neither
+    // chosen nothing is narrowed (every option is shown, as served), so the
+    // walk over ~1,100 options is skipped on a plain load.
+    if (yearSelect.value !== "" || makeSelect.value !== "") onChange();
+    if (focusId !== undefined) document.getElementById(focusId)?.focus();
+    yearSelect.addEventListener("change", onChange);
+    makeSelect.addEventListener("change", onChange);
+    return () => {
+      if (form !== null) {
+        for (const type of touchEvents) form.removeEventListener(type, onTouch, true);
+      }
+      yearSelect.removeEventListener("change", onChange);
+      makeSelect.removeEventListener("change", onChange);
+    };
+  }, [yearId, makeId, modelId, modelOptionsId, focusId]);
 
   return null;
 }

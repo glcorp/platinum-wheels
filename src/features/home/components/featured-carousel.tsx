@@ -22,18 +22,18 @@
    and `design/assets/home-mobile.html:135-141` (mobile). Track measured from
    `design/inventory/home.md:64,248,289`.
 
-   `SectionHeading` and `ProductCard` are plain components with no
-   server-only APIs, so importing them into this client file is fine — they
-   simply render on the client here (see the build-spec ruling in the task
-   brief; `.claude/rules/ui.md` "Server Components by default... `use client`
-   only on leaf islands").
+   The cards are NOT rendered here. `featured-tires.tsx` (a Server Component)
+   renders each `ProductCard` in its slot and hands the lot over as `children`,
+   so `ProductCard` and the product data stay out of this island's bundle and
+   the cards are server markup that hydration only walks (the island used to
+   import `ProductCard` and was handed the six `Product` objects, so the card
+   code shipped to the client and every card was rebuilt there). The island
+   keeps what needs state: the controls, the scroll listener and the dots.
    --------------------------------------------------------------------------- */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { SectionHeading } from "@/components/ui/section-heading";
-import { ProductCard } from "@/features/catalog/components/product-card";
-import type { Product } from "@/features/catalog/types";
 import { cx } from "@/lib/cx";
 
 /* 260px card + 12px gap — `design/inventory/home.md:64` (mobile track
@@ -69,10 +69,13 @@ function prefersReducedMotion(): boolean {
 }
 
 export interface FeaturedCarouselProps {
-  products: readonly Product[];
+  /** How many cards the track holds: the dots count them. */
+  count: number;
+  /** The track's slots, one server-rendered card each (`featured-tires.tsx`). */
+  children: ReactNode;
 }
 
-export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
+export function FeaturedCarousel({ count, children }: FeaturedCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -87,12 +90,12 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
     function handleScroll() {
       if (!track) return;
       const index = Math.round(track.scrollLeft / stepSize(track));
-      setActiveIndex(Math.min(Math.max(index, 0), products.length - 1));
+      setActiveIndex(Math.min(Math.max(index, 0), count - 1));
     }
 
     track.addEventListener("scroll", handleScroll, { passive: true });
     return () => track.removeEventListener("scroll", handleScroll);
-  }, [products.length]);
+  }, [count]);
 
   function scrollByStep(direction: 1 | -1) {
     const track = trackRef.current;
@@ -275,39 +278,9 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
           aria-label="Featured tires"
           className="hide-scrollbar flex gap-3 overflow-x-auto snap-x snap-mandatory sm:-mt-0.5 sm:gap-4 sm:pt-0.5"
         >
-          {products.map((product) => (
-            <div
-              key={product.slug}
-              /* TOKEN MISSING — `globals.css` is single-writer (D25), so
-                 these two are reported, not invented, and the class names are
-                 used here as the `fade-right` precedent in this same file
-                 does. THE ROW RENDERS AT 260px AT DESKTOP UNTIL THEY LAND:
-
-                 @utility featured-card-3 { flex-basis: calc((100% - 2 * 16px) / 3); }
-                 @utility featured-card-4 { flex-basis: calc((100% - 3 * 16px) / 4); }
-
-                 They reproduce, in a flex scroller, exactly the width the
-                 drawn grid gave each column: `repeat(N, minmax(0,1fr))` with
-                 a 16px gap is `(100% - (N-1) * 16px) / N`, and `flex-basis`
-                 percentages resolve against the flex container's content box
-                 — the same 100% the grid divided. Measured at 1440:
-                 (1344 - 48) / 4 = 324px, the COMPUTED desktop card width at
-                 `design/inventory/home.md:248`. Both bands stay fluid, which
-                 a spacing-scale width such as `md:w-81` could not do.
-                 `w-65` (260px) still governs below `sm:`, where no basis is
-                 set — the drawn mobile card. */
-              className="w-65 shrink-0 snap-start sm:featured-card-3 md:featured-card-4"
-            >
-              {/* `sizes` crosses where this track does (D91b, WDG-06):
-                  the fixed 260px `w-65` card below 720, a third of the
-                  content box 720–1099, and from 1100 a quarter of at most
-                  the 1344px container, i.e. ≤324px (`home.md:248`). */}
-              <ProductCard
-                product={product}
-                sizes="(min-width: 1100px) 324px, (min-width: 720px) 33vw, 260px"
-              />
-            </div>
-          ))}
+          {/* One slot per card, rendered by `featured-tires.tsx`, which also
+              holds the slot's `featured-card-3` / `featured-card-4` widths. */}
+          {children}
         </div>
 
         {/* Mobile right fade — `design/inventory/home.md:64`:
@@ -335,9 +308,9 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
           divisor is `stepSize()` rather than a constant so the readout stays
           correct if that ever changes. */}
       <div className="flex gap-1.5 pt-1 sm:hidden">
-        {products.map((product, index) => (
+        {Array.from({ length: count }, (_, index) => (
           <span
-            key={product.slug}
+            key={index}
             aria-hidden="true"
             className={cx(
               "h-0.75",
