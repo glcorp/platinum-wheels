@@ -308,8 +308,8 @@ export interface FacetCount<T extends string = string> {
 
 export interface CatalogFacets {
   category: ProductCategory;
-  /** Products matching every active filter. */
-  total: number;
+  /** Brands with the count each would yield (own group left out). Empty on
+   *  the whole-category view (`wholeCategoryFacets`), which carries no counts. */
   brands: readonly FacetCount[];
   /** Lowest and highest price in the category. `null` when nothing is priced. */
   price: { min: number | null; max: number | null };
