@@ -132,6 +132,27 @@ const EMPTY_HEADING = "No matches";
 /** The empty state's default body line, shared for the same reason. */
 const EMPTY_BODY = "Nothing matches these filters. Clear them, or call us.";
 
+/* The two-bolt-pattern line (D155) — undrawn, so new copy under
+   `.claude/rules/ui.md` "Copy": plain, short, no em dash. A model year that
+   came with two patterns lists wheels for both (owner, 2026-10-06: "Show
+   wheels for both patterns."), and the buyer is the one who knows the trim.
+   Exported for `/styleguide`, which renders the real component. */
+const PATTERN_COUNT = ["", "one", "two", "three", "four", "five", "six"] as const;
+
+function joinPatterns(patterns: readonly string[]): string {
+  if (patterns.length < 3) return patterns.join(" and ");
+  return `${patterns.slice(0, -1).join(", ")} and ${patterns[patterns.length - 1]}`;
+}
+
+export function BoltChoiceNote({ patterns }: { patterns: readonly string[] }) {
+  const count = PATTERN_COUNT[patterns.length] ?? "several";
+  return (
+    <p data-probe="bolt-choice" className={SUPPORT}>
+      {`This model year came with ${count} bolt patterns: ${joinPatterns(patterns)}. Check your trim before you order.`}
+    </p>
+  );
+}
+
 function CardGrid({
   products,
   probe,
@@ -328,6 +349,9 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             {countCopy(view.bestTotal, view.similarTotal)}
           </p>
           {empty ? <p className={SUPPORT}>{copy.empty}</p> : null}
+          {!empty && view.boltChoice.length > 1 ? (
+            <BoltChoiceNote patterns={view.boltChoice} />
+          ) : null}
         </div>
         {/* The first row preloads: `/tires` has no hero, so a best-matches
             card is the LCP element. Lighthouse mobile, 2026-09-21, measured

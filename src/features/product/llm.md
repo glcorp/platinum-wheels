@@ -46,6 +46,9 @@ Action, its emails and its two authored states moved there.
 - `components/specifications.tsx` · `similar-products.tsx` — `:126-131` / `:159-315`.
 
 ## Rules
+- **An old vehicle name in `?year&make&model` is redirected before the product is read** (D155, *derived*): the page
+  calls `redirectToCanonicalVehicle` (`src/features/finder/canonical.ts`), a 308 to the same product path with every
+  param kept (including `qty`) and `model` (and `make`) swapped to the finder list's spelling. `parseVehicle` stays exact (D91b).
 - **Measured baseline is `design/inventory/product.md`.** Every number in a component carries a
   `file:line` comment pointing at it or at the artboard (`src/components/ui/llm.md`).
 - **The split is 55/45, not 60/40.** `55fr 45fr; gap:64px` inside 1344px → gallery 704, panel 576

@@ -129,6 +129,68 @@ export type CatalogProductDetail = CatalogProduct & {
 export type CatalogSort = "best" | "price-asc" | "price-desc";
 
 /**
+ * A vehicle's tires, as a tire filter (the finder's `tire-fit.ts` builds it;
+ * the catalogue never learns what a vehicle is, D155). Two ways to read it:
+ *
+ * - **`sizes` / `flotation` given**: a best match is a tire whose size equals
+ *   one of them. The similar row is the tires inside `range` (overall
+ *   diameter within half an inch of the stock envelope, section width in it,
+ *   rim diameter inside `rimMin`..`rimMax` when known) that are not best.
+ *   `tire-fit.ts` always sends a `range` with sizes (derived from them when
+ *   the source states none); without one the rim rule's near list is a defence.
+ * - **no sizes**: the rim rule alone. A tire suits the vehicle when it suits
+ *   any of `rims` (diameter, width range) and its sidewall height is in the
+ *   band; the similar row is the plus sizes.
+ *
+ * The rim rule matches metric tires only (a flotation size has no aspect
+ * ratio, so its comparisons are NULL and it matches neither list).
+ */
+export interface TireVehicleFit {
+  /** Factory metric sizes: section width mm, aspect ratio, rim inches. */
+  sizes: ReadonlyArray<{ width: number; profile: number; rim: number }>;
+  /** Factory flotation sizes: overall diameter, section width, rim inches. */
+  flotation: ReadonlyArray<{ diameter: number; section: number; rim: number }>;
+  /** The stock envelope: overall diameter in inches, section width in mm. */
+  range: {
+    diameterMin: number;
+    diameterMax: number;
+    widthMin: number;
+    widthMax: number;
+    rimMin: number | null;
+    rimMax: number | null;
+  } | null;
+  /** The rim rule's wheels, inches: a tire suits the vehicle when it suits
+   *  any of them. */
+  rims: ReadonlyArray<{ diameter: number; width: number }>;
+  /** Sidewall height (section width x aspect ratio / 100), mm, inclusive. */
+  sidewallMinMm: number;
+  sidewallMaxMm: number;
+}
+
+/**
+ * A vehicle's wheels, as a wheel filter (D155). A wheel must be drilled for
+ * one of `boltPatterns` (both, when the model year came with two). With
+ * `range` a wheel is a best match inside it (diameter, width and offset; a
+ * wheel with no offset on record is not outside it) and not narrower than
+ * `hubBore`; a wheel outside it, with no bore on record or a bore too small
+ * is similar. With no `range` the bolt pattern alone decides and only a bore
+ * narrower than the hub is similar.
+ */
+export interface WheelVehicleFit {
+  boltPatterns: readonly string[];
+  range: {
+    diameterMin: number;
+    diameterMax: number;
+    widthMin: number;
+    widthMax: number;
+    offsetMin: number | null;
+    offsetMax: number | null;
+  } | null;
+  /** The hub bore in mm. */
+  hubBore: number | null;
+}
+
+/**
  * What a results page can narrow on. Every field is optional; an absent field
  * does not filter. Only the block matching `category` is read.
  */
@@ -151,6 +213,10 @@ export interface ProductFilters {
     /** The lowest load index wanted. A product with no load index on record
      *  never matches it; a pair (`121/118`) is read by its first number. */
     loadIndexMin?: number;
+    /** A vehicle's tires. With `sizeMatch: "exact"` it keeps the best matches;
+     *  with `"near"`, the similar ones (`TireVehicleFit`). Never sent together
+     *  with an explicit size part. */
+    vehicleFit?: TireVehicleFit;
   };
   wheel?: {
     diameter?: number;
@@ -165,6 +231,10 @@ export interface ProductFilters {
     centerBore?: number;
     /** `wheel_specs.finish_family`, matched exactly as the facet spells it. */
     finishes?: readonly string[];
+    /** A vehicle's wheels (`WheelVehicleFit`). With `sizeMatch: "exact"` it
+     *  keeps the best matches; with `"near"`, the similar ones. Never sent
+     *  together with an explicit size part. */
+    vehicleFit?: WheelVehicleFit;
   };
   accessory?: {
     kinds?: readonly AccessoryKind[];
@@ -175,6 +245,28 @@ export interface ProductFilters {
      * it returns only the lug nuts and wheel locks cut to a different one.
      */
     thread?: string;
+    /**
+     * The vehicle's hub bore in mm. A hub ring states the bore it fits as its
+     * inner diameter, so a ring whose inner diameter is another size
+     * contradicts the vehicle (same asymmetric rule as `thread`: a ring that
+     * states no inner diameter never contradicts).
+     */
+    hubBore?: number;
+    /**
+     * How the vehicle's wheels are held: `nut` (stud and nut) or `bolt` (hub
+     * bolt). A lug nut contradicts a `bolt` vehicle and a lug bolt a `nut`
+     * one, by type alone; wheel locks are held to the thread only, because no
+     * column says nut or bolt for them.
+     */
+    fastener?: "nut" | "bolt";
+    /**
+     * Whether the vehicle has a tyre pressure sensor system (D156). Only
+     * `false` acts: a TPMS sensor or tool contradicts a car with no TPMS, by
+     * the product's type alone (the catalogue does not tell a sensor from a
+     * tool). `true` and absent change nothing. On and off only; the sensor's
+     * frequency is not modelled (owner, 2026-10-06).
+     */
+    tpms?: boolean;
     /**
      * Thread sizes the buyer ticked (`14x1.5`, `1/2 UNF`), matched exactly as
      * the facet spells them. They narrow the lug nuts, lug bolts and wheel

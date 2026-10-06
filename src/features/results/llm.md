@@ -31,15 +31,38 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   with the known fields kept and a prompt for the rest.
 - [`search.ts`](search.ts) — server only and **async** since D108b: `searchResults()` asks the catalogue
   (`catalog/queries.ts`) for one page of best matches, the similar row and the facets, and maps them into
-  a `ResultsView`. Reads the database; never imported by a client file. An explicit URL size wins,
-  otherwise a vehicle borrows one from `src/features/finder/fitment.ts` `findFitment(year, make, model)`
-  (LA-05): the D48(4) placeholder tire size on tires, the real ANKUSI bolt pattern for that model year
-  on wheels (placeholder where the year has none) — `query` is never mutated and `facets.activeGroups` is unchanged, because a derived fitment is
-  not a user filter. **Fitment is per category (D58, D67):** tires borrow `width`/`profile`/`rim`, wheels
-  `bolt` only, and accessories, which have no size group, narrow on the vehicle's lug thread: a lug nut or
-  wheel lock that states a different thread is `similar`, and stating none stays best
-  (`queries.ts` `contradictsThread()`). TPMS frequency is not a catalogue column, so a sensor always stays
-  best. **What D108b changed, because 9 products and 45,000 behave differently:** a size now *filters*
+  a `ResultsView`. Reads the database; never imported by a client file. An explicit URL size wins;
+  with every size select at `Any`, a vehicle narrows the page from `src/features/finder/fitment.ts`
+  `findFitment(year, make, model)` through `tire-fit.ts` (D155): `query` is never mutated and
+  `facets.activeGroups` is unchanged, because a derived fit is not a user filter. **Fitment is per
+  category (D58, D67, D155):** **tires** (`filters.tire.vehicleFit`): `best` is a catalogue tire whose size
+  equals one of the model year's factory sizes; `similar` is any other tire inside the stock envelope
+  (overall diameter within 0.5 in of it, section width inside it, rim inside the wheel envelope's
+  diameters; with no tire range from the source the envelope is derived from the factory sizes: diameter
+  over the sizes, section width ±5%, rim inside the wheel range's diameters else the sizes' rims −1/+2,
+  *derived*, coordinator), and with no factory sizes at all the rim rule (rim, width fit, class sidewall
+  band) decides. **Wheels** (`filters.wheel.vehicleFit`): the bolt pattern must match one
+  of the vehicle's (both, when it has two); `best` is also inside the stock wheel envelope (diameter,
+  width, offset) with a centre bore not narrower than the hub; `similar` is the right pattern outside it,
+  with a bore too small, or with an envelope and no bore stated; with no envelope the pattern alone
+  decides and only a narrower bore demotes. **Accessories**: lug nuts, lug bolts and wheel locks by thread,
+  lug nuts against a hub-bolt car and lug bolts against a stud-and-nut one by type (`fastener`), hub rings
+  by hub bore, and **since D156 TPMS sensors and tools by the car's TPMS on or off**: every product of the
+  `tpms_sensors_tools` type goes to similar for a car whose `tpms` is `false`, and nothing changes for a car
+  with TPMS or no data (`filters.accessory.tpms`, wired in `search.ts` and counted in `narrows`); a product
+  that states nothing stays best (`queries.ts` `accessoryContradiction()`). The sensor's frequency is not
+  modelled. Owner, 2026-10-06, verbatim: *"for TM or TP MS frequency if auto country is giving on and off for car we can do the same and not focus on the frequency that is out of our scope"*. `ResultsView.boltChoice` carries the
+  patterns of a vehicle that came with two, only while the vehicle is what narrows `/wheels`.
+  **Owner, 2026-10-06:** *"priority is vendor then factory. use best and similar both techniques."* and
+  *"Two bolt patterns in one model-year: Show wheels for both patterns."* (the rest is *derived*, D155:
+  the 0.5 in tire diameter slack, the unstated-offset-is-not-outside rule, the unstated-bore rule, the
+  0.5 mm bore tolerance and the 0.5 in slack beyond the stock wheel width (coordinator, 2026-10-06, after a
+  vendor spot check: DAI's fit lists run wider than the stock range and list GM 78.1 hubs with 77.8 wheels;
+  "we have only commit a loose fit to the client"), a range bound of 0 or missing meaning unbounded on that
+  side, the rim-rule fallback). Wheel and tire sizes the buyer picks themselves still win over the
+  vehicle (the vehicle's bolt pattern is then not applied; whether it should be is open, #10)
+  (D67 asymmetry unchanged: a product is demoted only when it STATES a contradiction).
+  **What D108b changed, because 9 products and 45,000 behave differently:** a size now *filters*
   (`best` is that size; `similar` is the sizes next to it, `sizeMatch: "near"`, not "everything else");
   facet counts follow `best`; the lists arrive windowed by `query.show`; **the brand filter sent to the
   database is exact**, as the facet spells it (D107b); and a price bound parked at
@@ -53,7 +76,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   (D132):** each lists the values found with the OTHER size parts the buyer chose (`getFacets`'
   `sizeOptions`), read off the full list so the order holds, and always keeps its own value, so a URL
   never silently loses its choice; `withKnownSizes` checks the full lists, never the narrowed ones. The
-  narrowing uses `query.size` only, so a vehicle-lent size (D48(4)) leaves every select whole, and
+  narrowing uses `query.size` only, so a vehicle's fit (D155) leaves every select whole, and
   brand / chips / price never narrow sizes, so the size group stays "what sizes exist" and D109(1)'s
   best/similar split is untouched.
 - [`components/results-toolbar.tsx`](components/results-toolbar.tsx) — `ResultsToolbar({ view })`, Server.
@@ -117,11 +140,19 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   Since **D72** the count and `countCopy` live here as the second line of the `Best matches` header stack
   (#63), and `ResultsGrid` composes the zero-results state itself from the shared `SECTION` /
   `HEAD_STACK` / `HEADING` / `SUPPORT` / `EMPTY_HEADING` / `EmptyActions` instead of returning
-  `<ResultsEmpty/>`, now the `/styleguide` reference only.
+  `<ResultsEmpty/>`, now the `/styleguide` reference only. **D155:** `BoltChoiceNote` (exported, shown on
+  `/styleguide` §11) is a third line in the header stack, rendered only when `view.boltChoice` holds two
+  or more patterns (`/wheels` with a vehicle that came with two): *"This model year came with two bolt
+  patterns: 5x114.3 and 5x120. Check your trim before you order."* (new copy, *derived*; three or more
+  read "three", "four"; the count word and the patterns are filled in).
 - [`components/call-cta-panel.tsx`](components/call-cta-panel.tsx) — `CallCtaPanel()`, Server,
   `md:hidden`. `Not sure which one?` panel, `tel:` CTA from `PRIMARY_CONTACT` (D47(1)).
 
 ## Rules
+- **An old vehicle name in the URL is redirected before the page renders** (D155, *derived*): `/tires`, `/wheels` and
+  `/accessories` call `redirectToCanonicalVehicle` (`src/features/finder/canonical.ts`) first, a 308 to the same
+  path with the params kept in order and `model` (and `make`) swapped to the finder list's spelling. `parseResultsQuery`
+  itself stays exact (D91b) and never sees an alias.
 - **Five more filter groups (D137), each filled for at least 70% of what it applies to.** Tires
   `load` (minimum load index); wheels `bore` (exact), `offset_min`/`offset_max` (the price slider's
   `RangeGroup`), `finish` (finish families); accessories `thread`, shown, parsed and counted only while
@@ -174,6 +205,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 | D91b | 2026-09-30 | `filter-panel` attaches its native `change` listener (and the refocus/close-on-arrival step) in `useLayoutEffect`, not `useEffect`: the form is keyed on `href`, and a click landing between the commit that re-mounts it and a passive effect toggled a control with no listener, so the change never reached the URL. `sort-select` has no such gap (React's delegated `onChange`). | QA pass FIN-2: 22 of 36 rapid chip/brand sequences dropped a click before the fix, 36/36 after (`results.spec.ts` › rapid filter changes). | D91b |
 | D149, D151 | 2026-10-04 | The vehicle lookup takes the model year (`finder/fitment.ts`, server only); a part-filled finder submit sets `query.partialVehicle` and opens the toolbar's `Change vehicle` disclosure (`open`, server-rendered, so it works without JS) with Year/Make kept, a one-line prompt and the missing field focused. | LA-05 and the "finder silently discards a partly filled vehicle" P2 of the D145 audit. | Owner, 2026-10-04 (finder llm.md D149) |
 | D151 | 2026-10-04 | Range thumbs (price, wheel offset) are 24×24 hit boxes whose drawn 16×16 handle is the content box (`background-clip: content-box`, 4px transparent padding, `range-input` in globals.css); the travel box in `RangeGroup` hangs 12px past each track edge and is 24px tall (`-inset-x-3 -top-0.5 h-6`) so D69's alignment holds for a 24px border-box. The box and the utility change together or the handles drift 4px. Not a transparent border: the arithmetic is redone, not dodged. | WCAG 2.5.8: the inputs measured 20px tall and the real target, the thumb, 16px (launch audit, D145, A11Y-AUTO). | Owner, 2026-10-04: "Apply all code items" |
+| D155 | 2026-10-06 | The vehicle narrows tires, wheels and accessories through `tire-fit.ts` (see `search.ts` above); `ResultsView.boltChoice` and `BoltChoiceNote` say to check the trim when a model year came with two bolt patterns. | The finder's fit data grew from one bolt pattern and one rim to factory sizes, stock envelopes, two patterns, thread and fastener. | Owner, 2026-10-06 (quoted under `search.ts`) |
 | — | — | None folder-scoped. | Governing rows: **D42–D49**, **D58**, **D59** (root `llm.md` §5b), D37, D39, D41. | — |
 
 ## Connects to
@@ -210,8 +242,9 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `wheel-size-grid` one shipped syntactically valid and Tailwind never emitted it (#67's correction).
 
 ## Open
-1. Vehicle params drive the best/similar split on all three routes through the **placeholder** `FITMENT`
-   map (D48(4), D67 adds `thread`/`tpms`); real fitment data is owed by the client (root `llm.md` §7.13).
+1. ~~Vehicle params drive the split through the placeholder `FITMENT` map.~~ **Closed by D155** (2026-10-06):
+   the map is gone; the split reads the real fit data (`finder/llm.md`). The fit data is as complete as the
+   generated `VEHICLE_SPECS`; TPMS is on or off only since D156 (no frequency).
 2. ~~Stub links~~ (moot, **D71** removed `Category`, #60) and ~~no-JS mobile sheet~~ (D48(1): `showModal()`
    still needs JS to open it, but its footer `Apply` works without JS once open — the rail's own
    no-JS path went with `Apply`, #71, and isn't owed back).
@@ -231,5 +264,10 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
    a reload right after opening it, with no filter change between, arrives closed; the toolbar's
    `Change vehicle` form does not carry `brands=all`; and with JS off, a fold opened by hand is not
    carried by a submit unless it holds a ticked brand.
-9. **The vehicle → size map is still the placeholder `FITMENT` table.** Real fitment data is its own
-   session (D105b). Owner.
+9. ~~**The vehicle → size map is still the placeholder `FITMENT` table.**~~ Closed by D155.
+10. **A size picked by hand drops the vehicle's bolt pattern on `/wheels`** (an explicit size always wins,
+    D48): choose a diameter with a vehicle in the URL and wheels that do not fit the car list as matches.
+    Applying the vehicle's pattern beside an explicit size would be a one-line change in `catalogFilters`;
+    not done, since it was not asked for. Owner.
+11. **Whether to hide a wheel whose bore is narrower than the hub** is parked (owner, 2026-10-06); it is
+    `similar` today.

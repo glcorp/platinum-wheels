@@ -1,0 +1,303 @@
+wheel_sku,our_product_size,car,direction,dai_says_fits,ours,our_model,our_bolts,year_source,why
+R3342101,21x9.5 5x114.3 ET42 bore73.1,2015 Infiniti Q50 Base,dai->ours,y,best,Q50,5x114.3,exact,
+R3342101,21x9.5 5x114.3 ET42 bore73.1,2025 Hyundai Ioniq 5 N Base,dai->ours,y,best,Ioniq 5 N,5x114.3,exact,
+R3342101,21x9.5 5x114.3 ET42 bore73.1,2016 Ford Explorer Base,dai->ours,y,best,Explorer,5x114.3,exact,
+R3342101,21x9.5 5x114.3 ET42 bore73.1,2022 Mazda CX-9 Carbon Edition,dai->ours,y,similar,CX-9,5x114.3,exact,width 9.5 outside 8-9
+R3342101,21x9.5 5x114.3 ET42 bore73.1,2021 Genesis GV80 Advanced,dai->ours,y,best,GV80,5x114.3,exact,
+R3342101,21x9.5 5x114.3 ET42 bore73.1,2022 Honda CR-V Black Edition,dai->ours,y,similar,CR-V,5x114.3,exact,width 9.5 outside 6.5-8.5
+RUF672201,22x9 5x114.3 ET35 bore73.1,2024 Ford Explorer Base,dai->ours,y,best,Explorer,5x114.3,exact,
+RUF672201,22x9 5x114.3 ET35 bore73.1,2024 Kia EV6 GT,dai->ours,y,best,EV6,5x114.3,exact,
+RUF672201,22x9 5x114.3 ET35 bore73.1,2024 Fisker Ocean Extreme,dai->ours,y,similar,Ocean,5x114.3,exact,width 9 outside 7.5-8.5
+RUF672201,22x9 5x114.3 ET35 bore73.1,2023 Genesis GV60 Advanced AWD,dai->ours,y,best,GV60,5x114.3,exact,
+RUF672201,22x9 5x114.3 ET35 bore73.1,2025 Hyundai Ioniq 5 N Base,dai->ours,y,similar,Ioniq 5 N,5x114.3,exact,width 9 outside 9.5-10.5
+RUF672201,22x9 5x114.3 ET35 bore73.1,2025 Toyota Highlander Hybrid LE,dai->ours,y,best,Highlander,5x114.3,exact,
+DW10717005,17x7.5 5x114.3 ET40 bore67.1,2015 Kia Forte Koup EX,dai->ours,y,best,Forte Koup,5x114.3,exact,
+DW10717005,17x7.5 5x114.3 ET40 bore67.1,2017 Jeep Patriot 75th Anniversary,dai->ours,y,best,Patriot,5x114.3,exact,
+DW10717005,17x7.5 5x114.3 ET40 bore67.1,2017 Mazda CX-9 Grand Touring,dai->ours,y,similar,CX-9,5x114.3,exact,diameter 17 outside 18-24; width 7.5 outside 8-9
+DW10717005,17x7.5 5x114.3 ET40 bore67.1,2019 Hyundai Kona Essential,dai->ours,y,best,Kona,5x114.3,exact,
+DW10717005,17x7.5 5x114.3 ET40 bore67.1,2017 Lexus GS200t Base,dai->ours,y,best,GS,5x114.3,exact,
+DW10717005,17x7.5 5x114.3 ET40 bore67.1,2019 Toyota Camry Hybrid LE,dai->ours,y,best,Camry,5x114.3,exact,
+RUF831901,19x8.5 5x114.3 ET40 bore67.1,2021 Nissan Qashqai S,dai->ours,y,similar,Qashqai,5x114.3,exact,width 8.5 outside 6-8
+RUF831901,19x8.5 5x114.3 ET40 bore67.1,2023 Toyota Crown Limited,dai->ours,y,best,Crown,5x114.3,exact,
+RUF831901,19x8.5 5x114.3 ET40 bore67.1,2025 Kia EV6 GT-Line,dai->ours,y,best,EV6,5x114.3,exact,
+RUF831901,19x8.5 5x114.3 ET40 bore67.1,2025 Hyundai Sonata Hybrid Limited,dai->ours,y,best,Sonata,5x114.3,exact,
+RUF831901,19x8.5 5x114.3 ET40 bore67.1,2022 Mitsubishi Eclipse Cross ES,dai->ours,y,similar,Eclipse Cross,5x114.3,exact,width 8.5 outside 6.5-8
+RUF831901,19x8.5 5x114.3 ET40 bore67.1,2018 Mazda CX-9 Grand Touring,dai->ours,y,best,CX-9,5x114.3,exact,
+DW11515009,15x6.5 5x114.3 ET38 bore67.1,2022 Hyundai Elantra Blue Hybrid,dai->ours,y,best,Elantra,5x114.3,exact,
+DW11515009,15x6.5 5x114.3 ET38 bore67.1,2025 Kia K4 EX,dai->ours,y,similar,K4,5x114.3,exact,diameter 15 outside 16-20; width 6.5 outside 7.5-8.5
+DW11515009,15x6.5 5x114.3 ET38 bore67.1,2015 Toyota Tacoma Base,dai->ours,y,none,Tacoma,6x139.7,exact,bolt: wheel 5x114.3 vs car 6x139.7
+DW11515009,15x6.5 5x114.3 ET38 bore67.1,2016 Honda CR-Z Base,dai->ours,y,similar,CR-Z,5x114.3,exact,diameter 15 outside 16-19
+DW11515009,15x6.5 5x114.3 ET38 bore67.1,2015 Mitsubishi Lancer DE,dai->ours,y,similar,Lancer,5x114.3,exact,diameter 15 outside 16-20
+DW11515009,15x6.5 5x114.3 ET38 bore67.1,2016 Mazda CX-3 Grand Touring,dai->ours,y,similar,CX-3,5x114.3,exact,diameter 15 outside 16-22
+DW12218001,18x8 5x114.3 ET45 bore67.1,2017 Hyundai Elantra Eco,dai->ours,y,best,Elantra,5x114.3,exact,
+DW12218001,18x8 5x114.3 ET45 bore67.1,2019 Ford Police Responder Hybrid Base,dai->ours,y,best,Police Responder Hybrid,5x114.3,exact,
+DW12218001,18x8 5x114.3 ET45 bore67.1,2024 Subaru Impreza Base,dai->ours,y,best,Impreza,5x114.3,exact,
+DW12218001,18x8 5x114.3 ET45 bore67.1,2016 Toyota Tacoma Base,dai->ours,y,none,Tacoma,6x139.7,exact,bolt: wheel 5x114.3 vs car 6x139.7
+DW12218001,18x8 5x114.3 ET45 bore67.1,2017 Mazda CX-3 Grand Touring,dai->ours,y,best,CX-3,5x114.3,exact,
+DW12218001,18x8 5x114.3 ET45 bore67.1,2017 Kia Forte Koup EX,dai->ours,y,best,Forte Koup,5x114.3,exact,
+R1651907,19x8.5 5x120 ET35 bore72.6,2020 Cadillac CT5 Luxury,dai->ours,y,best,CT5,5x120,exact,
+R1651907,19x8.5 5x120 ET35 bore72.6,2015 Bmw 328i Base,dai->ours,y,best,328i,5x120,exact,
+R1651907,19x8.5 5x120 ET35 bore72.6,2016 Acura RLX Base,dai->ours,y,best,RLX,5x120,exact,
+R1651907,19x8.5 5x120 ET35 bore72.6,2017 Honda Odyssey EX,dai->ours,y,similar,Odyssey,5x120,exact,width 8.5 outside 7-8
+R1651907,19x8.5 5x120 ET35 bore72.6,2015 Gmc Terrain Denali,dai->ours,y,similar,Terrain,5x120,exact,width 8.5 outside 6.5-8
+R1651907,19x8.5 5x120 ET35 bore72.6,2017 Chevrolet Impala 2LZ,dai->ours,y,similar,Impala,5x120,exact,offset 35 outside 36..46
+LX52202,22x9 5x120 ET43 bore72.6,2024 Land Rover Range Rover Autobiography,dai->ours,y,best,Range Rover,5x120,exact,
+LX52202,22x9 5x120 ET43 bore72.6,2015 Cadillac CTS Base,dai->ours,y,similar,CTS,5x120,exact,diameter 22 outside 17-21
+LX52202,22x9 5x120 ET43 bore72.6,2024 Acura MDX Base,dai->ours,y,best,MDX,5x120,exact,
+LX52202,22x9 5x120 ET43 bore72.6,2020 Honda Passport Elite,dai->ours,y,best,Passport,5x120,exact,
+LX52202,22x9 5x120 ET43 bore72.6,2016 Buick LaCrosse Base,dai->ours,y,similar,LaCrosse,5x120,exact,diameter 22 outside 17-21
+LX52202,22x9 5x120 ET43 bore72.6,2023 Land Rover Range Rover Sport Autobiography,dai->ours,y,best,Range Rover Sport,5x120,exact,
+R61A18006B,18x8.5 5x120 ET35 bore72.6,2016 Chevrolet Malibu Limited LS,dai->ours,y,best,Malibu Limited,5x120,exact,
+R61A18006B,18x8.5 5x120 ET35 bore72.6,2015 Honda Pilot EX,dai->ours,y,best,Pilot,5x120,exact,
+R61A18006B,18x8.5 5x120 ET35 bore72.6,2016 Bmw Z4 sDrive28i,dai->ours,y,best,Z4,5x120,exact,
+R61A18006B,18x8.5 5x120 ET35 bore72.6,2024 Cadillac XT4 Luxury,dai->ours,y,best,XT4,5x120,exact,
+R61A18006B,18x8.5 5x120 ET35 bore72.6,2015 Buick LaCrosse Base,dai->ours,y,best,LaCrosse,5x120,exact,
+R61A18006B,18x8.5 5x120 ET35 bore72.6,2016 Mini Cooper Countryman Base,dai->ours,y,best,Cooper Countryman,5x120,exact,
+RUF5120004,20x9 5x120 ET35 bore72.6,2016 Bmw 328i Base,dai->ours,y,best,328i,5x120,exact,
+RUF5120004,20x9 5x120 ET35 bore72.6,2025 Acura MDX Base,dai->ours,y,best,MDX,5x120,exact,
+RUF5120004,20x9 5x120 ET35 bore72.6,2017 Buick Regal Base,dai->ours,y,best,Regal,5x120,exact,
+RUF5120004,20x9 5x120 ET35 bore72.6,2016 Land Rover Range Rover Sport Autobiography,dai->ours,y,best,Range Rover Sport,5x120,exact,
+RUF5120004,20x9 5x120 ET35 bore72.6,2015 Chevrolet Impala Limited LS,dai->ours,y,similar,Impala Limited,5x120,exact,width 9 outside 6.5-8
+RUF5120004,20x9 5x120 ET35 bore72.6,2016 Cadillac CTS Base,dai->ours,y,best,CTS,5x120,exact,
+R21217010,17x7 5x120 ET42 bore64.1,2017 Honda Ridgeline Black Edition,dai->ours,y,similar,Ridgeline,5x120,exact,diameter 17 outside 18-22; width 7 outside 8-9
+R21217010,17x7 5x120 ET42 bore64.1,2017 Acura RLX Base,dai->ours,y,similar,RLX,5x120,exact,diameter 17 outside 18-21; width 7 outside 8-9
+R21217010,17x7 5x120 ET42 bore64.1,2017 Honda Pilot EX,dai->ours,y,similar,Pilot,5x120,exact,diameter 17 outside 18-24; width 7 outside 8-9
+R21217010,17x7 5x120 ET42 bore64.1,2022 Honda Passport Elite,dai->ours,y,similar,Passport,5x120,exact,diameter 17 outside 18-24; width 7 outside 8-9.5
+R21217010,17x7 5x120 ET42 bore64.1,2017 Acura MDX Advance Pack,dai->ours,y,similar,MDX,5x120,exact,diameter 17 outside 18-24; width 7 outside 8-9
+R21217010,17x7 5x120 ET42 bore64.1,2016 Honda Odyssey EX,dai->ours,y,best,Odyssey,5x120,exact,
+R3251907,19x8 5x120 ET35 bore64.1,2017 Acura RLX Base,dai->ours,y,best,RLX,5x120,exact,
+R3251907,19x8 5x120 ET35 bore64.1,2022 Lucid Air Dream Edition Performance,dai->ours,y,similar,Air,5x120,exact,
+R3251907,19x8 5x120 ET35 bore64.1,2021 Honda Pilot Black Edition,dai->ours,y,best,Pilot,5x120,exact,
+R3251907,19x8 5x120 ET35 bore64.1,2018 Acura MDX Base,dai->ours,y,best,MDX,5x120,exact,
+R3251907,19x8 5x120 ET35 bore64.1,2024 Acura TLX Base,dai->ours,y,best,TLX,5x120,exact,
+R3251907,19x8 5x120 ET35 bore64.1,2020 Honda Ridgeline Black Edition,dai->ours,y,best,Ridgeline,5x120,exact,
+R4291801,18x7.5 6x139.7 ET55 bore95.1,2024 Toyota Sequoia Capstone,dai->ours,y,similar,Sequoia,6x139.7,exact,width 7.5 outside 8-9.5
+R4291801,18x7.5 6x139.7 ET55 bore95.1,2023 Lexus LX600 Base,dai->ours,y,best,LX,6x139.7,exact,
+R4291801,18x7.5 6x139.7 ET55 bore95.1,2025 Toyota Tundra 1794 Edition,dai->ours,y,best,Tundra,6x139.7,exact,
+R4291801,18x7.5 6x139.7 ET55 bore95.1,2024 Toyota Land Cruiser 1958,dai->ours,y,best,Land Cruiser,6x139.7,exact,
+R4291801,18x7.5 6x139.7 ET55 bore95.1,2024 Toyota Tacoma Limited,dai->ours,y,best,Tacoma,6x139.7,exact,
+R4291801,18x7.5 6x139.7 ET55 bore95.1,2025 Toyota 4Runner Limited,dai->ours,y,best,4Runner,6x139.7,exact,
+R3532003,20x9 6x139.7 ET20 bore77.8,2020 Gmc Yukon XL Denali,dai->ours,y,similar,Yukon XL,6x139.7,exact,bore 77.8 < hub 78.1
+R3532003,20x9 6x139.7 ET20 bore77.8,2023 Nissan TITAN Platinum Reserve,dai->ours,y,best,TITAN,6x139.7,exact,
+R3532003,20x9 6x139.7 ET20 bore77.8,2019 Infiniti QX80 Limited,dai->ours,y,similar,QX80,6x139.7,exact,bore 77.8 < hub 78.1
+R3532003,20x9 6x139.7 ET20 bore77.8,2018 Chevrolet Silverado 1500 Custom,dai->ours,y,similar,Silverado 1500,6x139.7,exact,bore 77.8 < hub 78.1
+R3532003,20x9 6x139.7 ET20 bore77.8,2016 Cadillac Escalade ESV Base,dai->ours,y,similar,Escalade ESV,6x139.7,exact,bore 77.8 < hub 78.1
+R3532003,20x9 6x139.7 ET20 bore77.8,2021 Ram 1500 Big Horn,dai->ours,y,best,1500,6x139.7;5x139.7,exact,
+566BM2228344,22x12 6x139.7 ET-44 bore106.1,2024 Cadillac Escalade ESV V,dai->ours,y,similar,Escalade ESV,6x139.7,exact,width 12 outside 9-10
+566BM2228344,22x12 6x139.7 ET-44 bore106.1,2020 Chevrolet Suburban LS,dai->ours,y,similar,Suburban,6x139.7,exact,width 12 outside 8-10.5
+566BM2228344,22x12 6x139.7 ET-44 bore106.1,2017 Gmc Yukon Denali,dai->ours,y,similar,Yukon,6x139.7,exact,width 12 outside 8-10.5
+566BM2228344,22x12 6x139.7 ET-44 bore106.1,2020 Nissan TITAN Platinum,dai->ours,y,similar,TITAN,6x139.7,exact,width 12 outside 7.5-9
+566BM2228344,22x12 6x139.7 ET-44 bore106.1,2019 Ram 1500 Big Horn,dai->ours,y,similar,1500,6x139.7;5x139.7,exact,width 12 outside 7-10
+566BM2228344,22x12 6x139.7 ET-44 bore106.1,2023 Toyota Tacoma Base,dai->ours,y,similar,Tacoma,6x139.7,exact,width 12 outside 7-8.5
+R3371701,17x8 6x139.7 ET5 bore106.1,2018 Lexus GX460 Base,dai->ours,y,similar,GX,6x139.7,exact,diameter 17 outside 18-23
+R3371701,17x8 6x139.7 ET5 bore106.1,2023 Toyota 4Runner 40th Anniversary Edition,dai->ours,y,best,4Runner,6x139.7,exact,
+R3371701,17x8 6x139.7 ET5 bore106.1,2025 Ford Bronco Stroppe Edition,dai->ours,y,best,Bronco,6x139.7;6x135,exact,
+R3371701,17x8 6x139.7 ET5 bore106.1,2022 Toyota Tacoma Base,dai->ours,y,best,Tacoma,6x139.7,exact,
+DW1281802,18x9 6x139.7 ET12 bore108.1,2024 Toyota 4Runner Limited,dai->ours,y,best,4Runner,6x139.7,exact,
+DW1281802,18x9 6x139.7 ET12 bore108.1,2019 Chevrolet Silverado 1500 Custom Trail Boss,dai->ours,y,best,Silverado 1500,6x139.7,exact,
+DW1281802,18x9 6x139.7 ET12 bore108.1,2024 Gmc Canyon AT4,dai->ours,y,best,Canyon,6x139.7,exact,
+DW1281802,18x9 6x139.7 ET12 bore108.1,2025 Jeep Grand Wagoneer L Base,dai->ours,y,best,Grand Wagoneer L,6x139.7,exact,
+DW1281802,18x9 6x139.7 ET12 bore108.1,2021 Cadillac Escalade Luxury,dai->ours,y,similar,Escalade,6x139.7,exact,diameter 18 outside 22-26
+DW1281802,18x9 6x139.7 ET12 bore108.1,2020 Ram 1500 Big Horn,dai->ours,y,best,1500,6x139.7;5x139.7,exact,
+566BSM2098318,20x9 6x139.7 ET18 bore106.2,2019 Gmc Yukon Denali,dai->ours,y,best,Yukon,6x139.7,exact,
+566BSM2098318,20x9 6x139.7 ET18 bore106.2,2025 Ford Ranger Lariat,dai->ours,y,similar,Ranger,6x139.7,exact,offset 18 outside 35..60
+566BSM2098318,20x9 6x139.7 ET18 bore106.2,2020 Nissan TITAN Platinum,dai->ours,y,best,TITAN,6x139.7,exact,
+566BSM2098318,20x9 6x139.7 ET18 bore106.2,2020 Ram 1500 Big Horn,dai->ours,y,best,1500,6x139.7;5x139.7,exact,
+566BSM2098318,20x9 6x139.7 ET18 bore106.2,2017 Toyota 4Runner Base,dai->ours,y,best,4Runner,6x139.7,exact,
+566BSM2098318,20x9 6x139.7 ET18 bore106.2,2017 Chevrolet Suburban LS,dai->ours,y,best,Suburban,6x139.7,exact,
+R2952102,21x10 5x112 ET19 bore66.5,2023 Bmw M4 CSL,dai->ours,y,best,M4,5x112,exact,
+R2952102,21x10 5x112 ET19 bore66.5,2024 Audi SQ8 Base,dai->ours,y,best,SQ8,5x112,exact,
+R2952102,21x10 5x112 ET19 bore66.5,2022 Mercedes-Benz AMG GT 43 Base,dai->ours,y,best,AMG GT,5x112,exact,
+R2952102,21x10 5x112 ET19 bore66.5,2025 Audi RS6 Avant GT,dai->ours,y,similar,RS6 Avant,5x112,exact,width 10 outside 10.5-11.5
+R2952102,21x10 5x112 ET19 bore66.5,2025 Bmw M2 Base,dai->ours,y,best,M2,5x112,exact,
+R2952102,21x10 5x112 ET19 bore66.5,2024 Audi SQ7 Base,dai->ours,y,similar,SQ7,5x112,exact,offset 19 outside 25..35
+LX42008,20x9 5x112 ET25 bore66.6,2025 Bmw M340i Base,dai->ours,y,best,M340i,5x112,exact,
+LX42008,20x9 5x112 ET25 bore66.6,2022 Audi S5 Premium,dai->ours,y,best,S5,5x112,exact,
+LX42008,20x9 5x112 ET25 bore66.6,2024 Mercedes-Benz CLE53 AMG 4Matic+,dai->ours,y,best,CLE,5x112,exact,
+LX42008,20x9 5x112 ET25 bore66.6,2025 Volkswagen Atlas Cross Sport Comfortline,dai->ours,y,best,Atlas Cross Sport,5x112,exact,
+LX42008,20x9 5x112 ET25 bore66.6,2015 Porsche Macan S,dai->ours,y,best,Macan,5x112,exact,
+LX42008,20x9 5x112 ET25 bore66.6,2025 Bmw i5 eDrive40,dai->ours,y,best,i5,5x112,exact,
+R9217002,17x8 5x112 ET42 bore66.6,2020 Audi TT Quattro Base,dai->ours,y,similar,TT,5x112,exact,diameter 17 outside 18-21; width 8 outside 8.5-10
+R9217002,17x8 5x112 ET42 bore66.6,2025 Bmw 228 xDrive Gran Coupe Base,dai->ours,y,similar,228,5x112,exact,diameter 17 outside 18-20
+R9217002,17x8 5x112 ET42 bore66.6,2016 Volkswagen Jetta GLI,dai->ours,y,similar,Jetta GLI,5x112,exact,diameter 17 outside 18-20
+R9217002,17x8 5x112 ET42 bore66.6,2023 Mini Cooper Clubman S,dai->ours,y,best,Cooper Clubman,5x112,exact,
+R9217002,17x8 5x112 ET42 bore66.6,2016 Infiniti QX30 Base,dai->ours,y,similar,QX30,5x112,exact,diameter 17 outside 18-23
+R9217002,17x8 5x112 ET42 bore66.6,2023 Bmw X2 sDrive28i,dai->ours,y,similar,X2,5x112,exact,diameter 17 outside 18-23
+R3251504,15x6.5 5x112 ET40 bore57.1,2024 Audi A3 Premium,dai->ours,y,similar,A3,5x112,exact,diameter 15 outside 17-20; width 6.5 outside 7.5-8.5
+R3251504,15x6.5 5x112 ET40 bore57.1,2016 Volkswagen Jetta Comfortline,dai->ours,y,best,Jetta,5x112,exact,
+R3251504,15x6.5 5x112 ET40 bore57.1,2016 Volkswagen Golf SportWagen Limited Edition,dai->ours,y,best,Golf SportWagen,5x112,exact,
+R3251504,15x6.5 5x112 ET40 bore57.1,2017 Volkswagen Jetta GLI,dai->ours,y,similar,Jetta GLI,5x112,exact,diameter 15 outside 18-20; width 6.5 outside 7.5-8.5
+R3251504,15x6.5 5x112 ET40 bore57.1,2020 Volkswagen e-Golf Comfortline,dai->ours,y,similar,e-Golf,5x112,exact,diameter 15 outside 16-18
+R3251504,15x6.5 5x112 ET40 bore57.1,2021 Volkswagen Golf Comfortline,dai->ours,y,similar,Golf,5x112,exact,diameter 15 outside 16-19
+R3742201,22x9.5 5x112 ET35 bore66.6,2025 Audi S6 Premium,dai->ours,y,best,S6,5x112,exact,
+R3742201,22x9.5 5x112 ET35 bore66.6,2022 Mercedes-Benz Maybach GLS600 4Matic,dai->ours,y,best,Maybach GLS600,5x112,exact,
+R3742201,22x9.5 5x112 ET35 bore66.6,2021 Bmw X4 M,dai->ours,y,best,X4,5x112,exact,
+R3742201,22x9.5 5x112 ET35 bore66.6,2024 Volkswagen Atlas Comfortline,dai->ours,y,best,Atlas,5x112,exact,
+R3742201,22x9.5 5x112 ET35 bore66.6,2018 Bentley Continental GT,dai->ours,y,best,Continental,5x112,exact,
+R3742201,22x9.5 5x112 ET35 bore66.6,2024 Audi A6 allroad Premium Plus,dai->ours,y,best,A6 allroad,5x112,exact,
+R21216003,16x6.5 5x112 ET45 bore57.1,2017 Audi A3 Sportback e-tron Premium,dai->ours,y,similar,A3,5x112,exact,width 6.5 outside 7-8.5
+R21216003,16x6.5 5x112 ET45 bore57.1,2017 Volkswagen Golf Base,dai->ours,y,best,Golf,5x112,exact,
+R21216003,16x6.5 5x112 ET45 bore57.1,2025 Volkswagen Jetta Comfortline,dai->ours,y,best,Jetta,5x112,exact,
+R21216003,16x6.5 5x112 ET45 bore57.1,2016 Volkswagen Beetle Base,dai->ours,y,best,Beetle,5x112,exact,
+R21216003,16x6.5 5x112 ET45 bore57.1,2016 Volkswagen Jetta GLI,dai->ours,y,similar,Jetta GLI,5x112,exact,diameter 16 outside 18-20; width 6.5 outside 7.5-8.5
+R21216003,16x6.5 5x112 ET45 bore57.1,2018 Volkswagen Golf SportWagen Comfortline,dai->ours,y,best,Golf SportWagen,5x112,exact,
+RUF871801,18x8 6x135 ET35 bore87.1,2017 Ford Expedition EL King Ranch,dai->ours,y,best,Expedition EL,6x135,exact,
+RUF871801,18x8 6x135 ET35 bore87.1,2019 Lincoln Navigator Base,dai->ours,y,similar,Navigator,6x135,exact,diameter 18 outside 20-26; width 8 outside 8.5-10
+RUF871801,18x8 6x135 ET35 bore87.1,2021 Ford F-150 King Ranch,dai->ours,y,best,F-150,6x135,exact,
+RUF871801,18x8 6x135 ET35 bore87.1,2015 Ford Expedition Max Limited,dai->ours,y,best,Expedition MAX,6x135,exact,
+RUF871801,18x8 6x135 ET35 bore87.1,2018 Ford Expedition Limited,dai->ours,y,best,Expedition,6x135,exact,
+RUF871801,18x8 6x135 ET35 bore87.1,2023 Lincoln Navigator L Black Label,dai->ours,y,best,Navigator L,6x135,nearest,
+547BM2226344,22x12 6x135 ET-44 bore87.1,2015 Lincoln Navigator L,dai->ours,y,best,Navigator L,6x135,exact,
+547BM2226344,22x12 6x135 ET-44 bore87.1,2023 Ford F-150 King Ranch,dai->ours,y,similar,F-150,6x135,exact,width 12 outside 7.5-9.5
+547BM2226344,22x12 6x135 ET-44 bore87.1,2016 Lincoln Navigator Base,dai->ours,y,similar,Navigator,6x135,exact,width 12 outside 8.5-10
+R26917001,17x8 6x135 ET35 bore87.1,2015 Lincoln Navigator L,dai->ours,y,best,Navigator L,6x135,exact,
+R26917001,17x8 6x135 ET35 bore87.1,2022 Ford Expedition King Ranch,dai->ours,y,best,Expedition,6x135,exact,
+R26917001,17x8 6x135 ET35 bore87.1,2015 Ford Expedition EL King Ranch,dai->ours,y,best,Expedition EL,6x135,exact,
+R26917001,17x8 6x135 ET35 bore87.1,2022 Ford Expedition Max King Ranch,dai->ours,y,best,Expedition MAX,6x135,exact,
+R26917001,17x8 6x135 ET35 bore87.1,2016 Ford F-150 King Ranch,dai->ours,y,best,F-150,6x135,exact,
+R26917001,17x8 6x135 ET35 bore87.1,2017 Lincoln Navigator Base,dai->ours,y,similar,Navigator,6x135,exact,diameter 17 outside 20-26; width 8 outside 8.5-10
+DW1282002,20x9 6x135 ET20 bore87.1,2017 Lincoln Navigator Base,dai->ours,y,similar,Navigator,6x135,exact,offset 20 outside 25..40
+DW1282002,20x9 6x135 ET20 bore87.1,2016 Ford F-150 King Ranch,dai->ours,y,best,F-150,6x135,exact,
+DW1282002,20x9 6x135 ET20 bore87.1,2016 Ford Expedition EL King Ranch,dai->ours,y,similar,Expedition EL,6x135,exact,offset 20 outside 25..44
+DW1282002,20x9 6x135 ET20 bore87.1,2020 Ford Expedition King Ranch,dai->ours,y,similar,Expedition,6x135,exact,offset 20 outside 25..55
+DW1282002,20x9 6x135 ET20 bore87.1,2020 Ford Expedition Max King Ranch,dai->ours,y,best,Expedition MAX,6x135,exact,
+DW1282002,20x9 6x135 ET20 bore87.1,2023 Lincoln Navigator L Black Label,dai->ours,y,best,Navigator L,6x135,nearest,
+RUF871803,18x8.5 6x135 ET25 bore87.1,2022 Lincoln Navigator Base,dai->ours,y,similar,Navigator,6x135,exact,diameter 18 outside 20-26
+RUF871803,18x8.5 6x135 ET25 bore87.1,2022 Ford Expedition Max King Ranch,dai->ours,y,best,Expedition MAX,6x135,exact,
+RUF871803,18x8.5 6x135 ET25 bore87.1,2016 Ford Expedition King Ranch,dai->ours,y,best,Expedition,6x135,exact,
+RUF871803,18x8.5 6x135 ET25 bore87.1,2015 Ford Expedition EL King Ranch,dai->ours,y,best,Expedition EL,6x135,exact,
+RUF871803,18x8.5 6x135 ET25 bore87.1,2016 Lincoln Navigator L,dai->ours,y,best,Navigator L,6x135,exact,
+RUF871803,18x8.5 6x135 ET25 bore87.1,2017 Ford F-150 King Ranch,dai->ours,y,best,F-150,6x135,exact,
+R4162201,22x8.5 6x135 ET40 bore87.1,2023 Ford F-150 King Ranch,dai->ours,y,best,F-150,6x135,exact,
+R4162201,22x8.5 6x135 ET40 bore87.1,2025 Ford Expedition Max Active,dai->ours,y,best,Expedition MAX,6x135,nearest,
+R4162201,22x8.5 6x135 ET40 bore87.1,2025 Ford Expedition Active,dai->ours,y,best,Expedition,6x135,nearest,
+RUF811701,17x8.5 5x127 ET-6 bore71.5,2025 Jeep Wrangler High Altitude 4xe,dai->ours,y,similar,Wrangler,5x127,exact,offset -6 outside 5..44
+RUF811701,17x8.5 5x127 ET-6 bore71.5,2023 Jeep Gladiator Freedom,dai->ours,y,similar,Gladiator,5x127,exact,offset -6 outside 5..45
+RNB18003B,18x7.5 5x127 ET35 bore71.5,2017 Dodge Grand Caravan American Value Package,dai->ours,y,best,Grand Caravan,5x127,exact,
+RNB18003B,18x7.5 5x127 ET35 bore71.5,2020 Jeep Grand Cherokee Laredo,dai->ours,y,similar,Grand Cherokee,5x127,exact,width 7.5 outside 8-11
+RNB18003B,18x7.5 5x127 ET35 bore71.5,2020 Chrysler Voyager L,dai->ours,y,best,Voyager,5x127,exact,
+RNB18003B,18x7.5 5x127 ET35 bore71.5,2020 Jeep Grand Cherokee Altitude,dai->ours,y,similar,Grand Cherokee,5x127,exact,width 7.5 outside 8-11
+RNB18003B,18x7.5 5x127 ET35 bore71.5,2015 Chrysler Town & Country Limited,dai->ours,y,best,Town & Country,5x127,exact,
+RNB18003B,18x7.5 5x127 ET35 bore71.5,2019 Jeep Wrangler Rubicon,dai->ours,y,best,Wrangler,5x127,exact,
+LX52203,22x9 5x127 ET40 bore71.5,2019 Jeep Grand Cherokee Altitude,dai->ours,y,best,Grand Cherokee,5x127,exact,
+LX52203,22x9 5x127 ET40 bore71.5,2018 Dodge Durango Citadel,dai->ours,y,best,Durango,5x127,exact,
+LX52203,22x9 5x127 ET40 bore71.5,2025 Jeep Grand Cherokee Laredo,dai->ours,y,best,Grand Cherokee L,5x127,exact,
+LX52203,22x9 5x127 ET40 bore71.5,2025 Jeep Wagoneer S Launch Edition,dai->ours,y,best,Wagoneer S,5x127,exact,
+R4817002,17x7.5 5x127 ET35 bore71.5,2016 Dodge Journey Canada Value Package,dai->ours,y,best,Journey,5x127,exact,
+R4817002,17x7.5 5x127 ET35 bore71.5,2023 Chrysler Grand Caravan SXT,dai->ours,y,best,Grand Caravan,5x127,exact,
+R4817002,17x7.5 5x127 ET35 bore71.5,2015 Ram C/V Base,dai->ours,y,best,C/V,5x127,exact,
+R4817002,17x7.5 5x127 ET35 bore71.5,2015 Jeep Wrangler Sport,dai->ours,y,best,Wrangler,5x127,exact,
+R4817002,17x7.5 5x127 ET35 bore71.5,2016 Chrysler Town & Country Limited,dai->ours,y,best,Town & Country,5x127,exact,
+R4817002,17x7.5 5x127 ET35 bore71.5,2015 Dodge Grand Caravan American Value Package,dai->ours,y,best,Grand Caravan,5x127,exact,
+R2920001,20x9 5x127 ET34 bore71.5,2021 Jeep Grand Cherokee 80th Anniversary,dai->ours,y,similar,Grand Cherokee,5x127,exact,offset 34 outside 40..56
+R2920001,20x9 5x127 ET34 bore71.5,2017 Dodge Grand Caravan American Value Package,dai->ours,y,similar,Grand Caravan,5x127,exact,diameter 20 outside 17-19; width 9 outside 6.5-7.5
+R2920001,20x9 5x127 ET34 bore71.5,2015 Ram C/V Base,dai->ours,y,best,C/V,5x127,exact,
+R2920001,20x9 5x127 ET34 bore71.5,2024 Jeep Wagoneer S Launch Edition,dai->ours,y,similar,Wagoneer S,5x127,exact,offset 34 outside 38..42
+R2920001,20x9 5x127 ET34 bore71.5,2019 Dodge Durango Citadel,dai->ours,y,best,Durango,5x127,exact,
+R2920001,20x9 5x127 ET34 bore71.5,2025 Jeep Gladiator High Tide,dai->ours,y,best,Gladiator,5x127,exact,
+XR92202,22x12 8x165.1 ET-44 bore125.1,2021 Ram 2500 Big Horn,dai->ours,y,similar,2500,8x165.1,exact,width 12 outside 7.5-9
+XR92202,22x12 8x165.1 ET-44 bore125.1,2016 Gmc Savana 2500 Base,dai->ours,y,similar,Savana,8x165.1,exact,diameter 22 outside 16-18; width 12 outside 6.5-7.5
+XR92202,22x12 8x165.1 ET-44 bore125.1,2025 Chevrolet Silverado EV LT,dai->ours,y,similar,Silverado EV,8x165.1,exact,width 12 outside 8.5-10
+XR92202,22x12 8x165.1 ET-44 bore125.1,2020 Nissan NV1500 S,dai->ours,y,similar,NV,8x165.1,exact,diameter 22 outside 17-19; width 12 outside 7.5-8.5
+XR92202,22x12 8x165.1 ET-44 bore125.1,2024 Gmc Savana 3500 Base,dai->ours,y,similar,Savana,8x165.1,exact,diameter 22 outside 16-18; width 12 outside 6.5-7.5
+XR92202,22x12 8x165.1 ET-44 bore125.1,2024 Gmc Hummer EV SUV 2,dai->ours,y,similar,Hummer EV SUV,8x165.1,exact,width 12 outside 9-10.5
+R3451801,18x8 8x165.1 ET12 bore121.3,2022 Gmc Savana 3500 Base,dai->ours,y,similar,Savana,8x165.1,exact,width 8 outside 6.5-7.5
+R3451801,18x8 8x165.1 ET12 bore121.3,2024 Chevrolet Silverado EV RST,dai->ours,y,similar,Silverado EV,8x165.1,exact,width 8 outside 8.5-10
+R3451801,18x8 8x165.1 ET12 bore121.3,2025 Cadillac ESCALADE IQ Luxury 1,dai->ours,y,similar,ESCALADE IQ,8x165.1,exact,diameter 18 outside 24-28; width 8 outside 9-10
+R3451801,18x8 8x165.1 ET12 bore121.3,2024 Ram 2500 Big Horn,dai->ours,y,best,2500,8x165.1,exact,
+R3451801,18x8 8x165.1 ET12 bore121.3,2025 Gmc Hummer EV Pickup 2X,dai->ours,y,similar,Hummer EV Pickup,8x165.1,exact,width 8 outside 9-10
+R3451801,18x8 8x165.1 ET12 bore121.3,2025 Gmc Hummer EV SUV 2X,dai->ours,y,similar,Hummer EV SUV,8x165.1,exact,width 8 outside 9-10.5
+DW9820013,20x9 8x165.1 ET20 bore125.1,2025 Gmc Savana 2500 Base,dai->ours,y,similar,Savana,8x165.1,exact,diameter 20 outside 16-18; width 9 outside 6.5-7.5
+DW9820013,20x9 8x165.1 ET20 bore125.1,2019 Nissan NV1500 S,dai->ours,y,similar,NV,8x165.1,exact,diameter 20 outside 17-19; width 9 outside 7.5-8.5
+DW9820013,20x9 8x165.1 ET20 bore125.1,2016 Ram 3500 Laramie,dai->ours,y,best,3500,8x165.1,exact,
+DW9820013,20x9 8x165.1 ET20 bore125.1,2025 Cadillac ESCALADE IQ Sport 1,dai->ours,y,similar,ESCALADE IQ,8x165.1,exact,diameter 20 outside 24-28
+DW9820013,20x9 8x165.1 ET20 bore125.1,2020 Chevrolet Express 2500 Base,dai->ours,y,similar,Express,8x165.1,exact,diameter 20 outside 16-18; width 9 outside 6.5-8
+DW9820013,20x9 8x165.1 ET20 bore125.1,2023 Gmc Hummer EV Pickup 3X,dai->ours,y,best,Hummer EV Pickup,8x165.1,exact,
+DW9817009,17x8 8x165.1 ET20 bore125.1,2019 Ford E-350 Super Duty Base,dai->ours,y,best,E-350,8x165.1,exact,
+DW9817009,17x8 8x165.1 ET20 bore125.1,2021 Nissan NV1500 S,dai->ours,y,best,NV,8x165.1,exact,
+DW9817009,17x8 8x165.1 ET20 bore125.1,2015 Chevrolet Express 3500 Base,dai->ours,y,best,Express,8x165.1,exact,
+DW9817009,17x8 8x165.1 ET20 bore125.1,2024 Gmc Savana 3500 Base,dai->ours,y,similar,Savana,8x165.1,exact,width 8 outside 6.5-7.5
+DW9817009,17x8 8x165.1 ET20 bore125.1,2015 Ram 3500 Laramie,dai->ours,y,best,3500,8x165.1,exact,
+DW9817009,17x8 8x165.1 ET20 bore125.1,2020 Chevrolet Express 2500 Base,dai->ours,y,best,Express,8x165.1,exact,
+547B2228144,22x12 8x165.1 ET-44 bore125.2,2017 Ram 2500 Big Horn,dai->ours,y,similar,2500,8x165.1,exact,width 12 outside 8-9
+547B2228144,22x12 8x165.1 ET-44 bore125.2,2015 Gmc Savana 2500 Base,dai->ours,y,similar,Savana,8x165.1,exact,diameter 22 outside 16-18; width 12 outside 6.5-7.5
+547B2228144,22x12 8x165.1 ET-44 bore125.2,2024 Chevrolet Silverado EV RST,dai->ours,y,similar,Silverado EV,8x165.1,exact,width 12 outside 8.5-10
+547B2228144,22x12 8x165.1 ET-44 bore125.2,2015 Nissan NV1500 S,dai->ours,y,similar,NV,8x165.1,exact,diameter 22 outside 17-19; width 12 outside 7.5-8.5
+547B2228144,22x12 8x165.1 ET-44 bore125.2,2015 Ram 3500 Laramie,dai->ours,y,similar,3500,8x165.1,exact,width 12 outside 6-9
+547B2228144,22x12 8x165.1 ET-44 bore125.2,2020 Gmc Savana 3500 Base,dai->ours,y,similar,Savana,8x165.1,exact,diameter 22 outside 16-18; width 12 outside 6.5-7.5
+R4101801,18x9 8x165.1 ET12 bore116.7,2025 Cadillac ESCALADE IQ Sport 1,dai->ours,y,similar,ESCALADE IQ,8x165.1,exact,diameter 18 outside 24-28
+R4101801,18x9 8x165.1 ET12 bore116.7,2025 Gmc Sierra EV Denali,dai->ours,y,similar,Sierra EV,8x165.1,nearest,offset 12 outside 20..40
+R4101801,18x9 8x165.1 ET12 bore116.7,2025 Chevrolet Silverado EV LT,dai->ours,y,similar,Silverado EV,8x165.1,exact,offset 12 outside 20..35
+R4101801,18x9 8x165.1 ET12 bore116.7,2025 Cadillac ESCALADE IQ Luxury 1,dai->ours,y,similar,ESCALADE IQ,8x165.1,exact,diameter 18 outside 24-28
+R4101801,18x9 8x165.1 ET12 bore116.7,2024 Gmc Hummer EV Pickup 2X,dai->ours,y,best,Hummer EV Pickup,8x165.1,exact,
+R4101801,18x9 8x165.1 ET12 bore116.7,2025 Gmc Hummer EV SUV 2X,dai->ours,y,best,Hummer EV SUV,8x165.1,exact,
+DW8317005,17x7 5x100 ET40 bore73.1,2020 Toyota 86 Base,dai->ours,y,best,86,5x100,exact,
+DW8317005,17x7 5x100 ET40 bore73.1,2015 Lexus CT200h Base,dai->ours,y,best,CT,5x100,exact,
+DW8317005,17x7 5x100 ET40 bore73.1,2017 Subaru BRZ Base,dai->ours,y,best,BRZ,5x100,exact,
+DW8317005,17x7 5x100 ET40 bore73.1,2015 Scion FR-S Base,dai->ours,y,best,FR-S,5x100,exact,
+DW8317005,17x7 5x100 ET40 bore73.1,2025 Toyota GR86 Base,dai->ours,y,similar,GR86,5x100,exact,diameter 17 outside 18-20; width 7 outside 7.5-8.5
+DW8317005,17x7 5x100 ET40 bore73.1,2015 Subaru XV Crosstrek Base,dai->ours,y,best,XV Crosstrek,5x100,exact,
+RNB16011B,16x6.5 5x100 ET39 bore54.1,2022 Toyota Prius Prime Base,dai->ours,y,best,Prius Prime,5x100,exact,
+RNB16011B,16x6.5 5x100 ET39 bore54.1,2015 Lexus CT200h Base,dai->ours,y,similar,CT,5x100,exact,width 6.5 outside 7-8
+RNB16011B,16x6.5 5x100 ET39 bore54.1,2018 Toyota Prius Base,dai->ours,y,best,Prius,5x100,exact,
+RNB16011B,16x6.5 5x100 ET39 bore54.1,2017 Toyota Corolla 50th Anniversary Special Edition,dai->ours,y,best,Corolla,5x100,exact,
+R3291801,18x8 5x100 ET40 bore54.1,2018 Toyota Prius Base,dai->ours,y,best,Prius,5x100,exact,
+R3291801,18x8 5x100 ET40 bore54.1,2015 Lexus CT200h Base,dai->ours,y,best,CT,5x100,exact,
+R3291801,18x8 5x100 ET40 bore54.1,2017 Toyota Prius Prime Advanced,dai->ours,y,best,Prius Prime,5x100,exact,
+R3291801,18x8 5x100 ET40 bore54.1,2022 Toyota Corolla Hybrid,dai->ours,y,best,Corolla,5x100,exact,
+R3091505,15x6.5 5x100 ET40 bore73.1,2016 Toyota Corolla 50th Anniversary Edition,dai->ours,y,best,Corolla,5x100,exact,
+R3091505,15x6.5 5x100 ET40 bore73.1,2015 Lexus CT200h Base,dai->ours,y,similar,CT,5x100,exact,diameter 15 outside 16-20; width 6.5 outside 7-8
+R3091505,15x6.5 5x100 ET40 bore73.1,2015 Subaru Impreza Base,dai->ours,y,best,Impreza,5x100,exact,
+R3091505,15x6.5 5x100 ET40 bore73.1,2018 Toyota Prius Prime Advanced,dai->ours,y,best,Prius Prime,5x100,exact,
+R3091505,15x6.5 5x100 ET40 bore73.1,2019 Toyota Prius Base,dai->ours,y,best,Prius,5x100,exact,
+RUF881701,17x7.5 5x100 ET35 bore56.1,2015 Subaru BRZ Aozora Edition,dai->ours,y,best,BRZ,5x100,exact,
+RUF881701,17x7.5 5x100 ET35 bore56.1,2023 Toyota GR86 10th Anniversary Special Edition,dai->ours,y,similar,GR86,5x100,exact,diameter 17 outside 18-20
+RUF881701,17x7.5 5x100 ET35 bore56.1,2015 Scion FR-S Base,dai->ours,y,best,FR-S,5x100,exact,
+RUF881701,17x7.5 5x100 ET35 bore56.1,2017 Subaru Impreza Sport Limited,dai->ours,y,best,Impreza,5x100,exact,
+RUF881701,17x7.5 5x100 ET35 bore56.1,2016 Toyota 86 Base,dai->ours,y,best,86,5x100,exact,
+RUF881701,17x7.5 5x100 ET35 bore56.1,2017 Subaru Forester 2.0XT Limited,dai->ours,y,best,Forester,5x100,exact,
+R3091602,16x6.5 5x100 ET40 bore73.1,2018 Toyota Prius Base,dai->ours,y,best,Prius,5x100,exact,
+R3091602,16x6.5 5x100 ET40 bore73.1,2019 Subaru Crosstrek Base,dai->ours,y,similar,Crosstrek,5x100,exact,diameter 16 outside 17-22; width 6.5 outside 7-8
+R3091602,16x6.5 5x100 ET40 bore73.1,2017 Lexus CT200h Base,dai->ours,y,similar,CT,5x100,exact,width 6.5 outside 7-8
+R3091602,16x6.5 5x100 ET40 bore73.1,2018 Toyota Prius Prime Advanced,dai->ours,y,best,Prius Prime,5x100,exact,
+R3091602,16x6.5 5x100 ET40 bore73.1,2020 Subaru Impreza Base,dai->ours,y,similar,Impreza,5x100,exact,offset 40 outside 45..55
+R3091602,16x6.5 5x100 ET40 bore73.1,2015 Subaru XV Crosstrek Base,dai->ours,y,similar,XV Crosstrek,5x100,exact,diameter 16 outside 17-21; width 6.5 outside 7-8
+507S2855935,20x8.5 5x112/5x114.3 ET35 bore73.1,2018 Volkswagen Tiguan Limited Base,dai->ours,y,similar,Tiguan Limited,5x112,exact,width 8.5 outside 6.5-7.5
+507S2855935,20x8.5 5x112/5x114.3 ET35 bore73.1,2017 Infiniti QX70 Base,dai->ours,y,best,QX70,5x114.3,exact,
+507S2855935,20x8.5 5x112/5x114.3 ET35 bore73.1,2022 Bmw M550i xDrive Base,dai->ours,y,best,M550i,5x112,exact,
+507S2855935,20x8.5 5x112/5x114.3 ET35 bore73.1,2023 Genesis GV70 Advanced,dai->ours,y,best,GV70,5x114.3,exact,
+507S2855935,20x8.5 5x112/5x114.3 ET35 bore73.1,2021 Ford Explorer Base,dai->ours,y,best,Explorer,5x114.3,exact,
+507S2855935,20x8.5 5x112/5x114.3 ET35 bore73.1,2017 Maserati Quattroporte GTS,dai->ours,y,best,Quattroporte,5x114.3,exact,
+XR12007,20x12 5x127/5x139.7 ET-44 bore77.8,2017 Jeep Wrangler 75th,dai->ours,y,similar,Wrangler,5x127,exact,width 12 outside 7-8.5
+XR12007,20x12 5x127/5x139.7 ET-44 bore77.8,2017 Chrysler Pacifica Hybrid Platinum,dai->ours,y,similar,Pacifica,5x127,exact,width 12 outside 7-8.5
+XR12007,20x12 5x127/5x139.7 ET-44 bore77.8,2025 Jeep Gladiator High Tide,dai->ours,y,similar,Gladiator,5x127,exact,width 12 outside 7.5-9
+R3342101,21x9.5 5x114.3 ET42 bore73.1,2016 Subaru WRX,ours-best->dai,n,best,WRX,5x114.3,exact,make not listed for this wheel in DAI
+R3342101,21x9.5 5x114.3 ET42 bore73.1,2025 Ferrari SF90 XX Stradale,ours-best->dai,n,best,SF90 XX Stradale,5x114.3,exact,make not listed for this wheel in DAI
+R3342101,21x9.5 5x114.3 ET42 bore73.1,2023 Genesis GV70,ours-best->dai,n,best,GV70,5x114.3,exact,model-year not listed for this wheel in DAI
+DW10717005,17x7.5 5x114.3 ET40 bore67.1,2022 Nissan Rogue,ours-best->dai,y,best,Rogue,5x114.3,exact,
+DW10717005,17x7.5 5x114.3 ET40 bore67.1,2015 Mitsubishi Lancer,ours-best->dai,y,best,Lancer,5x114.3,exact,
+DW10717005,17x7.5 5x114.3 ET40 bore67.1,2025 Hyundai Tucson,ours-best->dai,y,best,Tucson,5x114.3,exact,
+R1651907,19x8.5 5x120 ET35 bore72.6,2023 Buick Envision,ours-best->dai,n,best,Envision,5x120,exact,model-year not listed for this wheel in DAI
+R1651907,19x8.5 5x120 ET35 bore72.6,2019 Cadillac CTS,ours-best->dai,y,best,CTS,5x120,exact,
+R1651907,19x8.5 5x120 ET35 bore72.6,2025 Toyota Grand Highlander,ours-best->dai,n,best,Grand Highlander,5x120,exact,make not listed for this wheel in DAI
+RUF5120004,20x9 5x120 ET35 bore72.6,2017 Cadillac CTS,ours-best->dai,y,best,CTS,5x120,exact,
+RUF5120004,20x9 5x120 ET35 bore72.6,2023 Land Rover Range Rover Sport,ours-best->dai,n,best,Range Rover Sport,5x120,exact,model-year not listed for this wheel in DAI
+RUF5120004,20x9 5x120 ET35 bore72.6,2018 Rolls-Royce Dawn,ours-best->dai,n,best,Dawn,5x120,exact,make not listed for this wheel in DAI
+R4291801,18x7.5 6x139.7 ET55 bore95.1,2025 Chevrolet Suburban HD,ours-best->dai,n,best,Suburban HD,6x139.7,exact,make not listed for this wheel in DAI
+R4291801,18x7.5 6x139.7 ET55 bore95.1,2025 Lexus LX,ours-best->dai,y,best,LX,6x139.7,exact,
+R4291801,18x7.5 6x139.7 ET55 bore95.1,2022 Toyota Tundra,ours-best->dai,y,best,Tundra,6x139.7,exact,
+DW1281802,18x9 6x139.7 ET12 bore108.1,2019 Chevrolet Suburban,ours-best->dai,y,best,Suburban,6x139.7,exact,
+DW1281802,18x9 6x139.7 ET12 bore108.1,2021 GMC Sierra 1500,ours-best->dai,y,best,Sierra 1500,6x139.7,exact,
+DW1281802,18x9 6x139.7 ET12 bore108.1,2021 Nissan Armada,ours-best->dai,n,best,Armada,6x139.7,exact,model-year not listed for this wheel in DAI
+R3251504,15x6.5 5x112 ET40 bore57.1,2018 Volkswagen Golf,ours-best->dai,n,best,Golf,5x112,exact,model-year not listed for this wheel in DAI
+R3251504,15x6.5 5x112 ET40 bore57.1,2016 Volkswagen Golf SportWagen,ours-best->dai,y,best,Golf SportWagen,5x112,exact,
+R3251504,15x6.5 5x112 ET40 bore57.1,2017 Volkswagen e-Golf,ours-best->dai,n,best,e-Golf,5x112,exact,model-year not listed for this wheel in DAI
+R26917001,17x8 6x135 ET35 bore87.1,2015 Lincoln Navigator L,ours-best->dai,y,best,Navigator L,6x135,exact,
+R26917001,17x8 6x135 ET35 bore87.1,2015 Ford Expedition MAX,ours-best->dai,y,best,Expedition MAX,6x135,exact,
+R26917001,17x8 6x135 ET35 bore87.1,2017 Ford F-150,ours-best->dai,y,best,F-150,6x135,exact,
+RNB18003B,18x7.5 5x127 ET35 bore71.5,2016 Jeep Wrangler,ours-best->dai,n,best,Wrangler,5x127,exact,model-year not listed for this wheel in DAI
+RNB18003B,18x7.5 5x127 ET35 bore71.5,2024 Chrysler Grand Caravan,ours-best->dai,n,best,Grand Caravan,5x127,exact,model-year not listed for this wheel in DAI
+RNB18003B,18x7.5 5x127 ET35 bore71.5,2015 Dodge Grand Caravan,ours-best->dai,y,best,Grand Caravan,5x127,exact,
+DW9820013,20x9 8x165.1 ET20 bore125.1,2017 Ram 2500,ours-best->dai,y,best,2500,8x165.1,exact,
+DW9820013,20x9 8x165.1 ET20 bore125.1,2025 Chevrolet Silverado EV,ours-best->dai,y,best,Silverado EV,8x165.1,exact,
+DW9820013,20x9 8x165.1 ET20 bore125.1,2018 Ram 3500,ours-best->dai,n,best,3500,8x165.1,exact,model-year not listed for this wheel in DAI

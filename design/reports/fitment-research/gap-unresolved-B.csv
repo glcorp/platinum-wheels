@@ -1,0 +1,9 @@
+make,model,reason,best_guess,source_1
+Mitsubishi,Diamante,"No source names MY2005: autofiles, carsandcollectibles and threepiece all end at 2004 (US 1997-2004 generation).",5x114.3,https://www.autofiles.com/wheels/mitsubishi/diamante/
+Nissan,Kicks Play,"Latin-American market car, not sold in North America; only threepiece lists it (4x100, bore 60.1) and no independent source names it.",4x100,https://vehicles.threepiece.us/vehicles/nissan/kicks%20play/
+Nissan,X-Trail,"T30 X-Trail was not sold in the US/Canada; only threepiece names 2005-2006 (5x114.3, 66.1); zokuwheels.com names the model without a year range; hubcentric-rings lists only T32/T33.",5x114.3,https://vehicles.threepiece.us/vehicles/nissan/x-trail/
+Rivian,R2,MY2027 not yet in production; no source names it.,,
+VinFast,VF 6,"Not sold in North America as far as sources show; no site (autofiles, boltpatternhq, threepiece, hubcentric-rings, carsandcollectibles) has an entry.",,
+VinFast,VF 7,Not sold in North America as far as sources show; boltpatternhq lists the page but has no data for any year.,,
+VinFast,VF 8,Sources disagree: threepiece 5x120 / 74.1 vs boltpatternhq (2024) 5x114.3 / 67.1; no third non-banned source found (search results were Wheel-Size only).,5x120,https://vehicles.threepiece.us/vehicles/vinfast/vf8/
+VinFast,VF 9,"Only the banned Wheel-Size family surfaced; boltpatternhq has no data, threepiece lists the years but gives no pattern.",,

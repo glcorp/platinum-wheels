@@ -1,0 +1,282 @@
+[
+{
+"make": "Kia",
+"model": "Borrego",
+"years": "2009-2011"
+},
+{
+"make": "Kia",
+"model": "Spectra",
+"years": "2005-2009"
+},
+{
+"make": "Lexus",
+"model": "LFA",
+"years": "2012-2013"
+},
+{
+"make": "Lucid",
+"model": "Air",
+"years": "2022-2027"
+},
+{
+"make": "Maserati",
+"model": "Coupe",
+"years": "2006-2006"
+},
+{
+"make": "Maserati",
+"model": "MC20",
+"years": "2022-2025"
+},
+{
+"make": "Maserati",
+"model": "Spyder",
+"years": "2006-2006"
+},
+{
+"make": "Mazda",
+"model": "B-Series",
+"years": "2005-2010"
+},
+{
+"make": "Mazda",
+"model": "MX-30",
+"years": "2022-2023"
+},
+{
+"make": "Mercedes-Benz",
+"model": "EQS-Class SUV",
+"years": "2023-2027"
+},
+{
+"make": "Mercedes-Benz",
+"model": "eSprinter",
+"years": "2024-2027"
+},
+{
+"make": "Mercury",
+"model": "Grand Marquis",
+"years": "2005-2011"
+},
+{
+"make": "Mercury",
+"model": "Monterey",
+"years": "2005-2007"
+},
+{
+"make": "MINI",
+"model": "Cooper Coupe",
+"years": "2012-2015"
+},
+{
+"make": "MINI",
+"model": "Cooper Roadster",
+"years": "2012-2015"
+},
+{
+"make": "Mitsubishi",
+"model": "Diamante",
+"years": "2005-2005"
+},
+{
+"make": "Mitsubishi",
+"model": "Lancer Evolution",
+"years": "2005-2015"
+},
+{
+"make": "Mitsubishi",
+"model": "Raider",
+"years": "2005-2010"
+},
+{
+"make": "Nissan",
+"model": "Kicks Play",
+"years": "2025-2025"
+},
+{
+"make": "Nissan",
+"model": "NV",
+"years": "2012-2021"
+},
+{
+"make": "Nissan",
+"model": "X-Trail",
+"years": "2005-2006"
+},
+{
+"make": "Polestar",
+"model": "Polestar 1",
+"years": "2019-2021"
+},
+{
+"make": "Polestar",
+"model": "Polestar 2",
+"years": "2021-2027"
+},
+{
+"make": "Polestar",
+"model": "Polestar 3",
+"years": "2025-2027"
+},
+{
+"make": "Polestar",
+"model": "Polestar 4",
+"years": "2025-2027"
+},
+{
+"make": "Pontiac",
+"model": "G5",
+"years": "2007-2010"
+},
+{
+"make": "Pontiac",
+"model": "Grand Prix",
+"years": "2005-2008"
+},
+{
+"make": "Pontiac",
+"model": "Montana SV6",
+"years": "2005-2009"
+},
+{
+"make": "Pontiac",
+"model": "Pursuit",
+"years": "2005-2006"
+},
+{
+"make": "Pontiac",
+"model": "Wave",
+"years": "2005-2008"
+},
+{
+"make": "Rivian",
+"model": "R1S",
+"years": "2022-2027"
+},
+{
+"make": "Rivian",
+"model": "R2",
+"years": "2027-2027"
+},
+{
+"make": "Saturn",
+"model": "Ion",
+"years": "2005-2007"
+},
+{
+"make": "Saturn",
+"model": "Relay",
+"years": "2005-2007"
+},
+{
+"make": "Subaru",
+"model": "Solterra",
+"years": "2023-2027"
+},
+{
+"make": "Suzuki",
+"model": "Grand Vitara XL-7",
+"years": "2006-2008"
+},
+{
+"make": "Suzuki",
+"model": "Swift",
+"years": "2005-2008"
+},
+{
+"make": "Toyota",
+"model": "bZ",
+"years": "2026-2027"
+},
+{
+"make": "Toyota",
+"model": "Camry Solara",
+"years": "2005-2009"
+},
+{
+"make": "Toyota",
+"model": "Celica",
+"years": "2005-2006"
+},
+{
+"make": "Toyota",
+"model": "Corolla Matrix",
+"years": "2005-2013"
+},
+{
+"make": "Toyota",
+"model": "MR2",
+"years": "2005-2007"
+},
+{
+"make": "Toyota",
+"model": "Supra",
+"years": "2020-2027"
+},
+{
+"make": "VinFast",
+"model": "VF 6",
+"years": "2023-2027"
+},
+{
+"make": "VinFast",
+"model": "VF 7",
+"years": "2023-2027"
+},
+{
+"make": "VinFast",
+"model": "VF 8",
+"years": "2022-2027"
+},
+{
+"make": "VinFast",
+"model": "VF 9",
+"years": "2022-2027"
+},
+{
+"make": "Volkswagen",
+"model": "ID. Buzz",
+"years": "2025-2025"
+},
+{
+"make": "Volkswagen",
+"model": "Jetta Wagon",
+"years": "2005-2006"
+},
+{
+"make": "Volvo",
+"model": "EC40",
+"years": "2025-2026"
+},
+{
+"make": "Volvo",
+"model": "EX30 CC",
+"years": "2026-2027"
+},
+{
+"make": "Volvo",
+"model": "EX40",
+"years": "2025-2026"
+},
+{
+"make": "Volvo",
+"model": "EX90",
+"years": "2025-2027"
+},
+{
+"make": "Volvo",
+"model": "S60CC",
+"years": "2016-2018"
+},
+{
+"make": "Volvo",
+"model": "V60CC",
+"years": "2015-2026"
+},
+{
+"make": "Volvo",
+"model": "V90CC",
+"years": "2017-2026"
+}
+]

@@ -1,0 +1,2 @@
+make,model,year_from,year_to,reason
+Jeep,Cherokee,2009,2011,"No North American vehicle: Jeep sold no Cherokee in the US/Canada between the XJ (ended MY2001) and the KL (MY2014). The same SUV was sold as the Jeep Liberty (KK; 2008-2012; Wikipedia Jeep Liberty and Jeep Cherokee (KL) pages). autofiles Cherokee page lists only 1999-2001 (5x114.3) and 2014-2022 (5x110) with 2002-2013 explicitly absent. Not resolvable and not needed; drop these years from the finder or map to Liberty (not a Cherokee row)."

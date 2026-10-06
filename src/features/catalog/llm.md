@@ -97,6 +97,24 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs` (`includeDiscontinued` for the cart,
     D122), `getTitleSiblings`, `getPriceBounds`, `getBrands` (every
     brand a category carries, whatever is filtered; D111), `listProductUrls`.
+    **Vehicle fit (D155).** `ProductFilters` takes a vehicle as small shapes, never a vehicle:
+    `tire.vehicleFit` (`TireVehicleFit`), `wheel.vehicleFit` (`WheelVehicleFit`) and the accessory facts
+    `thread`, `fastener`, `hubBore`; `finder/tire-fit.ts` builds them. In SQL, with `sizeMatch: "exact"`
+    (best) and `"near"` (similar, never a best match, each condition `coalesce(..., false)` so a NULL
+    cannot drop a row from the similar list): **tires** best = `(width, aspect_ratio, rim_diameter)` or
+    `(overall_diameter, section_width, rim_diameter)` equal to a factory size (`factorySize`); similar =
+    `coalesce(overall_diameter, rim + 2*width*aspect/2540)` within 0.5 in of the stock envelope and
+    `coalesce(width, section_width*25.4)` inside it and `rim_diameter` inside the wheel envelope's
+    diameters (`stockEnvelope`; `tire-fit.ts` derives the envelope from the factory sizes when the source
+    states none); no factory sizes at all fall back to the rim rule (`rimRule`, the old width-fit and
+    sidewall-band query). **Wheels** best = `bolt_patterns && [patterns]`
+    and, with an envelope, diameter and width `between`, `(offset_mm is null or offset_mm between)` and
+    `coalesce(center_bore_mm >= hub - 0.5, <no envelope>)`; similar = the bolt overlap and `not` best
+    (`wheelVehicleBest` / `wheelVehicleNear`). **Accessories** contradict by thread (lug nuts, lug bolts,
+    wheel locks), by fastener (`lug_nuts` on a hub-bolt car, `lug_bolts` on a stud-and-nut one) and by hub
+    bore (`hub_rings` inner diameter, 0.5 mm), and **(D156) by TPMS**: `filters.accessory.tpms === false`
+    (the car has no TPMS) contradicts every `tpms_sensors_tools` product, by type alone (`CONTRADICTS_NO_TPMS`);
+    similar = any contradiction, best = none (`accessoryContradiction`). Facet counts use the best conditions, as before.
     The only place visibility is decided. **Since D132 `getFacets(filters, sizeChoice)` returns
     `StorefrontFacets`**: `CatalogFacets` (whose `tire` / `wheel` lists stay every value the category
     holds) plus `sizeOptions`, each size select's values narrowed to those found with the OTHER size parts
@@ -242,8 +260,8 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   invented (D59(4), the D7 precedent).
 - **`categories.ts` never imports seed data.** A `"use client"` island imports it; a seed import there
   would pull the whole catalogue into the browser bundle. It imports nothing from `finder/` either —
-  that would be a back-edge across D37's one-way graph, which is why the accessory-to-vehicle match
-  (D67) lives in `results/search.ts`, where both the config and the fitment map already meet.
+  that would be a back-edge across D37's one-way graph, which is why the vehicle match (D67, D155) is
+  built in `results/search.ts` and `finder/tire-fit.ts`, where the config and the fitment already meet.
 - **A category's `finder` is off only when its data genuinely cannot answer a vehicle.** D59(2) turned
   it off on accessories for a reason the seed disproved — lug nuts carry a thread pitch, TPMS sensors a
   frequency — and the owner vetoed it (D67). Before setting `finder: null` on anything, check the seed's
@@ -263,6 +281,8 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 | D93b | 2026-09-30 | The `ProductCard` model link carries an `sr-only` size tail, so the same model in two sizes has distinct link names (WCAG 2.4.4); the brand stamp is `translate="no"`. Tests match the model name by regex prefix, never exactly. | Two links read identically to a screen reader. | QA pass; D93b |
 | D91b | 2026-09-29 | `ProductCard` takes an optional `sizes` (default unchanged); each grid passes its own. The photo box is a padded wrapping flex row, so the brand stamp wraps below the badges instead of overlapping them; the image link is `absolute inset-0`, the same box as before. | `sizes` said 50vw where the results grid is 1-up (400–719), so phones fetched about half the pixels they paint; the `Currently unavailable` badge overlapped the stamp by up to 34.6px at 1100–1180. | QA pass WDG-06, NJR-6; D91b |
 | D132 | 2026-10-03 | The size selects narrow one another: `getFacets` takes the buyer's own size (`sizeChoice`, never a vehicle-lent one) and adds `sizeOptions`; the three per-field `select distinct` reads become one aggregate row (tires: width / profile / rim; wheels: diameter / width / bolt via `left join lateral unnest`), read as `text[]` and `Number`ed, and the chip-count read joins the first wave. Tires 6 facet queries in 2 waves → 4 in 1; wheels 5 in 2 → 3 in 1; accessories 4 in 2 → 4 in 1. `StorefrontFacets`, `TireSizeOptions` and `WheelSizeOptions` live in `queries.ts`, not `catalog-types.ts`. | After `width=205` the profile and rim lists still offered values no 205 tire has, and the buyer landed on `0 matches · N similar` (owner chose the fix, 2026-10-03). | Owner, D132 |
+| D155 | 2026-10-06 | A vehicle narrows the catalogue through `TireVehicleFit`, `WheelVehicleFit` and the accessory facts `thread` / `fastener` / `hubBore` (SQL in `queries.ts` above). | The finder now states factory tire sizes, stock envelopes, two bolt patterns and the fastener, where it stated one rim and one pattern. | Owner, 2026-10-06: *"priority is vendor then factory. use best and similar both techniques."*; *"we have only commit a loose fit to the client. So you don't have to be precise to the last spec if major of the filters work correctly then it's good"*. *Derived, each vetoable:* a wheel with no offset on record is not outside the envelope; a wheel with no bore is `similar` with an envelope and `best` without; 0.5 mm bore tolerance and 0.5 in beyond the stock wheel width on either side (coordinator, 2026-10-06, loose fit); a range bound of 0 or missing is unbounded on that side, an offset bound only when missing; 0.5 in diameter slack on the tire envelope; a lug nut contradicts a hub-bolt car by type alone; a flotation factory size matches by overall diameter, section width and rim. |
+| D156 | 2026-10-06 | A TPMS sensor or tool is demoted to `similar` for a car whose finder data says it has no TPMS (`ProductFilters.accessory.tpms === false`, `accessoryContradiction`); with TPMS or no data it stays best. **All 16 products of the `tpms_sensors_tools` type count, sensors and tools alike** (*derived*): `part_type` is empty on every one, so the catalogue cannot tell a sensor from a programming tool (by name, 9 are sensors, 7 tools, a pad or a kit), and a car with no sensor system needs neither. | The finder now knows whether a car has TPMS (on or off; Auto Country gives no frequency). | Owner, 2026-10-06, verbatim: *"for TM or TP MS frequency if auto country is giving on and off for car we can do the same and not focus on the frequency that is out of our scope"*. |
 | — | 2026-10-03 | *Derived* under D125, each vetoable: (1) a vendor price of `0` refuses the row, where a display price of `0` is stored blank, because a silent 0 → blank would hide a sheet's error; (2) an `extra_specs` pair with no `: `, an empty half, a label twice (case-insensitive), a label over 60, a value over 2,000 (raised from 500 by owner ruling, 2026-10-03, so the longest vendor `Fits wheel` lists load) or more than 40 pairs refuses the row rather than dropping the pair; (3) `lug_bolts` joins `lug_nuts` and `wheel_locks` in the D67 thread match, since a bolt states a thread too; (4) an unbranded accessory's slug is model + name + size part. | The validator reports, it does not repair (D113); D125 split lug bolts out of lug nuts. | Coordinator brief, D125 |
 
 Referenced: **D18** (routes, and the one-pair-of-constants derivation), **D19** (cut-outs normalised to

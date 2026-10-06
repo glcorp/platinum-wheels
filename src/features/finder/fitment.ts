@@ -1,252 +1,613 @@
 import "server-only";
 
-import { VEHICLE_FITMENT_DATA, VEHICLE_FITMENT_GENERATIONS } from "./vehicle-fitment-data";
+import {
+  VEHICLE_ALIASES,
+  VEHICLE_FITMENT_DATA,
+  VEHICLE_FITMENT_GENERATIONS,
+  VEHICLE_SPECS,
+  VEHICLE_THREADS,
+  VEHICLE_TYPES,
+  VEHICLE_WHEEL_SIZES,
+} from "./vehicle-fitment-data";
 
 /**
  * Vehicle -> fitment, for the best/similar split on the three results pages.
- * Server only (`results/search.ts`): the real data is ~60 KB and no island
+ * Server only (`results/search.ts`): the real data is large and no island
  * needs it.
  *
- * Sources, field by field (LA-05, D145 audit; owner rulings 2026-10-04/05).
- * The bolt pattern takes the first of these that has the vehicle:
+ * Every field is real data or absent; nothing is a placeholder (the D48(4)
+ * map is gone, owner 2026-10-06).
  *
- * 1. **An exact-year row** from the ANKUSI wheel fitment dataset
- *    (`scripts/data/vehicle-fitment.csv`, built by `scripts/vehicle-fitment.mjs`).
- * 2. **A generation row** (`scripts/data/vehicle-fitment-generations.csv`,
- *    hand-kept): a year range two independent free sources agree on. A range
- *    marked `?` means the sources disagree: it claims no bolt pattern and the
- *    placeholder is NOT used for those years.
- * 3. **The nearest real year** of the same make + model (rows 1 and 2
- *    together; equidistant takes the later year; no distance cap), for a model
- *    that has real rows but none for the year picked. Owner, 2026-10-05: "Use
- *    the nearest real year". A `?` range blocks it for its years.
- * 4. **The D48(4) placeholder below**, only for a model with no real row at
- *    all (owner: "Keep placeholder for tires", "No, keep until replaced").
- * 5. Nothing.
+ * **Sources, per field (D155; owner, 2026-10-06: "priority is vendor then
+ * factory").** For one make + model + year each fact takes the first of:
  *
- * Centre bore follows the row the bolt pattern came from, never the
- * placeholder. The tire size, lug thread and TPMS frequency are always the
- * placeholder: no free source carries them per vehicle. A vehicle in no source filters nothing (D110).
+ * 1. `VEHICLE_SPECS` for that exact year, the generated table the Auto
+ *    Country lookup leads (`scripts/vehicle-fitment.mjs`; the generator keeps
+ *    Auto Country ahead of every other source inside a row);
+ * 2. the older sheets for that exact year: the ANKUSI wheel dataset
+ *    (`VEHICLE_FITMENT_DATA`), the hand-kept generation rows
+ *    (`VEHICLE_FITMENT_GENERATIONS`; a range marked `?` claims nothing),
+ *    `VEHICLE_THREADS` and `VEHICLE_WHEEL_SIZES`;
+ * 3. the **nearest real year** of the same model across both (D149: equidistant
+ *    takes the later year, no distance cap, owner 2026-10-05: "Use the
+ *    nearest real year"), marked `yearSource: "nearest"`;
+ * 4. nothing.
+ *
+ * Step 3 runs per **group** of facts, so a year with a bolt pattern and no
+ * tire sizes still gets its tires from the nearest year that states them:
+ * mount (bolt patterns, bore, offset), lug (thread, fastener), wheels
+ * (factory wheel sizes, wheel range) and tires (factory tire sizes, tire
+ * range), and tpms (does the car have a tyre pressure sensor system: yes or
+ * no only, D156; borrowed like the lug group but never marks a year `nearest`).
+ * A year inside a `?` generation range borrows nothing at all (a `?`
+ * says two cars share the name, so a neighbour's facts would be the wrong
+ * car's). A fact already stated for the exact year is never replaced by a
+ * borrowed one.
+ *
+ * **Old model names** (`VEHICLE_ALIASES`) resolve to the canonical car before
+ * any lookup, so a bookmarked URL keeps working.
  */
 
-export interface VehicleFitment {
-  /** ASCII `5x114.3`, as `WheelSpec.bolt` spells it. `null` = unknown. */
-  boltPattern: string | null;
-  /** Hub bore in mm (`64.1`), real data only. Not used to filter (see
-   *  `src/features/finder/llm.md`). */
-  centreBore: string | null;
-  /** Where `boltPattern` came from: an exact-year ANKUSI row, a generation
-   *  row, the nearest real year of the same model, the D48(4) placeholder, or
-   *  nothing. */
-  boltSource: "ankusi" | "generation" | "nearest" | "placeholder" | null;
-  /** Placeholder (D48(4)): the one tire size the map gives the model. */
-  tireSize: { width: string; profile: string; rim: string } | null;
-  /** Placeholder (D67): lug-nut thread, ASCII `12x1.5`. */
-  thread: string | null;
-  /** Placeholder (D67): TPMS sensor frequency in MHz. The catalogue has no
-   *  frequency column, so nothing reads it today (D109(12)). */
-  tpms: string | null;
+export type BodyClass = "car" | "mpv" | "truck";
+
+export interface VehicleRim {
+  /** Inches, whole. */
+  diameter: number;
+  /** Inches (`7`, `8.5`). */
+  width: number;
+  /** `specs`: the generated table. `exact`: ANKUSI's row for the year.
+   *  `range`: borrowed from the nearest exact year inside the same generation
+   *  range. `sheet`: the hand-kept factory wheel sizes. */
+  source: "specs" | "exact" | "range" | "sheet";
 }
 
-/* --- Real: exact years (ANKUSI) and generations ---------------------------- */
+/** A factory metric tire size (`215/55R16`). */
+export interface FactoryTire {
+  /** Section width, mm. */
+  width: number;
+  /** Aspect ratio. */
+  profile: number;
+  /** Rim diameter, inches. */
+  rim: number;
+}
+
+/** A factory flotation size (`33x12.50R15`): overall diameter and section
+ *  width are inches. */
+export interface FactoryFlotationTire {
+  diameter: number;
+  section: number;
+  rim: number;
+}
+
+/** The stock tire envelope: overall diameter in inches, section width in mm.
+ *  A bound of 0 means the source states none on that side (unbounded). */
+export interface TireRange {
+  diameterMin: number;
+  diameterMax: number;
+  widthMin: number;
+  widthMax: number;
+}
+
+/** The stock wheel envelope: diameter and width in inches, offset in mm. A
+ *  diameter or width bound of 0 means the source states none on that side
+ *  (unbounded); an offset bound is `null` when none is stated, because 0 mm is
+ *  a real offset. */
+export interface WheelRange {
+  diameterMin: number;
+  diameterMax: number;
+  widthMin: number;
+  widthMax: number;
+  offsetMin: number | null;
+  offsetMax: number | null;
+}
+
+/** Where the bolt pattern came from. `autocountry`, `vendor`, `maker`, `web`
+ *  and `sheet` are the generated table's `src` letters; `ankusi` and
+ *  `generation` are the older sheets. */
+export type BoltSource =
+  | "autocountry"
+  | "vendor"
+  | "maker"
+  | "web"
+  | "sheet"
+  | "ankusi"
+  | "generation";
+
+export interface VehicleFitment {
+  /** ASCII `5x114.3`, as `WheelSpec.bolt` spells it. Empty = unknown; two or
+   *  more = the model year came with more than one (trims differ). */
+  boltPatterns: readonly string[];
+  /** Hub bore in mm (`64.1`), real data only. */
+  centreBore: string | null;
+  /** Where `boltPatterns` came from; `null` when there are none. */
+  boltSource: BoltSource | null;
+  /** Factory offset in mm. */
+  offset: number | null;
+  /** Factory metric tire sizes, the union across trims. */
+  tireSizes: readonly FactoryTire[];
+  /** Factory flotation sizes (some older trucks). */
+  flotationSizes: readonly FactoryFlotationTire[];
+  /** The stock tire envelope, `null` when no source states it. */
+  tireRange: TireRange | null;
+  /** Every factory wheel size known for the year (generated table, else the
+   *  union of the hand-kept sheet and ANKUSI's one). */
+  rims: readonly VehicleRim[];
+  /** The stock wheel envelope, `null` when no source states it. */
+  wheelRange: WheelRange | null;
+  /** vPIC's body classes for the model; sets the tire height band. */
+  classes: readonly BodyClass[];
+  /** Lug thread, ASCII `12x1.5`, for the year; `null` = not researched. */
+  thread: string | null;
+  /** `nut` (stud and nut) or `bolt` (hub bolt), with `thread`. */
+  fastener: "nut" | "bolt" | null;
+  /** Does the car carry a tyre pressure sensor system (D156)? `true` when a
+   *  trim of the year does, `false` when the source says the year has none,
+   *  `null` = not stated. On and off only: the sensor's frequency is out of
+   *  scope (owner, 2026-10-06). */
+  tpms: boolean | null;
+  /** `exact` when every fact is from the year asked for; `nearest` when any
+   *  group was borrowed from the nearest real year of the model. */
+  yearSource: "exact" | "nearest";
+}
+
+/* --- Parsing helpers -------------------------------------------------------- */
+
+function num(text: string | undefined): number | null {
+  if (text === undefined || text.trim() === "") return null;
+  const value = Number(text);
+  return Number.isFinite(value) ? value : null;
+}
+
+/** "2021-2023" -> the years in it (bounded: a malformed range cannot loop). */
+function yearsIn(range: string): number[] {
+  const [from, to] = range.split("-").map(Number);
+  if (from === undefined || to === undefined || !Number.isInteger(from) || !Number.isInteger(to)) {
+    return [];
+  }
+  if (to < from || to - from > 60) return [];
+  const out: number[] = [];
+  for (let year = from; year <= to; year += 1) out.push(year);
+  return out;
+}
+
+/** "<range>:<value>" entries of a sheet value, split on the first colon. */
+function entriesOf(value: string | undefined): Array<[range: string, rest: string]> {
+  const out: Array<[string, string]> = [];
+  for (const entry of value?.split(" ") ?? []) {
+    const at = entry.indexOf(":");
+    if (at > 0) out.push([entry.slice(0, at), entry.slice(at + 1)]);
+  }
+  return out;
+}
+
+const SOURCE_BY_LETTER: Readonly<Record<string, BoltSource>> = {
+  a: "autocountry",
+  d: "vendor",
+  p: "vendor",
+  m: "maker",
+  s: "sheet",
+  w: "web",
+};
+
+const METRIC_TIRE = /^(\d{3})\/(\d{2,3})(?:Z?R)(\d{2})$/;
+const FLOTATION_TIRE = /^(\d{2}(?:\.\d)?)x(\d{1,2}(?:\.\d{1,2})?)R(\d{2})$/;
+
+/* --- The generated table ---------------------------------------------------- */
+
+interface SpecRecord {
+  bolts: string[];
+  bore: string | null;
+  thread: string | null;
+  fastener: "nut" | "bolt" | null;
+  /** Field 11 (D156); absent in a record from before it, which reads `null`. */
+  tpms: boolean | null;
+  offset: number | null;
+  tires: FactoryTire[];
+  flotation: FactoryFlotationTire[];
+  wheels: VehicleRim[];
+  tireRange: TireRange | null;
+  wheelRange: WheelRange | null;
+  source: BoltSource | null;
+}
+
+function list(field: string | undefined): string[] {
+  return (field ?? "").split(",").map((part) => part.trim()).filter((part) => part !== "");
+}
+
+function parseRecord(text: string): SpecRecord {
+  const f = text.split(";");
+  const tires: FactoryTire[] = [];
+  const flotation: FactoryFlotationTire[] = [];
+  for (const size of list(f[5])) {
+    const metric = METRIC_TIRE.exec(size);
+    if (metric) {
+      tires.push({ width: Number(metric[1]), profile: Number(metric[2]), rim: Number(metric[3]) });
+      continue;
+    }
+    const float = FLOTATION_TIRE.exec(size);
+    if (float) {
+      flotation.push({
+        diameter: Number(float[1]),
+        section: Number(float[2]),
+        rim: Number(float[3]),
+      });
+    }
+  }
+  const wheels: VehicleRim[] = [];
+  for (const size of list(f[6])) {
+    const [diameter, width] = size.split("x").map(Number);
+    if (diameter && width) wheels.push({ diameter, width, source: "specs" });
+  }
+  /* A bound that is missing or 0 is unbounded on that side (D155,
+     coordinator 2026-10-06: Lucid Air 2022-26 states a wheel width minimum of
+     0). It is kept as 0, which the queries' `measure()` reads as "not given".
+     `split`, not `list`: dropping an empty field would shift the rest. An
+     offset keeps `null` for a missing bound, because 0 mm is a real offset. */
+  const bound = (text: string | undefined): number => {
+    const value = num(text);
+    return value !== null && value > 0 ? value : 0;
+  };
+  const tr = (f[7] ?? "").split(",").map(bound);
+  const tireRange =
+    tr.some((value) => value > 0)
+      ? { diameterMin: tr[0] ?? 0, diameterMax: tr[1] ?? 0, widthMin: tr[2] ?? 0, widthMax: tr[3] ?? 0 }
+      : null;
+  const wr = (f[8] ?? "").split(",");
+  const offsetMin = num(wr[4]);
+  const offsetMax = num(wr[5]);
+  const wheelBounds = wr.slice(0, 4).map(bound);
+  const wheelRange =
+    wheelBounds.some((value) => value > 0) || offsetMin !== null || offsetMax !== null
+      ? {
+          diameterMin: wheelBounds[0] ?? 0,
+          diameterMax: wheelBounds[1] ?? 0,
+          widthMin: wheelBounds[2] ?? 0,
+          widthMax: wheelBounds[3] ?? 0,
+          offsetMin,
+          offsetMax,
+        }
+      : null;
+  const fastener = f[3] === "b" ? "bolt" : f[3] === "n" ? "nut" : null;
+  return {
+    bolts: list(f[0]),
+    bore: f[1] ? f[1] : null,
+    thread: f[2] ? f[2] : null,
+    fastener,
+    tpms: f[10] === "y" ? true : f[10] === "n" ? false : null,
+    offset: num(f[4]),
+    tires,
+    flotation,
+    wheels,
+    tireRange,
+    wheelRange,
+    source: SOURCE_BY_LETTER[(f[9] ?? "").charAt(0)] ?? null,
+  };
+}
+
+function specYears(key: string): Map<number, SpecRecord> {
+  const out = new Map<number, SpecRecord>();
+  for (const [range, record] of entriesOf(VEHICLE_SPECS[key])) {
+    const parsed = parseRecord(record);
+    for (const year of yearsIn(range)) out.set(year, parsed);
+  }
+  return out;
+}
+
+/* --- The older sheets ------------------------------------------------------- */
 
 interface RealYear {
   /** `null` = a generation range the sources disagree on ("?"): claim nothing. */
   bolt: string | null;
   bore: string | null;
   source: "ankusi" | "generation";
+  rim: VehicleRim | null;
 }
 
-/** "<Make>|<Model>" -> model year -> real row, built once per model on first use. */
-const realCache = new Map<string, Map<number, RealYear> | null>();
-
-function realYears(make: string, model: string): Map<number, RealYear> | null {
-  const key = `${make}|${model}`;
-  const cached = realCache.get(key);
-  if (cached !== undefined) return cached;
-  const exact = VEHICLE_FITMENT_DATA[key];
-  const generations = VEHICLE_FITMENT_GENERATIONS[key];
-  if (exact === undefined && generations === undefined) {
-    realCache.set(key, null);
-    return null;
-  }
+function realYears(key: string): Map<number, RealYear> {
   const years = new Map<number, RealYear>();
-  for (const entry of generations?.split(" ") ?? []) {
-    const [range = "", fit = ""] = entry.split(":");
-    const [from, to] = range.split("-").map(Number);
+  const ranges: Array<[number, number]> = [];
+  for (const [range, fit] of entriesOf(VEHICLE_FITMENT_GENERATIONS[key])) {
     const [bolt, bore] = fit.split("/");
-    if (from === undefined || to === undefined) continue;
-    for (let year = from; year <= to; year += 1) {
+    const inRange = yearsIn(range);
+    if (inRange.length === 0) continue;
+    ranges.push([inRange[0]!, inRange[inRange.length - 1]!]);
+    for (const year of inRange) {
       years.set(year, {
         bolt: bolt && bolt !== "?" ? bolt : null,
         bore: bore ?? null,
         source: "generation",
+        rim: null,
       });
     }
   }
-  /* An exact-year row wins over a generation row for the same year. */
-  for (const entry of exact?.split(" ") ?? []) {
+  /* An exact-year row wins over a generation row for the same year. Its value
+     is `<bolt>[/<bore>[/<diameter>/<width>]]`. */
+  const exactRims = new Map<number, VehicleRim>();
+  for (const entry of VEHICLE_FITMENT_DATA[key]?.split(" ") ?? []) {
     const [built, fit = ""] = entry.split(":");
-    const [bolt, bore] = fit.split("/");
-    if (bolt) years.set(Number(built), { bolt, bore: bore ?? null, source: "ankusi" });
+    const [bolt, bore, diameter, width] = fit.split("/");
+    const year = Number(built);
+    if (!Number.isInteger(year)) continue;
+    const rim =
+      diameter && width
+        ? { diameter: Number(diameter), width: Number(width), source: "exact" as const }
+        : null;
+    if (rim !== null) exactRims.set(year, rim);
+    if (bolt) years.set(year, { bolt, bore: bore || null, source: "ankusi", rim });
   }
-  realCache.set(key, years);
+  /* A year without a rim of its own takes the nearest exact year's inside the
+     SAME generation range (equidistant: the later year). */
+  for (const [from, to] of ranges) {
+    const inside = [...exactRims].filter(([year]) => year >= from && year <= to);
+    if (inside.length === 0) continue;
+    for (let year = from; year <= to; year += 1) {
+      const row = years.get(year);
+      if (row === undefined || row.rim !== null) continue;
+      let best = inside[0]!;
+      for (const candidate of inside) {
+        const gap = Math.abs(candidate[0] - year);
+        const bestGap = Math.abs(best[0] - year);
+        if (gap < bestGap || (gap === bestGap && candidate[0] > best[0])) best = candidate;
+      }
+      row.rim = { ...best[1], source: "range" };
+    }
+  }
   return years;
 }
 
+interface ThreadRange {
+  years: number[];
+  thread: string;
+  fastener: "nut" | "bolt";
+}
+
+function threadRanges(key: string): ThreadRange[] {
+  const out: ThreadRange[] = [];
+  for (const [range, fit] of entriesOf(VEHICLE_THREADS[key])) {
+    const [thread, kind] = fit.split("/");
+    if (!thread) continue;
+    out.push({ years: yearsIn(range), thread, fastener: kind === "b" ? "bolt" : "nut" });
+  }
+  return out;
+}
+
+interface SizeRange {
+  years: number[];
+  rims: VehicleRim[];
+}
+
+function sheetSizeRanges(key: string): SizeRange[] {
+  const out: SizeRange[] = [];
+  for (const [range, sizes] of entriesOf(VEHICLE_WHEEL_SIZES[key])) {
+    const rims: VehicleRim[] = [];
+    for (const size of sizes.split(",")) {
+      const [diameter, width] = size.split("x").map(Number);
+      if (diameter && width) rims.push({ diameter, width, source: "sheet" });
+    }
+    out.push({ years: yearsIn(range), rims });
+  }
+  return out;
+}
+
+/** One entry per size; the first one listed wins a duplicate. */
+function unionRims(parts: ReadonlyArray<VehicleRim | null>): VehicleRim[] {
+  const seen = new Map<string, VehicleRim>();
+  for (const rim of parts) {
+    if (rim === null) continue;
+    const key = `${rim.diameter}x${rim.width}`;
+    if (!seen.has(key)) seen.set(key, rim);
+  }
+  return [...seen.values()];
+}
+
+/* --- Every fact of one model, year by year ---------------------------------- */
+
+interface Facts {
+  bolts: readonly string[];
+  boltSource: BoltSource | null;
+  bore: string | null;
+  offset: number | null;
+  thread: string | null;
+  fastener: "nut" | "bolt" | null;
+  tpms: boolean | null;
+  rims: readonly VehicleRim[];
+  wheelRange: WheelRange | null;
+  tires: readonly FactoryTire[];
+  flotation: readonly FactoryFlotationTire[];
+  tireRange: TireRange | null;
+}
+
+const NO_FACTS: Facts = {
+  bolts: [],
+  boltSource: null,
+  bore: null,
+  offset: null,
+  thread: null,
+  fastener: null,
+  tpms: null,
+  rims: [],
+  wheelRange: null,
+  tires: [],
+  flotation: [],
+  tireRange: null,
+};
+
+interface ModelFacts {
+  years: Map<number, Facts>;
+  /** Model years inside a `?` generation range: no source claims a bolt
+   *  pattern and nothing is borrowed from a neighbour. */
+  blocked: Set<number>;
+}
+
+const modelCache = new Map<string, ModelFacts | null>();
+
+/** The facts of every model year any source states, each field resolved by
+ *  the precedence in the header (generated table first, then the sheets). */
+function modelFacts(key: string): ModelFacts | null {
+  const cached = modelCache.get(key);
+  if (cached !== undefined) return cached;
+
+  const specs = specYears(key);
+  const real = realYears(key);
+  const threads = threadRanges(key);
+  const sizes = sheetSizeRanges(key);
+
+  const all = new Set<number>([...specs.keys(), ...real.keys()]);
+  for (const range of threads) for (const year of range.years) all.add(year);
+  for (const range of sizes) for (const year of range.years) all.add(year);
+  if (all.size === 0) {
+    modelCache.set(key, null);
+    return null;
+  }
+
+  const years = new Map<number, Facts>();
+  const blocked = new Set<number>();
+  for (const year of all) {
+    const s = specs.get(year);
+    const r = real.get(year);
+    const realBolts = r !== undefined && r.bolt !== null ? list(r.bolt) : [];
+    const specBolts = s?.bolts ?? [];
+    const bolts = specBolts.length > 0 ? specBolts : realBolts;
+    const boltSource: BoltSource | null =
+      specBolts.length > 0 ? (s?.source ?? "sheet") : realBolts.length > 0 ? (r?.source ?? null) : null;
+    if (r !== undefined && r.bolt === null && specBolts.length === 0) blocked.add(year);
+
+    /* A real bore belongs to the bolt pattern it was published with: it is
+       used only when the generated table has no pattern, or the same one. */
+    const realBore =
+      r !== undefined && r.bolt !== null && (specBolts.length === 0 || specBolts.includes(r.bolt))
+        ? r.bore
+        : null;
+    const sheetThread = threads.find((range) => range.years.includes(year));
+    const thread = s?.thread ?? sheetThread?.thread ?? null;
+    const sheetFastener =
+      sheetThread !== undefined && sheetThread.thread === thread ? sheetThread.fastener : null;
+    const sheetRimList = sizes.filter((range) => range.years.includes(year)).flatMap((range) => range.rims);
+    const rims =
+      s !== undefined && s.wheels.length > 0 ? s.wheels : unionRims([...sheetRimList, r?.rim ?? null]);
+
+    years.set(year, {
+      bolts,
+      boltSource,
+      bore: s?.bore ?? realBore,
+      offset: s?.offset ?? null,
+      thread,
+      fastener: s?.fastener ?? sheetFastener,
+      tpms: s?.tpms ?? null,
+      rims,
+      wheelRange: s?.wheelRange ?? null,
+      tires: s?.tires ?? [],
+      flotation: s?.flotation ?? [],
+      tireRange: s?.tireRange ?? null,
+    });
+  }
+  const out = { years, blocked };
+  modelCache.set(key, out);
+  return out;
+}
+
 /**
- * The real year closest to `year` that claims a bolt pattern (a `?` range
- * claims none, so it is never borrowed from). Equidistant: the later year.
- * Distance is not capped: the owner ruled "use the nearest real year" for a
- * model that has real rows but none for the year picked (2026-10-05).
+ * The year closest to `year` among those whose facts pass `has`. Equidistant:
+ * the later year. Distance is not capped (D149, owner 2026-10-05).
  */
-function nearestReal(years: Map<number, RealYear>, year: number): RealYear | null {
-  let best: { year: number; row: RealYear } | null = null;
-  for (const [known, row] of years) {
-    if (row.bolt === null) continue;
+function nearest(
+  years: Map<number, Facts>,
+  year: number,
+  has: (facts: Facts) => boolean,
+): Facts | null {
+  let best: { year: number; facts: Facts } | null = null;
+  for (const [known, facts] of years) {
+    if (!has(facts)) continue;
     if (
       best === null ||
       Math.abs(known - year) < Math.abs(best.year - year) ||
       (Math.abs(known - year) === Math.abs(best.year - year) && known > best.year)
     ) {
-      best = { year: known, row };
+      best = { year: known, facts };
     }
   }
-  return best?.row ?? null;
+  return best?.facts ?? null;
 }
 
-/* --- Placeholder (D48(4), D58, D67) ---------------------------------------- */
+function bodyClasses(key: string): readonly BodyClass[] {
+  return (VEHICLE_TYPES[key]?.split(";") ?? []).filter(
+    (value): value is BodyClass =>
+      value === "car" || value === "mpv" || value === "truck",
+  );
+}
 
 /**
- * PLACEHOLDER FITMENT DATA (D48 item 4), generated 2026-09-21 and kept by the
- * owner until replaced. Owner, 2026-09-21: "all 5 are upto you. for data
- * related issues, they will be added later, use placeholder and temporary
- * data genrated by you".
- *
- * One tire size, one bolt pattern, one lug thread and one TPMS frequency per
- * make and model, **year-blind**, keyed `"<Make>|<Model>"` as vehicles.csv
- * spells them (`Chevrolet|Silverado` became `Silverado 1500` when the finder
- * moved to that list). NOT verified OE specs: the sizes were skewed toward
- * what the old seed stocked; the bolt patterns were assigned by make and the
- * D145 audit found 21 of 60 wrong, which is why a real bolt pattern for the
- * year always wins. Thread and TPMS were assigned by make (D67); Volkswagen's
- * `14x1.5` is a simplification, VW holds wheels on with bolts, not nuts.
- */
-type Placeholder = readonly [
-  width: string,
-  profile: string,
-  rim: string,
-  bolt: string,
-  thread: string,
-  tpms: string,
-];
-
-const PLACEHOLDER: Readonly<Record<string, Placeholder>> = {
-  "Chevrolet|Equinox": ["225", "50", "17", "5x114.3", "12x1.5", "315"],
-  "Chevrolet|Malibu": ["225", "45", "17", "5x114.3", "12x1.5", "315"],
-  "Chevrolet|Silverado 1500": ["265", "70", "17", "6x139.7", "14x1.5", "315"],
-  "Chevrolet|Traverse": ["255", "65", "18", "5x114.3", "12x1.5", "315"],
-  "Chevrolet|Trax": ["215", "50", "17", "5x114.3", "12x1.5", "315"],
-  "Dodge|Charger": ["225", "45", "17", "5x114.3", "14x1.5", "315"],
-  "Dodge|Durango": ["265", "60", "18", "5x114.3", "14x1.5", "315"],
-  "Dodge|Hornet": ["225", "50", "17", "5x114.3", "14x1.5", "315"],
-  "Ford|Bronco": ["255", "70", "16", "5x114.3", "14x1.5", "315"],
-  "Ford|Edge": ["235", "65", "18", "5x114.3", "14x1.5", "315"],
-  "Ford|Explorer": ["255", "65", "18", "5x114.3", "14x1.5", "315"],
-  "Ford|F-150": ["275", "65", "18", "6x139.7", "14x1.5", "315"],
-  "Ford|Mustang": ["225", "45", "17", "5x114.3", "14x1.5", "315"],
-  "GMC|Acadia": ["225", "50", "17", "5x114.3", "12x1.5", "315"],
-  "GMC|Sierra 1500": ["265", "70", "17", "6x139.7", "14x1.5", "315"],
-  "GMC|Terrain": ["225", "50", "17", "5x114.3", "12x1.5", "315"],
-  "GMC|Yukon": ["275", "60", "20", "6x139.7", "14x1.5", "315"],
-  "Honda|Accord": ["225", "50", "17", "5x114.3", "12x1.5", "315"],
-  "Honda|CR-V": ["225", "50", "17", "5x114.3", "12x1.5", "315"],
-  "Honda|Civic": ["215", "55", "16", "5x114.3", "12x1.5", "315"],
-  "Honda|HR-V": ["215", "50", "17", "5x114.3", "12x1.5", "315"],
-  "Honda|Pilot": ["245", "60", "18", "5x114.3", "12x1.5", "315"],
-  "Hyundai|Elantra": ["215", "55", "16", "5x114.3", "12x1.5", "433"],
-  "Hyundai|Kona": ["215", "50", "17", "5x114.3", "12x1.5", "433"],
-  "Hyundai|Santa Fe": ["225", "50", "17", "5x114.3", "12x1.5", "433"],
-  "Hyundai|Tucson": ["225", "50", "17", "5x114.3", "12x1.5", "433"],
-  "Jeep|Compass": ["225", "50", "17", "5x114.3", "12x1.25", "315"],
-  "Jeep|Grand Cherokee": ["265", "60", "18", "5x114.3", "14x1.5", "315"],
-  "Jeep|Wrangler": ["245", "75", "17", "6x139.7", "14x1.5", "315"],
-  "Kia|Forte": ["215", "55", "16", "5x114.3", "12x1.5", "433"],
-  "Kia|Sorento": ["225", "50", "17", "5x114.3", "12x1.5", "433"],
-  "Kia|Sportage": ["225", "50", "17", "5x114.3", "12x1.5", "433"],
-  "Kia|Telluride": ["245", "60", "18", "5x114.3", "12x1.5", "433"],
-  "Mazda|CX-30": ["215", "50", "17", "5x114.3", "12x1.5", "315"],
-  "Mazda|CX-5": ["225", "50", "17", "5x114.3", "12x1.5", "315"],
-  "Mazda|CX-90": ["255", "55", "19", "5x114.3", "12x1.5", "315"],
-  "Mazda|Mazda3": ["225", "45", "17", "5x114.3", "12x1.5", "315"],
-  "Nissan|Kicks": ["215", "50", "17", "5x114.3", "12x1.25", "315"],
-  "Nissan|Pathfinder": ["255", "65", "18", "5x114.3", "12x1.25", "315"],
-  "Nissan|Rogue": ["225", "50", "17", "5x114.3", "12x1.25", "315"],
-  "Nissan|Sentra": ["215", "55", "16", "5x114.3", "12x1.25", "315"],
-  "Ram|1500": ["275", "65", "18", "6x139.7", "14x1.5", "315"],
-  "Ram|2500": ["275", "70", "18", "6x139.7", "14x1.5", "315"],
-  "Ram|3500": ["235", "80", "17", "6x139.7", "14x1.5", "315"],
-  "Subaru|Crosstrek": ["225", "50", "17", "5x100", "12x1.25", "315"],
-  "Subaru|Forester": ["225", "50", "17", "5x100", "12x1.25", "315"],
-  "Subaru|Impreza": ["215", "50", "17", "5x100", "12x1.25", "315"],
-  "Subaru|Outback": ["225", "50", "17", "5x100", "12x1.25", "315"],
-  "Tesla|Model 3": ["235", "40", "18", "5x114.3", "14x1.5", "433"],
-  "Tesla|Model S": ["235", "40", "18", "5x114.3", "14x1.5", "433"],
-  "Tesla|Model X": ["265", "45", "20", "5x114.3", "14x1.5", "433"],
-  "Tesla|Model Y": ["235", "40", "18", "5x114.3", "14x1.5", "433"],
-  "Toyota|Camry": ["225", "45", "17", "5x114.3", "12x1.5", "315"],
-  "Toyota|Corolla": ["215", "55", "16", "5x114.3", "12x1.5", "315"],
-  "Toyota|Highlander": ["235", "65", "18", "5x114.3", "12x1.5", "315"],
-  "Toyota|RAV4": ["225", "50", "17", "5x114.3", "12x1.5", "315"],
-  "Toyota|Tacoma": ["265", "70", "16", "6x139.7", "12x1.5", "315"],
-  "Volkswagen|Atlas": ["245", "60", "18", "5x112", "14x1.5", "433"],
-  "Volkswagen|Jetta": ["215", "55", "16", "5x112", "14x1.5", "433"],
-  "Volkswagen|Tiguan": ["225", "50", "17", "5x112", "14x1.5", "433"],
-};
-
-/**
- * The fitment the site uses for a vehicle the finder offers. `null` when
- * neither source knows the make and model at all, which the caller treats as
- * no vehicle (D47(8): no size given, every result is a best match). Exact
- * strings: `query.ts` has already checked them against the finder list.
+ * The fitment the site uses for a vehicle the finder offers. `null` when no
+ * source states anything for the make, model and year, which the caller treats
+ * as no vehicle (D47(8): no size given, every result is a best match). Exact
+ * strings: `query.ts` has already checked them against the finder list; an
+ * old model name is resolved through `VEHICLE_ALIASES` first.
  */
 export function findFitment(year: string, make: string, model: string): VehicleFitment | null {
   const built = Number(year);
-  const years = realYears(make, model);
-  const placeholder = PLACEHOLDER[`${make}|${model}`] ?? null;
-  if (years === null && placeholder === null) return null;
+  if (!Number.isInteger(built)) return null;
+  const asked = `${make}|${model}`;
+  const key = VEHICLE_ALIASES[asked] ?? asked;
+  const data = modelFacts(key);
+  if (data === null) return null;
 
-  let boltPattern: string | null = null;
-  let boltSource: VehicleFitment["boltSource"] = null;
-  let centreBore: string | null = null;
-  if (years !== null) {
-    /* A model with any real row never uses the placeholder's bolt pattern. */
-    const own = Number.isInteger(built) ? (years.get(built) ?? null) : null;
-    if (own !== null) {
-      boltPattern = own.bolt;
-      centreBore = own.bolt === null ? null : own.bore;
-      boltSource = own.bolt === null ? null : own.source;
-    } else if (Number.isInteger(built)) {
-      const near = nearestReal(years, built);
-      if (near !== null) {
-        boltPattern = near.bolt;
-        centreBore = near.bore;
-        boltSource = "nearest";
-      }
-    }
-  } else if (placeholder !== null) {
-    boltPattern = placeholder[3];
-    boltSource = "placeholder";
+  const own = data.years.get(built) ?? NO_FACTS;
+  const blocked = data.blocked.has(built);
+  let borrowed = false;
+  /* A group's facts: the exact year's when it states any, else the nearest
+     year that does, else nothing. A blocked year borrows nothing. */
+  const group = (has: (facts: Facts) => boolean, marks = true): Facts | null => {
+    if (has(own)) return own;
+    if (blocked) return null;
+    const near = nearest(data.years, built, has);
+    if (near !== null && marks) borrowed = true;
+    return near;
+  };
+  const mount = group((f) => f.bolts.length > 0);
+  /* The other groups are borrowed only from a year with the same bolt
+     patterns as the mount that was settled: a new bolt pattern is a new
+     platform, and its thread, wheels and tires are another car's. A year that
+     states no pattern cannot be told apart and may lend. */
+  const sameMount = (f: Facts): boolean =>
+    mount === null ||
+    f.bolts.length === 0 ||
+    (f.bolts.length === mount.bolts.length && f.bolts.every((b) => mount.bolts.includes(b)));
+  const lug = group((f) => f.thread !== null && sameMount(f));
+  /* TPMS (D156) follows the lug group's rule: the exact year's when it states
+     it, else the nearest year that does with the same bolt patterns. A
+     borrowed yes/no is not a fit fact, so it does not make the year `nearest`
+     (derived: it would otherwise move that headline count for a flag). */
+  const sensors = group((f) => f.tpms !== null && sameMount(f), false);
+  const wheels = group((f) => (f.rims.length > 0 || f.wheelRange !== null) && sameMount(f));
+  const tires = group(
+    (f) =>
+      (f.tires.length > 0 || f.flotation.length > 0 || f.tireRange !== null) && sameMount(f),
+  );
+
+  const centreBore = mount?.bore ?? own.bore;
+  if (
+    mount === null &&
+    lug === null &&
+    wheels === null &&
+    tires === null &&
+    centreBore === null
+  ) {
+    return null;
   }
   return {
-    boltPattern,
+    boltPatterns: mount?.bolts ?? [],
     centreBore,
-    boltSource,
-    tireSize:
-      placeholder === null
-        ? null
-        : { width: placeholder[0], profile: placeholder[1], rim: placeholder[2] },
-    thread: placeholder?.[4] ?? null,
-    tpms: placeholder?.[5] ?? null,
+    boltSource: mount?.boltSource ?? null,
+    offset: mount?.offset ?? null,
+    tireSizes: tires?.tires ?? [],
+    flotationSizes: tires?.flotation ?? [],
+    tireRange: tires?.tireRange ?? null,
+    rims: wheels?.rims ?? [],
+    wheelRange: wheels?.wheelRange ?? null,
+    classes: bodyClasses(key),
+    thread: lug?.thread ?? null,
+    fastener: lug?.fastener ?? null,
+    tpms: sensors?.tpms ?? null,
+    yearSource: borrowed ? "nearest" : "exact",
   };
 }

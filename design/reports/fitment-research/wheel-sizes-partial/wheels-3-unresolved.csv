@@ -1,0 +1,14 @@
+make,model,years,reason,best_guess,source_1
+Honda,FCX Clarity,2005-2014,no catalogue page found and only wheel-size.com-derived results surfaced (rejected); fuel-cell lease car,unknown,
+Chevrolet,Malibu Classic,2005,fleet-only carry-over of the 1997-2003 body; no catalogue page found,15x6;16x6.5,
+Chevrolet,Equinox,2025-2027,widths come from one catalogue only (AR 2025 page https://autorimshop.com/collections/2025-chevrolet-equinox-wheels); GM Authority pages confirm diameters 17/19/20 (ICE) and 19/21 (EV) but state no widths; OW has no 2025 page,17x7.5;19x7.5;19x8.5(EV);21x9(EV); 20-inch RS option width unknown,https://gmauthority.com/blog/2024/07/here-are-all-the-2025-chevy-equinox-wheels/
+Chevrolet,Cruze,2010,no NA Cruze for MY2010 (first NA Cruze is MY2011),,
+Chevrolet,Corvette,2023-2027,"catalogue pages (OW 2024: 19x8.5 front/20x11 rear for 2020-2025; AR 2024: 20x11 rear only) cover the Stingray only; Z06 (2023+), E-Ray (2024+) and ZR1 (2025+) wheels not found in two sources","19x8.5;20x11 plus Z06 20x10/21x13 (from memory, unverified)",https://www.originalwheels.com/chevrolet-wheels/corvette2024rims.php
+Chevrolet,Aveo,2012-2020,Aveo nameplate was replaced by Sonic in North America after MY2011; later years in the finder are other markets,see Sonic,
+Chevrolet,Spark,2008;2011-2012,Spark was sold in North America from MY2013; earlier finder years are the Matiz/other markets; no North American catalogue page,15x6,
+Chevrolet,Captiva Sport,2010-2011;2016-2017,not sold in North America those years; catalogue fitment is 2012-2015,17x7;18x7,
+Chevrolet,Optra,2009,catalogue fitment ends 2008; no 2009 page sampled,15x6,https://www.originalwheels.com/chevrolet-wheels/optra2007rims.php
+Chevrolet,Orlando,2009-2011;2015,not sold in North America those years,16x6.5;18x8,
+Chevrolet,S-10 Pickup,2005,catalogue pages for this model not found (OW s10 page and AR s10 collection 404),15x7;16x8 (unverified),
+Chevrolet,Express,2005-2027,"only one catalogue (Auto Rim Shop) gives widths; OW van pages state diameters only (15/16/17 inch rims, Express 2500 = two 16-inch steel wheels) and no per-year width; no second width source","16x6.5;16x7;17x7.5 (AR 2006), 16x6.5 (AR 2010 shows 16x6.5;17x7.5, 2015 and 2020 show 16x6.5)",https://autorimshop.com/collections/2006-chevrolet-express-wheels
+Chevrolet,SS,2014-2017,only one catalogue (AR) lists it; no OW page for the SS; web search budget used up,19x8.5 front; 19x9 rear (staggered),https://autorimshop.com/collections/2015-chevrolet-ss-wheels

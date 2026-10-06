@@ -1,5 +1,25 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-06 (the vehicle finder's fit data from Auto Country, D155, branch `fitment-auto-country`).**
+The finder now knows bolt pattern, bore, thread, nut or bolt, factory tire and wheel sizes and the stock range for
+about 99% of 8,882 model-years, from Auto Country's public lookup first, then vendor lookups, makers and the web.
+The finder list is the union of Auto Country's and NHTSA's (1,061 models), under Auto Country's names; old
+names redirect. Tires, wheels and accessories split Best and Similar by spec; a two-pattern year shows both.
+- **Re-run:** `node scripts/autocountry-crawl.mjs` (resumes from saved answers outside the repo; 8 a second,
+  never in parallel), then `node scripts/vehicle-fitment-autocountry.mjs`,
+  `node scripts/vehicle-fitment-merge-gaps.mjs <gap-fill folder>` (only with new gap fills) and
+  `node scripts/vehicle-fitment.mjs`; check with `npx tsx scripts/fitment-coverage.ts <catalogue.csv>`.
+- **Checked:** the offline counter equals the page's SQL (about 920 comparisons; 21 cars on all three pages
+  of a production build against a local Postgres holding the built catalogue); 390 and 1440 in the browser
+  (no overflow, no console errors, Add to cart hit-tests); `npm run check`; `npm run test:e2e:fixture`
+  (128 passed, 2 skipped; 32 with indexing on).
+- **Not checked:** Neon or Vercel; Safari and Firefox; each Auto Country value beyond the overrides list and
+  the vendor spot check (`design/reports/fitment-coverage.md`).
+- **Owner rulings applied (D156):** familiar model names (`Mazda3`, `Model 3`), 2015 Tacoma 5x114.3, 25
+  no-North-American-car years dropped (8,857 model-years), TPMS sensors to Similar on a TPMS-off car (blank
+  before 2008 reads off), spacers and lift sizes not for launch.
+- **Owed:** `glcorp` merges with **Create a merge commit**.
+
 **Last updated 2026-10-04 (the two open PRs combined into one branch for a single `glcorp` merge, D143,
 branch `integrate/prs-39-42`).** The branch brings **#39** the catalogue photo loader (D139b) and **#42** part
 number and M+S as columns, tire part numbers dropped (D142). The two touch no common code; the only

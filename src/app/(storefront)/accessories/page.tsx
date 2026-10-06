@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { redirectToCanonicalVehicle } from "@/features/finder/canonical";
 import { ResultsPage } from "@/features/results/components/results-page";
 import { JsonLd } from "@/features/seo/json-ld";
 import { pageMetadata } from "@/features/seo/metadata";
@@ -30,9 +31,12 @@ export const metadata: Metadata = pageMetadata({
 export default async function Accessories({
   searchParams,
 }: PageProps<"/accessories">) {
+  /* An old model name in the URL goes to the canonical one (D155). */
+  const query = await searchParams;
+  redirectToCanonicalVehicle(ROUTES.accessories, query);
   return (
     <>
-      <ResultsPage category="accessories" searchParams={await searchParams} />
+      <ResultsPage category="accessories" searchParams={query} />
       <JsonLd data={categoryBreadcrumb("accessories")} />
     </>
   );

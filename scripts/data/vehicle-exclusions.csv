@@ -1,0 +1,26 @@
+make,model,year,reason,source
+BMW,M2,2022,"no NA car (F87 M2 ended MY2021, G87 started MY2023; Wikipedia and ANKUSI per the committed research file)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Chevrolet,Suburban HD,2026,"no NA car (Chevrolet sells no Suburban HD or Suburban 2500 for these years; the Suburban is 6x139.7, 1500-class. HD is the Silverado 2500HD pickup.)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Chevrolet,Suburban HD,2027,"no NA car (Chevrolet sells no Suburban HD or Suburban 2500 for these years; the Suburban is 6x139.7, 1500-class. HD is the Silverado 2500HD pickup.)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Chrysler,Cirrus,2006,no NA car (Cirrus built 1995-2000; 2006 is a finder oddity),design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Ford,GT MKII,2023,"no NA car (track-only Mk II, 45 units delivered from 2020, not road-registered; the road Ford GT is a separate model in the Auto Country file)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Ford,GT MKII,2024,"no NA car (track-only Mk II, 45 units delivered from 2020, not road-registered; the road Ford GT is a separate model in the Auto Country file)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Ford,GT MKII,2025,"no NA car (track-only Mk II, 45 units delivered from 2020, not road-registered; the road Ford GT is a separate model in the Auto Country file)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Ford,GT MKII,2026,"no NA car (track-only Mk II, 45 units delivered from 2020, not road-registered; the road Ford GT is a separate model in the Auto Country file)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Ford,GT MKII,2027,"no NA car (track-only Mk II, 45 units delivered from 2020, not road-registered; the road Ford GT is a separate model in the Auto Country file)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+GMC,Canyon,2013,"no NA car. First generation built 2004-2012; the next Canyon is model year 2015. AC sheet has 2012 and 2015 rows, nothing between.",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-5.csv
+GMC,Canyon,2014,"no NA car. First generation built 2004-2012; the next Canyon is model year 2015. AC sheet has 2012 and 2015 rows, nothing between.",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-5.csv
+Honda,FCX Clarity,2005,"no NA car (retail FCX Clarity is 2008-2014; the 2005-2007 original FCX was a tiny lease fleet, no fitment published)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Honda,FCX Clarity,2006,"no NA car (retail FCX Clarity is 2008-2014; the 2005-2007 original FCX was a tiny lease fleet, no fitment published)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Honda,FCX Clarity,2007,"no NA car (retail FCX Clarity is 2008-2014; the 2005-2007 original FCX was a tiny lease fleet, no fitment published)",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-3.csv
+Maserati,GranTurismo,2020,no NA car (first-generation GranTurismo ended with model year 2019; second generation arrives as a 2023/2024 model),design/reports/fitment-research/gap-fill-2026-10-06/gapfill-4.csv
+Maserati,GranTurismo,2021,no NA car (first-generation GranTurismo ended with model year 2019; second generation arrives as a 2023/2024 model),design/reports/fitment-research/gap-fill-2026-10-06/gapfill-4.csv
+Maserati,GranTurismo,2022,no NA car (first-generation GranTurismo ended with model year 2019; second generation arrives as a 2023/2024 model),design/reports/fitment-research/gap-fill-2026-10-06/gapfill-4.csv
+Mitsubishi,Diamante,2005,"no NA car. Exports ended after the 2004 model year; a few leftover cars sold as 2005 from dealer stock. No source (autofiles, threepiece, AC) lists a 2005 model year.",design/reports/fitment-research/gap-fill-2026-10-06/gapfill-5.csv
+VinFast,VF 6,2023,no NA car. VinFast removed the VF 6 from its North American plans (March 2026); only Europe and Vietnam sell it.,design/reports/fitment-research/gap-fill-2026-10-06/gapfill-5.csv
+VinFast,VF 6,2026,no NA car. VinFast removed the VF 6 from its North American plans (March 2026); only Europe and Vietnam sell it.,design/reports/fitment-research/gap-fill-2026-10-06/gapfill-5.csv
+VinFast,VF 6,2027,no NA car. VinFast removed the VF 6 from its North American plans (March 2026); only Europe and Vietnam sell it.,design/reports/fitment-research/gap-fill-2026-10-06/gapfill-5.csv
+VinFast,VF 7,2023,no NA car,design/reports/fitment-research/gap-fill-2026-10-06/gapfill-1.csv
+VinFast,VF 7,2024,no NA car,design/reports/fitment-research/gap-fill-2026-10-06/gapfill-1.csv
+VinFast,VF 7,2025,no NA car,design/reports/fitment-research/gap-fill-2026-10-06/gapfill-1.csv
+VinFast,VF9,2022,no NA car (US/Canada sales began 2023),design/reports/fitment-research/gap-fill-2026-10-06/gapfill-1.csv

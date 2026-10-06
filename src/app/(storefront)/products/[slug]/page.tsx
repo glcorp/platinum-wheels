@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site/site-footer";
 import { PageTransition } from "@/components/site/page-transition";
 import { SiteHeader } from "@/components/site/site-header";
+import { redirectToCanonicalVehicle } from "@/features/finder/canonical";
 import { BuyPanel } from "@/features/product/components/buy-panel";
 import { PdpBreadcrumb } from "@/features/product/components/pdp-breadcrumb";
 import { PdpGallery } from "@/features/product/components/pdp-gallery";
@@ -114,6 +115,10 @@ export default async function ProductPage({
   searchParams,
 }: PageProps<"/products/[slug]">) {
   const { slug } = await params;
+  /* An old model name in the URL goes to the canonical one, before any
+     database read (D155). */
+  const query = await searchParams;
+  redirectToCanonicalVehicle(productRoute(slug), query);
   const detail = await loadProduct(slug);
   /* An unknown slug is a 404, and so is a HIDDEN product. A DISCONTINUED one
      is not: the page still returns 200 and shows it as unavailable, so an old
@@ -124,7 +129,6 @@ export default async function ProductPage({
   /* Read once: `productView` derives from it, and `BuyPanel` passes it down to
      `QuantityControl` so a `?qty=` link changes that param and preserves every
      other one (D50). */
-  const query = await searchParams;
   const view = productView(detail, query, await loadProductRows(detail));
   const { product } = view;
   const breadcrumb = <PdpBreadcrumb view={view} />;

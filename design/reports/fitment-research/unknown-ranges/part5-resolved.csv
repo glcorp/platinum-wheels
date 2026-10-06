@@ -1,0 +1,12 @@
+make,model,year_from,year_to,bolt_pattern,centre_bore_mm,source_1,source_2
+MINI,Hardtop,2009,2012,4x100,56.1,https://boltpatternhq.com/mini/hardtop/2009/,https://hubcentric-rings.com/car_models/mini/mini-hatch/
+Maserati,Granturismo,2014,2019,5x114.3,67.1,https://boltpatternhq.com/maserati/granturismo/2014/,https://autofiles.com/wheels/maserati/granturismo/
+Maserati,Granturismo,2023,2026,5x110,65.1,https://brightstoneengineering.com/products/maserati-granturismo-2023-wheel-spacers-5x110-65-1mm-bore,https://ankusiwheels.com/wp-content/uploads/dataset/ankusi-wheel-fitment.csv
+Mazda,MX-5,2005,2005,4x100,54.1,https://boltpatternhq.com/mazda/mx-5-miata/2005/,https://www.kipardoracing.com/mazda-miata-bolt-pattern-na-nb-fitment-guide/
+Nissan,Armada,2023,2023,6x139.7,,https://www.originalwheels.com/nissan-wheels/armada2023rims.php,https://autorimshop.com/products/2023-nissan-armada-20-oem-wheel-rim-w97731mc
+Nissan,Armada,2024,2024,6x139.7,,https://www.originalwheels.com/nissan-wheels/armada2024rims.php,https://autorimshop.com/products/2024-nissan-armada-18-oem-wheel-rim-w62737s
+Nissan,Cube,2009,2009,4x114.3,,https://boltpatternhq.com/nissan/cube/2011/,https://www.originalwheels.com/nissan-wheels/cube2009rims.php
+Nissan,Cube,2011,2014,4x114.3,,https://boltpatternhq.com/nissan/cube/2011/,"https://www.originalwheels.com/nissan-wheels/cube2011rims.php (2012, 2013, 2014 pages cube2012rims.php, cube2013rims.php, cube2014rims.php agree)"
+Nissan,Pathfinder,2012,2012,6x114.3,,https://boltpatternhq.com/nissan/pathfinder/2012/,https://www.originalwheels.com/nissan-wheels/pathfinder2012rims.php
+Nissan,Versa,2008,2011,4x114.3,,https://autofiles.com/wheels/nissan/versa/,https://www.originalwheels.com/nissan-wheels/versa2010rims.php
+Pontiac,Vibe,2008,2008,5x100,,https://www.originalwheels.com/pontiac-wheels/vibe2008rims.php,https://forums.genvibe.com/phpBB3/viewtopic.php?t=41400
