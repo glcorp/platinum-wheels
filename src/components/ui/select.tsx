@@ -27,7 +27,9 @@ export interface SelectProps extends ComponentPropsWithRef<"select"> {
    * `className` goes to the `<select>` itself.
    */
   wrapperClassName?: string;
-  children: ReactNode;
+  /** Omitted only when the options come as `dangerouslySetInnerHTML` (the
+   *  finder's Model list, `finder/options-html.ts`). */
+  children?: ReactNode;
 }
 
 export function Select({

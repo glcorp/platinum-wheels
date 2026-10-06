@@ -15,7 +15,10 @@ business logic) and *constants*, so that a change lands in exactly one place.
   authorisation. **Since the launch audit (D145; D151)** it also answers a path whose
   percent-encoding cannot be decoded (`/products/%FF`) with that host's 404 instead of Next's unbranded
   500, so its matcher also covers `/products/**`, `/sitemaps/**` and any path containing `%`. Ordinary
-  storefront pages still never reach it (the LCP reason in its header comment).
+  storefront pages still never reach it (the LCP reason in its header comment). **Since D157** it also
+  answers a `/products/<slug>` document request (no `RSC` header) for an unknown or hidden slug with the
+  branded 404, after one indexed read (`productPageExists`, `features/catalog/queries.ts`): a `notFound()`
+  thrown from the page gives a 404 whose body only JavaScript paints. A database error lets the request through.
 - [`components/ui/`](components/ui/llm.md) — ten token-only primitives (`badge`, `button`, `checkbox`,
   `chip`, `field-label`, `input`, `price`, `section-heading`, `select`, `stripe-divider`).
 - [`components/site/`](components/site/llm.md) — header, footer, mobile drawer. **Not created yet**;

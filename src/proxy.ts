@@ -9,6 +9,7 @@ import {
   isAdminHost,
   normalizeHost,
 } from "@/features/admin/host-routing";
+import { productPageExists } from "@/features/catalog/queries";
 
 /* ---------------------------------------------------------------------------
    Request proxy — host routing for the admin (D97, D115) and payments (D105)
@@ -46,6 +47,12 @@ import {
    reach proxy. If a platform ever decodes the path before testing the
    matcher, that second entry simply matches nothing; the first still holds.
 
+   **Product 404 (D157).** On `/products/<slug>` document requests proxy also
+   reads the catalogue once (`productPageExists`) and answers an unknown or
+   hidden slug with the branded 404, because a `notFound()` thrown from the
+   page gives a 404 whose body only JavaScript paints. That is the one
+   database read proxy makes; see the `pass` case below.
+
    Server Actions are POSTs to the page's own URL, so an admin form posted to
    `/products` is rewritten to `/admin/products` like the page itself was
    (Next's proxy docs: "Server Functions … are handled as POST requests to the
@@ -57,6 +64,10 @@ import {
  *  `src/app/not-found.tsx` with a real 404 status, not a redirect that would
  *  advertise where the admin actually lives. */
 const NOT_FOUND_PATH = "/_admin-not-served-on-this-host";
+
+/** `/products/<slug>` and nothing deeper (`/products/<slug>/og.jpg` is a route
+ *  handler that already answers a real 404 by itself). */
+const PRODUCT_PAGE = /^\/products\/([^/]+)\/?$/;
 
 /** `true` when the path cannot be percent-decoded. `nextUrl.pathname` is
  *  still encoded (WHATWG URL parsing never decodes), so this is the same
@@ -70,7 +81,20 @@ function isUndecodable(pathname: string): boolean {
   }
 }
 
-export function proxy(request: NextRequest) {
+/** The slug of a storefront product page request that should be checked
+ *  against the catalogue, else `null`: only a document request (a browser
+ *  navigation, a crawler, a link unfurler). Client navigations and prefetches
+ *  carry an `RSC` header and are left alone: the page's own `notFound()`
+ *  covers them. */
+function productSlugToCheck(request: NextRequest): string | null {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  if (request.headers.has("rsc")) return null;
+  const match = PRODUCT_PAGE.exec(request.nextUrl.pathname);
+  // The path was already shown to be decodable above.
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+export async function proxy(request: NextRequest) {
   if (isUndecodable(request.nextUrl.pathname)) {
     const host = request.headers.get("host");
     const isProduction = process.env.VERCEL_ENV === "production";
@@ -104,8 +128,32 @@ export function proxy(request: NextRequest) {
     }
     case "not-found":
       return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url));
-    case "pass":
+    case "pass": {
+      /* An unknown or hidden product is answered here, with the 404 document
+         `/zzz` gets, rather than by `notFound()` thrown from the page: that
+         throw reaches Next before the first byte is flushed, and Next answers
+         it with a 404 status but an EMPTY `<html id="__next_error__">` shell
+         that only a browser running JavaScript paints (measured on Next
+         16.4.0-canary.37 with a bare `notFound()` page too; Next's own advice
+         for a real 404 is a proxy check, `loading.md` "Status Codes"). The
+         page keeps its `notFound()` for client navigations and for the instant
+         a product is hidden between this check and the render. A database
+         error lets the request through: an outage must never turn a real
+         product into a 404. */
+      const slug = productSlugToCheck(request);
+      if (slug !== null) {
+        let exists = true;
+        try {
+          exists = await productPageExists(slug);
+        } catch {
+          // Let the page decide; its own error boundary handles the outage.
+        }
+        if (!exists) {
+          return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url));
+        }
+      }
       return NextResponse.next();
+    }
   }
 }
 

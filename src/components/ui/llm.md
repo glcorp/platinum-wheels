@@ -60,7 +60,8 @@ One line each; measurements and per-variant tables live in each file's header co
 - [`section-heading.tsx`](section-heading.tsx) — `SectionHeading`, the `01 — Shop by category` pattern.
   `SectionHeadingProps`: `eyebrow`, `index?`, `title`, `as?: "h1" | "h2" | "h3"`, `action?`.
 - [`select.tsx`](select.tsx) — `Select`, a native `<select>` plus the 16px chevron. `SelectProps`:
-  `id` (required), `density?`, `invalid?`, `wrapperClassName?`, `children`.
+  `id` (required), `density?`, `invalid?`, `wrapperClassName?`, `children?` (optional since D157: the
+  finder's Model select may take its options as `dangerouslySetInnerHTML`).
 - [`stripe-divider.tsx`](stripe-divider.tsx) — `StripeDivider`, the decorative 135° accent hairline.
   `StripeDividerProps`: `thickness?: 1 | 2`.
 

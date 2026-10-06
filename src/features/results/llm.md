@@ -31,7 +31,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   with the known fields kept and a prompt for the rest.
 - [`search.ts`](search.ts) — server only and **async** since D108b: `searchResults()` asks the catalogue
   (`catalog/queries.ts`) for one page of best matches, the similar row and the facets, and maps them into
-  a `ResultsView`. Reads the database; never imported by a client file. An explicit URL size wins;
+  a `ResultsView`. Reads the database; never imported by a client file. **Since D157** one cached
+  category base read (`getCategoryBase`), then one round: best, similar and facets together (only an
+  expanded `Load more` page reads similar after best). A URL value the category does not hold (size,
+  brand, finish, thread, load, bore, offset) is settled against the base before the read, so a hand-typed
+  unknown size no longer costs a second read. An explicit URL size wins;
   with every size select at `Any`, a vehicle narrows the page from `src/features/finder/fitment.ts`
   `findFitment(year, make, model)` through `tire-fit.ts` (D155): `query` is never mutated and
   `facets.activeGroups` is unchanged, because a derived fit is not a user filter. **Fitment is per
@@ -117,7 +121,9 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   the panel's lower groups below the fold once it outgrew the space under the sticky offset — 735px
   against 604px at 1440×700 — with the page scrolling underneath them. Inert where the panel fits.
   Its scrollbar sits in the grid gap (16px right bleed), so a macOS overlay bar never covers the counts.
-- [`components/filter-sheet.tsx`](components/filter-sheet.tsx) — `"use client"`. `FilterSheet({ view })`:
+- [`components/filter-sheet.tsx`](components/filter-sheet.tsx) — `"use client"`. `FilterSheet({ view })`;
+  **since D157 its `FilterPanel` mounts on the sheet's first open** (the sheet cannot open without JS), and
+  the panels take `FilterView = Pick<ResultsView, "query" | "facets">`, never the product arrays:
   the `Filters (n)` trigger (`Filters` at 0) and its `<dialog>` — `sheet-panel` height, `::backdrop`
   `--scrim-mid` over the header too (D47(3)), Esc / ✕ / backdrop close, body scroll lock, closes at
   `md:`, body scroller `overscroll-contain` (**D65**). Footer submits via `form=` and reads **`Apply`**,

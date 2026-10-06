@@ -34,7 +34,11 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   the gallery, desktop inside the buy panel — with the visibility classes owned here, not by the
   component. The header's active nav item follows the product's category (D58), so a wheel PDP marks
   Wheels. No `generateStaticParams` — reading `searchParams` for `?qty=` makes the route dynamic (D50).
-  Parity: `design/reports/product.md`.
+  Parity: `design/reports/product.md`. **Since D157** a direct visit to an unknown or hidden slug never
+  reaches this page: `src/proxy.ts` rewrites it to the branded 404, because Next 16.4 canary answers a
+  `notFound()` thrown here with a 404 whose body is an empty `__next_error__` shell that only JavaScript
+  fills (measured; a segment `not-found.tsx` does not change it). The page's `notFound()` stays for client
+  navigations and a product hidden between the check and the render.
 - ~~`loading.tsx`~~ — **removed 2026-09-29 (D91b, owner ruling).** Its group-level Suspense boundary
   streamed every page into `<div hidden id="S:0">` behind the skeleton, so with JavaScript off every
   route showed only the skeleton (every no-JS promise in D44/D45/D50/D83 was void while the served HTML

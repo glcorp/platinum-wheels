@@ -49,6 +49,12 @@ rules in this file apply to all of them.
     process: `run.mjs` blocks on `spawnSync` while it builds and tests, and an in-process server answers nothing), and four
     payment links (open, paid, cancelled, expired).
   - `run.mjs` — the entry point: database, photos, `next build`, `next start`, Playwright, cleanup.
+- **Since D157:** `admin-save`'s two `request` tests reach the admin at `127.0.0.1` with a
+  `host: admin.localhost:<port>` header (Node's resolver on macOS does not resolve `*.localhost`), and
+  `routes.spec.ts` has a JS-off block for the product 404 (unknown and hidden slug: 404, one `<h1>`, one
+  `<main>`, one robots meta). Parked specs that assume 1,058 Model options at load (`finder`, `nojs`,
+  `results`, `crawl`, `environment`, `product`) must focus a finder select first, or read
+  `#finder-model-all` with JS off, when they return.
 - `e2e/cart-send.spec.ts`, `e2e/pay-states.spec.ts`, `e2e/admin-save.spec.ts` (new, 2026-10-05) — one
   project each (`chromium-1440`). Cart: add a tire, open `/cart`, the quote dialog, an empty send refused, a valid
   send, the success panel, the cart empties (email flag OFF: the app's own success path; nothing is sent). Pay:

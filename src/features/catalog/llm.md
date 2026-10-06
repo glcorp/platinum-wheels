@@ -96,7 +96,15 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   - [`queries.ts`](queries.ts) — storefront reads: `listProducts`, `getFacets`, `getProductBySlug`,
     `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs` (`includeDiscontinued` for the cart,
     D122), `getTitleSiblings`, `getPriceBounds`, `getBrands` (every
-    brand a category carries, whatever is filtered; D111), `listProductUrls`.
+    brand a category carries, whatever is filtered; D111), `listProductUrls`, and `productPageExists`
+    (one indexed read for `src/proxy.ts`'s product 404, D157).
+    **Since D157:** `getBrands`, `getPriceBounds` and `getExtraValues` are internal; pages read them through
+    `getCategoryBase(category)`, an `unstable_cache` under `CATALOGUE_TAG` with no timer, keyed by
+    `CACHE_DEPLOYMENT` (`cache-tag.ts`) and the database host, holding only what ignores the URL filters
+    (brands, value lists, whole-category bounds, the distinct size list). Size selects narrow in memory from
+    that list with the D132 predicates. `listProducts` ranks on id and sort keys in a CTE, joins specs only
+    for the window and returns the count from `count(*) over ()`. `getFacets(filters, sizeChoice, base)`;
+    `CatalogFacets.total` is gone. A bulk load outside the admin does not expire the base (as D111(5)).
     **Vehicle fit (D155).** `ProductFilters` takes a vehicle as small shapes, never a vehicle:
     `tire.vehicleFit` (`TireVehicleFit`), `wheel.vehicleFit` (`WheelVehicleFit`) and the accessory facts
     `thread`, `fastener`, `hubBore`; `finder/tire-fit.ts` builds them. In SQL, with `sizeMatch: "exact"`
