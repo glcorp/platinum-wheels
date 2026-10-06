@@ -53,9 +53,9 @@ import { PRICES_VISIBLE } from "@/lib/site";
    Copy ships in the artboards' source case; `text-transform:uppercase` on the
    Badge primitive renders it uppercase, which is why DESIGN.md writes `WINTER`
    and the export writes `Winter` (`.claude/rules/ui.md:49`, artboard copy
-   verbatim). Since 2026-10-07 Winter wears the aqua `winter` variant with a
-   snowflake (#126) and All-Season the lime `accent` fill (#125); everything
-   else takes the
+   verbatim). Since 2026-10-07 each season has its own filled badge with a
+   mark (Winter aqua, All-Season brown, Summer yellow, All-Weather lime;
+   DEVIATIONS #125, #126); OEM and Studdable keep the
    `1px --text-muted` outline (`design/DESIGN.md:197-199`,
    `design/assets/results-desktop.html:162` and `:239`). */
 type BadgeVariant = NonNullable<BadgeProps["variant"]>;
@@ -67,10 +67,10 @@ const BADGE_PRESENTATION: Record<
   winter: { variant: "winter", copy: "Winter" },
   /* Filled like Winter since 2026-10-07 (owner: "make all season green
      filled like winter"; DEVIATIONS #125). */
-  "all-season": { variant: "accent", copy: "All-Season" },
+  "all-season": { variant: "all-season", copy: "All-Season" },
   /* New copy (D105b), in the drawn `All-Season` badge's own capitalisation. */
-  "all-weather": { variant: "outline", copy: "All-Weather" },
-  summer: { variant: "outline", copy: "Summer" },
+  "all-weather": { variant: "all-weather", copy: "All-Weather" },
+  summer: { variant: "summer", copy: "Summer" },
   oem: { variant: "outline", copy: "OEM" },
   studdable: { variant: "outline", copy: "Studdable" },
 };

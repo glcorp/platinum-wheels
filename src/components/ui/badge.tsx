@@ -3,7 +3,7 @@ import type { ComponentPropsWithoutRef } from "react";
 import { cx } from "@/lib/cx";
 
 /* ---------------------------------------------------------------------------
-   Badge — winter / accent / outline / unavailable
+   Badge — the four season fills / accent / outline / unavailable
 
    Not interactive, so no hover, focus or tap-target rule applies. Radius is 0:
    `--radius-ctl` is for controls only and badges are explicitly excluded
@@ -12,7 +12,14 @@ import { cx } from "@/lib/cx";
    `rounded-*` class.
    --------------------------------------------------------------------------- */
 
-type BadgeVariant = "winter" | "accent" | "outline" | "unavailable";
+type BadgeVariant =
+  | "winter"
+  | "all-season"
+  | "all-weather"
+  | "summer"
+  | "accent"
+  | "outline"
+  | "unavailable";
 
 /* Shared box and type — identical across all three variants and across both
    artboards, and the one place DESIGN.md §4 "Badge" and the exports agree
@@ -43,15 +50,21 @@ const badgeBase =
    ever renders as a plain inline span — where `height` would be ignored and
    line-height alone would carry the 24px. */
 const variantClass: Record<BadgeVariant, string> = {
-  /* WINTER — drawn `background:var(--accent);color:var(--on-accent);
-     font:500 11px/24px`, no border (results.md §3.3, product.md §3.1). Since
-     2026-10-07 an icy aqua `--winter` fill with a snowflake (owner: "make
-     winter tag aqua and frosty element", DEVIATIONS #126); box and type
-     unchanged. */
-  winter: "bg-winter leading-badge text-on-winter",
+  /* The four seasons (owner, 2026-10-07: "Give each season tag its own
+     colour"; DEVIATIONS #125, #126). The drawn WINTER was a borderless
+     `--accent` fill at `font:500 11px/24px`. Each season is now its own fill
+     with a 1px darker edge, `--on-season` ink and a 12px mark before the
+     word; the edge plus the outline leading (22 + 2) keeps the drawn 24px box.
+     The edge and the mark are what "more premium" means here, inside the
+     flat, no-shadow, no-gradient rules (`.claude/rules/ui.md`). */
+  winter: "bg-winter border border-winter-edge leading-badge-outline text-on-season",
+  "all-season":
+    "bg-all-season border border-all-season-edge leading-badge-outline text-on-season",
+  summer: "bg-summer border border-summer-edge leading-badge-outline text-on-season",
+  "all-weather": "bg-accent border border-all-weather-edge leading-badge-outline text-on-season",
 
-  /* The drawn filled badge, lime. All-Season wears it since 2026-10-07
-     (owner: "make all season green filled like winter", DEVIATIONS #125). */
+  /* The drawn filled badge, lime, with no mark. Kept for a non-season fill;
+     no season uses it since each has its own (2026-10-07). */
   accent: "bg-accent leading-badge text-on-accent",
 
   /* ALL-SEASON / SUMMER / OEM / STUDDABLE / M+S / 3PMSF —
@@ -72,10 +85,23 @@ export type BadgeProps = ComponentPropsWithoutRef<"span"> & {
   variant?: BadgeVariant;
 };
 
-/* The frost on the Winter badge: a six-armed snowflake, 12px, stroked in the
-   badge's own ink, `gap-1.5` from the word (the 3PMSF badge's icon gap).
-   Decorative; the word says the season. */
-function Snowflake() {
+/* Each season's mark: 12px, stroked in the badge's own ink, `gap-1.5` from
+   the word (the 3PMSF badge's icon gap). Decorative; the word says the
+   season. */
+const SEASON_MARK: Partial<Record<BadgeVariant, string>> = {
+  // Six-armed snowflake.
+  winter:
+    "M12 2v20M3.3 7l17.4 10M3.3 17l17.4-10M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.6 10.4 7 9.5 6.1 6.1M17.9 17.9 17 14.5l3.4-.9M3.6 13.6 7 14.5l-.9 3.4M17.9 6.1 17 9.5l3.4.9",
+  // A leaf.
+  "all-season": "M5 19C5 10 11 5 20 4c-1 9-6 15-15 15ZM5 19l8-8",
+  // The sun.
+  summer:
+    "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
+  // A cloud.
+  "all-weather": "M7 18h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.7 1.3A3.4 3.4 0 0 0 7 18Z",
+};
+
+function SeasonMark({ path }: { path: string }) {
   return (
     <svg
       aria-hidden="true"
@@ -84,9 +110,10 @@ function Snowflake() {
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
+      strokeLinejoin="round"
       className="size-3 shrink-0"
     >
-      <path d="M12 2v20M3.3 7l17.4 10M3.3 17l17.4-10M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.6 10.4 7 9.5 6.1 6.1M17.9 17.9 17 14.5l3.4-.9M3.6 13.6 7 14.5l-.9 3.4M17.9 6.1 17 9.5l3.4.9" />
+      <path d={path} />
     </svg>
   );
 }
@@ -94,7 +121,7 @@ function Snowflake() {
 export function Badge({ variant = "outline", className, children, ...rest }: BadgeProps) {
   return (
     <span {...rest} className={cx(badgeBase, variantClass[variant], className)}>
-      {variant === "winter" ? <Snowflake /> : null}
+      {SEASON_MARK[variant] ? <SeasonMark path={SEASON_MARK[variant]} /> : null}
       {children}
     </span>
   );

@@ -101,7 +101,9 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `Filters` + `SortSelect variant="bar"` share a second row. 122px tall; the `scroll-padding-top` rule in
   `globals.css` (190 / 210px) must change with it.
 - [`components/vehicle-panel.tsx`](components/vehicle-panel.tsx) — Server. `VehicleButton({ query,
-  showChange?, className? })`: a link to `#vehicle-sheet`, 44px, `Add vehicle` outline in `--accent` or
+  size?: "bar" | "rail", className? })`: a link to `#vehicle-sheet`; `bar` 44px, `rail` 64px with the label
+  in the `Filters` title's type (28px condensed, owner 2026-10-07) and `shrink-0` (the scrolling rail
+  squeezed it to 28px); `Add vehicle` outline in `--accent` or
   the D72 chip naming the car (mobile bar; top of the rail with a `Change` cue). `VehiclePanel({ query })`:
   the sheet with `VehicleFinder variant="sheet"` (submits to this category, carries the page's filters,
   WDG-17) and `Remove vehicle`; rendered once in `results-page.tsx` so the finder's ids stay unique (D88).

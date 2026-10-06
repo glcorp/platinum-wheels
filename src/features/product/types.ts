@@ -87,7 +87,7 @@ export function vehicleLabel(view: Pick<ProductView, "vehicle">): string {
  */
 export interface PdpBadge {
   label: string;
-  variant: "winter" | "accent" | "outline" | "unavailable";
+  variant: "winter" | "all-season" | "all-weather" | "summer" | "accent" | "outline" | "unavailable";
   /** `3PMSF` only: the snowflake mark, desktop only. */
   mark?: "three-peak";
 }

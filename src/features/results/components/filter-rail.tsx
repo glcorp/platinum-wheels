@@ -51,7 +51,7 @@ export function FilterRail({ view }: FilterRailProps) {
       {/* D159 (owner, 2026-10-07, "Top of the filter column"): the vehicle
           button sits above `Filters`, so it stays on screen with the rail. */}
       {CATEGORY_CONFIG[view.query.category].finder === null ? null : (
-        <VehicleButton query={view.query} showChange className="mb-8 w-full" />
+        <VehicleButton query={view.query} size="rail" className="mb-8 w-full" />
       )}
       <FilterPanel
         view={{ query: view.query, facets: view.facets }}
