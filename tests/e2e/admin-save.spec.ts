@@ -18,6 +18,13 @@ import { SLUG, settle } from "../helpers";
 
 const PORT = process.env.PW_PORT ?? "3100";
 const ADMIN = `http://admin.localhost:${PORT}`;
+// Node's resolver (macOS getaddrinfo) cannot look up `*.localhost`, so the two
+// `request` tests below go to 127.0.0.1 and name the admin host in `Host`, the
+// one header the proxy reads. Browser pages still use `ADMIN` directly.
+const ADMIN_REQUEST = {
+  base: `http://127.0.0.1:${PORT}`,
+  headers: { host: `admin.localhost:${PORT}` },
+};
 const USER = process.env.FIXTURE_ADMIN_USERNAME;
 const PASSWORD = process.env.FIXTURE_ADMIN_PASSWORD;
 
@@ -46,20 +53,31 @@ async function signIn(page: Page) {
 
 test("every gated page sends a visitor without a session to the sign-in", async ({ request }) => {
   for (const path of ["/", "/products", "/products/new", "/payment-links"]) {
-    const res = await request.get(`${ADMIN}${path}`, { maxRedirects: 0 });
+    const res = await request.get(`${ADMIN_REQUEST.base}${path}`, {
+      maxRedirects: 0,
+      headers: ADMIN_REQUEST.headers,
+    });
     expect(res.status(), path).toBe(307);
     expect(new URL(res.headers()["location"] ?? "", ADMIN).pathname, path).toBe("/login");
   }
   // The sign-in itself is public, noindex and never framed.
-  const login = await request.get(`${ADMIN}/login`, { maxRedirects: 0 });
+  const login = await request.get(`${ADMIN_REQUEST.base}/login`, {
+    maxRedirects: 0,
+    headers: ADMIN_REQUEST.headers,
+  });
   expect(login.status()).toBe(200);
   expect(login.headers()["x-robots-tag"]).toContain("noindex");
   expect(login.headers()["x-frame-options"]).toBe("DENY");
 });
 
 test("`/admin` is a 404 on the admin host and on the storefront (D115)", async ({ request }) => {
-  expect((await request.get(`${ADMIN}/admin`, { maxRedirects: 0 })).status()).toBe(404);
-  expect((await request.get(`${ADMIN}/admin/login`, { maxRedirects: 0 })).status()).toBe(404);
+  for (const path of ["/admin", "/admin/login"]) {
+    const res = await request.get(`${ADMIN_REQUEST.base}${path}`, {
+      maxRedirects: 0,
+      headers: ADMIN_REQUEST.headers,
+    });
+    expect(res.status(), path).toBe(404);
+  }
   expect((await request.get("/admin", { maxRedirects: 0 })).status()).toBe(404);
   expect((await request.get("/admin/login", { maxRedirects: 0 })).status()).toBe(404);
   // And the admin's pages are not served on the storefront host at all.
