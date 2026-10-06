@@ -44,15 +44,24 @@
   --accent-subtle: rgba(201, 242, 58, 0.12);
   --on-accent: #0b0b0d; /* ink on accent fill */
 
-  /* Seasonal ink — DESIGN.md §2 "spec tables, legends — never large areas".
-     Since 2026-10-07 `--winter` fills the WINTER badge (owner: "make winter
-     tag aqua and frosty element"), moved from DESIGN.md's ice blue #8fc9f2 to
-     an icy aqua; `--on-winter` is its ink (about 13:1). The badge is small,
-     so §2's "never large areas" holds. DEVIATIONS #126. `--all-season` is
-     still unused (the All-Season badge is an --accent fill, #125). */
+  /* Season badge fills (owner, 2026-10-07: "Give each season tag its own
+     colour … Winter: keep the current style, but make it look more premium.
+     All-Season: an earthy brown fill … Summer: a yellowish fill …
+     All-Weather: lime green"). Each is a fill plus a darker 1px edge with
+     `--on-season` ink (12:1 to 6:1); the badge is small, so DESIGN.md §2's
+     "never large areas" holds. `--winter` moved from §2's ice blue #8fc9f2
+     to aqua and `--all-season` from §2's sand #d9c29a to brown.
+     All-Weather is the lime `--accent` with its own edge. DEVIATIONS #125,
+     #126. */
   --winter: #7fe3f0;
+  --winter-edge: #3fb8ca;
   --on-winter: #0b0b0d;
-  --all-season: #d9c29a;
+  --all-season: #c4925f;
+  --all-season-edge: #93663c;
+  --summer: #f2cf4a;
+  --summer-edge: #c9a52b;
+  --all-weather-edge: #9cc21d;
+  --on-season: #0b0b0d;
 
   /* Display scale ramp — DESIGN.md §3. All three are 1 in Track Night; they
      exist so a theme can retune the display ramp without touching markup.
@@ -132,6 +141,12 @@
 
   --color-winter: var(--winter);
   --color-on-winter: var(--on-winter);
+  --color-winter-edge: var(--winter-edge);
+  --color-all-season-edge: var(--all-season-edge);
+  --color-summer: var(--summer);
+  --color-summer-edge: var(--summer-edge);
+  --color-all-weather-edge: var(--all-weather-edge);
+  --color-on-season: var(--on-season);
   --color-all-season: var(--all-season);
 
   --color-scrim-strong: var(--scrim-strong);

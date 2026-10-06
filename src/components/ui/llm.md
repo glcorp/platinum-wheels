@@ -11,8 +11,10 @@ per page. Delete it and `ProductCard`, `/styleguide` and every unbuilt page stop
 One line each; measurements and per-variant tables live in each file's header comment, not here.
 
 - [`badge.tsx`](badge.tsx) — `Badge`, a non-interactive season/status pill. `BadgeProps` = `<span>` props
-  + `variant?: "winter" | "accent" | "outline" | "unavailable"`. Since D159 (2026-10-07) `winter` is the
-  aqua `--winter` fill with a snowflake and `accent` the drawn lime fill (All-Season), DEVIATIONS #125, #126.
+  + `variant?: "winter" | "all-season" | "all-weather" | "summer" | "accent" | "outline" | "unavailable"`.
+  Since 2026-10-07 (D159, D160) each season is its own fill + darker 1px edge + 12px mark (`SEASON_MARK`),
+  `--on-season` ink, 24px box kept by the outline leading; `accent` is the drawn lime with no mark,
+  unused by any season. DEVIATIONS #125, #126.
 - [`button.tsx`](button.tsx) — `Button`; renders `next/link` when `href` is set, otherwise `<button>`.
   `ButtonProps` adds `variant?: "primary" | "secondary" | "tertiary" | "accent"` (`accent` = the header
   phone CTA, D40), `size?: "panel" | "card" | "compact" | "promo" | "load"` (`:36`; named by role, because
