@@ -37,9 +37,12 @@ import { builtIn } from "@/features/finder/years";
  * Aston Martin models under a chosen Alfa Romeo). The Model `<optgroup>`s are
  * not React's: they are appended by this island from the `<noscript>` text, or
  * come from `dangerouslySetInnerHTML`, whose children React never reconciles.
- * So the island keeps the full list in memory and puts back into the select
- * only the groups and options that fit. React's own placeholder option is
- * never touched.
+ * So the island keeps the full list in memory and, on every Year or Make
+ * change, refills the select with fresh copies of what fits: a chosen make's
+ * models as plain options, or every make's group when none is chosen. Fresh
+ * copies, because moving the same group nodes out and back in left a real
+ * iPhone's picker showing an empty list (2026-10-07). React's own
+ * placeholder option is never touched.
  *
  * The Make select keeps the attribute rule below: its options are React's.
  * On iOS a make not built in the chosen year shows greyed and unselectable.
@@ -165,14 +168,34 @@ export function FinderModelSync({
 
       const make = makeSelect.value;
       const chosen = modelSelect.value;
+      /* Rebuilt from fresh copies every time, never by moving the same nodes
+         in and out: on a real iPhone the picker kept showing the old list (an
+         empty one, owner's screenshot 2026-10-07, 2020 Buick) when the groups
+         were detached and re-attached, although the DOM was right and desktop
+         WebKit showed it. Everything after React's own placeholder option is
+         removed; that option is never touched. With a make chosen its models
+         are plain options (one make needs no group heading); with none, every
+         make's group, as served. */
+      for (const node of Array.from(modelSelect.children)) {
+        if (node instanceof HTMLOptionElement && node.value === "") continue;
+        node.remove();
+      }
       const list = document.createDocumentFragment();
       for (const { group, options } of models) {
-        group.remove();
         // `group.label` is the make, spelled by `FINDER_MAKES` in both selects.
         if (make !== "" && group.label !== make) continue;
-        const keep = options.filter((option) => fits(option, year));
-        group.replaceChildren(...keep);
-        if (keep.length > 0) list.appendChild(group);
+        const keep = options
+          .filter((option) => fits(option, year))
+          .map((option) => option.cloneNode(true) as HTMLOptionElement);
+        if (keep.length === 0) continue;
+        if (make !== "") {
+          list.append(...keep);
+        } else {
+          const copy = document.createElement("optgroup");
+          copy.label = group.label;
+          copy.append(...keep);
+          list.appendChild(copy);
+        }
       }
       modelSelect.appendChild(list);
       // The chosen model survives only if it is still listed.

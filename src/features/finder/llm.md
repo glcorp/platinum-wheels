@@ -110,7 +110,9 @@ Built at `page home`, 2026-09-20.
   WebKit ignores `hidden` on options, so on an iPhone a chosen make still listed every make's models,
   greyed (owner's screenshot, 2026-10-07). The Model `<optgroup>`s are not React's (appended from the
   `<noscript>` text, or `dangerouslySetInnerHTML`, which React never reconciles), so `FinderModelSync`
-  keeps them in memory and puts back only what fits; React's placeholder option is never touched. The
+  keeps them in memory and refills the select with **fresh copies** of what fits (a chosen make's
+  models as plain options, every group when none is chosen); re-attaching the same nodes left a real
+  iPhone's picker empty (2026-10-07, 2020 Buick); React's placeholder option is never touched. The
   Make options are React's and keep the rule below, so on iOS a make not built in the chosen year shows
   greyed. The older rule, now for Make only: **narrow by attribute, never by removing options.** Non-matching `<optgroup>`s **and their child
   `<option>`s** get `hidden` (gone in current Chrome/Firefox/Safari) *and* `disabled` (unselectable
