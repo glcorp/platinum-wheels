@@ -46,7 +46,11 @@ export function FilterRail({ view }: FilterRailProps) {
       data-probe="rail"
       className="hidden md:sticky md:top-24 md:flex md:flex-col md:filter-rail"
     >
-      <FilterPanel view={view} variant="rail" idPrefix="rail" />
+      <FilterPanel
+        view={{ query: view.query, facets: view.facets }}
+        variant="rail"
+        idPrefix="rail"
+      />
     </aside>
   );
 }

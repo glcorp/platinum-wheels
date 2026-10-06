@@ -1,5 +1,22 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-06 (the three final-check fixes, D157, PR branch `final-check-fixes-pr`).** From
+`design/reports/final-check-2026-10-06.md`: (1) an unknown or hidden product URL now gets the full branded 404
+with JavaScript off, answered by `src/proxy.ts` after one database read; (2) results pages read the catalogue in
+2 rounds of 5 to 8 queries (was 3 to 5 rounds of 9 to 14), with the whole-category lists cached under
+`CATALOGUE_TAG`; (3) `/` and `/tires` do less at load on a phone (Model list built on first touch, filter sheet
+panel on first open, featured cards server-rendered): `/tires` TBT 441 to 262 ms, `/` 452 to 388 ms (target 300
+not met on `/`). Numbers and reasons: root `llm.md` D157.
+- **Checked:** `npm run check`; `next build` (no warnings); `npm run test:e2e:fixture` 131 passed, 0 failed,
+  2 skipped, then 32 with indexing on; on a local production build against a throwaway Postgres holding the full
+  catalogue (39,950 products): the 404 by curl, the finder submit with JS on, off and by keyboard, a box and style
+  dump at 390 and 1440 (no rest-state change), the parity probe.
+- **Not checked:** anything on Vercel or Neon. **After the merge deploys, do the two timings in
+  `design/reports/final-check-fixes-parked.md`** (product page TTFB with the proxy read; filtered results TTFB).
+- **Concurrent work:** another session left uncommitted D158 work (category tabs that keep the vehicle) in the
+  main checkout on the local `final-check-fixes` branch. This PR does not contain it.
+- **Owed:** `glcorp` merges with **Create a merge commit**.
+
 **Last updated 2026-10-06 (the vehicle finder's fit data from Auto Country, D155, branch `fitment-auto-country`).**
 The finder now knows bolt pattern, bore, thread, nut or bolt, factory tire and wheel sizes and the stock range for
 about 99% of 8,882 model-years, from Auto Country's public lookup first, then vendor lookups, makers and the web.

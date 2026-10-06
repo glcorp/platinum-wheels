@@ -27,9 +27,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { CLEAR_ALL_CLASS, FilterPanel } from "@/features/results/components/filter-panel";
+import {
+  CLEAR_ALL_CLASS,
+  FilterPanel,
+  type FilterView,
+} from "@/features/results/components/filter-panel";
 import { clearFilters, resultsHref } from "@/features/results/query";
-import type { ResultsView } from "@/features/results/types";
 
 const SHEET_FORM_ID = "results-filter-sheet";
 const SHEET_ID = "results-filter-sheet-dialog";
@@ -41,12 +44,19 @@ const SHEET_ID = "results-filter-sheet-dialog";
 const RAIL_FROM = "(min-width: 1100px)";
 
 export interface FilterSheetProps {
-  view: ResultsView;
+  view: FilterView;
 }
 
 export function FilterSheet({ view }: FilterSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
+  /* The panel is mounted by the first press of the trigger and kept after. The
+     sheet cannot open without JavaScript, so a visitor without it never needed
+     the panel's markup, and one with it pays for the panel (about 800 nodes,
+     the brand list and every size select) when they ask for it rather than on
+     every load of every results page, where it sat inside a closed dialog and
+     was still serialised, parsed, styled and hydrated. */
+  const [panelMounted, setPanelMounted] = useState(false);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -91,6 +101,7 @@ export function FilterSheet({ view }: FilterSheetProps) {
         aria-expanded={open}
         aria-controls={SHEET_ID}
         onClick={() => {
+          setPanelMounted(true);
           setOpen(true);
         }}
         data-probe="filters-trigger"
@@ -205,13 +216,15 @@ export function FilterSheet({ view }: FilterSheetProps) {
               declares `overflow:hidden` because it is a static 844px snapshot
               and the groups happen to fit; a real sheet scrolls. */}
           <div className="flex flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-2">
-            <FilterPanel
-              view={view}
-              variant="sheet"
-              idPrefix="sheet"
-              formId={SHEET_FORM_ID}
-              onNavigate={close}
-            />
+            {panelMounted ? (
+              <FilterPanel
+                view={view}
+                variant="sheet"
+                idPrefix="sheet"
+                formId={SHEET_FORM_ID}
+                onNavigate={close}
+              />
+            ) : null}
           </div>
 
           {/* Footer `padding:12px 16px 20px; border-top; background:--surface`

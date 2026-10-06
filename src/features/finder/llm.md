@@ -10,6 +10,8 @@ because `/tires` reuses it as "Change vehicle" (`design/manifest.md` §2 row 2) 
 
 ## Owns
 Built at `page home`, 2026-09-20.
+- [`options-html.ts`](options-html.ts) — server only (D157): the Model select's inside as one HTML string
+  (placeholder plus every make's `<optgroup>`, a preselected model `selected`), built once per process.
 - [`components/vehicle-finder.tsx`](components/vehicle-finder.tsx) — `VehicleFinder`, a Server
   Component. A `<form method="get" action={ROUTES.tires}>` with three native `Select`s
   (`year` / `make` / `model`, none `required` — D79, root `llm.md` §5b — each with a disabled
@@ -95,7 +97,15 @@ Built at `page home`, 2026-09-20.
 - No JavaScript required to submit: plain GET form to `ROUTES.tires` with `year`, `make`, `model`
   query params. **Enhancement never gates a field.** `FinderModelSync` (D70) is the one script here and
   it may only narrow what is already rendered; the server must keep rendering every make's models, so
-  a scripting-off visitor can still reach every one of them.
+  a scripting-off visitor can still reach every one of them. **Since D157 that list is the markup of a
+  second Model select inside `<noscript id="finder-model-options">`** (`options-html.ts` builds the
+  string), with an inline `.finder-js-only` rule hiding the placeholder-only select when scripting is off.
+  With scripting on the visible select ships only its placeholder and `FinderModelSync` builds the
+  `<optgroup>`s from that text on the first touch of the finder (appended after the placeholder, nothing
+  React owns removed). A part-filled vehicle that kept a model gets the whole list in the visible select,
+  that model `selected`. Why: 1,100 options were about a fifth of `/` and `/tires` main-thread work on a
+  phone. Measured 2026-10-06: JS off submits one `model` (the hidden select's only option is disabled);
+  keyboard focus on Model builds all 1,059 options.
 - **Narrow by attribute, never by removing options.** Non-matching `<optgroup>`s **and their child
   `<option>`s** get `hidden` (gone in current Chrome/Firefox/Safari) *and* `disabled` (unselectable
   everywhere, including older WebKit that ignores `hidden` on an option). The attributes must be set on

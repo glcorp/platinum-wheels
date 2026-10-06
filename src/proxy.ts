@@ -47,6 +47,12 @@ import { productPageExists } from "@/features/catalog/queries";
    reach proxy. If a platform ever decodes the path before testing the
    matcher, that second entry simply matches nothing; the first still holds.
 
+   **Product 404 (D157).** On `/products/<slug>` document requests proxy also
+   reads the catalogue once (`productPageExists`) and answers an unknown or
+   hidden slug with the branded 404, because a `notFound()` thrown from the
+   page gives a 404 whose body only JavaScript paints. That is the one
+   database read proxy makes; see the `pass` case below.
+
    Server Actions are POSTs to the page's own URL, so an admin form posted to
    `/products` is rewritten to `/admin/products` like the page itself was
    (Next's proxy docs: "Server Functions … are handled as POST requests to the

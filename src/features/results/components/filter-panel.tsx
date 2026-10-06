@@ -474,8 +474,13 @@ function RangeGroup({
 
 /* --- Panel ---------------------------------------------------------------- */
 
+/** What the panels read of a results view. Never the whole `ResultsView`: its
+ *  `best` / `similar` lists are the cards, which the server already rendered,
+ *  and a client prop is serialised into the RSC payload in full. */
+export type FilterView = Pick<ResultsView, "query" | "facets">;
+
 export interface FilterPanelProps {
-  view: ResultsView;
+  view: FilterView;
   /** `rail` = the 280px desktop aside; `sheet` = the mobile dialog body. */
   variant: "rail" | "sheet";
   /** Namespaces every control id — the panel is rendered twice per page. */

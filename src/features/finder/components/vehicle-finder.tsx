@@ -8,6 +8,7 @@ import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { FINDER_MAKES, finderYears, type PartialVehicle } from "@/features/finder/data";
 import { FinderModelSync } from "@/features/finder/components/finder-model-sync";
 import { FinderSwitchSubmit } from "@/features/finder/components/finder-switch-submit";
+import { modelOptionsHtml } from "@/features/finder/options-html";
 
 /**
  * The vehicle finder — Year / Make / Model native selects plus the primary
@@ -99,6 +100,8 @@ export interface VehicleFinderProps {
 
 const FIELD_ID = { year: "finder-year", make: "finder-make", model: "finder-model" } as const;
 const PROMPT_ID = "finder-prompt";
+/** The `<noscript>` holding the full model list, read by `FinderModelSync`. */
+const MODEL_NOSCRIPT_ID = "finder-model-options";
 
 /** "Choose your model to see what fits." / "Choose your make and model to see
  *  what fits." New copy under `.claude/rules/ui.md` "Copy": plain, no dash. */
@@ -141,6 +144,10 @@ export function VehicleFinder({
 }: VehicleFinderProps) {
   const hero = variant === "hero";
   const firstMissing = partial?.missing[0];
+  /* The vehicle a part-filled submit kept a model for, or `null`. */
+  const preselected = partial?.model
+    ? { make: partial.make, model: partial.model }
+    : null;
   const promptFor = (field: keyof typeof FIELD_ID) =>
     partial !== null && partial.missing.includes(field) ? PROMPT_ID : undefined;
   return (
@@ -272,33 +279,61 @@ export function VehicleFinder({
           <FieldLabel htmlFor="finder-model">Model</FieldLabel>
           {/* Every model of every make ships, grouped with <optgroup> per
               make, because the submit is a plain GET and must work with
-              scripting off (D44, D45). `FinderModelSync` below narrows the
-              list to the chosen make when JS is available (D70); without it
-              this is the whole list, exactly as it was before D70. */}
-          <Select
-            id={FIELD_ID.model}
-            name="model"
-            autoComplete="off"
-            defaultValue={partial?.model ?? ""}
-            aria-describedby={promptFor("model")}
-          >
-            <option value="" disabled>
-              Model
-            </option>
-            {/* 843 models. No `value` attribute: an option without one submits
-                its text, which is the same string, and leaving it off keeps
-                the page about 15 KB lighter (LA-05). `data-years` is when the
-                model was built. */}
-            {FINDER_MAKES.map(({ make, models }) => (
-              <optgroup key={make} label={make}>
-                {models.map(({ model, years }) => (
-                  <option key={model} data-years={years}>
-                    {model}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </Select>
+              scripting off (D44, D45). `FinderModelSync` narrows the list to
+              the chosen make when JS is available (D70).
+
+              Where the 1,058 options live depends on who is reading.
+              - A part-filled vehicle that kept a model (`preselected`): the
+                visible select carries the whole list, with that model
+                `selected`. Rare, and the closed select must already read it.
+              - Otherwise: the visible select carries only the `Model`
+                placeholder, and the whole list is the markup of a second
+                select inside a `<noscript>`. With scripting off the browser
+                parses it, the `finder-js-only` rule beside it hides the
+                placeholder-only select, and the visitor has exactly the list
+                they had before. With scripting on the browser keeps the
+                `<noscript>` content as text, so 1,100 options are never
+                parsed, styled or laid out on load (measured: about a fifth of
+                the main-thread work of `/` and `/tires` on a phone-class
+                CPU); `FinderModelSync` builds them from that text on the
+                first touch of the finder. React never renders a `<noscript>`
+                on the client, so nothing here can mismatch on hydration.
+              The string comes from `options-html.ts`. */}
+          {preselected ? (
+            <Select
+              id={FIELD_ID.model}
+              name="model"
+              autoComplete="off"
+              aria-describedby={promptFor("model")}
+              dangerouslySetInnerHTML={{ __html: modelOptionsHtml(preselected) }}
+            />
+          ) : (
+            <>
+              <noscript id={MODEL_NOSCRIPT_ID}>
+                <style>{".finder-js-only{display:none!important}"}</style>
+                <Select
+                  id={`${FIELD_ID.model}-all`}
+                  name="model"
+                  autoComplete="off"
+                  aria-label="Model"
+                  aria-describedby={promptFor("model")}
+                  dangerouslySetInnerHTML={{ __html: modelOptionsHtml(null) }}
+                />
+              </noscript>
+              <Select
+                id={FIELD_ID.model}
+                name="model"
+                autoComplete="off"
+                defaultValue=""
+                aria-describedby={promptFor("model")}
+                wrapperClassName="finder-js-only"
+              >
+                <option value="" disabled>
+                  Model
+                </option>
+              </Select>
+            </>
+          )}
         </div>
 
         {/* Renders nothing. Leaf island (D70, LA-05): narrows `Make` to the
@@ -310,6 +345,7 @@ export function VehicleFinder({
           yearId={FIELD_ID.year}
           makeId={FIELD_ID.make}
           modelId={FIELD_ID.model}
+          modelOptionsId={preselected ? undefined : MODEL_NOSCRIPT_ID}
           focusId={firstMissing === undefined ? undefined : FIELD_ID[firstMissing]}
         />
 
