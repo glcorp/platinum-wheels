@@ -710,23 +710,42 @@ async function readCatalogue(
         fit?.tpms === false));
   const expanded = query.show > RESULTS_WINDOW.best;
 
-  const [best, similar, catalog] = await Promise.all([
+  const [best, catalog] = await Promise.all([
     listProducts({ ...filters, sort: query.sort, limit: query.show }),
-    narrows
-      ? listProducts({
-          ...filters,
-          sizeMatch: "near",
-          sort: query.sort,
-          limit: expanded
-            ? RESULTS_WINDOW.similarExpanded
-            : RESULTS_WINDOW.similar,
-        })
-      : { items: [], total: 0 },
     /* The size options narrow on the buyer's own choice, `query.size`, not
        on `size`: a size lent by the vehicle is not shown in the selects, so
        it does not narrow them either (D132). */
     getFacets(filters, sizeFilters(query.size)),
   ]);
+
+  /* The similar row's window depends on how many best matches there are, so
+     it is read after them, and only when something narrows. Collapsed it
+     shows 3; the first `Load more` opens it to 12; once the best list is
+     fully shown each further press adds a step to it, the way best grew
+     (owner, 2026-10-06: the button vanished after one press with 136
+     similar left). `bestEnd` is the `show` value at which best became
+     complete, the first of 6, 30, 54 ... at or past the total. */
+  let similarLimit: number = RESULTS_WINDOW.similar;
+  if (expanded) {
+    const bestEnd =
+      RESULTS_WINDOW.best +
+      RESULTS_WINDOW.step *
+        Math.ceil(
+          Math.max(0, best.total - RESULTS_WINDOW.best) / RESULTS_WINDOW.step,
+        );
+    const opened = RESULTS_WINDOW.best + RESULTS_WINDOW.step;
+    similarLimit =
+      RESULTS_WINDOW.similarExpanded +
+      Math.max(0, query.show - Math.max(opened, bestEnd));
+  }
+  const similar = narrows
+    ? await listProducts({
+        ...filters,
+        sizeMatch: "near",
+        sort: query.sort,
+        limit: similarLimit,
+      })
+    : { items: [], total: 0 };
 
   return {
     catalog,

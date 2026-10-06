@@ -285,9 +285,10 @@ export function ResultsGrid({ view }: ResultsGridProps) {
   const similarHidden = view.similarTotal - similar.length;
   const atCeiling = view.query.show >= RESULTS_WINDOW.max;
   const growsBest = bestHidden > 0 && !atCeiling;
-  const canLoadMore =
-    growsBest ||
-    (similarHidden > 0 && view.query.show === RESULTS_WINDOW.best);
+  /* Once best is fully shown, `Load more` keeps growing the similar row
+     (`search.ts` sizes it) until the window's ceiling. */
+  const growsSimilar = bestHidden === 0 && similarHidden > 0 && !atCeiling;
+  const canLoadMore = growsBest || growsSimilar;
   /* D133 — where `Load more` lands: the first card the press adds. That is
      the next best match whenever best grows (with a size set it grows ABOVE
      the similar row and the button, which is why holding the scroll showed
@@ -306,8 +307,9 @@ export function ResultsGrid({ view }: ResultsGridProps) {
      (owner, 2026-10-06). `underBest` drops the page-foot padding, which
      exists to space the button from the footer, not from another section. */
   const ceilingHit = atCeiling && bestHidden > 0;
+  const ceilingSimilar = atCeiling && bestHidden === 0 && similarHidden > 0;
   const underBest = growsBest || ceilingHit;
-  const ceiling = ceilingHit ? (
+  const ceiling = ceilingHit || ceilingSimilar ? (
     <p
       data-probe="load-ceiling"
       className={
@@ -316,7 +318,9 @@ export function ResultsGrid({ view }: ResultsGridProps) {
           : `${SUPPORT} px-4 pt-5 sm:px-8 md:px-0 md:pt-0 md:pb-30`
       }
     >
-      {`Showing ${COUNT_FORMAT.format(best.length)} of ${COUNT_FORMAT.format(view.bestTotal)}. Filter by size or brand to narrow it down.`}
+      {ceilingHit
+        ? `Showing ${COUNT_FORMAT.format(best.length)} of ${COUNT_FORMAT.format(view.bestTotal)}. Filter by size or brand to narrow it down.`
+        : `Showing ${COUNT_FORMAT.format(similar.length)} of ${COUNT_FORMAT.format(view.similarTotal)} similar. Filter by size or brand to narrow it down.`}
     </p>
   ) : null;
   const loadMore = !canLoadMore ? null : (

@@ -133,7 +133,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `/styleguide` call site stays untouched (one sentence for all three today, D73). `Best matches` is the
   `<h1>` (D47(6)), `Similar matches` an `<h2>` (omitted when empty); `RESULTS_WINDOW` 6 + 3 by
   default; `Load more` = `Button size="load"` link that raises `?show=` by 24 up to 150 and opens the
-  similar row to 12 (D108b; it used to be `?show=all`, which is thousands of cards now), rendered only
+  similar row to 12, then, once best is fully shown, grows similar by the same step to the ceiling (`search.ts`
+  reads similar after best for that; owner, 2026-10-06: the button vanished after one press with 136 similar left) (D108b; it used to be `?show=all`, which is thousands of cards now), rendered only
   while it has something to reveal (D47(7)); **it sits under the list it grows**: inside the `Best matches`
   section (with the ceiling note) while best grows or is capped, at the page foot only for the press that
   just opens the similar row (owner, 2026-10-06: it read as belonging to similar); at the ceiling a line says how many are shown and to narrow
