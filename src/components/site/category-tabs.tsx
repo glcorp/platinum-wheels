@@ -22,7 +22,9 @@
 
    The look is the quote form's Preferred contact segmented control
    (`quote-form.tsx`): one `--border-strong` box, separators between segments
-   only, the selected one filled `--text`. 44px tall, the touch minimum.
+   only. The selected one is filled `--accent` (owner, 2026-10-07: "selected
+   category colour should be green and not white"; it was `--text`). 44px
+   tall, the touch minimum.
    `data-segment` + `aria-current` is the forced-colours hook (globals.css).
    --------------------------------------------------------------------------- */
 
@@ -84,11 +86,14 @@ export function CategoryTabs({
                 data-segment=""
                 className={cx(
                   "font-sans flex flex-1 items-center justify-center text-14 leading-flat font-medium",
-                  "focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-0",
+                  "focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-0",
+                  /* A lime ring on the lime segment would vanish; the
+                     selected one takes the ink ring instead. */
+                  selected ? "focus-visible:outline-ink" : "focus-visible:outline-accent",
                   index === 0 && "rounded-l-ctl",
                   index === items.length - 1 && "rounded-r-ctl",
                   selected
-                    ? "bg-ink text-on-accent"
+                    ? "bg-accent text-on-accent"
                     : "text-ink-muted hover:text-ink active:opacity-70",
                 )}
               >

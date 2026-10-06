@@ -312,3 +312,7 @@ export interface ResultsView {
   /** `bestTotal + similarTotal`. Zero = the empty state. */
   total: number;
 }
+
+/** The vehicle sheet's `id` (D159). Every `#vehicle-sheet` link opens it. Here,
+ *  not in the client island, so the server-rendered buttons can read it. */
+export const VEHICLE_SHEET_ID = "vehicle-sheet";

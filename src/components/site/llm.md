@@ -90,6 +90,9 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   that the result *"looks too much now, dont add On this page etc — just simple plain"*. Exports
   `ProsePage` (`{ eyebrow; title; lede; active?; meta?; children }`), `ProseSection`
   (`{ title; children; wide? }`), and two shared class constants, `PROSE_LINK` and `CAPTION`.
+  Since D159 (2026-10-07, owner: "the right side text from about is looking a bit off") the header's
+  lede spans columns 5-12, capped at 560px, the same left edge as every section's prose and the fact
+  band's middle column; the `<h1>` takes columns 1-4 (fits `PRIVACY` at 1100, measured).
   **`SectionIndex` ("On this page") and the per-section `01`/`02` numeral are gone** — the owner named
   the index explicitly, and the numbering was scaffolding for it. Since nothing links to a section
   anymore, `ProseSection` also dropped its `id` prop and `scroll-mt-*` offset; only `/about`'s fact band
@@ -154,6 +157,8 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   and the home finder (`finderSwitch`: a plain tap switches the finder through `finderSwitchRef`, exported
   from `site-nav-links.tsx`, `aria-current="true"`). `data-segment` + `aria-current` is its forced-colours
   hook in `globals.css`. No `overflow-hidden` on the box: it would clip the offset-0 focus ring (D16).
+  Since D159 the current segment is filled `--accent` with an ink focus ring (owner: "selected category
+  colour should be green"), and on results pages the row sits inside the pinned `FilterSortBar`.
 - **D158:** `SiteHeader` takes `vehicle?: VehicleParams | null`. Results pages and the PDP pass the
   vehicle they already checked; the three category links (row and drawer) then carry it
   (`categoryHref`). Contact and the logo never do.
@@ -245,8 +250,9 @@ all widths, hide rather than remove).
   already centred (`lg:mx-auto lg:max-w-content`, the idiom `hero`/`contact`/`how-it-works` use); what
   fills the frame is the side-head grid and the full-width hairlines. Centre-aligned type would break
   `.claude/rules/ui.md` "Flush-left" and `DESIGN.md` §5 outright.
-- **Don't make the home header sticky.** It is absolutely positioned inside the hero
-  (`design/manifest.md:44`, `HANDOFF.md` §6).
+- **Don't unpin the header.** Since D159 (owner, 2026-10-07) it is `fixed` on `/` and `sticky` elsewhere,
+  filled `--bg` (the drawn `--scrim-strong` let pinned content show through), `z-30`; `html`
+  `scroll-padding-top` (68 / 88px) keeps anchors and focus out from under it. `DEVIATIONS.md` #121.
 - **Don't add the social row back** because the artboard draws it (D34).
 - **Don't put the home hero, finder or any home section here.** Those are `src/features/home/` (D33) and
   `src/features/finder/`.

@@ -26,8 +26,8 @@ import { SiteHeader } from "@/components/site/site-header";
    default … never centred stacks" and "Left-edge alignment. Headline, body,
    CTA, price and image share one left edge within their column." So:
 
-     - the page header is a 12-column row, eyebrow + `<h1>` on the left six,
-       the lede on the right five, bottom-aligned the way `SectionHeading`
+     - the page header is a 12-column row, eyebrow + `<h1>` on the left four,
+       the lede on the right eight (2026-10-07; it was six and five), bottom-aligned the way `SectionHeading`
        aligns its own header row (`align-items:flex-end`, home-desktop.html:187);
      - every section is a side-head: its `<h2>` in the left four
        columns, its prose in the right eight, capped at 560px because
@@ -119,7 +119,7 @@ export function ProsePage({
                 headline the way home-desktop.html:187 aligns its header row;
                 below `md:` the two simply stack, headline first. */}
             <div className="flex flex-col gap-6 md:grid md:grid-cols-12 md:items-end md:gap-x-8">
-              <div className="flex flex-col gap-4 md:col-span-6">
+              <div className="flex flex-col gap-4 md:col-span-4">
                 <span className="label text-ink-dim text-11 tracking-14 sm:text-12">
                   {eyebrow}
                 </span>
@@ -129,7 +129,13 @@ export function ProsePage({
                   {title}
                 </h1>
               </div>
-              <p className="text-16 leading-body text-ink-muted max-w-measure sm:text-17 md:col-span-5 md:col-start-8">
+              {/* Columns 5-12, capped at 560px: the same left edge as every
+                  section's prose below it and the fact band's middle column
+                  (a 3-column grid's second column starts where a 12-column
+                  grid's fifth does). It used to start at column 8, an edge
+                  nothing else on the page shared (owner, 2026-10-07: "the
+                  right side text from about is looking a bit off"). */}
+              <p className="text-16 leading-body text-ink-muted max-w-measure sm:text-17 md:col-span-8 md:col-start-5 md:max-w-hero-lede">
                 {lede}
               </p>
             </div>

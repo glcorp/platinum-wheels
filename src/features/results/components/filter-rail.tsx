@@ -32,7 +32,9 @@
    and without it, so nothing drawn moves.
    --------------------------------------------------------------------------- */
 
+import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { FilterPanel } from "@/features/results/components/filter-panel";
+import { VehicleButton } from "@/features/results/components/vehicle-panel";
 import type { ResultsView } from "@/features/results/types";
 
 export interface FilterRailProps {
@@ -46,6 +48,11 @@ export function FilterRail({ view }: FilterRailProps) {
       data-probe="rail"
       className="hidden md:sticky md:top-24 md:flex md:flex-col md:filter-rail"
     >
+      {/* D159 (owner, 2026-10-07, "Top of the filter column"): the vehicle
+          button sits above `Filters`, so it stays on screen with the rail. */}
+      {CATEGORY_CONFIG[view.query.category].finder === null ? null : (
+        <VehicleButton query={view.query} showChange className="mb-8 w-full" />
+      )}
       <FilterPanel
         view={{ query: view.query, facets: view.facets }}
         variant="rail"

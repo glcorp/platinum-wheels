@@ -84,7 +84,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   brand / chips / price never narrow sizes, so the size group stays "what sizes exist" and D109(1)'s
   best/similar split is untouched.
 - [`components/results-toolbar.tsx`](components/results-toolbar.tsx) — `ResultsToolbar({ view })`, Server.
-  Breadcrumb, then a `<details>` whose `<summary>` is the vehicle chip plus the `Change vehicle` /
+  **Since D159 (2026-10-07) only the breadcrumb and the desktop sort**; the vehicle chip and disclosure
+  below moved to `vehicle-panel.tsx`. History: breadcrumb, then a `<details>` whose `<summary>` is the vehicle chip plus the `Change vehicle` /
   `Add vehicle` link (D45, D47(5)) opening a `<VehicleFinder variant="inline">` that submits to **this**
   category's route with its own CTA — on **all three** routes since **D67** vetoed D59(2) — and the
   desktop `Sort` label + `SortSelect`. **D72**: the chip is `--accent-subtle` on `1px --accent` with an
@@ -94,8 +95,23 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   variant: "toolbar" | "bar", id })`: native `<select name="sort">`, `router.replace` on change; the
   `bar` variant prefixes each option `Sort: ` (D47(4)). **D65** re-focuses it **by `id`** after the
   `key={query.sort}` re-mount, which otherwise dropped focus to `<body>` — so `id` is load-bearing.
-- [`components/filter-sort-bar.tsx`](components/filter-sort-bar.tsx) — `FilterSortBar({ view })`, Server.
-  The mobile sticky bar (`top:68` / `sm:top-22`, `md:hidden`): `FilterSheet` + `SortSelect variant="bar"`.
+- [`components/filter-sort-bar.tsx`](components/filter-sort-bar.tsx) — `FilterSortBar({ view, tabs, active })`,
+  Server. The mobile sticky bar (`top:68` / `sm:top-22`, `md:hidden`, `--bg` fill): since **D159** the
+  category tabs (D158) over the `VehicleButton` beside a 120px `FilterSheet` trigger; with prices on,
+  `Filters` + `SortSelect variant="bar"` share a second row. 122px tall; the `scroll-padding-top` rule in
+  `globals.css` (190 / 210px) must change with it.
+- [`components/vehicle-panel.tsx`](components/vehicle-panel.tsx) — Server. `VehicleButton({ query,
+  showChange?, className? })`: a link to `#vehicle-sheet`, 44px, `Add vehicle` outline in `--accent` or
+  the D72 chip naming the car (mobile bar; top of the rail with a `Change` cue). `VehiclePanel({ query })`:
+  the sheet with `VehicleFinder variant="sheet"` (submits to this category, carries the page's filters,
+  WDG-17) and `Remove vehicle`; rendered once in `results-page.tsx` so the finder's ids stay unique (D88).
+- [`components/vehicle-sheet.tsx`](components/vehicle-sheet.tsx) — `"use client"`. `VehicleSheet`: the
+  dialog (filter sheet's pattern, `sheet-panel` with `data-fit` = content height, centred at
+  `max-w-dialog` from `md:`). Opens on any click of an `a[href="#vehicle-sheet"]` (capture listener), so
+  the triggers stay server-rendered; without JS a `<noscript>` `:target` style shows it. A part-filled
+  submit (`partialVehicle`) opens it on load and focuses the missing field. `VEHICLE_SHEET_ID` lives in
+  `types.ts`: a server file cannot read a constant exported from a client module (measured: it rendered
+  as a function's source in the `href`).
 - [`components/filter-panel.tsx`](components/filter-panel.tsx) — `"use client"`. `FilterPanel({ view, variant:
   "rail" | "sheet", idPrefix, formId?, onNavigate? })`: the one `<form method="get">` posting to **the
   current category's route** (hidden `year/make/model/sort`); **four groups, or three on accessories**

@@ -95,10 +95,10 @@ export function HowItWorks() {
          starts below the viewport; without JS or with reduced motion it is
          never hidden. */
       data-reveal=""
-      /* `scroll-mt-*`: `ROUTES.howItWorks` points the nav at this anchor, and
-         `scroll-margin-top` was set nowhere in the build, so following the link
-         landed the section flush at y=0 with no breathing room. D66. */
-      className="scroll-mt-14 sm:scroll-mt-20 pt-14 px-4 sm:pt-20 sm:px-8 md:pt-30 md:px-12"
+      /* No `scroll-mt-*` since the header is pinned (2026-10-07): the html
+         `scroll-padding-top` lands `ROUTES.howItWorks` under the header, and
+         the section's own top padding is the breathing room D66 added. */
+      className="pt-14 px-4 sm:pt-20 sm:px-8 md:pt-30 md:px-12"
     >
       <div className="flex flex-col gap-5 md:gap-10 lg:mx-auto lg:max-w-content">
         {/* The artboard draws this as an eyebrow with no heading (home.md:215),

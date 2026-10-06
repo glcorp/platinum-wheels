@@ -44,6 +44,11 @@ Action, its emails and its two authored states moved there.
   `How many tires?` (the field that used to sit in the quote form's Optional group, `DEVIATIONS.md` #70)
   and adds what is typed, a whole number, no visible ceiling (owner: "lets not put restrictions of cart").
 - `components/specifications.tsx` · `similar-products.tsx` — `:126-131` / `:159-315`.
+- **Phone spacing (D159, 2026-10-07, `DEVIATIONS.md` #123).** Below 1100 the gallery photo's inset is 2%
+  (desktop keeps the drawn 8%); below 720 the buy panel's top padding is 16px (drawn 32), the gallery cap
+  is `100svh - 466px`, and Specifications start 48px under `Call us` (drawn 112). Owner: *"reduce the
+  border around image, below tire there is so much black space"*, *"fix the blank space between call us
+  and specs"*. Season badges (#125, #126): All-Season is the lime `accent` badge, Winter the aqua one.
 
 - **D158:** the PDP passes `view.vehicle` to `SiteHeader` (category links keep the car) and to both
   `SimilarProducts` rows (their cards' links keep it). A product opened from a results card now

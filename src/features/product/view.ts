@@ -326,7 +326,10 @@ function buildBadges(
   if (season !== null) {
     badges.push({
       label: SEASON_BADGE[season],
-      variant: season === "winter" ? "winter" : "outline",
+      /* All-season is filled lime like Winter (owner, 2026-10-07: "make all
+         season green filled like winter"; DEVIATIONS #125). `winter` is the
+         lime `accent` variant; Winter has its own aqua one (#126). */
+      variant: season === "winter" ? "winter" : season === "all-season" ? "accent" : "outline",
     });
   }
 

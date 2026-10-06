@@ -53,7 +53,9 @@ import { PRICES_VISIBLE } from "@/lib/site";
    Copy ships in the artboards' source case; `text-transform:uppercase` on the
    Badge primitive renders it uppercase, which is why DESIGN.md writes `WINTER`
    and the export writes `Winter` (`.claude/rules/ui.md:49`, artboard copy
-   verbatim). `winter` is the only filled variant; everything else takes the
+   verbatim). Since 2026-10-07 Winter wears the aqua `winter` variant with a
+   snowflake (#126) and All-Season the lime `accent` fill (#125); everything
+   else takes the
    `1px --text-muted` outline (`design/DESIGN.md:197-199`,
    `design/assets/results-desktop.html:162` and `:239`). */
 type BadgeVariant = NonNullable<BadgeProps["variant"]>;
@@ -63,7 +65,9 @@ const BADGE_PRESENTATION: Record<
   { variant: BadgeVariant; copy: string }
 > = {
   winter: { variant: "winter", copy: "Winter" },
-  "all-season": { variant: "outline", copy: "All-Season" },
+  /* Filled like Winter since 2026-10-07 (owner: "make all season green
+     filled like winter"; DEVIATIONS #125). */
+  "all-season": { variant: "accent", copy: "All-Season" },
   /* New copy (D105b), in the drawn `All-Season` badge's own capitalisation. */
   "all-weather": { variant: "outline", copy: "All-Weather" },
   summer: { variant: "outline", copy: "Summer" },

@@ -1,6 +1,5 @@
 import { PageTransition } from "@/components/site/page-transition";
 import { SiteFooter } from "@/components/site/site-footer";
-import { CategoryTabs } from "@/components/site/category-tabs";
 import { SiteHeader } from "@/components/site/site-header";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import type { ProductCategory } from "@/features/catalog/types";
@@ -9,6 +8,7 @@ import { FilterRail } from "@/features/results/components/filter-rail";
 import { FilterSortBar } from "@/features/results/components/filter-sort-bar";
 import { ResultsGrid } from "@/features/results/components/results-grid";
 import { ResultsToolbar } from "@/features/results/components/results-toolbar";
+import { VehiclePanel } from "@/features/results/components/vehicle-panel";
 import { searchResults } from "@/features/results/search";
 import type { RawSearchParams } from "@/features/results/types";
 import { FINDER_CATEGORIES } from "@/lib/finder-category";
@@ -84,15 +84,15 @@ export async function ResultsPage({
       <SiteHeader variant="solid" active={CATEGORY_CONFIG[category].nav} vehicle={vehicle} />
       <PageTransition>
         <main id="main" tabIndex={-1} className="flex-1">
-          {/* D158: below `md:` the header folds Tires / Wheels / Accessories
-              into the menu, so the three categories show here as tabs. Same
-              side padding as the toolbar; hidden from `md:`, where the header
-              row shows them. */}
-          <CategoryTabs items={tabs} active={category} className="px-4 pt-4 sm:px-8" />
           <ResultsToolbar view={view} />
-          {/* Mobile sticky filter/sort bar — owns its own `margin-top:16px` and
-              sticky offset (`results.md` §2.3). */}
-          <FilterSortBar view={view} />
+          {/* Mobile sticky bar — owns its own `margin-top:16px` and sticky
+              offset (`results.md` §2.3). Since D159 it also pins the category
+              tabs (D158: below `md:` the header folds them into the menu) and
+              the vehicle button beside `Filters`. Hidden from `md:`. */}
+          <FilterSortBar view={view} tabs={tabs} active={category} />
+          {/* The vehicle sheet (D159), once per page: the mobile bar's and the
+              desktop rail's vehicle buttons both open it. */}
+          <VehiclePanel query={view.query} />
           <div className="md:px-12 md:pt-10">
             <div className="md:results-grid lg:mx-auto lg:max-w-content">
               <FilterRail view={view} />

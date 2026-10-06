@@ -31,8 +31,21 @@ import { builtIn } from "@/features/finder/years";
  * `<optgroup>`s appended after the placeholder React rendered. Nothing React
  * owns is removed or replaced, so the D70 rule below still holds.
  *
- * Why `hidden` **and** `disabled`, and why on the `<option>`s too, rather
- * than removing or rebuilding them:
+ * **The Model list is narrowed by removing nodes, not by attributes (2026-10-07).**
+ * iOS WebKit's native picker ignores `hidden` on an `<option>` or `<optgroup>`
+ * and lists every make's models, greyed (owner's iPhone screenshot: Acura and
+ * Aston Martin models under a chosen Alfa Romeo). The Model `<optgroup>`s are
+ * not React's: they are appended by this island from the `<noscript>` text, or
+ * come from `dangerouslySetInnerHTML`, whose children React never reconciles.
+ * So the island keeps the full list in memory and puts back into the select
+ * only the groups and options that fit. React's own placeholder option is
+ * never touched.
+ *
+ * The Make select keeps the attribute rule below: its options are React's.
+ * On iOS a make not built in the chosen year shows greyed and unselectable.
+ *
+ * Why `hidden` **and** `disabled` on the Make options, rather than removing
+ * them:
  * - `<option>`/`<optgroup>` visibility is the one genuinely inconsistent
  *   corner of native selects. `hidden` is honoured by current Chrome, Firefox
  *   and Safari, but older WebKit ignores it. `disabled` has no such history.
@@ -127,7 +140,19 @@ export function FinderModelSync({
       }
       modelSelect.appendChild(list);
       groups = Array.from(modelSelect.getElementsByTagName("optgroup"));
+      captureModels();
     };
+
+    /* The whole Model list, in served order, held outside the document so the
+       select can carry only what fits (see the header: iOS ignores `hidden`). */
+    let models: Array<{ group: HTMLOptGroupElement; options: HTMLOptionElement[] }> = [];
+    const captureModels = () => {
+      models = groups.map((group) => ({
+        group,
+        options: Array.from(group.getElementsByTagName("option")),
+      }));
+    };
+    captureModels();
 
     const fits = (node: HTMLOptionElement, year: number | null) =>
       year === null || builtIn(node.dataset.years ?? "", year);
@@ -139,18 +164,20 @@ export function FinderModelSync({
       if (makeSelect.selectedOptions[0]?.hidden) makeSelect.value = "";
 
       const make = makeSelect.value;
-      for (const group of groups) {
+      const chosen = modelSelect.value;
+      const list = document.createDocumentFragment();
+      for (const { group, options } of models) {
+        group.remove();
         // `group.label` is the make, spelled by `FINDER_MAKES` in both selects.
-        const sameMake = make === "" || group.label === make;
-        let any = false;
-        for (const option of Array.from(group.getElementsByTagName("option"))) {
-          const visible = sameMake && fits(option, year);
-          show(option, visible);
-          any ||= visible;
-        }
-        show(group, any);
+        if (make !== "" && group.label !== make) continue;
+        const keep = options.filter((option) => fits(option, year));
+        group.replaceChildren(...keep);
+        if (keep.length > 0) list.appendChild(group);
       }
-      if (modelSelect.selectedOptions[0]?.hidden) modelSelect.value = "";
+      modelSelect.appendChild(list);
+      // The chosen model survives only if it is still listed.
+      modelSelect.value = chosen;
+      if (modelSelect.value !== chosen) modelSelect.value = "";
     };
 
     /* A change always needs the list: it is what gets narrowed. */

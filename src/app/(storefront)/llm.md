@@ -141,8 +141,7 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   `2021 Honda Civic`, the finder pre-fill (**D28**), or hard-coded `Winter 2026` / `© 2026` (**D32**)
   (`design/DEVIATIONS.md` "Sample data").
 - Don't add a sticky mobile buy bar to the PDP (**D6**).
-- Don't make the home nav sticky — on `/` it is absolutely positioned inside the hero; on other pages
-  it is a solid `--bg` bar (`HANDOFF.md` §6).
+- Don't unpin the header: since D159 (2026-10-07) it stays on screen on every page (`DEVIATIONS.md` #121).
 - Don't write "matches" or "looks right" in a parity report without the table
   (`design/reports/README.md:4`).
 

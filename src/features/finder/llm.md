@@ -106,7 +106,13 @@ Built at `page home`, 2026-09-20.
   that model `selected`. Why: 1,100 options were about a fifth of `/` and `/tires` main-thread work on a
   phone. Measured 2026-10-06: JS off submits one `model` (the hidden select's only option is disabled);
   keyboard focus on Model builds all 1,059 options.
-- **Narrow by attribute, never by removing options.** Non-matching `<optgroup>`s **and their child
+- **Model narrows by removing the groups the island appended; Make narrows by attribute (D159).** iOS
+  WebKit ignores `hidden` on options, so on an iPhone a chosen make still listed every make's models,
+  greyed (owner's screenshot, 2026-10-07). The Model `<optgroup>`s are not React's (appended from the
+  `<noscript>` text, or `dangerouslySetInnerHTML`, which React never reconciles), so `FinderModelSync`
+  keeps them in memory and puts back only what fits; React's placeholder option is never touched. The
+  Make options are React's and keep the rule below, so on iOS a make not built in the chosen year shows
+  greyed. The older rule, now for Make only: **narrow by attribute, never by removing options.** Non-matching `<optgroup>`s **and their child
   `<option>`s** get `hidden` (gone in current Chrome/Firefox/Safari) *and* `disabled` (unselectable
   everywhere, including older WebKit that ignores `hidden` on an option). The attributes must be set on
   the options themselves, not only the group — an optgroup's `hidden` does not hide its options, only
