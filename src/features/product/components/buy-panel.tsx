@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
 import { cartItem } from "@/features/catalog/cart-item";
 import { AddToCartPanel } from "@/features/product/components/add-to-cart-panel";
+import { QuantityProvider } from "@/features/product/components/quantity-state";
 import { QuantityControl } from "@/features/product/components/quantity-control";
 import { vehicleLabel, type ProductView } from "@/features/product/types";
 import { PRICES_VISIBLE, PRIMARY_CONTACT } from "@/lib/site";
@@ -193,7 +194,10 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
         </div>
       ) : null}
 
-      <QuantityControl quantity={view.quantity} searchParams={searchParams} />
+      {/* The cells and `Add to cart` share the selection in the browser
+          (2026-10-07, `quantity-state.tsx`): a tap no longer reloads. */}
+      <QuantityProvider initial={view.quantity}>
+        <QuantityControl quantity={view.quantity} searchParams={searchParams} />
 
       {/* CTA pair — `flex flex-col;gap:8px;padding-top:8px` mobile,
           `gap:10px` desktop (`product.md` §3.5). `panel` size (`h-14 sm:h-15`
@@ -225,6 +229,7 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
           Call us
         </Button>
       </div>
+      </QuantityProvider>
     </div>
   );
 }

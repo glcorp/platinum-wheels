@@ -117,7 +117,8 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   addendum), plus `LoaderMark`, the tyre itself, which `/styleguide` §12 renders directly. No React
   state: one effect writes `data-state` (`idle`/`loading`/`done`) on the `nav-progress` overlay — a
   `--scrim-mid` wash with the tyre in the centre, no box. Starts on an internal link click, a GET submit
-  or `aria-busy="true"`; ends when the URL has committed and nothing is busy; 15s safety. Mounted in
+  or `aria-busy="true"`; ends when the URL has committed and nothing is busy; 15s safety. A link marked
+  `data-no-progress` never starts it (the PDP quantity cells, handled in place since D160). Mounted in
   the root layout. Its listeners survive `pagehide` on purpose, so a bfcache-restored page still has a
   working loader. Centred by the owner's choice, DEVIATIONS #81.
 - [`scroll-reveal.tsx`](scroll-reveal.tsx) — `"use client"` leaf island rendering `null` (**D92b**). Arms

@@ -9,14 +9,15 @@
 
 import type { CartItem } from "@/lib/cart";
 
-export type QuoteField = "name" | "email" | "phone" | "contact" | "message" | "consent";
+/* No `contact` field: the Preferred contact control is gone (owner,
+   2026-10-07: "remove preferred contact full section in all views"). */
+export type QuoteField = "name" | "email" | "phone" | "message" | "consent";
 
 /** Field `name` attributes. Also the keys of `errors` and `values`. */
 export const QUOTE_FIELD = {
   name: "name",
   email: "email",
   phone: "phone",
-  contact: "contact",
   message: "message",
   consent: "consent",
   /** Hidden: the cart's lines as JSON, `[{ slug, quantity, vehicle }]`. The
@@ -35,18 +36,6 @@ export const QUOTE_FIELD = {
 
 /** The timer half of the form protection (owner ruling 2026-09-23, D104). */
 export const QUOTE_MIN_FILL_MS = 3_000;
-
-/** The segmented control, artboard-verbatim and in drawn order
- *  (`product-desktop.html:147`). `Phone` is drawn selected. */
-export type ContactMethod = "phone" | "email" | "whatsapp";
-
-export const CONTACT_METHODS: ReadonlyArray<{ value: ContactMethod; label: string }> = [
-  { value: "phone", label: "Phone" },
-  { value: "email", label: "Email" },
-  { value: "whatsapp", label: "WhatsApp" },
-];
-
-export const DEFAULT_CONTACT_METHOD: ContactMethod = "phone";
 
 /**
  * What the Server Action returns. `idle` is the initial state; `invalid`

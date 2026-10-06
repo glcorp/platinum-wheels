@@ -5,7 +5,9 @@
 and a vehicle button beside `Filters`; from 1100 the vehicle button tops the sticky filter rail; both open one
 vehicle sheet. The iPhone Model list shows only the chosen make's models. The brand ticker moves with Reduce
 Motion on. Winter badges are aqua with a snowflake, All-Season lime. Phone product page spacing tightened; the
-About lede lines up with the prose. Detail: root `llm.md` D159, `DEVIATIONS.md` #121 to #126.
+About lede lines up with the prose. Then D160: PDP quantity taps change in the browser (no reload, no
+loader); Preferred contact removed from the quote form; the cart's `Request a quote` is pinned on phones.
+Detail: root `llm.md` D159, D160, `DEVIATIONS.md` #121 to #128. PR #52.
 - **Checked:** `tsc`, `eslint`, `npm run test:e2e:fixture` 131 passed, 0 failed, 2 skipped, then 32 with indexing on, and in the browser on the
   fixture build at 375, 390, 1100 and 1280.
 - **Not checked:** a real iPhone (model list, Reduce Motion ticker), Safari and Firefox, Vercel.

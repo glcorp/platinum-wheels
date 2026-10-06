@@ -39,7 +39,9 @@
          save a file, so this page never loads anything. A hash-only link is
          a scroll (HashScroll, D80), not a load. `defaultPrevented` is
          deliberately NOT checked: `next/link` prevents the default on every
-         client navigation, which is exactly the case this exists for.
+         client navigation, which is exactly the case this exists for. A
+         link marked `data-no-progress` is handled in place by its island
+         and never starts it (the PDP quantity cells).
      (b) A `submit` of a GET form that nobody prevented — the vehicle finder,
          and the filter form with scripting half-loaded. POST forms (the quote
          form's Server Action) are excluded; they own their pending state.
@@ -233,6 +235,9 @@ export function NavProgress() {
       const anchor = event.target.closest("a[href]");
       if (!(anchor instanceof HTMLAnchorElement)) return;
       if (anchor.hasAttribute("download")) return;
+      /* A link a client island handles in place (the PDP quantity cells,
+         2026-10-07): it changes the page without asking the server. */
+      if (anchor.hasAttribute("data-no-progress")) return;
 
       const target = anchor.getAttribute("target");
       if (target !== null && target !== "" && target !== "_self") return;

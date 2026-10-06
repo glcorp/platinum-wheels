@@ -140,7 +140,7 @@ export function VehicleSheet({ title, openOnLoad = false, children }: VehicleShe
               </svg>
             </a>
           </div>
-          <div className="pb-safe flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pt-5 sm:px-8 sm:pt-6">
+          <div className="pb-safe flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pt-5 sm:px-8 sm:pt-6">
             {children}
           </div>
         </div>

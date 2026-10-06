@@ -183,6 +183,9 @@ export function CartView({ copy }: CartViewProps) {
    *  (D123(7)). */
   const [openedAt, setOpenedAt] = useState(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  /** The summary box is on screen, so the pinned phone bar steps aside. */
+  const [summaryVisible, setSummaryVisible] = useState(false);
   const successRef = useRef<HTMLDivElement>(null);
   const countRef = useRef<HTMLParagraphElement>(null);
   const refreshed = useRef(false);
@@ -259,6 +262,23 @@ export function CartView({ copy }: CartViewProps) {
       })),
     [],
   );
+
+  const request = () => {
+    setOpenedAt((first) => first || performance.now());
+    setOpen(true);
+  };
+
+  /* The pinned phone bar hides while the summary box is on screen. */
+  const hasLines = !sent && (lines?.length ?? 0) > 0;
+  useEffect(() => {
+    const summary = summaryRef.current;
+    if (!hasLines || summary === null) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setSummaryVisible(entry?.isIntersecting ?? false);
+    });
+    observer.observe(summary);
+    return () => observer.disconnect();
+  }, [hasLines]);
 
   const handleSuccess = useCallback(() => {
     setOpen(false);
@@ -348,13 +368,34 @@ export function CartView({ copy }: CartViewProps) {
           </ul>
         </div>
 
-        <CartSummary
-          products={lines.length}
-          onRequest={() => {
-            setOpenedAt((first) => first || performance.now());
-            setOpen(true);
-          }}
-        />
+        <div ref={summaryRef}>
+          <CartSummary products={lines.length} onRequest={request} />
+        </div>
+      </div>
+
+      {/* Below 1100 the summary sits under every line, so on a phone its
+          button was a long scroll away (owner, 2026-10-07: "request a quote
+          should be accessible always. in mobile we need to scroll down"). A
+          bar pinned to the bottom carries the same button until the summary
+          itself is on screen; the spacer keeps the last line from sitting
+          under it. */}
+      <div aria-hidden="true" className="h-22 md:hidden" />
+      <div
+        data-probe="cart-request-bar"
+        hidden={summaryVisible}
+        className="border-border-strong bg-bg pb-safe fixed inset-x-0 bottom-0 z-20 border-t px-4 pt-3 sm:px-8 md:hidden"
+      >
+        <Button
+          type="button"
+          variant="primary"
+          size="promo"
+          fullWidth
+          onClick={request}
+          aria-haspopup="dialog"
+          aria-controls={DIALOG_ID}
+        >
+          Request a quote
+        </Button>
       </div>
 
       <dialog
@@ -379,7 +420,15 @@ export function CartView({ copy }: CartViewProps) {
         }}
         className="sheet-dialog backdrop:bg-scrim-mid fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none flex-col justify-end border-0 bg-transparent p-0 open:flex"
       >
-        <div className="sheet-panel bg-surface border-border-strong flex w-full flex-col border-t md:mx-auto md:max-w-dialog md:border-x">
+        {/* `data-fit` (2026-10-07): the panel takes the form's own height, up
+            to the whole screen, instead of the filter sheet's fixed
+            `100dvh - 144px`, which left the top of the screen to the page and
+            the form scrolling below it (owner: "the form is not visible till
+            top and needs scrolling"). */}
+        <div
+          data-fit=""
+          className="sheet-panel bg-surface border-border-strong flex w-full flex-col border-t md:mx-auto md:max-w-dialog md:border-x"
+        >
           <div className="border-border-strong flex items-center justify-between gap-4 border-b px-4 py-5 sm:px-8">
             <h2 id="cart-quote-title" className="display text-ink text-display-28 sm:text-display-40">
               Tell us where to send it.
@@ -410,7 +459,7 @@ export function CartView({ copy }: CartViewProps) {
               `scroll-pb-24` (96px) is that row's height (56/60px button +
               16px above + 20px below), so focus never lands under it.
               Launch audit, D145. */}
-          <div className="scroll-pb-24 flex flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4 pt-6 sm:px-8 sm:pt-8">
+          <div className="scroll-pb-24 flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4 pt-6 sm:px-8 sm:pt-8">
             <p className="text-ink-muted text-14 leading-body">
               {`Your request covers ${productCount(lines.length)} in your cart.`}
             </p>

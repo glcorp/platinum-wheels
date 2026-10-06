@@ -13,7 +13,7 @@ Server Actions and the emails.
 
 ## Owns
 - [`types.ts`](types.ts) — the quote contract (D25): `QUOTE_FIELD` (the D51 contact fields plus the hidden
-  `lines`, `elapsed`, `website`), `CONTACT_METHODS`, `QuoteFormState`, `PostedLine`, `QuoteCopy` and
+  `lines`, `elapsed`, `website`; no `contact` since D160, the Preferred contact control is gone), `QuoteFormState`, `PostedLine`, `QuoteCopy` and
   `pickQuoteCopy()` (pure, so the island and the action pick the same words).
 - [`copy.ts`](copy.ts) — server only: the quote form's placeholder and consent line per category, and the
   `mixed` pair for a cart of several categories (the wheels/accessories consent line, new placeholder).
@@ -29,7 +29,8 @@ Server Actions and the emails.
   one auto-reply per request, each listing every line ("One email, all items", owner ruling). Plain text,
   Resend REST, **sends only when `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` is exactly `true`**, never logs
   personal data (log lines carry a line count).
-- `components/cart-view.tsx` — the page's client island: hydration placeholder, empty state, lines,
+- `components/cart-view.tsx` — (D160: below 1100 a bottom-pinned `Request a quote` bar shows until the
+  summary is on screen; the quote panel is `data-fit`, the form's height up to the full screen.) The page's client island: hydration placeholder, empty state, lines,
   request panel, the removed-products note, the quote dialog (the filter sheet's `sheet-dialog`, centred at
   `--container-dialog` from `md:`) and the sent state. Also exports `CartEmpty`, `CartSummary`,
   `CartRemovedNote` for `/styleguide`.

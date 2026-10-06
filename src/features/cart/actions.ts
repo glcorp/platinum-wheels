@@ -40,12 +40,9 @@ import type { Product } from "@/features/catalog/types";
 import { quoteCopyByCategory } from "@/features/cart/copy";
 import { deliverQuote, type QuoteLine } from "@/features/cart/quote-email";
 import {
-  CONTACT_METHODS,
-  DEFAULT_CONTACT_METHOD,
   QUOTE_FIELD,
   QUOTE_MIN_FILL_MS,
   pickQuoteCopy,
-  type ContactMethod,
   type PostedLine,
   type QuoteFormState,
 } from "@/features/cart/types";
@@ -79,8 +76,6 @@ const VEHICLE_MAX_LENGTH = 80;
 const INVISIBLE_FORMAT = /\p{Cf}/gu;
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-const CONTACT_VALUES = new Set<string>(CONTACT_METHODS.map((method) => method.value));
 
 /**
  * The per-IP cap on quote requests (LA-03, D145 audit). In memory, per server
@@ -266,13 +261,8 @@ export async function submitCartQuote(
   const email = readString(formData, QUOTE_FIELD.email);
   const phone = readString(formData, QUOTE_FIELD.phone);
   const message = readMessage(formData, QUOTE_FIELD.message);
-  const rawContact = readString(formData, QUOTE_FIELD.contact);
   // Ticked = the field is present (an unticked checkbox submits nothing).
   const consented = formData.get(QUOTE_FIELD.consent) !== null;
-
-  const contact: ContactMethod = CONTACT_VALUES.has(rawContact)
-    ? (rawContact as ContactMethod)
-    : DEFAULT_CONTACT_METHOD;
 
   // The visitor's own tick is echoed on `invalid` and `failed` only, so an
   // unrelated error never silently unticks it (WDG-10).
@@ -281,7 +271,6 @@ export async function submitCartQuote(
     email,
     phone,
     message,
-    contact,
     ...(consented ? { [QUOTE_FIELD.consent]: "on" } : {}),
   };
 
@@ -375,7 +364,6 @@ export async function submitCartQuote(
   const outcome = await deliverQuote({
     lines: quoteLines,
     cartUrl: `${origin}/cart`,
-    contact: CONTACT_METHODS.find((method) => method.value === contact)?.label ?? contact,
     name,
     email,
     phone,

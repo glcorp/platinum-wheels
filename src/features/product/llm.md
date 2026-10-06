@@ -70,7 +70,9 @@ Action, its emails and its two authored states moved there.
   (`DEVIATIONS.md` #96). With prices switched off the price row is absent (`DEVIATIONS.md` #97).
 - **Buy panel is `position:sticky; top:96px` on desktop only** (`product.md` §3). Never on mobile.
 - **No sticky mobile buy bar** — D6. **No fitment or install trust line in the buy panel** — D47(2).
-- **Quantity is a URL param** (D50). The cells are links that set `?qty=` and keep every other param;
+- **Quantity is a URL param** (D50), **changed in the browser since D160**: a plain tap sets
+  `QuantityProvider` (`quantity-state.tsx`) and rewrites `?qty=` with `history.replaceState`, so no
+  server round trip and no loader; `quantity-control.tsx` is now a client island. The cells are links that set `?qty=` and keep every other param;
   the panel stays a Server Component apart from the add island. `qty` never reaches `backHref`. The
   *selected* cell defaults to `1` for every category (D127, `DEVIATIONS.md` #98); the four cells and their labels stay as drawn (D63).
   `role="group" aria-labelledby="qty-label"` (D66). Every cell is `scroll={false}`; `Custom` no longer

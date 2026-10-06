@@ -32,12 +32,9 @@ export default function CartPage() {
         <main id="main" tabIndex={-1} className="flex-1">
           <div className="px-4 pt-8 pb-14 sm:px-8 sm:pt-12 md:px-12 md:pb-30">
             <div className="flex flex-col gap-8 sm:gap-10 lg:mx-auto lg:max-w-content">
-              <div className="flex flex-col gap-3">
-                <span className="label text-accent text-11 tracking-16 sm:text-12">
-                  Request a quote
-                </span>
-                <h1 className="display text-ink text-display-56 sm:text-display-88">Your cart</h1>
-              </div>
+              {/* The `Request a quote` eyebrow above the title is gone (owner,
+                  2026-10-07: "remove request a quote"). */}
+              <h1 className="display text-ink text-display-56 sm:text-display-88">Your cart</h1>
               <noscript>
                 <p className="text-ink-muted text-17 leading-body">
                   {`Your cart is kept in this browser and needs JavaScript. Turn it on, or call us at ${PRIMARY_CONTACT.display}.`}
