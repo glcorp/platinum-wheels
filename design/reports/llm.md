@@ -43,6 +43,17 @@ Without this folder a page can be called "done" on an opinion, which is exactly 
 - [`launch-fixes.md`](launch-fixes.md) — the fix plan built from it: issues de-duplicated into batches
   with the recommended fix, who decides and where the code is, plus the prompt that starts the fix
   session. Each row gets a status as it is applied.
+- [`final-check-brief.md`](final-check-brief.md) — the 10-minute final check before a client hand-over
+  (owner brief 2026-10-06): a timed sweep, 26 scopes plus 4 verifiers launched together, production plus
+  the fixture stack, two sanctioned production writes (one cart send, one owner-signed admin edit and
+  restore). Not the pre-launch audit: update §2 and run it before every hand-over.
+- [`final-check-2026-10-06.md`](final-check-2026-10-06.md) — the first run of that brief, on `main` at `d81c25b`
+  (production the same commit): verdict, gates, the one confirmed P2 (a product 404 is blank with JavaScript
+  off), the owner items, 24 of 26 scopes partial because 20 browsers shared 8 cores, the cleared list and
+  the two production writes. The evidence folder lived in the session scratchpad and is not committed.
+- [`final-check-fixes-prompt.md`](final-check-fixes-prompt.md) — the prompt for the session that fixes the
+  report's three important findings (product 404 blank without JS, results TTFB, phone main-thread time)
+  and opens the PR; owner 2026-10-06: *"fix the three important ones and open a PR in a new session"*.
 - [`fitment-questions-prompt.md`](fitment-questions-prompt.md) — the prompt for the session that settles the
   vehicle finder's fit data (D149): where it stands, the standing source rules, and the questions to put to
   the owner one at a time.
