@@ -725,6 +725,16 @@
   &[data-fit] {
     height: auto;
   }
+  /* The vehicle sheet opens at the top of the screen on desktop and slides
+     down (owner, 2026-10-07: "for desktop dont put it down. put it up only").
+     The exit's mirror is in `sheet-dialog` below. */
+  &[data-top] {
+    @media (min-width: 1100px) {
+      @starting-style {
+        translate: 0 -100%;
+      }
+    }
+  }
   /* Scrolling past either end of the sheet chained to the page behind the
      modal: `overscroll-behavior` was declared nowhere in the build. The body
      `overflow:hidden` lock the sheet sets is a different guarantee and does not
@@ -776,6 +786,12 @@
     translate: 0 100%;
     transition-duration: var(--duration-exit);
     transition-timing-function: var(--ease-leave);
+  }
+
+  @media (min-width: 1100px) {
+    &:not([open]) .sheet-panel[data-top] {
+      translate: 0 -100%;
+    }
   }
 
   &::backdrop {

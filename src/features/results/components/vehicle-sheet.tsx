@@ -15,7 +15,7 @@
    Same dialog as the filter sheet and the cart's quote dialog: `showModal()`
    for the focus trap and Esc, `sheet-dialog` / `sheet-panel` for the slide
    (D67, D92b), centred at `--container-dialog` from `md:` like the quote
-   dialog. `data-fit` lets the panel take its content's height: three fields
+   dialog, and from `md:` hung from the top edge, sliding down (2026-10-07). `data-fit` lets the panel take its content's height: three fields
    do not need the filter sheet's near-full-screen panel.
 
    Without JavaScript a link to `#vehicle-sheet` makes the dialog the URL's
@@ -106,11 +106,15 @@ export function VehicleSheet({ title, openOnLoad = false, children }: VehicleShe
         onClick={(event) => {
           if (event.target === dialogRef.current) close();
         }}
-        className="sheet-dialog backdrop:bg-scrim-mid fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none flex-col justify-end border-0 bg-transparent p-0 open:flex"
+        className="sheet-dialog backdrop:bg-scrim-mid fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none flex-col justify-end border-0 bg-transparent p-0 open:flex md:justify-start"
       >
+        {/* `data-top`: from 1100 the panel hangs from the top edge and slides
+            down (owner, 2026-10-07: "for desktop dont put it down. put it up
+            only"); phones keep the bottom sheet ("for mobile it is perfect"). */}
         <div
           data-fit=""
-          className="sheet-panel bg-surface border-border-strong flex w-full flex-col border-t md:mx-auto md:max-w-dialog md:border-x"
+          data-top=""
+          className="sheet-panel bg-surface border-border-strong flex w-full flex-col border-t md:mx-auto md:max-w-dialog md:border-x md:border-t-0 md:border-b"
         >
           <div className="border-border-strong flex items-center justify-between gap-4 border-b px-4 py-5 sm:px-8">
             <h2 id={TITLE_ID} className="font-display text-display-28 leading-flat font-bold uppercase text-ink">

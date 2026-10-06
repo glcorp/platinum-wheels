@@ -37,11 +37,11 @@ import { cx } from "@/lib/cx";
 
 /* The drawn chip glyph, `results-desktop.html:113`, stroked in `--accent`
    (D72). */
-function CarIcon() {
+function CarIcon({ size = 18 }: { size?: number }) {
   return (
     <svg
-      width="18"
-      height="18"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -64,16 +64,20 @@ function vehicleLabel(query: ResultsQuery): string | null {
 
 export function VehicleButton({
   query,
-  showChange = false,
+  size = "bar",
   className,
 }: {
   query: ResultsQuery;
-  /** The desktop rail has room for a `Change` cue after the car; the mobile
-   *  bar gives that room to `Filters`. */
-  showChange?: boolean;
+  /** `bar`: the mobile sticky bar's 44px cell, beside `Filters`. `rail`: the
+   *  top of the desktop filter column, 64px tall with its label in the
+   *  `Filters` title's own type (Barlow Condensed 700, 28px, uppercase;
+   *  owner, 2026-10-07: "add vehicle is still small and not visible. keep it
+   *  as big as filters font size"), and a `Change` cue after a chosen car. */
+  size?: "bar" | "rail";
   className?: string;
 }) {
   const label = vehicleLabel(query);
+  const rail = size === "rail";
   return (
     <a
       href={`#${VEHICLE_SHEET_ID}`}
@@ -81,24 +85,31 @@ export function VehicleButton({
       aria-label={label === null ? "Add vehicle" : `Change vehicle, ${label}`}
       data-probe="vehicle-button"
       className={cx(
-        "border-accent text-ink inline-flex h-11 min-w-0 touch-manipulation items-center gap-2.5 border px-3.5 no-underline",
+        /* `shrink-0`: the rail is a scrolling flex column (D68), which
+           squeezed a 44px button to 28px. */
+        "border-accent text-ink inline-flex min-w-0 shrink-0 touch-manipulation items-center border no-underline",
+        rail ? "h-16 gap-3 px-4" : "h-11 gap-2.5 px-3.5",
         "hover:bg-accent hover:text-on-accent active:translate-y-px",
         "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2",
         label === null
-          ? "label justify-center text-12 tracking-6"
-          : "bg-accent-subtle font-sans text-14 leading-flat font-bold",
+          ? rail
+            ? "font-display text-display-28 leading-flat justify-center font-bold uppercase"
+            : "label justify-center text-12 tracking-6"
+          : rail
+            ? "bg-accent-subtle font-display text-display-24 leading-flat font-bold uppercase"
+            : "bg-accent-subtle font-sans text-14 leading-flat font-bold",
         className,
       )}
     >
-      <CarIcon />
+      <CarIcon size={rail ? 26 : 18} />
       {label === null ? (
         "Add vehicle"
       ) : (
         <>
           {/* `py-1` keeps descenders inside the truncation box (D91b). */}
           <span className="min-w-0 flex-1 truncate py-1">{label}</span>
-          {showChange ? (
-            <span className="text-ink-muted shrink-0 text-12 font-medium underline underline-offset-4">
+          {rail ? (
+            <span className="text-ink-muted shrink-0 font-sans text-12 font-medium normal-case underline underline-offset-4">
               Change
             </span>
           ) : null}
