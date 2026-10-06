@@ -134,7 +134,9 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `<h1>` (D47(6)), `Similar matches` an `<h2>` (omitted when empty); `RESULTS_WINDOW` 6 + 3 by
   default; `Load more` = `Button size="load"` link that raises `?show=` by 24 up to 150 and opens the
   similar row to 12 (D108b; it used to be `?show=all`, which is thousands of cards now), rendered only
-  while it has something to reveal (D47(7)); at the ceiling a line says how many are shown and to narrow
+  while it has something to reveal (D47(7)); **it sits under the list it grows**: inside the `Best matches`
+  section (with the ceiling note) while best grows or is capped, at the page foot only for the press that
+  just opens the similar row (owner, 2026-10-06: it read as belonging to similar); at the ceiling a line says how many are shown and to narrow
   the filters and carrying `scroll={false}` since **D68**, because Next scrolls a navigation to the top by
   default and the reader was thrown back to the header (2146 → 0); the empty state is new copy (D47(4)).
   Since **D72** the count and `countCopy` live here as the second line of the `Best matches` header stack

@@ -299,6 +299,74 @@ export function ResultsGrid({ view }: ResultsGridProps) {
     ? `result-${best.length + 1}`
     : `similar-${similar.length + 1}`;
 
+  /* The ceiling note and `Load more` sit under the list they grow: under
+     `Best matches` while best is what grows or is capped, else under
+     `Similar matches` for the one press that only opens the similar row.
+     Rendered at the foot of the page they read as belonging to similar
+     (owner, 2026-10-06). `underBest` drops the page-foot padding, which
+     exists to space the button from the footer, not from another section. */
+  const ceilingHit = atCeiling && bestHidden > 0;
+  const underBest = growsBest || ceilingHit;
+  const ceiling = ceilingHit ? (
+    <p
+      data-probe="load-ceiling"
+      className={
+        underBest
+          ? SUPPORT
+          : `${SUPPORT} px-4 pt-5 sm:px-8 md:px-0 md:pt-0 md:pb-30`
+      }
+    >
+      {`Showing ${COUNT_FORMAT.format(best.length)} of ${COUNT_FORMAT.format(view.bestTotal)}. Filter by size or brand to narrow it down.`}
+    </p>
+  ) : null;
+  const loadMore = !canLoadMore ? null : (
+    /* D: its own row, `justify-content:center` + `padding-bottom:120px`
+       (results-desktop.html:498) — the 120px is why the page's footer
+       wrapper adds no desktop margin. M: full width inside the flow,
+       `margin-top:12px` (results-mobile.html:299). Under the best grid it
+       is a flex item of that section, which already owns the side padding
+       and the gap, so it adds neither.
+       The `accent` variant is the drawn treatment exactly: `1px --accent`
+       border, `--text` ink (`--on-photo` is the same #F4F4F5), filling
+       lime with `--on-accent` ink on hover (`.x77:hover`). Tailwind's
+       `hover:` compiles to `@media (hover:hover)`, so the mobile artboard's
+       missing hover rule is honoured for free (D17). */
+    <div
+      data-probe="load-more"
+      className={
+        underBest
+          ? "md:flex md:justify-center"
+          : "mt-3 px-4 sm:px-8 md:mt-0 md:flex md:justify-center md:px-0 md:pb-30"
+      }
+    >
+      <Button
+        variant="accent"
+        size="load"
+        fullWidth
+        className="md:w-auto"
+        href={`${resultsHref(withMore(view.query))}#${landingId}`}
+        /* The hook `LoadMoreLanding` listens for. Written out, not
+           imported: every export of a "use client" module reaches a
+           Server Component as a client reference, never as its value. */
+        data-load-more=""
+        /* `scroll={false}`: this is a `?show=` link (D44), and Next
+           scrolls a navigation to the top by default — so pressing
+           `Load more` threw the reader back to the header, away from the
+           cards it had just revealed. Measured before the fix: scrollY
+           2146 → 0 (D68).
+           D133: the href names the first new card (`#result-7`): without
+           JS the browser lands on it; with JS `scroll={false}` still keeps
+           Next out of it (its fragment scroll can glide short, D91b, and
+           `HashScroll` only corrects pathname changes) and
+           `LoadMoreLanding` scrolls there instantly and moves focus to
+           that card's product link. */
+        scroll={false}
+      >
+        Load more
+      </Button>
+    </div>
+  );
+
   return (
     <div className="flex flex-col md:gap-20">
       {/* M `padding:40px 16px 0` (results-mobile.html:102); from `md:` the
@@ -389,6 +457,12 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             vehicle={vehicle}
           />
         )}
+        {underBest ? (
+          <>
+            {ceiling}
+            {loadMore}
+          </>
+        ) : null}
       </section>
 
       {/* Omitted entirely when there is nothing similar — with no size in the
@@ -415,60 +489,11 @@ export function ResultsGrid({ view }: ResultsGridProps) {
         </section>
       )}
 
-      {/* The window has a ceiling (D108b): past it the page stops growing and
-          says how to narrow instead. Undrawn, so new copy under
-          `.claude/rules/ui.md` "Copy", in the empty state's own type. */}
-      {atCeiling && bestHidden > 0 ? (
-        <p
-          data-probe="load-ceiling"
-          className={`${SUPPORT} px-4 pt-5 sm:px-8 md:px-0 md:pt-0 md:pb-30`}
-        >
-          {`Showing ${COUNT_FORMAT.format(best.length)} of ${COUNT_FORMAT.format(view.bestTotal)}. Filter by size or brand to narrow it down.`}
-        </p>
-      ) : null}
-
-      {!canLoadMore ? null : (
-        /* D: its own row, `justify-content:center` + `padding-bottom:120px`
-           (results-desktop.html:498) — the 120px is why the page's footer
-           wrapper adds no desktop margin. M: full width inside the flow,
-           `margin-top:12px` (results-mobile.html:299).
-           The `accent` variant is the drawn treatment exactly: `1px --accent`
-           border, `--text` ink (`--on-photo` is the same #F4F4F5), filling
-           lime with `--on-accent` ink on hover (`.x77:hover`). Tailwind's
-           `hover:` compiles to `@media (hover:hover)`, so the mobile artboard's
-           missing hover rule is honoured for free (D17). */
-        <div
-          data-probe="load-more"
-          className="mt-3 px-4 sm:px-8 md:mt-0 md:flex md:justify-center md:px-0 md:pb-30"
-        >
-          <Button
-            variant="accent"
-            size="load"
-            fullWidth
-            className="md:w-auto"
-            href={`${resultsHref(withMore(view.query))}#${landingId}`}
-            /* The hook `LoadMoreLanding` listens for. Written out, not
-               imported: every export of a "use client" module reaches a
-               Server Component as a client reference, never as its value. */
-            data-load-more=""
-            /* `scroll={false}`: this is a `?show=` link (D44), and Next
-               scrolls a navigation to the top by default — so pressing
-               `Load more` threw the reader back to the header, away from the
-               cards it had just revealed. Measured before the fix: scrollY
-               2146 → 0 (D68).
-               D133: holding the position was right only with one list. With
-               a size set, the new best cards arrive above the similar row and
-               this button, off-screen. So the href now names the first new
-               card (`#result-7`): without JS the browser lands on it; with JS
-               `scroll={false}` still keeps Next out of it (its fragment scroll
-               can glide short, D91b, and `HashScroll` only corrects pathname
-               changes) and `LoadMoreLanding` scrolls there instantly and moves
-               focus to that card's product link. */
-            scroll={false}
-          >
-            Load more
-          </Button>
-        </div>
+      {underBest ? null : (
+        <>
+          {ceiling}
+          {loadMore}
+        </>
       )}
 
       {/* D133. Renders nothing; mounted in every state, after every slot the
