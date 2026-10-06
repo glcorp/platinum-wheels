@@ -50,18 +50,18 @@ const badgeBase =
    ever renders as a plain inline span — where `height` would be ignored and
    line-height alone would carry the 24px. */
 const variantClass: Record<BadgeVariant, string> = {
-  /* The four seasons (owner, 2026-10-07: "Give each season tag its own
-     colour"; DEVIATIONS #125, #126). The drawn WINTER was a borderless
-     `--accent` fill at `font:500 11px/24px`. Each season is now its own fill
-     with a 1px darker edge, `--on-season` ink and a 12px mark before the
-     word; the edge plus the outline leading (22 + 2) keeps the drawn 24px box.
-     The edge and the mark are what "more premium" means here, inside the
-     flat, no-shadow, no-gradient rules (`.claude/rules/ui.md`). */
+  /* Seasons (owner, 2026-10-07; DEVIATIONS #125, #126). The drawn WINTER
+     was a borderless `--accent` fill at `font:500 11px/24px`. Winter is now
+     an aqua fill with a 1px darker edge, `--on-season` ink and a snowflake;
+     the edge plus the outline leading (22 + 2) keeps the drawn 24px box.
+     All-Season, Summer and All-Weather share one faint lime look: the 12%
+     `--accent-subtle` fill, `--text` ink (about 15:1) and their mark in lime
+     (`SEASON_MARK_TINT`), no border, so the fill's own 24px leading holds
+     the box ("very translucent … just keep it with a touch of lime"). */
   winter: "bg-winter border border-winter-edge leading-badge-outline text-on-season",
-  "all-season":
-    "bg-all-season border border-all-season-edge leading-badge-outline text-on-season",
-  summer: "bg-summer border border-summer-edge leading-badge-outline text-on-season",
-  "all-weather": "bg-accent border border-all-weather-edge leading-badge-outline text-on-season",
+  "all-season": "bg-accent-subtle leading-badge text-ink",
+  summer: "bg-accent-subtle leading-badge text-ink",
+  "all-weather": "bg-accent-subtle leading-badge text-ink",
 
   /* The drawn filled badge, lime, with no mark. Kept for a non-season fill;
      no season uses it since each has its own (2026-10-07). */
@@ -101,7 +101,14 @@ const SEASON_MARK: Partial<Record<BadgeVariant, string>> = {
   "all-weather": "M7 18h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.7 1.3A3.4 3.4 0 0 0 7 18Z",
 };
 
-function SeasonMark({ path }: { path: string }) {
+/* The faint lime seasons draw their mark in lime; Winter's takes its ink. */
+const SEASON_MARK_TINT: Partial<Record<BadgeVariant, string>> = {
+  "all-season": "text-accent",
+  summer: "text-accent",
+  "all-weather": "text-accent",
+};
+
+function SeasonMark({ path, tint }: { path: string; tint?: string }) {
   return (
     <svg
       aria-hidden="true"
@@ -111,7 +118,7 @@ function SeasonMark({ path }: { path: string }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="size-3 shrink-0"
+      className={cx("size-3 shrink-0", tint)}
     >
       <path d={path} />
     </svg>
@@ -121,7 +128,7 @@ function SeasonMark({ path }: { path: string }) {
 export function Badge({ variant = "outline", className, children, ...rest }: BadgeProps) {
   return (
     <span {...rest} className={cx(badgeBase, variantClass[variant], className)}>
-      {SEASON_MARK[variant] ? <SeasonMark path={SEASON_MARK[variant]} /> : null}
+      {SEASON_MARK[variant] ? <SeasonMark path={SEASON_MARK[variant]} tint={SEASON_MARK_TINT[variant]} /> : null}
       {children}
     </span>
   );

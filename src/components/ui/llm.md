@@ -12,9 +12,10 @@ One line each; measurements and per-variant tables live in each file's header co
 
 - [`badge.tsx`](badge.tsx) — `Badge`, a non-interactive season/status pill. `BadgeProps` = `<span>` props
   + `variant?: "winter" | "all-season" | "all-weather" | "summer" | "accent" | "outline" | "unavailable"`.
-  Since 2026-10-07 (D159, D160) each season is its own fill + darker 1px edge + 12px mark (`SEASON_MARK`),
-  `--on-season` ink, 24px box kept by the outline leading; `accent` is the drawn lime with no mark,
-  unused by any season. DEVIATIONS #125, #126.
+  Since 2026-10-07 (D159, D160) every season has a 12px mark (`SEASON_MARK`): Winter is the aqua fill +
+  darker 1px edge + `--on-season` ink (24px kept by the outline leading); All-Season, Summer and
+  All-Weather are `--accent-subtle` + `--text` with the mark in lime (`SEASON_MARK_TINT`). `accent` is the
+  drawn solid lime with no mark, unused by any season. DEVIATIONS #125, #126.
 - [`button.tsx`](button.tsx) — `Button`; renders `next/link` when `href` is set, otherwise `<button>`.
   `ButtonProps` adds `variant?: "primary" | "secondary" | "tertiary" | "accent"` (`accent` = the header
   phone CTA, D40), `size?: "panel" | "card" | "compact" | "promo" | "load"` (`:36`; named by role, because

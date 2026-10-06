@@ -55,7 +55,7 @@ const GROUND = [
   { name: "--border", hex: "#1F1F24", util: "bg-border", role: "Hairlines on --surface" },
   { name: "--border-strong", hex: "#35353B", util: "bg-border-strong", role: "Panel edges, dividers, card hairlines" },
   { name: "--border-control", hex: "#69696F", util: "bg-border-control", role: "Field borders only, 3:1 per WCAG 1.4.11" },
-  { name: "--winter", hex: "#8FC9F2", util: "bg-winter", role: "Seasonal ink, spec tables only" },
+  { name: "--winter", hex: "#7FE3F0", util: "bg-winter", role: "Winter badge fill (D160)" },
   { name: "--all-season", hex: "#D9C29A", util: "bg-all-season", role: "Seasonal ink, spec tables only" },
 ];
 
