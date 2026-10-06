@@ -1,5 +1,6 @@
 import { ProductCard } from "@/features/catalog/components/product-card";
 import type { Product } from "@/features/catalog/types";
+import type { Vehicle } from "@/features/product/types";
 import { cx } from "@/lib/cx";
 
 /* ---------------------------------------------------------------------------
@@ -30,8 +31,8 @@ export interface SimilarProductsProps {
    *  instead of two. */
   leads?: boolean;
   /** The page's checked vehicle, saved on a cart line by each card's
-   *  `Add to cart` (D122), or `""`. */
-  vehicle?: string;
+   *  `Add to cart` (D122) and carried into its links (D158), or `null`. */
+  vehicle?: Vehicle | null;
 }
 
 /* Section: mobile `padding:56px 0 0 16px;gap:20px` — left-padded,
@@ -91,7 +92,7 @@ export function SimilarProducts({
   heading = "Similar products",
   probe = "similar",
   leads = false,
-  vehicle = "",
+  vehicle = null,
 }: SimilarProductsProps) {
   if (products.length === 0) {
     return null;

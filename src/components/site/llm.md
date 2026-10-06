@@ -147,6 +147,17 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   what may have just failed. Read the file header before changing either point. Props are `error` and
   **`retry`** — renamed from `reset` in this canary.
 
+- [`category-tabs.tsx`](category-tabs.tsx) — `"use client"`, `CategoryTabs({ items, active?, finderSwitch?,
+  className?, listClassName? })` (**D158**, owner 2026-10-06: the categories were "invisible" on phones
+  under the menu). A 44px Tires / Wheels / Accessories segmented row, `md:hidden`, in the quote form's
+  Preferred contact look. Used by `results-page.tsx` (links carrying the vehicle, `aria-current="page"`)
+  and the home finder (`finderSwitch`: a plain tap switches the finder through `finderSwitchRef`, exported
+  from `site-nav-links.tsx`, `aria-current="true"`). `data-segment` + `aria-current` is its forced-colours
+  hook in `globals.css`. No `overflow-hidden` on the box: it would clip the offset-0 focus ring (D16).
+- **D158:** `SiteHeader` takes `vehicle?: VehicleParams | null`. Results pages and the PDP pass the
+  vehicle they already checked; the three category links (row and drawer) then carry it
+  (`categoryHref`). Contact and the logo never do.
+
 ## Rules
 - **Header composition is the artboards as drawn** — D7 / DEVIATIONS #11: 64px badge image, **no text
   wordmark**, one accent-bordered `Call <PRIMARY_CONTACT.display>` link, and **four** nav items (`Tires` active,

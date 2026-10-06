@@ -89,6 +89,11 @@ the next session guesses which of the two phone numbers is real.
   **The tire category is `ROUTES.tires` = `/tires` since D112**; the old `ROUTES.results` key and the
   `/results` path are gone.
 
+- **D158:** `routes.ts` also holds `VehicleParams` (spelled here so `components/` need not import a
+  feature, D37), `categoryHref(route, vehicle?)` and `productHref(slug, vehicle?)`: the route plus
+  `?year=&make=&model=` when a vehicle is given, bare otherwise. Only the vehicle travels between
+  categories; filters do not.
+
 ## Rules
 - **Nothing contact-related is hardcoded in a component.** Phone, email, hours, address, legal name and
   the price note all come from here (`docs/decisions.md:129`).

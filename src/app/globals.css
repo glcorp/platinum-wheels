@@ -1745,10 +1745,13 @@
      `data-selected`, `ChipCheckbox` checked) and the quote form's checked
      Preferred contact segment signal state with an `--text` fill alone, so
      they vanished. Same treatment as the quantity cell. Children inherit the
-     system text colour, including a chip's dim count and its `×`. */
+     system text colour, including a chip's dim count and its `×`. The
+     category tabs (D158, `category-tabs.tsx`) mark the current segment with
+     `aria-current` instead of a checked radio. */
   [data-chip][data-selected],
   [data-chip]:has(input:checked),
-  [data-segment]:has(input:checked) {
+  [data-segment]:has(input:checked),
+  [data-segment][aria-current] {
     forced-color-adjust: none;
     background: Highlight;
     color: HighlightText;
@@ -1756,7 +1759,8 @@
   }
   [data-chip][data-selected] *,
   [data-chip]:has(input:checked) *,
-  [data-segment]:has(input:checked) * {
+  [data-segment]:has(input:checked) *,
+  [data-segment][aria-current] * {
     color: inherit;
   }
 }
@@ -1848,10 +1852,12 @@ dialog:modal {
    resize the hero as the bars slide away).
 
    The subtracted length is the finder's height BELOW the hero (panel height
-   minus its overlap), measured 2026-10-03; if the finder changes, re-measure:
-     mobile, stacked    341 - 72  = 269  (whole panel above the fold)
-     mobile, compact    260 - 72  = 188  (fold-short: Year + Make share a row)
-     tablet, 2x2        232 - 120 = 112  (whole panel above the fold)
+   minus its overlap), measured 2026-10-03 and again 2026-10-06 after D158
+   put the 44px category tabs (plus one row gap) at the top of the panel
+   below `md:`; if the finder changes, re-measure:
+     mobile, stacked    397 - 72  = 325  (whole panel above the fold)
+     mobile, compact    316 - 72  = 244  (fold-short: Year + Make share a row)
+     tablet, 2x2        292 - 120 = 172  (whole panel above the fold)
      desktop, one row   no subtraction: the hero is the viewport, so the CTA
                         ends 12px above the fold and the panel's bottom
                         padding runs past it. That is the drawn composition
@@ -1862,15 +1868,15 @@ dialog:modal {
    The plain `min-height` first is the fallback for an engine without `svh`. */
 @utility hero-fit {
   min-height: 720px;
-  min-height: min(720px, calc(100svh - 269px));
+  min-height: min(720px, calc(100svh - 325px));
 
   @media (min-height: 500px) and (max-height: 819.98px) {
-    min-height: min(720px, calc(100svh - 188px));
+    min-height: min(720px, calc(100svh - 244px));
   }
 
   @media (min-width: 720px) {
     min-height: 760px;
-    min-height: min(760px, calc(100svh - 112px));
+    min-height: min(760px, calc(100svh - 172px));
   }
 
   @media (min-width: 1100px) {

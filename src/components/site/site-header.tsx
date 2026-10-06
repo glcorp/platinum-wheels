@@ -38,9 +38,9 @@ import {
   type NavItemId,
   type SiteNavItem,
 } from "@/components/site/site-nav-links";
-import { FINDER_SWITCH_HINT_ID } from "@/lib/finder-category";
+import { FINDER_SWITCH_HINT_ID, isFinderCategory } from "@/lib/finder-category";
 import { PRIMARY_CONTACT } from "@/lib/site";
-import { ROUTES } from "@/lib/routes";
+import { categoryHref, ROUTES, type VehicleParams } from "@/lib/routes";
 
 /* Four nav items, in artboard order — design/inventory/home.md:137-139,
    home-desktop.html:100-109. Routes from src/lib/routes.ts (D39). */
@@ -55,6 +55,7 @@ export function SiteHeader({
   variant,
   active,
   finderSwitch = false,
+  vehicle = null,
 }: {
   variant: "over-hero" | "solid";
   /** The current nav item. Every drawn route passes its own explicitly
@@ -68,8 +69,18 @@ export function SiteHeader({
    *  instead of navigating, in the desktop row and the drawer, and the active
    *  marker follows the finder. Every other page leaves it off. */
   finderSwitch?: boolean;
+  /** The vehicle the page was searched for (D158), already checked by the
+   *  page (`isFinderVehicle`). Tires / Wheels / Accessories then carry it, so
+   *  switching category keeps the car. Contact never does. */
+  vehicle?: VehicleParams | null;
 }) {
-  const drawerLinks: SiteNavDrawerLink[] = NAV_ITEMS.map((item) => ({
+  /* D158 (owner, 2026-10-06): "when we switch from tire to wheels, the
+     vehicle gets removed. keep it … and show wheels for it. same for
+     accessories." */
+  const navItems: ReadonlyArray<SiteNavItem> = NAV_ITEMS.map((item) =>
+    isFinderCategory(item.id) ? { ...item, href: categoryHref(item.href, vehicle) } : item,
+  );
+  const drawerLinks: SiteNavDrawerLink[] = navItems.map((item) => ({
     id: item.id,
     label: item.label,
     href: item.href,
@@ -135,7 +146,7 @@ export function SiteHeader({
             switch the hero finder; their classes and the travelling
             `nav-indicator` (D92b) moved there unchanged. */}
         <div data-print="hide" className="hidden items-center gap-10 md:flex">
-          <SiteNavLinks items={NAV_ITEMS} active={active} finderSwitch={finderSwitch} />
+          <SiteNavLinks items={navItems} active={active} finderSwitch={finderSwitch} />
         </div>
 
         {finderSwitch ? (

@@ -9,6 +9,7 @@ import { FieldError, FieldLabel } from "@/components/ui/field-label";
 import { Input, Textarea } from "@/components/ui/input";
 import { Price } from "@/components/ui/price";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { CategoryTabs } from "@/components/site/category-tabs";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import {
@@ -642,6 +643,27 @@ export default function StyleguidePage() {
             </p>
             <div className="border-border-strong border p-4">
               <BoltChoiceNote patterns={["5x114.3", "5x120"]} />
+            </div>
+          </div>
+
+          {/* Category tabs (D158). Below 1100 the header folds the three
+              categories into the menu, so results pages and the home finder
+              show this row; neither artboard draws it (DEVIATIONS #119).
+              Rendered from the real component, at every width here. */}
+          <div className="mt-10">
+            <p className="numeral text-12 text-ink-dim mb-4">
+              Category tabs · src/components/site/category-tabs.tsx
+            </p>
+            <div className="border-border-strong border p-4">
+              <CategoryTabs
+                everyWidth
+                active="wheels"
+                items={[
+                  { id: "tires", label: "Tires", href: ROUTES.tires },
+                  { id: "wheels", label: "Wheels", href: ROUTES.wheels },
+                  { id: "accessories", label: "Accessories", href: ROUTES.accessories },
+                ]}
+              />
             </div>
           </div>
 

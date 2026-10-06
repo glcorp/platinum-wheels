@@ -1,5 +1,6 @@
 import { PageTransition } from "@/components/site/page-transition";
 import { SiteFooter } from "@/components/site/site-footer";
+import { CategoryTabs } from "@/components/site/category-tabs";
 import { SiteHeader } from "@/components/site/site-header";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import type { ProductCategory } from "@/features/catalog/types";
@@ -10,6 +11,8 @@ import { ResultsGrid } from "@/features/results/components/results-grid";
 import { ResultsToolbar } from "@/features/results/components/results-toolbar";
 import { searchResults } from "@/features/results/search";
 import type { RawSearchParams } from "@/features/results/types";
+import { FINDER_CATEGORIES } from "@/lib/finder-category";
+import { categoryHref } from "@/lib/routes";
 
 /* ---------------------------------------------------------------------------
    ResultsPage — the whole results composition, once, for all three categories.
@@ -67,12 +70,25 @@ export async function ResultsPage({
   searchParams,
 }: ResultsPageProps) {
   const view = await searchResults(category, searchParams);
+  /* D158 (owner, 2026-10-06): switching category keeps the searched vehicle,
+     in the header and in the mobile tabs below. */
+  const vehicle = view.query.vehicle;
+  const tabs = FINDER_CATEGORIES.map((id) => ({
+    id,
+    label: CATEGORY_CONFIG[id].crumb,
+    href: categoryHref(CATEGORY_CONFIG[id].route, vehicle),
+  }));
 
   return (
     <>
-      <SiteHeader variant="solid" active={CATEGORY_CONFIG[category].nav} />
+      <SiteHeader variant="solid" active={CATEGORY_CONFIG[category].nav} vehicle={vehicle} />
       <PageTransition>
         <main id="main" tabIndex={-1} className="flex-1">
+          {/* D158: below `md:` the header folds Tires / Wheels / Accessories
+              into the menu, so the three categories show here as tabs. Same
+              side padding as the toolbar; hidden from `md:`, where the header
+              row shows them. */}
+          <CategoryTabs items={tabs} active={category} className="px-4 pt-4 sm:px-8" />
           <ResultsToolbar view={view} />
           {/* Mobile sticky filter/sort bar — owns its own `margin-top:16px` and
               sticky offset (`results.md` §2.3). */}

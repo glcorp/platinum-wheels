@@ -50,9 +50,10 @@ export type SiteNavItem = { id: NavItemId; label: string; href: string };
 /**
  * A callback ref that switches the finder on a plain left click and lets
  * every other click through. (The drawer does the same with one listener on
- * its dialog, because it must close before it switches.)
+ * its dialog, because it must close before it switches.) The home finder's
+ * category tabs use it too (`category-tabs.tsx`, D158).
  */
-function finderSwitchRef(onSwitch: () => void) {
+export function finderSwitchRef(onSwitch: () => void) {
   return (node: HTMLAnchorElement | null) => {
     if (!node) return;
     const onClick = (event: MouseEvent) => {

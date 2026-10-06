@@ -16,7 +16,7 @@ import {
 } from "@/features/catalog/types";
 import { cx } from "@/lib/cx";
 import { productName } from "@/lib/product-name";
-import { productRoute } from "@/lib/routes";
+import { productHref, type VehicleParams } from "@/lib/routes";
 import { PRICES_VISIBLE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
@@ -184,12 +184,13 @@ export interface ProductCardProps {
    */
   sizes?: string;
   /**
-   * The vehicle the visitor searched, `2021 Honda Civic`, already checked
-   * against the finder's list by the page (D91b), or `""`. `Add to cart` saves
-   * it on the cart line so the shop knows what the part was for (D122). The
-   * results grid and the PDP rows pass it; the home row has none.
+   * The vehicle the visitor searched, already checked against the finder's
+   * list by the page (D91b), or `null`. `Add to cart` saves it on the cart
+   * line so the shop knows what the part was for (D122), and both product
+   * links carry it (D158). The results grid and the PDP rows pass it; the
+   * home row has none.
    */
-  vehicle?: string;
+  vehicle?: VehicleParams | null;
   /**
    * A positional id for the `<article>` (`result-7`, `similar-4`), set only by
    * the results grid so `Load more` can link to the first card it adds and
@@ -206,7 +207,7 @@ export function ProductCard({
   priority = false,
   morph = true,
   sizes = IMAGE_SIZES,
-  vehicle = "",
+  vehicle = null,
   anchorId,
 }: ProductCardProps) {
   const {
@@ -220,6 +221,10 @@ export function ProductCard({
     available,
   } = product;
   const photoSrc = productImageSrc(product);
+  /* D158: both product links keep the searched vehicle, and `Add to cart`
+     saves it on the line as `2021 Honda Civic` (D122). */
+  const href = productHref(slug, vehicle);
+  const vehicleLabel = vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : "";
   /* An unbranded accessory (D125) has no brand: no stamp, no brand line, and
      its name stands alone wherever the two are joined. `|| null` also folds an
      empty string into "no brand". */
@@ -396,7 +401,7 @@ export function ProductCard({
             `active:opacity-70`, the text-link/photo half of the D92b press
             vocabulary. */}
         <Link
-          href={productRoute(slug)}
+          href={href}
           tabIndex={-1}
           aria-hidden="true"
           transitionTypes={["nav-forward", "product-open"]}
@@ -501,7 +506,7 @@ export function ProductCard({
               This is the card's one path to the product. The whole card is NOT
               an anchor: wrapping it would nest the CTA link inside it. */}
           <Link
-            href={productRoute(slug)}
+            href={href}
             /* `tap-extend` lifts the touch target to 46px without adding
                padding or height, so every measured property still matches the
                artboard. Display type at 24px/0.92 is only ~22px tall, which
@@ -621,7 +626,7 @@ export function ProductCard({
             slug={slug}
             item={cartItem(product)}
             quantity={1}
-            vehicle={vehicle}
+            vehicle={vehicleLabel}
             size="card"
             className="flex-1"
             srContext={`${fullName} ${size}`}

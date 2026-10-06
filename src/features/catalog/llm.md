@@ -188,6 +188,10 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     slug) and what is refused, with the reason and the column, out. Drives the dry run and the real
     load alike. Pure.
 
+- **D158:** `ProductCard`'s `vehicle` prop is the checked vehicle object (`VehicleParams | null`), no
+  longer a label string: both product links use `productHref(slug, vehicle)` and `Add to cart` still
+  saves `2021 Honda Civic`. The results grid and the PDP rows pass it; the home row passes none.
+
 ## Rules
 - **One product per real item for the shopper, every vendor listing a source for the admin (D135).**
   The builder merges; nothing here de-duplicates. An accessory slug is brand + name + part number (the

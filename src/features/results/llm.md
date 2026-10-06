@@ -157,6 +157,10 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 - [`components/call-cta-panel.tsx`](components/call-cta-panel.tsx) — `CallCtaPanel()`, Server,
   `md:hidden`. `Not sure which one?` panel, `tel:` CTA from `PRIMARY_CONTACT` (D47(1)).
 
+- **D158:** `results-page.tsx` renders `CategoryTabs` (from `components/site/`) above the toolbar below
+  `md:`, passes `view.query.vehicle` to `SiteHeader`, and `results-grid.tsx` hands the same vehicle object
+  (not a label) to each `ProductCard`, whose links then carry it. `DEVIATIONS.md` #119, #120.
+
 ## Rules
 - **An old vehicle name in the URL is redirected before the page renders** (D155, *derived*): `/tires`, `/wheels` and
   `/accessories` call `redirectToCanonicalVehicle` (`src/features/finder/canonical.ts`) first, a 308 to the same
