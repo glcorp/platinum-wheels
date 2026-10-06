@@ -80,7 +80,6 @@ export interface QuoteInquiry {
   lines: QuoteLine[];
   /** The page the request was sent from, for the consent record. */
   cartUrl: string;
-  contact: string;
   name: string;
   email: string;
   phone: string;
@@ -177,7 +176,6 @@ function ownerAlertText(q: QuoteInquiry): string {
     `Name: ${q.name}`,
     `Email: ${q.email}`,
     `Phone: ${q.phone}`,
-    `Preferred contact: ${q.contact}`,
     "",
     "Message:",
     q.message || "(none)",

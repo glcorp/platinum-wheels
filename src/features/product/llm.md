@@ -44,6 +44,11 @@ Action, its emails and its two authored states moved there.
   `How many tires?` (the field that used to sit in the quote form's Optional group, `DEVIATIONS.md` #70)
   and adds what is typed, a whole number, no visible ceiling (owner: "lets not put restrictions of cart").
 - `components/specifications.tsx` · `similar-products.tsx` — `:126-131` / `:159-315`.
+- **Phone spacing (D159, 2026-10-07, `DEVIATIONS.md` #123).** Below 1100 the gallery photo's inset is 2%
+  (desktop keeps the drawn 8%); below 720 the buy panel's top padding is 16px (drawn 32), the gallery cap
+  is `100svh - 466px`, and Specifications start 48px under `Call us` (drawn 112). Owner: *"reduce the
+  border around image, below tire there is so much black space"*, *"fix the blank space between call us
+  and specs"*. Season badges (#125, #126): All-Season is the lime `accent` badge, Winter the aqua one.
 
 - **D158:** the PDP passes `view.vehicle` to `SiteHeader` (category links keep the car) and to both
   `SimilarProducts` rows (their cards' links keep it). A product opened from a results card now
@@ -65,7 +70,9 @@ Action, its emails and its two authored states moved there.
   (`DEVIATIONS.md` #96). With prices switched off the price row is absent (`DEVIATIONS.md` #97).
 - **Buy panel is `position:sticky; top:96px` on desktop only** (`product.md` §3). Never on mobile.
 - **No sticky mobile buy bar** — D6. **No fitment or install trust line in the buy panel** — D47(2).
-- **Quantity is a URL param** (D50). The cells are links that set `?qty=` and keep every other param;
+- **Quantity is a URL param** (D50), **changed in the browser since D160**: a plain tap sets
+  `QuantityProvider` (`quantity-state.tsx`) and rewrites `?qty=` with `history.replaceState`, so no
+  server round trip and no loader; `quantity-control.tsx` is now a client island. The cells are links that set `?qty=` and keep every other param;
   the panel stays a Server Component apart from the add island. `qty` never reaches `backHref`. The
   *selected* cell defaults to `1` for every category (D127, `DEVIATIONS.md` #98); the four cells and their labels stay as drawn (D63).
   `role="group" aria-labelledby="qty-label"` (D66). Every cell is `scroll={false}`; `Custom` no longer

@@ -48,6 +48,10 @@ import { modelOptionsHtml } from "@/features/finder/options-html";
  * - `hero` (default, unchanged) — the home page panel that overlaps the hero
  *   photo: negative top margin plus its own side margins and container cap.
  * - `inline` (D45) — the `/tires` toolbar's `Change vehicle` disclosure.
+ * - `sheet` (D159) — inside the results pages' vehicle sheet, which already
+ *   draws the box: no border or fill of its own, and the fields stay stacked
+ *   / two-up at every width (the sheet is at most 720px wide, too narrow for
+ *   the desktop four-column row).
  *   Drops the overlap and the side margins/cap so the panel takes its
  *   parent's width; the padding, border, fields and CTA are identical.
  *   Only ever one finder per page, so the field `id`s stay unique.
@@ -65,7 +69,7 @@ import { modelOptionsHtml } from "@/features/finder/options-html";
  * page is the page that shipped before D128.
  */
 export interface VehicleFinderProps {
-  variant?: "hero" | "inline";
+  variant?: "hero" | "inline" | "sheet";
   /**
    * Where the GET submit lands. Defaults to `ROUTES.tires`, the drawn
    * target, so the home hero and `/tires` are unchanged; `/wheels` passes
@@ -143,6 +147,7 @@ export function VehicleFinder({
   partial = null,
 }: VehicleFinderProps) {
   const hero = variant === "hero";
+  const sheet = variant === "sheet";
   const firstMissing = partial?.missing[0];
   /* The vehicle a part-filled submit kept a model for, or `null`. */
   const preselected = partial?.model
@@ -159,7 +164,7 @@ export function VehicleFinder({
       action={action}
       data-probe="finder"
       className={[
-        "bg-surface border border-border-strong",
+        sheet ? "" : "bg-surface border border-border-strong",
         // `hero`: overlap -72px mobile, -120px desktop (home.md:36-37,
         // -mt-18/-mt-30), plus the panel's own side margins (home.md:35-36
         // `margin:-120px 48px 0`). mx-12 (48px) at md matches the 1344px
@@ -170,8 +175,10 @@ export function VehicleFinder({
         hero
           ? "relative z-10 -mt-18 sm:-mt-30 mx-4 sm:mx-8 md:mx-12 lg:mx-auto lg:max-w-content"
           : "w-full",
-        // Padding 20px -> 32px (home.md:36-37); inner gap 12px -> 16px.
-        "p-5 sm:p-8 flex flex-col gap-3 sm:gap-4",
+        // Padding 20px -> 32px (home.md:36-37); inner gap 12px -> 16px. The
+        // sheet's own panel pads it (D159).
+        sheet ? "" : "p-5 sm:p-8",
+        "flex flex-col gap-3 sm:gap-4",
       ].join(" ")}
     >
       {switchable ? (
@@ -225,7 +232,7 @@ export function VehicleFinder({
           "sm:items-end",
           /* Desktop: 1fr 1.2fr 1.2fr 300px (home.md:154 `grid-template-columns`),
              `@utility finder-grid` in globals.css, which also aligns to end. */
-          "md:finder-grid md:gap-4",
+          !sheet && "md:finder-grid md:gap-4",
         ]
           .filter(Boolean)
           .join(" ")}

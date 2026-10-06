@@ -30,15 +30,12 @@ import { Input, Textarea } from "@/components/ui/input";
 import { submitCartQuote } from "@/features/cart/actions";
 import { QuoteErrorSummary } from "@/features/cart/components/quote-error-summary";
 import {
-  CONTACT_METHODS,
-  DEFAULT_CONTACT_METHOD,
   QUOTE_FIELD,
   QUOTE_INITIAL_STATE,
   type PostedLine,
   type QuoteCopy,
   type QuoteFormState,
 } from "@/features/cart/types";
-import { cx } from "@/lib/cx";
 
 /** Browser `maxLength` per field (D91b WDG-12). They mirror the caps
  *  `actions.ts` enforces; the server is still the validator (`noValidate`). */
@@ -49,7 +46,7 @@ const SEND_FAILED = "We couldn't send that. Check your connection and try again.
 
 function failedSendState(formData: FormData): QuoteFormState {
   const values: QuoteFormState["values"] = {};
-  for (const field of ["name", "email", "phone", "contact", "message", "consent"] as const) {
+  for (const field of ["name", "email", "phone", "message", "consent"] as const) {
     const value = formData.get(field);
     if (typeof value === "string") values[field] = value;
   }
@@ -102,7 +99,6 @@ export function QuoteForm({ getLines, copy, openedAt, onSuccess }: QuoteFormProp
   }, [state]);
 
   const errors = state.status === "invalid" ? state.errors : undefined;
-  const selectedContact = values?.contact ?? DEFAULT_CONTACT_METHOD;
   const errorCount = errors ? Object.keys(errors).length : 0;
 
   return (
@@ -222,49 +218,9 @@ export function QuoteForm({ getLines, copy, openedAt, onSuccess }: QuoteFormProp
       <div className="border-border-strong flex flex-col gap-3.5 border-t pt-5 sm:gap-4 sm:pt-6">
         <span className="label text-ink-dim text-10 tracking-14 sm:text-11">Optional</span>
 
-        <div>
-          {/* The group's accessible name is the fieldset's own legend; this
-              visible caption is `aria-hidden` (product-desktop.html:146). */}
-          <span
-            aria-hidden="true"
-            className="label text-ink-muted mb-1.5 block text-11 tracking-12 sm:mb-2 sm:text-12"
-          >
-            Preferred contact
-          </span>
-          <fieldset className="m-0 min-w-0 border-0 p-0">
-            <legend className="sr-only">Preferred contact</legend>
-            {/* Segmented control: 56px desktop / 52px mobile, separators
-                between segments only (product-desktop.html:146, product
-                `llm.md` Don't). Selected state is `has-checked:`. */}
-            <div className="rounded-ctl border-border-strong grid h-13 grid-cols-3 overflow-hidden border sm:h-14">
-              {CONTACT_METHODS.map((method, index) => (
-                <label
-                  key={method.value}
-                  /* Forced-colours hook: the checked segment's `--text` fill
-                     is repainted as `Canvas` there, so globals.css gives
-                     `[data-segment]:has(:checked)` `Highlight`. D145. */
-                  data-segment=""
-                  className={cx(
-                    "font-sans relative flex cursor-pointer items-center justify-center text-14 leading-flat font-medium",
-                    "text-ink-muted has-checked:bg-ink has-checked:text-on-accent",
-                    "has-focus-visible:outline-2 has-focus-visible:outline-accent has-focus-visible:outline-offset-0",
-                    index > 0 && "border-border-strong border-l",
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name={QUOTE_FIELD.contact}
-                    value={method.value}
-                    defaultChecked={selectedContact === method.value}
-                    className="sr-only"
-                  />
-                  {method.label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        </div>
-
+        {/* The Preferred contact segmented control (Phone / Email / WhatsApp)
+            was here until 2026-10-07 (owner: "remove preferred contact full
+            section in all views"). DEVIATIONS #127. */}
         <div>
           <FieldLabel htmlFor="quote-message">Message</FieldLabel>
           <Textarea

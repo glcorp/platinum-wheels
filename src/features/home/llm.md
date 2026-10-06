@@ -14,7 +14,7 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
 - [`components/winter-promo.tsx`](components/winter-promo.tsx) — `WinterPromo`. Full-bleed photo + tinted panel, computed `Winter <year>` (D32), spec chips inline (not `Chip`). home.md §2.5.
 - [`components/how-it-works.tsx`](components/how-it-works.tsx) — `HowItWorks`, `id="how-it-works"`. Four steps as data; eyebrow only, no h2. home.md §2.6.
 - [`components/featured-tires.tsx`](components/featured-tires.tsx) — `FeaturedTires`. Async server shell: spacing, hands the featured products to the island, and renders nothing when none resolve. home.md §2.7.
-- [`featured.ts`](featured.ts) — `FEATURED_SLUGS`, **a fixed list of product slugs in code** (owner, 2026-09-30, D108b: not an automatic rule, not an admin tick), and `getFeaturedProducts()`, which reads them from the catalogue through `unstable_cache` (tag `CATALOGUE_TAG`, **no timer**, D111). A slug that does not resolve is skipped; a failed read logs `home.featured.read_failed` and returns none. `/` stays prerendered and fully static: the row follows the database when the product admin's actions expire the tag and on every deploy (the cache key carries the deployment's id, because an `unstable_cache` entry otherwise outlives the deploy that wrote it), never on a clock (a timed `revalidate` sends the `stale-while-revalidate` header D93b reverted, WDG-09).
+- [`featured.ts`](featured.ts) — `FEATURED_SLUGS` (since 2026-10-07 seven winter tires chosen for whole-tire photos, D160), **a fixed list of product slugs in code** (owner, 2026-09-30, D108b: not an automatic rule, not an admin tick), and `getFeaturedProducts()`, which reads them from the catalogue through `unstable_cache` (tag `CATALOGUE_TAG`, **no timer**, D111). A slug that does not resolve is skipped; a failed read logs `home.featured.read_failed` and returns none. `/` stays prerendered and fully static: the row follows the database when the product admin's actions expire the tag and on every deploy (the cache key carries the deployment's id, because an `unstable_cache` entry otherwise outlives the deploy that wrote it), never on a clock (a timed `revalidate` sends the `stale-while-revalidate` header D93b reverted, WDG-09).
 - [`components/featured-carousel.tsx`](components/featured-carousel.tsx) — `FeaturedCarousel`, **the one `"use client"` file** (D30): heading row with prev/next, scroll-snap track, dot progress. **Since D157** it takes `count` and the cards as `children`, rendered by `featured-tires.tsx` on the server, so `ProductCard` is not in the client bundle.
   Since **D74** the track is a flex scroll-snap scroller at **every** width, not a grid from `sm:`, so
   the two drawn desktop arrows act. One press moves one card at any width — `stepSize()` measures the
@@ -23,7 +23,7 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
   The track is `tabIndex={0} role="group" aria-label="Featured tires"` (**D66**): Chrome will not focus
   a plain scrolling `<div>`, so below `sm:` a keyboard user could not scroll it and AT announced four
   cards in an unnamed container. The only paint it adds is the global focus ring.
-- [`components/brand-strip.tsx`](components/brand-strip.tsx) — `BrandStrip`. The drawn band (fill, hairlines, margins, paddings: home.md §2.8) holding a **CSS-only ticker of real brand logos** since **D129**: the list twice in a track that slides one list's width, the copy `aria-hidden`; a no-JS pause checkbox (WCAG 2.2.2) plus pause on hover and focus; reduced motion shows one static wrapping row. Mechanics are the `brand-marquee` utility (`globals.css`, "Brand marquee (D129)"). No longer reads `BRANDS`.
+- [`components/brand-strip.tsx`](components/brand-strip.tsx) — `BrandStrip`. The drawn band (fill, hairlines, margins, paddings: home.md §2.8) holding a **CSS-only ticker of real brand logos** since **D129**: the list twice in a track that slides one list's width, the copy `aria-hidden`; pause on hover only since D139; it moves with Reduce Motion on too since D159. Mechanics are the `brand-marquee` utility (`globals.css`, "Brand marquee (D129)"). No longer reads `BRANDS`.
 - [`brand-logos.ts`](brand-logos.ts) — `BRAND_LOGOS`: the nineteen ticker brands in display order, each with its file slug (`public/images/brands/<slug>.svg`), measured `aspect` and optical `scale` (D129). Sources: `design/ASSET-CREDITS.md` "Brand logos".
 - [`components/contact.tsx`](components/contact.tsx) — `Contact`, `id="contact"`. One DOM, four blocks placed by grid per width (D22). home.md §2.9.
 
@@ -40,8 +40,8 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
   never invent (`.claude/rules/ui.md`).
 - Section anchors: `contact.tsx` renders `id="contact"`, `how-it-works.tsx` renders
   `id="how-it-works"` — `ROUTES.contact` / `ROUTES.howItWorks` depend on them. Both carry
-  `scroll-mt-14 sm:scroll-mt-20` (**D66**, measured 80px): `scroll-margin-top` was set nowhere in the
-  build, so following either link landed the section flush at y=0.
+  no `scroll-mt-*` since **D159** (2026-10-07): the header is pinned and `html`'s `scroll-padding-top`
+  (68 / 88px) lands them under it; the sections' own top padding is the breathing room **D66** added.
 - **Motion (D92b).** Every section below the hero and finder carries `data-reveal=""` on its root; the
   page renders `ScrollReveal`, which arms only the ones below the fold at mount. Never put `data-reveal`
   on the hero or the finder. Category tiles take the card's drawn hover (DEVIATIONS #77), and tiles plus
@@ -72,8 +72,8 @@ None folder-scoped. Governing: **D22, D29, D30, D32, D33, D35, D37, D39** (root 
 - Don't give a brand logo its own colour, an `<img>`, or a link. The ticker paints every logo `currentColor` through a mask so the
   colour is a token (D129); the owner did not ask for links. A new logo needs a row in `design/ASSET-CREDITS.md`, its measured
   `aspect`, and a `scale` tuned on a rendered strip.
-- Don't drop the brand ticker's reduced-motion fallback: the global reduced-motion kill alone would park the track on the
-  hidden copy. Its pause button was removed by owner ruling (**D139**, 2026-10-04), which leaves no pause for keyboard or
+- Don't bring back a static reduced-motion layout for the brand ticker: since **D159** (owner, 2026-10-07, "Always move")
+  it moves with Reduce Motion on, via an `!important` in the utility layer that outranks the global kill. Its pause button was removed by owner ruling (**D139**, 2026-10-04), which leaves no pause for keyboard or
   touch users, a known WCAG 2.2.2 gap; putting one back is the owner's call.
 
 ## Open

@@ -410,7 +410,7 @@ export default function StyleguidePage() {
         <Block id="badges" index={5} eyebrow="Controls" title="Badge">
           <Row label="Variants">
             <Badge variant="winter">Winter</Badge>
-            <Badge variant="outline">All-Season</Badge>
+            <Badge variant="accent">All-Season</Badge>
             <Badge variant="outline">3PMSF</Badge>
             <Badge variant="outline">M+S</Badge>
             <Badge variant="unavailable">Currently unavailable</Badge>

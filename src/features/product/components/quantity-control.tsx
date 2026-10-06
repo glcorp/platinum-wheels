@@ -1,5 +1,9 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import type { MouseEvent } from "react";
+
+import { useQuantity } from "@/features/product/components/quantity-state";
 import {
   PRODUCT_PARAM,
   QUANTITY_OPTIONS,
@@ -8,6 +12,15 @@ import {
 
 /* ---------------------------------------------------------------------------
    QuantityControl — the four `?qty=` cells (D50)
+
+   Since 2026-10-07 a client island: a plain tap changes the selection in the
+   browser (`quantity-state.tsx`) and rewrites `?qty=` without a server round
+   trip, so the loader no longer shows on every tap (owner: "The fix is to
+   change the quantity in the browser with no reload"). The cells stay real
+   `?qty=` links, so a modified click, a click before hydration and a visit
+   with JavaScript off still load the page with that quantity. The
+   paragraphs below about Server Components and same-route navigations
+   describe that no-JS path.
 
    Server Component: the cells are `next/link`s that set `?qty=<value>` while
    preserving every other current param, so the panel never needs client
@@ -107,9 +120,19 @@ function hrefFor(
 }
 
 export function QuantityControl({
-  quantity,
+  quantity: served,
   searchParams,
 }: QuantityControlProps) {
+  const live = useQuantity();
+  const quantity = live?.quantity ?? served;
+  /* A plain left click picks the cell in place; anything else is left to
+     the link (new tab, no JS yet). */
+  const pick = (value: QuantityKey) => (event: MouseEvent<HTMLAnchorElement>) => {
+    if (live === null || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    live.setQuantity(value);
+  };
   return (
     <div className="flex flex-col gap-2.5 pt-2">
       <div className="flex items-baseline justify-between">
@@ -134,6 +157,10 @@ export function QuantityControl({
               <Link
                 key={option.value}
                 href={hrefFor(option.value, searchParams)}
+                onClick={pick(option.value)}
+                data-no-progress=""
+                /* Handled in place, so no server copy is worth fetching. */
+                prefetch={false}
                 /* D122: no `#quote` to scroll to any more; stays put like the
                    number cells (D91b, WDG-05). */
                 scroll={false}
@@ -160,6 +187,9 @@ export function QuantityControl({
             <Link
               key={option.value}
               href={hrefFor(option.value, searchParams)}
+              onClick={pick(option.value)}
+              data-no-progress=""
+              prefetch={false}
               /* Same-route `?qty=` nav: without this Next scrolls to the top
                  once the page's first element is off-screen, so on a phone a
                  tap threw the reader away from the cells (D91b, WDG-05; the

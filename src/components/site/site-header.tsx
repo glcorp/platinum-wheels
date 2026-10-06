@@ -7,9 +7,12 @@
    D122 adds the cart link (`cart-link.tsx`, the second client island here)
    between the phone CTA and the menu, at every width.
 
-   Two variants, one markup: `over-hero` is absolutely positioned inside the
-   hero (design/manifest.md:44, "not sticky"); `solid` is the same bar on
-   every other route. Both read `background:var(--scrim-strong)` on the
+   Two variants, one markup: `over-hero` sits over the hero and `solid` is
+   the same bar on every other route. Since 2026-10-07 both stay on screen as
+   the page scrolls (owner: "the header should be sticky and when we scroll
+   down, it should be there in laptop and mobile both"): `over-hero` is
+   `fixed`, `solid` is `sticky`. The drawn header was "not sticky"
+   (design/manifest.md:44); DEVIATIONS #121. Both read `background:var(--scrim-strong)` on the
    artboards themselves (home-desktop.html:95, home-mobile.html:77,
    results-desktop.html:86 — the drawn "solid" header) even though
    DESIGN.md §4 describes the non-home header as "--bg". Per the authority
@@ -100,11 +103,24 @@ export function SiteHeader({
          while the nav below takes the page's 1344px frame. */
       className={
         variant === "over-hero"
-          ? /* absolute inset-x-0 top-0 z-10 — design/manifest.md:44 (not sticky) */
-            "bg-scrim-strong border-border absolute inset-x-0 top-0 z-10 h-17 border-b px-4 sm:h-22 sm:px-8 md:px-12"
-          : /* solid: static bar, same background as measured on the artboards
-               (results-desktop.html:86) — see deviation note above. */
-            "bg-scrim-strong border-border h-17 border-b px-4 sm:h-22 sm:px-8 md:px-12"
+          ? /* Pinned to the viewport (owner, 2026-10-07: "the header should be
+               sticky … in laptop and mobile both"). At rest it sits exactly
+               where the drawn `absolute inset-x-0 top-0` put it, over the
+               hero photo; `fixed` rather than `sticky` because its parent is
+               the hero, which scrolls away. Solid `--bg` rather than the drawn
+               92% `--scrim-strong`: pinned over the page, 8% of whatever
+               scrolled under it showed through. Over the photo the two are
+               nearly the same. DEVIATIONS #121. */
+            "bg-bg border-border fixed inset-x-0 top-0 z-30 h-17 border-b px-4 sm:h-22 sm:px-8 md:px-12"
+          : /* solid: the same bar, sticky at the top of every other page
+               (owner, 2026-10-07). Background as measured on the artboards
+               (results-desktop.html:86) — see deviation note above. z-30
+               clears the results sticky bar (z-3) and the card overlays.
+               `bg-bg`, not the drawn `--scrim-strong`: that token is `--bg`
+               at 92%, so over the page it composites to exactly `--bg` and
+               nothing moves at rest, but once pinned it let the cards show
+               through (measured 2026-10-07). */
+            "bg-bg border-border sticky top-0 z-30 h-17 border-b px-4 sm:h-22 sm:px-8 md:px-12"
       }
     >
       <nav

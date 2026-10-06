@@ -22,8 +22,9 @@
    nothing focusable. It pauses on hover (pointer devices). The visible pause
    button is gone (D139, owner 2026-10-04: *"remove pause buttoon"*), which
    leaves no pause for keyboard or touch users: a known WCAG 2.2.2 gap, taken
-   on the owner's ruling. Reduced motion gets one static, wrapping, flush-left
-   row.
+   on the owner's ruling. Reduce Motion no longer stops it (owner, 2026-10-07,
+   "Always move"): an iPhone with Reduce Motion on showed a static grid of
+   rows instead of the banner.
 
    Logos are not links (not asked for). Each `<li>` carries the brand's name as
    `sr-only` text with `translate="no"` (WDG-15); the painted logo is

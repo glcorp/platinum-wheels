@@ -28,8 +28,11 @@ export interface SpecificationsProps {
    adding it again here would double it. Only padding-top and gap are this
    component's own. Type crosses at `sm:` 720 (h2 below); the 96px
    padding-top also lands at `sm:`, the same D41 tablet-band convention as
-   the type step, not a `md:` layout change. */
-const SECTION = "flex flex-col gap-5 pt-28 sm:gap-8 sm:pt-24";
+   the type step, not a `md:` layout change.
+   2026-10-07 (owner, on a phone: "fix the blank space between call us and
+   specs"): the drawn 112px below 720 is 48px, the gap the mobile page uses
+   between its other sections. DEVIATIONS #123. Tablet and desktop keep 96. */
+const SECTION = "flex flex-col gap-5 pt-12 sm:gap-8 sm:pt-24";
 
 /* `display` utility carries family/weight/leading/tracking/transform; size
    stays an explicit token (DESIGN.md §3). 32px M (product-mobile.html:103) →

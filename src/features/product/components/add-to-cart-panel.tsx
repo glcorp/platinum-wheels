@@ -21,6 +21,7 @@ import { useRef, useState } from "react";
 import { FieldError, FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
 import { AddToCartButton } from "@/features/catalog/components/add-to-cart-button";
+import { useQuantity } from "@/features/product/components/quantity-state";
 import { CART_MAX_QUANTITY, type CartItem } from "@/lib/cart";
 
 /* Any whole number; past the store's invisible ceiling it is clamped there
@@ -36,7 +37,12 @@ export interface AddToCartPanelProps {
   vehicle: string;
 }
 
-export function AddToCartPanel({ slug, item, quantity, vehicle }: AddToCartPanelProps) {
+export function AddToCartPanel({ slug, item, quantity: served, vehicle }: AddToCartPanelProps) {
+  /* The cells' live choice (2026-10-07, `quantity-state.tsx`); the served
+     prop only outside a provider. */
+  const live = useQuantity();
+  const quantity =
+    live === null ? served : live.quantity === "custom" ? null : Number(live.quantity);
   const [custom, setCustom] = useState("");
   const [invalid, setInvalid] = useState(false);
   const fieldRef = useRef<HTMLInputElement>(null);

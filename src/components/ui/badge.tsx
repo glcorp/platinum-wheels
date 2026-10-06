@@ -3,7 +3,7 @@ import type { ComponentPropsWithoutRef } from "react";
 import { cx } from "@/lib/cx";
 
 /* ---------------------------------------------------------------------------
-   Badge — winter / outline / unavailable
+   Badge — winter / accent / outline / unavailable
 
    Not interactive, so no hover, focus or tap-target rule applies. Radius is 0:
    `--radius-ctl` is for controls only and badges are explicitly excluded
@@ -12,7 +12,7 @@ import { cx } from "@/lib/cx";
    `rounded-*` class.
    --------------------------------------------------------------------------- */
 
-type BadgeVariant = "winter" | "outline" | "unavailable";
+type BadgeVariant = "winter" | "accent" | "outline" | "unavailable";
 
 /* Shared box and type — identical across all three variants and across both
    artboards, and the one place DESIGN.md §4 "Badge" and the exports agree
@@ -43,10 +43,16 @@ const badgeBase =
    ever renders as a plain inline span — where `height` would be ignored and
    line-height alone would carry the 24px. */
 const variantClass: Record<BadgeVariant, string> = {
-  /* WINTER — `background:var(--accent);color:var(--on-accent);
-     font:500 11px/24px` — no border. "Spends the frame's accent"
-     (DESIGN.md §4). results.md §3.3, product.md §3.1. */
-  winter: "bg-accent leading-badge text-on-accent",
+  /* WINTER — drawn `background:var(--accent);color:var(--on-accent);
+     font:500 11px/24px`, no border (results.md §3.3, product.md §3.1). Since
+     2026-10-07 an icy aqua `--winter` fill with a snowflake (owner: "make
+     winter tag aqua and frosty element", DEVIATIONS #126); box and type
+     unchanged. */
+  winter: "bg-winter leading-badge text-on-winter",
+
+  /* The drawn filled badge, lime. All-Season wears it since 2026-10-07
+     (owner: "make all season green filled like winter", DEVIATIONS #125). */
+  accent: "bg-accent leading-badge text-on-accent",
 
   /* ALL-SEASON / SUMMER / OEM / STUDDABLE / M+S / 3PMSF —
      `border:1px solid var(--text-muted);color:var(--text-muted);
@@ -66,8 +72,30 @@ export type BadgeProps = ComponentPropsWithoutRef<"span"> & {
   variant?: BadgeVariant;
 };
 
-export function Badge({ variant = "outline", className, ...rest }: BadgeProps) {
+/* The frost on the Winter badge: a six-armed snowflake, 12px, stroked in the
+   badge's own ink, `gap-1.5` from the word (the 3PMSF badge's icon gap).
+   Decorative; the word says the season. */
+function Snowflake() {
   return (
-    <span {...rest} className={cx(badgeBase, variantClass[variant], className)} />
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      className="size-3 shrink-0"
+    >
+      <path d="M12 2v20M3.3 7l17.4 10M3.3 17l17.4-10M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5M3.6 10.4 7 9.5 6.1 6.1M17.9 17.9 17 14.5l3.4-.9M3.6 13.6 7 14.5l-.9 3.4M17.9 6.1 17 9.5l3.4.9" />
+    </svg>
+  );
+}
+
+export function Badge({ variant = "outline", className, children, ...rest }: BadgeProps) {
+  return (
+    <span {...rest} className={cx(badgeBase, variantClass[variant], className)}>
+      {variant === "winter" ? <Snowflake /> : null}
+      {children}
+    </span>
   );
 }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
 import { cartItem } from "@/features/catalog/cart-item";
 import { AddToCartPanel } from "@/features/product/components/add-to-cart-panel";
+import { QuantityProvider } from "@/features/product/components/quantity-state";
 import { QuantityControl } from "@/features/product/components/quantity-control";
 import { vehicleLabel, type ProductView } from "@/features/product/types";
 import { PRICES_VISIBLE, PRIMARY_CONTACT } from "@/lib/site";
@@ -24,7 +25,9 @@ import { PRICES_VISIBLE, PRIMARY_CONTACT } from "@/lib/site";
    flex-direction:column;gap:20px`, no padding of its own: the split's 64px
    gap and the page's own padding do that job (`product-desktop.html:106`).
    Mobile `padding:32px 16px 0;display:flex;flex-direction:column;gap:16px`,
-   not sticky (`product-mobile.html:92`). Tablet band keeps the mobile
+   not sticky (`product-mobile.html:92`); the top 32px is 16px below 720
+   since 2026-10-07 (owner: "below tire there is so much black space",
+   DEVIATIONS #123). Tablet band keeps the mobile
    padding (D41 "page padding 32" from `sm:`) until the split activates at
    `md:` (1100, `product.md` §1.5/1.6), where padding hands off to the split
    wrapper and `md:sticky md:top-24` (96px, the same token name
@@ -115,7 +118,7 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
     /* `min-w-0` (D91b, NJR-8): this is the `pdp-split` grid item, and an
        `fr` track's floor is its item's min-content — one long word in the
        h1 grew the 576px column to 606px and squeezed the gallery. */
-    <div className="flex min-w-0 flex-col gap-4 px-4 pt-8 sm:gap-5 sm:px-8 sm:pt-8 md:sticky md:top-24 md:gap-5 md:px-0 md:pt-0">
+    <div className="flex min-w-0 flex-col gap-4 px-4 pt-4 sm:gap-5 sm:px-8 sm:pt-8 md:sticky md:top-24 md:gap-5 md:px-0 md:pt-0">
       {breadcrumb}
 
       {/* Badge row — desktop only (`product-desktop.html:108`); mobile's
@@ -191,7 +194,10 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
         </div>
       ) : null}
 
-      <QuantityControl quantity={view.quantity} searchParams={searchParams} />
+      {/* The cells and `Add to cart` share the selection in the browser
+          (2026-10-07, `quantity-state.tsx`): a tap no longer reloads. */}
+      <QuantityProvider initial={view.quantity}>
+        <QuantityControl quantity={view.quantity} searchParams={searchParams} />
 
       {/* CTA pair — `flex flex-col;gap:8px;padding-top:8px` mobile,
           `gap:10px` desktop (`product.md` §3.5). `panel` size (`h-14 sm:h-15`
@@ -223,6 +229,7 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
           Call us
         </Button>
       </div>
+      </QuantityProvider>
     </div>
   );
 }

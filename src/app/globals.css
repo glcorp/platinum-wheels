@@ -45,11 +45,13 @@
   --on-accent: #0b0b0d; /* ink on accent fill */
 
   /* Seasonal ink — DESIGN.md §2 "spec tables, legends — never large areas".
-     Referenced zero times in the current artboards; the WINTER badge is an
-     --accent fill and every other badge a 1px --text-muted outline. Kept
-     because the spec gives them a defined role, not because a screen uses them
-     yet. If no screen ever does, delete them. */
-  --winter: #8fc9f2;
+     Since 2026-10-07 `--winter` fills the WINTER badge (owner: "make winter
+     tag aqua and frosty element"), moved from DESIGN.md's ice blue #8fc9f2 to
+     an icy aqua; `--on-winter` is its ink (about 13:1). The badge is small,
+     so §2's "never large areas" holds. DEVIATIONS #126. `--all-season` is
+     still unused (the All-Season badge is an --accent fill, #125). */
+  --winter: #7fe3f0;
+  --on-winter: #0b0b0d;
   --all-season: #d9c29a;
 
   /* Display scale ramp — DESIGN.md §3. All three are 1 in Track Night; they
@@ -129,6 +131,7 @@
   --color-on-accent: var(--on-accent);
 
   --color-winter: var(--winter);
+  --color-on-winter: var(--on-winter);
   --color-all-season: var(--all-season);
 
   --color-scrim-strong: var(--scrim-strong);
@@ -447,6 +450,15 @@
 
 @utility photo-inset-gallery {
   padding: 8%;
+
+  /* Below 1100 the gallery is a short, full-bleed band (`pdp-gallery-band`)
+     with no frame, and 8% of its width left a wide black ring round a photo
+     that already carries its own margin (owner, 2026-10-07: "reduce the
+     border around image, below tire there is so much black space").
+     DEVIATIONS #123. The desktop square keeps the drawn 8%. */
+  @media (max-width: 1099.98px) {
+    padding: 2%;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -706,6 +718,13 @@
   @media (max-height: 500px) {
     height: 100dvh;
   }
+  /* The vehicle sheet (D159) holds three fields, not a filter list: it takes
+     its content's height, never more than the viewport. An attribute, not a
+     second utility, so it outranks the heights above by specificity rather
+     than by emission order (HANDOFF §8.3). */
+  &[data-fit] {
+    height: auto;
+  }
   /* Scrolling past either end of the sheet chained to the page behind the
      modal: `overscroll-behavior` was declared nowhere in the build. The body
      `overflow:hidden` lock the sheet sets is a different guarantee and does not
@@ -809,7 +828,9 @@
    Below 720 (DEVIATIONS #117, owner 2026-10-05 "Yes, shorter photo"): the
    stack under the photo is ~470px (header, crumbs, h1, size line, quantity,
    `Add to cart`), so the square pushed `Add to cart` past the first screen;
-   the cap leaves that stack plus 12px on screen. `svh`, not `dvh`, so it holds
+   the cap leaves that stack plus 12px on screen. 2026-10-07: the buy panel's
+   top padding went 32 → 16px below 720 (DEVIATIONS #123), so the stack is
+   16px shorter and the photo takes those 16px (482 → 466). `svh`, not `dvh`, so it holds
    with the browser toolbars showing and never resizes during a scroll.
    1100+ never matches; the square there is `md:aspect-square` on the box.
    The height is set outright, never as `aspect-square` + `max-height`: a
@@ -821,7 +842,7 @@
    The photo stays whole (`object-contain`). */
 @utility pdp-gallery-band {
   @media (max-width: 719.98px) {
-    height: min(100vw, max(240px, calc(100svh - 482px)));
+    height: min(100vw, max(240px, calc(100svh - 466px)));
   }
   @media (min-width: 720px) and (max-width: 1099.98px) {
     height: min(100vw, 60dvh);
@@ -1512,8 +1533,9 @@
    3.6k / 4.5k / 5.2k px at the three base heights, so the loop runs 60s /
    70s / 80s. Paused on hover (pointer devices only, D17). The pause toggle
    was removed by owner ruling (D139), so keyboard and touch users have no
-   pause: a known WCAG 2.2.2 gap. Reduced motion: no animation, no copy, no
-   fade; the one list wraps flush-left into static rows.
+   pause: a known WCAG 2.2.2 gap. Reduced motion moves it too (owner,
+   2026-10-07, "Always move"), so the band is the same one-line ticker on
+   every phone.
    =========================================================================== */
 @keyframes brand-marquee {
   from {
@@ -1604,37 +1626,16 @@
     }
   }
 
-  /* Static fallback: an intentional row, never a frozen half-loop. The
-     global reduced-motion kill alone would run the animation for 0.01ms and
-     park the track at -50%, showing the aria-hidden copy. */
+  /* Reduce Motion does not stop the ticker (owner, 2026-10-07, choosing
+     "Always move" after seeing the static grid an iPhone with Reduce Motion
+     shows). The global reduced-motion kill is unlayered `!important`; an
+     `!important` inside this utility's layer outranks it, so the track keeps
+     its full loop. A known WCAG 2.3.3 / 2.2.2 gap on the owner's ruling, as
+     D139 already took for the pause control. DEVIATIONS #122. */
   @media (prefers-reduced-motion: reduce) {
-    /* Nineteen logos in rows: smaller on a phone so the band stays a band. */
-    --brand-logo-h: calc(var(--spacing) * 5);
-
-    @media (min-width: 720px) {
-      --brand-logo-h: calc(var(--spacing) * 7);
-    }
-
     & [data-marquee="track"] {
-      width: auto;
-      animation: none;
-    }
-
-    & [data-marquee="viewport"] {
-      -webkit-mask-image: none;
-      mask-image: none;
-    }
-
-    & [data-marquee~="list"] {
-      flex: 1 1 auto;
-      flex-wrap: wrap;
-      column-gap: calc(var(--spacing) * 8);
-      row-gap: calc(var(--spacing) * 5);
-      padding-inline-end: 0;
-    }
-
-    & [data-marquee~="copy"] {
-      display: none;
+      animation-duration: var(--brand-loop) !important;
+      animation-iteration-count: infinite !important;
     }
   }
 
@@ -1686,21 +1687,37 @@
    condition the artboards do not draw (a keyboard landing, forced colours).
    --------------------------------------------------------------------------- */
 
+/* The header is pinned on every page since 2026-10-07 (owner: "the header
+   should be sticky"), 68px tall, 88px from 720 (`site-header.tsx`). Every
+   fragment jump, `scrollIntoView` and keyboard focus lands below it instead of
+   under it (WCAG 2.4.11). The results rule below is more specific and adds the
+   filter bar on top. */
+html {
+  scroll-padding-top: calc(var(--spacing) * 17);
+}
+@media (min-width: 720px) {
+  html {
+    scroll-padding-top: calc(var(--spacing) * 22);
+  }
+}
+
 /* WCAG 2.4.11 Focus Not Obscured (AXE-1). Below `md:` the results pages pin a
    filter/sort bar at top 68px (88px from `sm:`), 70px tall
    (`filter-sort-bar.tsx`, `results-mobile.html:98`). Nothing reserved that
    band, so Shift+Tab parked `Load more` and the card links fully under it
    (measured 68.3-120.3 under a 68-138 bar). Scroll padding makes the browser
    bring focus targets in below the bar's bottom edge. Rest scroll positions
-   are unaffected. */
+   are unaffected. Since D159 the bar also holds the category tabs and the
+   vehicle button and is 122px tall under the pinned header: 68 + 122 = 190,
+   88 + 122 = 210 from `sm:` (measured 2026-10-07). */
 @media (max-width: 1099.98px) {
   html:has([data-sticky-filter-bar]) {
-    scroll-padding-top: 138px;
+    scroll-padding-top: 190px;
   }
 }
 @media (min-width: 720px) and (max-width: 1099.98px) {
   html:has([data-sticky-filter-bar]) {
-    scroll-padding-top: 158px;
+    scroll-padding-top: 210px;
   }
 }
 
