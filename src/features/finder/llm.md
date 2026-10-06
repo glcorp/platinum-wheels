@@ -75,6 +75,11 @@ Built at `page home`, 2026-09-20.
   **generated** by `scripts/vehicle-fitment.mjs` from `scripts/data/vehicles.csv` and
   `scripts/data/vehicle-fitment.csv` and `vehicle-fitment-generations.csv`. Never edited by hand.
 
+- **D158:** with `switchable` (home only), `vehicle-finder.tsx` renders `CategoryTabs` with `finderSwitch`
+  as the panel's first row below `md:`: the header's categories are in the menu there. The panel grew
+  56px (60 on tablets), so `globals.css` `hero-fit` subtracts 325 / 244 / 172 (re-measure if the finder
+  changes again); the tabs take `max-sm:fold-minimal:h-10` so 320×568 keeps the CTA on screen (565).
+
 ## Rules
 - Native `<select>` via `src/components/ui/select.tsx`. Never a custom combobox (`docs/decisions.md` §5).
 - Ships **unselected** with a placeholder option per select (D28). The artboard pre-fill

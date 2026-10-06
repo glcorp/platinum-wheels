@@ -6,7 +6,7 @@ import { ProductCard } from "@/features/catalog/components/product-card";
 import type { Product } from "@/features/catalog/types";
 import { LoadMoreLanding } from "@/features/results/components/load-more-landing";
 import { clearFilters, resultsHref, withMore } from "@/features/results/query";
-import { RESULTS_WINDOW, type ResultsView } from "@/features/results/types";
+import { RESULTS_WINDOW, type ResultsView, type Vehicle } from "@/features/results/types";
 import { PRIMARY_CONTACT } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
@@ -166,8 +166,9 @@ function CardGrid({
    *  `Load more` can link to the first card it adds (D133). Positional on
    *  purpose: the link names a slot, not a product. */
   anchorPrefix: "result" | "similar";
-  /** The checked search vehicle, saved on a cart line by `Add to cart`. */
-  vehicle: string;
+  /** The checked search vehicle, saved on a cart line by `Add to cart` and
+   *  carried into each product link (D158). */
+  vehicle: Vehicle | null;
   /** How many leading cards preload their photo instead of lazy-loading it. */
   priorityCount?: number;
 }) {
@@ -277,10 +278,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
   const { best, similar } = view;
   /* D122: the search vehicle rides on every card's `Add to cart`. `query.ts`
      has already dropped any vehicle the finder does not offer (D91b). */
-  const vehicle =
-    view.query.vehicle === null
-      ? ""
-      : `${view.query.vehicle.year} ${view.query.vehicle.make} ${view.query.vehicle.model}`;
+  const vehicle = view.query.vehicle;
   const bestHidden = view.bestTotal - best.length;
   const similarHidden = view.similarTotal - similar.length;
   const atCeiling = view.query.show >= RESULTS_WINDOW.max;

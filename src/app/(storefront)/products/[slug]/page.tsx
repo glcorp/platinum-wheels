@@ -16,7 +16,6 @@ import {
   loadTitleSiblings,
 } from "@/features/product/load";
 import { productView } from "@/features/product/view";
-import { vehicleLabel } from "@/features/product/types";
 import { JsonLd } from "@/features/seo/json-ld";
 import { pageMetadata } from "@/features/seo/metadata";
 import {
@@ -136,7 +135,8 @@ export default async function ProductPage({
 
   return (
     <>
-      <SiteHeader variant="solid" active={view.config.nav} />
+      {/* D158: the header's category links keep the searched vehicle. */}
+      <SiteHeader variant="solid" active={view.config.nav} vehicle={view.vehicle} />
       {/* `<main>` + footer ride one `PageTransition` (D92b); the gallery image
           inside it is the other half of the card-photo morph. */}
       <PageTransition>
@@ -188,9 +188,9 @@ export default async function ProductPage({
             probe="other-sizes"
             products={view.otherSizes}
             leads={view.similar.length > 0}
-            vehicle={vehicleLabel(view)}
+            vehicle={view.vehicle}
           />
-          <SimilarProducts products={view.similar} vehicle={vehicleLabel(view)} />
+          <SimilarProducts products={view.similar} vehicle={view.vehicle} />
         </main>
         <SiteFooter />
       </PageTransition>

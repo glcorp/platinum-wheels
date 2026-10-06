@@ -47,3 +47,33 @@ export const PRODUCT_PATH = "/products";
 export function productRoute(slug: string): string {
   return `${PRODUCT_PATH}/${slug}`;
 }
+
+/** The searched vehicle as the category routes read it from the URL
+ *  (`?year=&make=&model=`, `RESULTS_PARAM` in `results/types.ts`). Spelled
+ *  here, not imported, because `src/lib/` and `src/components/` may not import
+ *  a feature (D37). */
+export type VehicleParams = { year: string; make: string; model: string };
+
+/**
+ * A category route that keeps the searched vehicle (D158). Moving from
+ * `/tires?year=2021&make=Honda&model=Civic` to Wheels lands on
+ * `/wheels?year=2021&make=Honda&model=Civic`, which fits wheels to the same
+ * car; every other filter is left behind, because the three categories filter
+ * on different things. Without a vehicle the route is returned bare.
+ */
+export function categoryHref(route: string, vehicle?: VehicleParams | null): string {
+  if (!vehicle) return route;
+  const params = new URLSearchParams({
+    year: vehicle.year,
+    make: vehicle.make,
+    model: vehicle.model,
+  });
+  return `${route}?${params.toString()}`;
+}
+
+/** `productRoute` that keeps the searched vehicle (D158), so a product opened
+ *  from a results page still knows the car: its header switches category with
+ *  it and `Add to cart` saves it on the line (D122). */
+export function productHref(slug: string, vehicle?: VehicleParams | null): string {
+  return categoryHref(productRoute(slug), vehicle);
+}

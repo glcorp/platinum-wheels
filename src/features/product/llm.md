@@ -45,6 +45,10 @@ Action, its emails and its two authored states moved there.
   and adds what is typed, a whole number, no visible ceiling (owner: "lets not put restrictions of cart").
 - `components/specifications.tsx` · `similar-products.tsx` — `:126-131` / `:159-315`.
 
+- **D158:** the PDP passes `view.vehicle` to `SiteHeader` (category links keep the car) and to both
+  `SimilarProducts` rows (their cards' links keep it). A product opened from a results card now
+  arrives with the vehicle in its URL.
+
 ## Rules
 - **An old vehicle name in `?year&make&model` is redirected before the product is read** (D155, *derived*): the page
   calls `redirectToCanonicalVehicle` (`src/features/finder/canonical.ts`), a 308 to the same product path with every

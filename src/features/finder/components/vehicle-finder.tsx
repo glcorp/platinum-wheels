@@ -1,6 +1,7 @@
 import { FieldLabel } from "@/components/ui/field-label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { CategoryTabs } from "@/components/site/category-tabs";
 import { FINDER_CATEGORIES, FINDER_FORM_ID } from "@/lib/finder-category";
 import { ROUTES } from "@/lib/routes";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
@@ -166,6 +167,26 @@ export function VehicleFinder({
         "p-5 sm:p-8 flex flex-col gap-3 sm:gap-4",
       ].join(" ")}
     >
+      {switchable ? (
+        /* D158 (owner, 2026-10-06): below `md:` the header's category links
+           sit in the menu, where a visitor never sees them, so the finder
+           shows its own Tires / Wheels / Accessories tabs. A tap switches
+           this finder in place, as the header links do (D128); hidden from
+           `md:`, where the header row is visible. */
+        <CategoryTabs
+          finderSwitch
+          /* On the shortest phones (under 600px tall, D128's `fold-minimal`)
+             the tabs give up 4px so the CTA still ends on the first screen:
+             measured 569px at 320x568 at 44px. 40px stays far above the
+             24px minimum target (WCAG 2.5.8). */
+          listClassName="max-sm:fold-minimal:h-10"
+          items={FINDER_CATEGORIES.map((id) => ({
+            id,
+            label: CATEGORY_CONFIG[id].crumb,
+            href: CATEGORY_CONFIG[id].route,
+          }))}
+        />
+      ) : null}
       {carry.map(([name, value], index) => (
         <input key={`${name}-${index}`} type="hidden" name={name} value={value} />
       ))}
