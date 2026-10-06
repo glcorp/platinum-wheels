@@ -168,6 +168,27 @@ for (const [from, to] of SLASH_REDIRECT) {
   });
 }
 
+/* An unknown or hidden product is a full server-rendered 404 document, not a
+   shell that JavaScript fills in. A `notFound()` thrown from the page makes
+   Next answer 404 with an empty `<html id="__next_error__">`, so `src/proxy.ts`
+   checks the slug first and rewrites to the same 404 `/zzz` gets (launch final
+   check, 2026-10-06). Read as HTML with scripting off: no scripts run. */
+test.describe("a product 404 is a whole document with JavaScript off", () => {
+  test.use({ javaScriptEnabled: false });
+  for (const path of ["/products/no-such-product-zz", `/products/${SLUG.hidden}`, "/zzz"]) {
+    test(`${path}`, async ({ page, request }) => {
+      const res = await page.goto(path);
+      expect(res?.status()).toBe(404);
+      await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
+      await expect(page.getByRole("main").getByRole("link", { name: "Shop tires" })).toBeVisible();
+      const html = await (await request.get(path, { maxRedirects: 0 })).text();
+      expect(html.match(/<h1[ >]/g) ?? [], "one h1 in the served HTML").toHaveLength(1);
+      expect(html.match(/<main[ >]/g) ?? [], "one main in the served HTML").toHaveLength(1);
+      expect(html.match(/<meta name="robots"/g) ?? [], "one robots meta").toHaveLength(1);
+    });
+  }
+});
+
 for (const path of NOT_FOUND) {
   test(`status ${path} is 404, branded, noindex and accessible`, async ({ page, request }) => {
     const raw = await request.get(path, { maxRedirects: 0 });

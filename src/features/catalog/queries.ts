@@ -1330,6 +1330,30 @@ export async function getProductBySlug(
 }
 
 /**
+ * Whether `/products/<slug>` has a page to show: the same visibility rule as
+ * `getProductBySlug` (`published` or `discontinued`, never `hidden`), but one
+ * indexed lookup of the id and nothing else. `src/proxy.ts` asks it before the
+ * page renders, so an unknown or hidden slug can be answered with the branded
+ * 404 document rather than with `notFound()` thrown from the page (which Next
+ * answers with an empty shell that only a browser running JavaScript fills in).
+ * A slug the catalogue could never hold is `false` without a query.
+ */
+export async function productPageExists(slug: string): Promise<boolean> {
+  if (slug.length > SLUG_MAX_LENGTH || !SLUG.test(slug)) return false;
+  const [row] = await getDb()
+    .select({ id: products.id })
+    .from(products)
+    .where(
+      and(
+        eq(products.slug, slug),
+        inArray(products.status, ["published", "discontinued"]),
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
+}
+
+/**
  * The same brand and model in its other sizes, nearest to this product's own
  * size first. Nearest, not smallest: a wheel model can come in hundreds of
  * variants, and the first page of those has to be the ones beside the size
