@@ -47,7 +47,9 @@ and the `metadata` of `layout.tsx` and of each indexable page.
   URLs are never indexable even with the flag on, and every page stays static. The canonical host is
   governed by the flag alone.
 - **A 404 carries one robots tag**, Next's own `noindex`: `src/app/not-found.tsx` sets `robots: null`
-  so the layout's site-wide value does not add a second (D145).
+  so the layout's site-wide value does not add a second (D145). Since D157 an unknown or hidden product
+  is that same document, served by `src/proxy.ts`; the product route's `robots: null` covers only the
+  client-navigation fallback.
 - **No two product pages share a title** (D145, D151). The title is the name plus the page's size
   line, and when other published or discontinued products share both, the size line ends with what
   tells this one apart: `Left side`, `Centre bore 72.6 mm`, `Part number GT14156LB`, `Load range E`

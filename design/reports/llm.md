@@ -54,6 +54,8 @@ Without this folder a page can be called "done" on an opinion, which is exactly 
 - [`final-check-fixes-prompt.md`](final-check-fixes-prompt.md) — the prompt for the session that fixes the
   report's three important findings (product 404 blank without JS, results TTFB, phone main-thread time)
   and opens the PR; owner 2026-10-06: *"fix the three important ones and open a PR in a new session"*.
+- [`final-check-fixes-parked.md`](final-check-fixes-parked.md) — what the fix session (D157) left for the
+  owner: the proxy's product-404 read and the Neon timing to check after deploy, each with a recommendation.
 - [`fitment-questions-prompt.md`](fitment-questions-prompt.md) — the prompt for the session that settles the
   vehicle finder's fit data (D149): where it stands, the standing source rules, and the questions to put to
   the owner one at a time.
