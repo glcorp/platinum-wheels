@@ -53,9 +53,9 @@ import { PRICES_VISIBLE } from "@/lib/site";
    Copy ships in the artboards' source case; `text-transform:uppercase` on the
    Badge primitive renders it uppercase, which is why DESIGN.md writes `WINTER`
    and the export writes `Winter` (`.claude/rules/ui.md:49`, artboard copy
-   verbatim). Since 2026-10-07 each season has its own filled badge with a
-   mark (Winter aqua, All-Season brown, Summer yellow, All-Weather lime;
-   DEVIATIONS #125, #126); OEM and Studdable keep the
+   verbatim). Since 2026-10-07 every season badge carries a mark: Winter an
+   aqua fill, All-Season, Summer and All-Weather a faint lime one
+   (DEVIATIONS #125, #126); OEM and Studdable keep the
    `1px --text-muted` outline (`design/DESIGN.md:197-199`,
    `design/assets/results-desktop.html:162` and `:239`). */
 type BadgeVariant = NonNullable<BadgeProps["variant"]>;
