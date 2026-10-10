@@ -51,7 +51,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   validate with `parseProductInput()` in between.
 - [`photo-actions.ts`](photo-actions.ts) — `"use server"`, D117, storage D126b. `requestPhotoUpload` (signs a
   10-minute R2 link for `PUT`s of one type at one staging key `uploads/<product>/<stem>-<id>`), `addPhoto`
-  (takes that key, checks it with a `HEAD`, reads exactly that version with a 10 MB cap, makes the 480 and
+  (takes that key, checks it with a `HEAD`, reads exactly that version with a 50 MB cap (D166; was 10 MB), makes the 480 and
   1000 sizes, stores them under `products/<product>/`,
   deletes the original, then records the row), `removePhoto` (row, then both sizes), `movePhoto`. Each
   calls `requireAdminAction(formData)` first. The only admin file that writes to the bucket.
@@ -156,7 +156,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   marked immutable, so a copy Cloudflare or a browser cached may answer the (unlinked) URL until it
   expires.
 - **A photo is recorded only after R2 confirms it** (D117, D126b): `addPhoto` accepts only a staging key
-  this product's handshake could have issued, `HEAD`s it for an allowed type within 10 MB, and records the
+  this product's handshake could have issued, `HEAD`s it for an allowed type within 50 MB (D166), and records the
   stored `full` URL, never one the browser sends.
 
 ## Decisions
@@ -236,9 +236,8 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 2. ~~**PSP selection.**~~ **Closed by D99 and D107:** the PSP is Converge and the builder creates real
    links. What is left is proving it against the gateway, which waits on the owner actions in `todo.md`
    "Owner — payments".
-3. ~~**Product CRUD screens.**~~ **Built by D116 and D117.** Still open: **the storefront product page shows
-   only the main photo** (`src/features/product/components/pdp-gallery.tsx` takes one image), so photos 2–8
-   are stored and ordered but not displayed; a gallery is storefront work for the owner to schedule. The
+3. ~~**Product CRUD screens.**~~ **Built by D116 and D117.** The storefront gallery that shows photos 2–8 is
+   built (**D167**, 2026-10-11), and photos may be 50 MB (**D166**). The
    greeting lines (`greeting.ts`) await the owner's read. Every successful product or photo write calls
    `updateTag(CATALOGUE_TAG)` (D109), which expires the cached home row and has Next re-render the route
    it was posted from. Owner.

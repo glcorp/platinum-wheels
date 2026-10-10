@@ -151,13 +151,18 @@ export const PHOTO_FIELD = {
   size: "size",
 } as const;
 
-/** What a photo may be (owner, 2026-10-01): 8 per product, 10 MB each, JPEG,
- *  PNG or WebP. The count is enforced beside the writes, in
+/** What a photo may be (owner, 2026-10-01): 8 per product, JPEG, PNG or WebP,
+ *  and since D166 50 MB each (owner, 2026-10-11: "keep it like 50-60 MB, but
+ *  not like 2-3 MB or 5 MB"; it was 10 MB). The browser sends the file
+ *  straight to R2, so Vercel's 4.5 MB request limit never applies; what the
+ *  size costs is `addPhoto` reading and resizing it (measured in D166). The count is enforced beside the writes, in
  *  `@/features/catalog/photos` (`MAX_PHOTOS_PER_PRODUCT`), and repeated here
  *  only so a client island can state it without importing that module. */
 export const PHOTO_LIMITS = {
   perProduct: 8,
-  maxBytes: 10 * 1024 * 1024,
+  /** Stated to staff in every message about the limit. */
+  maxMegabytes: 50,
+  maxBytes: 50 * 1024 * 1024,
   contentTypes: ["image/jpeg", "image/png", "image/webp"],
 } as const;
 

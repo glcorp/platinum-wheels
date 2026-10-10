@@ -10,7 +10,8 @@ import { RESULTS_WINDOW, type ResultsView, type Vehicle } from "@/features/resul
 import { PRIMARY_CONTACT } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
-   ResultsGrid — `Best matches`, `Similar matches`, the load-more window and
+   ResultsGrid — `Best matches`, `May also fit` (D165, was `Similar matches`),
+   the load-more window and
    the empty state. Server Component: the window is a URL read, not state
    (D44), and `Load more` is a `?show=all` link, not a button.
 
@@ -299,23 +300,25 @@ export function ResultsGrid({ view }: ResultsGridProps) {
     : `similar-${similar.length + 1}`;
 
   /* The ceiling note and `Load more` sit under the list they grow: under
-     `Best matches` while best is what grows or is capped, else under
-     `Similar matches` for the one press that only opens the similar row.
+     `Best matches` while best is what grows or is capped, else inside
+     `May also fit` (D165) for the presses that grow the similar row.
      Rendered at the foot of the page they read as belonging to similar
      (owner, 2026-10-06). `underBest` drops the page-foot padding, which
      exists to space the button from the footer, not from another section. */
   const ceilingHit = atCeiling && bestHidden > 0;
   const ceilingSimilar = atCeiling && bestHidden === 0 && similarHidden > 0;
   const underBest = growsBest || ceilingHit;
+  /* D165 — `May also fit` renders open when best is empty (its cards are then
+     the page's only cards), or when the last `Load more` press grew this
+     list: the press before it already showed every best match, which is
+     `show - step >= bestTotal` (the default window, `show` 6, never
+     qualifies). That press's button, ceiling note and landing card are
+     inside the list, so it must arrive open, with JavaScript or without. */
+  const similarOpen =
+    view.bestTotal === 0 ||
+    view.query.show - RESULTS_WINDOW.step >= view.bestTotal;
   const ceiling = ceilingHit || ceilingSimilar ? (
-    <p
-      data-probe="load-ceiling"
-      className={
-        underBest
-          ? SUPPORT
-          : `${SUPPORT} px-4 pt-5 sm:px-8 md:px-0 md:pt-0 md:pb-30`
-      }
-    >
+    <p data-probe="load-ceiling" className={SUPPORT}>
       {ceilingHit
         ? `Showing ${COUNT_FORMAT.format(best.length)} of ${COUNT_FORMAT.format(view.bestTotal)}. Filter by size or brand to narrow it down.`
         : `Showing ${COUNT_FORMAT.format(similar.length)} of ${COUNT_FORMAT.format(view.similarTotal)} similar. Filter by size or brand to narrow it down.`}
@@ -338,7 +341,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
       className={
         underBest
           ? "md:flex md:justify-center"
-          : "mt-3 px-4 sm:px-8 md:mt-0 md:flex md:justify-center md:px-0 md:pb-30"
+          : "mt-3 md:mt-0 md:flex md:justify-center"
       }
     >
       <Button
@@ -429,7 +432,7 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             lazy-loaded and 523ms of resource load delay
             (`design/reports/results.md`). Three because the desktop first row
             is 3-up (results-desktop.html:154); at 390 the first card is the
-            LCP and the other two are harmless preloads. `Similar matches` is
+            LCP and the other two are harmless preloads. `May also fit` is
             always below the fold and stays lazy. */}
         {empty ? (
           <EmptyActions clearHref={resultsHref(clearFilters(view.query))} />
@@ -468,34 +471,74 @@ export function ResultsGrid({ view }: ResultsGridProps) {
       </section>
 
       {/* Omitted entirely when there is nothing similar — with no size in the
-          URL every result is a best match (D47(8)). */}
+          URL every result is a best match (D47(8)).
+
+          D165 — `May also fit` is a collapsible list (owner, 2026-10-11: "We
+          can give a collapsible list instead of showing them always."). A
+          native `<details>`, so it opens and closes with JavaScript off, the
+          D44/D45 pattern; the `<h2>` sits inside the `<summary>` (one heading
+          is allowed there), so the outline is unchanged. It renders closed
+          while there are best matches, and open when best is empty (the list
+          is then the page's only cards) or when the last `Load more` press
+          grew this list (`similarOpen`, below): that press's button lives
+          inside it, and a no-JS arrival at `#similar-N` must land on an open
+          list. A list the reader opened stays open across filter changes:
+          React only writes `open` when the prop itself changes. The global
+          `details` fade (globals.css, D67/D92b) animates the body.
+          `DEVIATIONS.md` #132. */}
       {similar.length === 0 ? null : (
+        /* `md:pb-30`: the 120px page foot the drawn `Load more` row carries
+           (results-desktop.html:498). Closed, the list's summary row is the
+           page's last element on desktop and sat flush on the footer's
+           hairline, so the section carries the foot itself and the button
+           and note inside it do not. */
         <section
           data-probe="similar"
-          className={`${SECTION} pt-14`}
+          className={`${SECTION} pt-14 md:pb-30`}
         >
-          {/* `border-top:1px solid --border-strong` + `padding-top:24px` and
-              `gap:8px` M (results-mobile.html:221); `32px` / `gap:10px` D
-              (results-desktop.html:383). */}
-          <div className="border-border-strong flex flex-col gap-2 border-t pt-6 md:gap-2.5 md:pt-8">
-            <h2 data-probe="similar-heading" className={HEADING}>
-              Similar matches
-            </h2>
-          </div>
-          <CardGrid
-            products={similar}
-            probe="similar-grid"
-            anchorPrefix="similar"
-            vehicle={vehicle}
-          />
+          <details
+            data-probe="similar-details"
+            open={similarOpen}
+            className="group/similar"
+          >
+            {/* `border-top:1px solid --border-strong` + `padding-top:24px`
+                M (results-mobile.html:221); `32px` D (results-desktop.html:383).
+                The whole row is the toggle, at least 44px tall. */}
+            <summary className="border-border-strong text-ink-dim hover:text-ink flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 border-t pt-6 md:pt-8 [&::-webkit-details-marker]:hidden">
+              <h2 data-probe="similar-heading" className={HEADING}>
+                May also fit
+              </h2>
+              <svg
+                aria-hidden="true"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                className="shrink-0 transition-transform ease-card duration-150 group-open/similar:rotate-180"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </summary>
+            {/* The section's own gap, now inside the disclosure: `gap:20px`
+                M, `32px` D. */}
+            <div className="flex flex-col gap-5 pt-5 md:gap-8 md:pt-8">
+              <CardGrid
+                products={similar}
+                probe="similar-grid"
+                anchorPrefix="similar"
+                vehicle={vehicle}
+              />
+              {underBest ? null : (
+                <>
+                  {ceiling}
+                  {loadMore}
+                </>
+              )}
+            </div>
+          </details>
         </section>
-      )}
-
-      {underBest ? null : (
-        <>
-          {ceiling}
-          {loadMore}
-        </>
       )}
 
       {/* D133. Renders nothing; mounted in every state, after every slot the
