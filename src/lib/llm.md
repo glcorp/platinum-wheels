@@ -89,7 +89,7 @@ the next session guesses which of the two phone numbers is real.
   caller is the cart's quote action (`src/features/cart/actions.ts`). The admin keeps its own
   `clientIp()` in `src/features/admin/session.ts` (`x-forwarded-for` first, for logs); this file may not
   import a feature (D37), so they are not shared.
-- [`routes.ts`](routes.ts) — `ROUTES` (every internal href; `ROUTES.cart` since D122), `PRODUCT_PATH`, `productRoute()`. `quoteRoute()` and the PDP's `#quote` anchor went with D122. The
+- [`routes.ts`](routes.ts) — `ROUTES` (every internal href; `ROUTES.cart` since D122, `ROUTES.search` since D173), `PRODUCT_PATH`, `productRoute()`. `quoteRoute()` and the PDP's `#quote` anchor went with D122. The
   one place a path literal lives (D39); components import from here, never write `/tires` themselves.
   **The tire category is `ROUTES.tires` = `/tires` since D112**; the old `ROUTES.results` key and the
   `/results` path are gone.

@@ -52,6 +52,7 @@ import {
   unique,
   uniqueIndex,
   uuid,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 /* ===========================================================================
@@ -122,6 +123,24 @@ export const accessoryType = pgEnum("accessory_type", [
 export interface ExtraSpec {
   label: string;
   value: string;
+}
+
+/**
+ * The text storefront search matches (D173): brand, model, name and part
+ * number, lower case, plus the part number with every non-alphanumeric
+ * stripped, so `DAI12345` finds `DAI-123-45`. Every function in it is
+ * IMMUTABLE (`||` rather than `concat_ws`, which is only STABLE), which an
+ * index expression requires. `products_search_trgm_idx` indexes exactly this
+ * expression and `src/features/search/queries.ts` filters on exactly this
+ * expression; Postgres uses the index only when the two match.
+ */
+export function productSearchText(t: {
+  brand: AnyPgColumn;
+  model: AnyPgColumn;
+  name: AnyPgColumn;
+  partNumber: AnyPgColumn;
+}) {
+  return sql`(lower(coalesce(${t.brand}, '') || ' ' || coalesce(${t.model}, '') || ' ' || coalesce(${t.name}, '') || ' ' || coalesce(${t.partNumber}, '') || ' ' || regexp_replace(coalesce(${t.partNumber}, ''), '[^A-Za-z0-9]+', '', 'g')))`;
 }
 
 /* ===========================================================================
@@ -206,6 +225,15 @@ export const products = pgTable(
     // because that is what `ORDER BY updated_at DESC` means; an index that
     // orders nulls the other way cannot serve the sort.
     index("products_updated_at_idx").on(t.updatedAt.desc().nullsFirst(), t.id),
+    // Storefront search (D173, migration 0006): a trigram index over the text
+    // a shopper types, so `LIKE '%michelin%'` on 40,000 products is an index
+    // read. `pg_trgm` is created by the migration itself. The expression must
+    // stay byte-identical to the one the search query filters on, so both
+    // take it from `productSearchText`.
+    index("products_search_trgm_idx").using(
+      "gin",
+      sql`${productSearchText(t)} gin_trgm_ops`,
+    ),
 
     check(
       "products_slug_format",

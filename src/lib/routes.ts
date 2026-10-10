@@ -38,6 +38,8 @@ export const ROUTES = {
   styleguide: "/styleguide",
   /** The browser-only cart, where a quote is requested (D122). */
   cart: "/cart",
+  /** Free-text search, `?q=` (D173). `noindex`, never in a sitemap. */
+  search: "/search",
 } as const;
 
 /** `/products/<slug>`. Since D122 the product page has no quote form and no

@@ -260,6 +260,7 @@ try {
     "error-boundary",
     "cart-send",
     "pay-states",
+    "search",
     "admin-save",
     "listings",
     "finder-fit",
