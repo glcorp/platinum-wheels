@@ -26,14 +26,30 @@ Server Actions and the emails.
   shape only; every product is read again; the consent wording is picked from the products, never from the
   post. Ceilings 200 lines × 9,999 stop tampering, never a person.
 - [`quote-email.ts`](quote-email.ts) — `deliverQuote()` (D104), moved from `product/`: one owner alert and
-  one auto-reply per request, each listing every line ("One email, all items", owner ruling). Plain text,
-  Resend REST, **sends only when `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` is exactly `true`**, never logs
-  personal data (log lines carry a line count).
+  one auto-reply per request, each listing every line ("One email, all items", owner ruling). Transport
+  only: Resend REST with an `html` body and a `text` alternative (D162), **sends only when
+  `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` is exactly `true`**, never logs personal data (log lines carry a line
+  count). Owns the `QuoteLine` / `QuoteInquiry` shapes.
+- [`quote-email-html.ts`](quote-email-html.ts) — the two emails as pure builders (D162):
+  `ownerAlertEmail(inquiry)` and `autoReplyEmail(lines, shopAddress)`, each `{ subject, text, html }`. No
+  env reads, so a preview can call them. One dark 600px table, inline styles, `bgcolor` beside every
+  background, no gradients or images (the goodwill site's inquiry emails). **Every visitor or catalogue
+  value goes through `esc()`, attributes included**; a URL is a link only when it starts with `http`.
+  Times are Brampton time (`SHOP_DATE_TIME`); the consent record keeps the ISO string. The phone is
+  `PRIMARY_CONTACT` only, no person's name.
 - `components/cart-view.tsx` — (D160: below 1100 a bottom-pinned `Request a quote` bar shows until the
   summary is on screen; the quote panel is `data-fit`, the form's height up to the full screen.) The page's client island: hydration placeholder, empty state, lines,
   request panel, the removed-products note, the quote dialog (the filter sheet's `sheet-dialog`, centred at
-  `--container-dialog` from `md:`) and the sent state. Also exports `CartEmpty`, `CartSummary`,
-  `CartRemovedNote` for `/styleguide`.
+  `--container-dialog` from `md:`) and the sent state. **Since D162 the sent state is read from the
+  browser's record** (`useSentRequests`, `src/lib/cart.ts`), so it survives a refresh: a send records the
+  time and products, then empties the cart; an empty cart with a record shows the newest request in the
+  `QuoteSuccess` panel (with its time and products, `Keep shopping` and `Clear sent requests`) and lists
+  the earlier ones; a full cart lists every sent request below it. Also exports `CartEmpty`,
+  `CartSummary`, `CartRemovedNote` for `/styleguide`.
+- `components/sent-requests.tsx` — `SentRequestList` (a titled list of sent requests, each with its
+  Brampton time and products, optional `Clear sent requests`), `SentLines` (one request's products,
+  linked to their pages), `sentLabel()` and `CLEAR_LABEL` (D162). No `"use client"`: rendered inside
+  `CartView` and inert on `/styleguide`.
 - `components/cart-line.tsx` — one line: photo, brand, model link, size, `For <vehicle>`, the
   `Unavailable, we'll check restock` badge, a −/field/+ stepper (floor 1, committed on blur or Enter) and
   `Remove`. Handlers optional, so the styleguide renders it inert. An unbranded accessory (D125) has no
@@ -42,16 +58,21 @@ Server Actions and the emails.
 - `components/quote-form.tsx` — the D51 form inside the dialog, minus the quantity fields. Reads the cart
   at the moment of sending (`getLines`). Send runs in `onSubmit` inside a try/catch (D93b ENV-1).
 - `components/quote-success.tsx` · `components/quote-error-summary.tsx` — the two authored states (D51,
-  D57, D104), moved from `product/` unchanged except the success heading is now an `h2`.
+  D57, D104), moved from `product/` unchanged except the success heading is now an `h2`. Since D162
+  `QuoteSuccess` takes an optional `sentLabel` and `children` (the request's products).
 
 ## Rules
 - **No price anywhere in the cart** (owner ruling for launch, D122), whatever `PRICES_VISIBLE` says.
 - **The cart lives in the browser only.** No account, no cookie, nothing stored on the server; the owner
-  alert is the only record (D104). The privacy page says so (`privacy/page.tsx`, "Cookies and tracking").
+  alert is the only record (D104). The browser's record of sent requests (D162) holds the time and the
+  products only, never the visitor's name, email, phone, message or vehicle (owner, 2026-10-11:
+  *"Products and time only"*). The privacy page says so (`privacy/page.tsx`, "Cookies and tracking").
 - **One request = one owner alert + one auto-reply**, listing every line with its quantity, the searched
   vehicle (unverified, labelled so) and, for a discontinued product, "check restock".
 - **The auto-reply never repeats what the visitor typed** (D104): product names come from the catalogue
   and quantities are parsed whole numbers.
+- **Every value in an HTML email body is escaped** (D162): visitor text and catalogue text alike, in
+  text and in attributes. Build bodies only in `quote-email-html.ts`.
 - **A database outage costs names, never the lead.** `refreshCart` failing keeps the saved snapshots;
   `submitCartQuote` failing to read products still sends, by slug.
 - **`noValidate` on the form is load-bearing** (D65); `actions.ts` is the validator.
@@ -74,6 +95,8 @@ Server Actions and the emails.
 | D93b | 2026-09-30 | An offline send returns `status: "invalid"` with every value echoed and a `notice` ("We couldn't send that. Check your connection and try again."), instead of throwing to the route boundary. Caps name 100 / email 254 / phone 32 / message 1000, mirrored between `actions.ts` and `maxLength`, `\p{Cf}` stripped. | ENV-1, WDG-10/12. Moved here from `product/` with the form (D122). | D93b |
 | D147 | 2026-10-04 | Per-IP cap on `submitCartQuote`: 3 / 10 min and 5 / 24 h, counted once a request would send email, checked before the spam guards; the auto-reply stays. | The honeypot and timer are client-controlled; each request sends two emails from a 100-a-day Resend quota shared with another site, and the auto-reply can be aimed at strangers. | LA-03 (D145 audit); owner: "Keep it, rate-limited" |
 | D151 | 2026-10-04 | (1) The quote form's submit row is sticky at the bottom of the dialog's scroller, on `--surface`, carrying the scroller's old `pb-safe`; the scroller has `scroll-pb-24` so focus never lands under it (DEVIATIONS #116). (2) The Preferred contact segments carry `data-segment`, the forced-colours hook for the checked segment. | The submit sat below the visible area on common viewports (UI-CRITIQUE); the selected segment vanished in forced colours (A11Y-MANUAL). Launch audit, D145. | Owner, 2026-10-04: "Apply all code items" |
+| D162 | 2026-10-11 | Sent requests stay on `/cart` after a refresh: a second `localStorage` entry keeps each request's time and products (no personal details), newest first, at most 20; the visitor can clear it. | The success panel vanished on refresh, so a visitor could not tell the request had gone. | Owner brief 2026-10-11; owner: "Products and time only" |
+| D162 | 2026-10-11 | Both quote emails are HTML with a plain-text alternative, in the goodwill site's dark table style. The auto-reply still repeats nothing the visitor typed (no name, email, phone, message or vehicle) and gains a Contact us band (email, primary phone, hours); its "Need it sooner? Call us" line folds into that band. Subjects, flag, reply-to and logging unchanged. | Owner brief, 2026-10-11: restyle both quote emails to match the platinumwheels.ca site's template. | D162 |
 | — | — | Every other cart ruling is global. | — | root `llm.md` D122 |
 
 ## Connects to
@@ -83,7 +106,8 @@ Server Actions and the emails.
   `src/components/ui/` (`Button`, `Badge`, `Input`, `Textarea`, `Checkbox`, `FieldLabel`, `FieldError`);
   `src/app/globals.css` (`cart-grid`, `sheet-dialog`, `sheet-panel`, `--container-dialog`, `enter-rise`).
 - **Depended on by:** `src/app/(storefront)/cart/page.tsx`; `src/app/(storefront)/styleguide/page.tsx`
-  (`QuoteSuccess`, `QuoteErrorSummary`, `CartLineRow`, `CartEmpty`, `CartSummary`, `CartRemovedNote`).
+  (`QuoteSuccess`, `QuoteErrorSummary`, `CartLineRow`, `CartEmpty`, `CartSummary`, `CartRemovedNote`,
+  `SentRequestList`, `SentLines`, `sentLabel`).
 
 ## Don't
 - **Don't send one email per product.** Owner ruling: one request, one alert.

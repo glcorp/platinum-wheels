@@ -8,7 +8,7 @@ import {
 } from "@/components/site/prose-page";
 import { pageMetadata } from "@/features/seo/metadata";
 import { ROUTES } from "@/lib/routes";
-import { BRANDS, CONTACTS, SITE } from "@/lib/site";
+import { BRANDS, PRIMARY_CONTACT, SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
    `/about` — undesigned (D26, D39), content authored 2026-09-21 (D63) at the
@@ -30,20 +30,22 @@ import { BRANDS, CONTACTS, SITE } from "@/lib/site";
    header, a full-width fact band read out of `SITE`, four plain side-head
    sections instead of four stacked 420px blocks, and two existing data sets
    given a place to sit — `BRANDS` (already rendered on `/` by `BrandStrip`)
-   and `CONTACTS` (already rendered by the home contact section and the header
-   CTA). Both are shown here in the same treatment their existing call sites
+   and `PRIMARY_CONTACT` (already rendered by the home contact section and
+   the header CTA). Both are shown here in the same treatment their existing call sites
    use, so neither asserts anything new.
 
    2026-10-03 (D130), the owner's copy pass: plainer wording throughout. Two
    facts moved with it: "How we work" names the cart (D122), and "Who we are"
    no longer says the people you deal with "fit the parts", which nothing in
    `SITE` supports (D112: no shop to walk into); it now says you talk to us,
-   which the two named `CONTACTS` do support.
+   which the contact section supports. 2026-10-11 (D161): the two named
+   contacts became the shop's one number, with no personal names, and
+   (D163) "Who we are" says the shop serves the GTA and surrounding areas.
    --------------------------------------------------------------------------- */
 
 export const metadata: Metadata = pageMetadata({
   title: "About",
-  description: `${SITE.legalName} is an online store based in ${SITE.city}, ${SITE.province}. We sell tires, wheels and accessories, and check the fitment before we quote.`,
+  description: `${SITE.legalName} is an online store based in ${SITE.city}, ${SITE.province}, serving ${SITE.serviceArea}. We sell tires, wheels and accessories, and check the fitment before we quote.`,
   path: ROUTES.about,
 });
 
@@ -86,8 +88,11 @@ export default function AboutPage() {
     >
       <ProseSection title="Who we are">
         <p>
-          {SITE.legalName} sells tires, wheels and accessories in {SITE.city},{" "}
-          {SITE.province}. When you call or email, you talk to one of us.
+          {/* Client wording, 2026-10-11 (D163): "Platinum…. Deal in tires……
+              serving the GTA and surrounding areas". */}
+          {SITE.legalName} deals in tires, wheels and accessories, serving{" "}
+          {SITE.serviceArea}. We&apos;re based in {SITE.city}, {SITE.province}.
+          When you call or email, you talk to one of us.
         </p>
       </ProseSection>
 
@@ -145,28 +150,24 @@ export default function AboutPage() {
       <ProseSection
         title="Talk to us"
         wide={
-          /* Both named contacts, in the bordered accent treatment the home
-             contact cards already give a phone number
+          /* The shop's one number (D161: no personal names, one number), in
+             the bordered accent treatment the home contact card gives it
              (`src/features/home/components/contact.tsx`, home.md:77,331).
-             Numbers come from `CONTACTS` and are never written out here
-             (`docs/decisions.md` §8). */
-          <ul className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:gap-8">
-            {CONTACTS.map((contact) => (
-              <li key={contact.tel} className="flex flex-col items-start gap-2">
-                <span className={CAPTION}>{contact.name}</span>
-                <a
-                  href={`tel:${contact.tel}`}
-                  className="numeral border-accent text-ink hover:bg-accent hover:text-on-accent rounded-ctl inline-flex h-13 w-full items-center justify-center gap-2.5 border px-5 text-16 leading-flat no-underline sm:h-14 sm:w-auto sm:text-17"
-                >
-                  {contact.display}
-                </a>
-              </li>
-            ))}
-          </ul>
+             The number comes from `PRIMARY_CONTACT` and is never written out
+             here (`docs/decisions.md` §8). */
+          <div className="flex flex-col items-start gap-2">
+            <span className={CAPTION}>Phone</span>
+            <a
+              href={`tel:${PRIMARY_CONTACT.tel}`}
+              className="numeral border-accent text-ink hover:bg-accent hover:text-on-accent rounded-ctl inline-flex h-13 w-full items-center justify-center gap-2.5 border px-5 text-16 leading-flat whitespace-nowrap no-underline sm:h-14 sm:w-auto sm:text-17"
+            >
+              {PRIMARY_CONTACT.display}
+            </a>
+          </div>
         }
       >
         <p>
-          {SITE.hoursLabel}: {SITE.hours}. Call either of us, or email{" "}
+          {SITE.hoursLabel}: {SITE.hours}. Call or text us, or email{" "}
           <a href={`mailto:${SITE.email}`} className={PROSE_LINK}>
             {SITE.email}
           </a>

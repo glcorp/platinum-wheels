@@ -1,7 +1,8 @@
 /* ---------------------------------------------------------------------------
    Quote delivery by email (D104, unparking root `llm.md` §7.15)
 
-   Two plain-text emails per accepted request, sent through Resend's REST API
+   Two emails per accepted request, each HTML with a plain-text alternative
+   (D162; built in `quote-email-html.ts`), sent through Resend's REST API
    with `fetch` (no SDK dependency). Since D122 a request is a whole cart, so
    each email lists every line; still one alert and one reply per request,
    never one per product (owner ruling, "One email, all items"):
@@ -27,14 +28,18 @@
    the request a quote on live website and dont want the emails to be sent
    when testing"*.
 
-   Plain text only: no HTML body means nothing typed by a visitor can ever be
-   rendered as markup in the owner's mail client.
+   **Escaping (D162).** The HTML bodies escape every value the visitor typed
+   (name, email, phone, message, vehicle) and every catalogue value (product
+   names, slugs, URLs), attributes included, so nothing typed by a visitor can
+   be rendered as markup in the owner's mail client. The rule and the markup
+   live in `quote-email-html.ts`; never build a body anywhere else.
 
    Never logs a name, email, phone or message. Log lines carry a line count and
    an outcome only, in the admin's one-JSON-line style (`admin/session.ts`).
    --------------------------------------------------------------------------- */
 
-import { SITE, PRIMARY_CONTACT } from "@/lib/site";
+import { autoReplyEmail, ownerAlertEmail } from "@/features/cart/quote-email-html";
+import { SITE } from "@/lib/site";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
@@ -121,8 +126,7 @@ export async function deliverQuote(inquiry: QuoteInquiry): Promise<QuoteEmailOut
     from,
     to: [shopAddress],
     reply_to: inquiry.email,
-    subject: oneLine(`Quote request: ${subjectItems(inquiry.lines)} (${inquiry.name})`),
-    text: ownerAlertText(inquiry),
+    ...ownerAlertEmail(inquiry),
   });
   if (!alert.ok) {
     log("error", "quote.email.alert_failed", inquiry.lines.length, alert.reason);
@@ -133,8 +137,7 @@ export async function deliverQuote(inquiry: QuoteInquiry): Promise<QuoteEmailOut
     from,
     to: [inquiry.email],
     reply_to: shopAddress,
-    subject: `We got your quote request | ${SITE.name}`,
-    text: autoReplyText(inquiry.lines, shopAddress),
+    ...autoReplyEmail(inquiry.lines, shopAddress),
   });
   if (!reply.ok) {
     log("warn", "quote.email.autoreply_failed", inquiry.lines.length, reply.reason);
@@ -142,79 +145,6 @@ export async function deliverQuote(inquiry: QuoteInquiry): Promise<QuoteEmailOut
 
   log("info", "quote.email.sent", inquiry.lines.length);
   return { status: "sent" };
-}
-
-/* --- Bodies --------------------------------------------------------------- */
-
-/** `Zeta Antarctica Sport` for one line, `3 products` for more. */
-function subjectItems(lines: QuoteLine[]): string {
-  if (lines.length === 1) {
-    const [line] = lines;
-    return line.productName ?? line.slug;
-  }
-  return `${lines.length} products`;
-}
-
-function lineName(line: QuoteLine): string {
-  return line.productName ?? `Unknown product (slug "${line.slug}")`;
-}
-
-function ownerAlertText(q: QuoteInquiry): string {
-  const items = q.lines.flatMap((line, index) => [
-    `${index + 1}. ${lineName(line)}`,
-    `   Quantity: ${line.quantity}`,
-    ...(line.available ? [] : ["   Currently unavailable: check restock before quoting."]),
-    `   Vehicle searched: ${line.vehicle || "none"}`,
-    `   ${line.pageUrl}`,
-  ]);
-  const lines = [
-    "New quote request from the website.",
-    "",
-    `Products (${q.lines.length}):`,
-    ...items,
-    "",
-    `Name: ${q.name}`,
-    `Email: ${q.email}`,
-    `Phone: ${q.phone}`,
-    "",
-    "Message:",
-    q.message || "(none)",
-    "",
-    "---",
-    "Marketing consent (CASL). Keep this email: it is the consent record.",
-    `Consented: ${q.consent ? "YES" : "NO"}`,
-    `Checkbox wording: "${q.consentWording}"`,
-    `Submitted: ${q.submittedAt.toISOString()}`,
-    `Page URL: ${q.cartUrl}`,
-    "",
-    "Reply to this email to answer the customer directly.",
-  ];
-  return lines.join("\n");
-}
-
-/** Fixed copy plus the catalogue's product names and the parsed quantities.
- *  Must never include anything the visitor typed. */
-function autoReplyText(lines: QuoteLine[], shopAddress: string): string {
-  const items = lines.map(
-    (line) => `- ${line.productName ?? "A product from our catalogue"} (${line.quantity})`,
-  );
-  return [
-    "Hi,",
-    "",
-    "Thanks for your quote request. You asked about:",
-    ...items,
-    "",
-    // Same promise as the on-page success panel (`quote-success.tsx`).
-    "We'll check fitment and stock, then get back to you within 1-2 business days.",
-    `Need it sooner? Call us at ${PRIMARY_CONTACT.display}.`,
-    "",
-    SITE.legalName,
-    `${SITE.city}, ${SITE.province}`,
-    shopAddress,
-    "",
-    "You are getting this email because a quote was requested on our website with this address.",
-    'If that was not you, or you do not want emails from us, reply with "unsubscribe".',
-  ].join("\n");
 }
 
 /* --- Transport ------------------------------------------------------------ */
@@ -225,6 +155,7 @@ interface ResendEmail {
   reply_to: string;
   subject: string;
   text: string;
+  html: string;
 }
 
 async function send(
@@ -253,12 +184,6 @@ async function send(
   } catch (error) {
     return { ok: false, reason: error instanceof Error ? error.name : "unknown" };
   }
-}
-
-/** Subjects are one line. Resend's JSON API cannot be header-injected, but a
- *  newline in a name would still mangle the subject in some clients. */
-function oneLine(value: string): string {
-  return value.replace(/[\r\n]+/g, " ").slice(0, 200);
 }
 
 function log(

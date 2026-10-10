@@ -33,9 +33,11 @@ import { SITE } from "@/lib/site";
        quantities and searched vehicles;
      - the consent checkbox renders unticked always and never accepts a
        `defaultChecked` from its call site (`docs/decisions.md` §7);
-     - **no analytics, no cookies, no sessionStorage**, and one `localStorage`
-       entry: the cart (`src/lib/cart.ts`, D122), described in "Cookies and
-       tracking" in the same commit that added it. That paragraph is the one
+     - **no analytics, no cookies, no sessionStorage**, and two `localStorage`
+       entries: the cart (`src/lib/cart.ts`, D122), described in "Cookies and
+       tracking" in the same commit that added it, and since D162 the record
+       of sent quote requests (time, products, quantities; no name, email,
+       phone, message or vehicle), added to that paragraph in its own commit. That paragraph is the one
        factual change since D63, made because the old sentence ("stores
        nothing in your browser") became false; it adds no commitment.
      - nothing is sent anywhere yet: `actions.ts` validates and discards, with
@@ -113,13 +115,16 @@ const SECTIONS: ReadonlyArray<{
     title: "Cookies and tracking",
     body: (
       <p>
-        This site sets no cookies and runs no analytics. The one thing it keeps
-        in your browser is your cart: the products and quantities you add, in
+        This site sets no cookies and runs no analytics. It keeps two things in
         this browser&apos;s local storage, so they&apos;re still there when you
-        come back. It stays in your browser until you send a quote request. You can
-        empty it by removing the products, or by clearing this site&apos;s data
-        in your browser. There is no advertising or third-party tracking on any
-        page.
+        come back. One is your cart: the products and quantities you add. It
+        stays until you send a quote request. The other is a list of the quote
+        requests you&apos;ve sent from this browser: when you sent each one and
+        the products and quantities in it. It never holds your name, email,
+        phone number or message. You can empty the cart by removing the
+        products, clear the list from your cart page, or remove both by
+        clearing this site&apos;s data in your browser. There is no advertising
+        or third-party tracking on any page.
       </p>
     ),
   },

@@ -5,7 +5,8 @@
    browsers will get rid of the cart is acceptable", and it is stored "in the
    cookies in local storage of the browser and not at our server level". So
    the whole cart is one `localStorage` entry. It never expires (owner ruling);
-   it is emptied when a quote request is sent.
+   it is emptied when a quote request is sent, and a record of what was sent
+   is kept in a second entry (D162, end of this file).
 
    Each line keeps a snapshot of what the cart page shows (brand, model, size,
    photo, availability, unit words) so the page draws at once, then the page
@@ -336,4 +337,184 @@ export function reconcileCart(items: Readonly<Record<string, CartItem | null>>):
   }
   save(next);
   return removed;
+}
+
+/* ---------------------------------------------------------------------------
+   Sent quote requests (D162) — also browser only.
+
+   Owner brief, 2026-10-11: "Quote request sent" stays on `/cart` after a
+   refresh, browser only, earlier requests stay listed. So each request the visitor sends from this browser is kept in a
+   second `localStorage` entry: when it was sent and the products and
+   quantities, newest first. Owner, 2026-10-11, choosing "Products and time
+   only": **no name, email, phone, message or vehicle is ever stored**, only
+   what the cart already held minus the vehicle. Nothing reaches the server;
+   the visitor can clear the list from the cart page.
+
+   Same rules as the cart above: versioned, every field re-checked on read,
+   an in-memory fallback when storage is blocked, `null` on the server, and
+   another tab's change arrives through the `storage` event.
+   --------------------------------------------------------------------------- */
+
+/** One product in a sent request: what the list shows, nothing more. */
+export interface SentLine {
+  slug: string;
+  quantity: number;
+  brand: string | null;
+  model: string;
+  size: string;
+  unit: { one: string; many: string };
+}
+
+export interface SentRequest {
+  /** Unique within this browser, for React keys. */
+  id: string;
+  /** ISO time the request was accepted. Shown in Brampton time (D118). */
+  sentAt: string;
+  lines: SentLine[];
+}
+
+/** The newest 20 are kept; an older one drops off the end. */
+export const SENT_MAX_REQUESTS = 20;
+
+const SENT_KEY = "pw-quotes-sent";
+const SENT_VERSION = 1;
+
+let sentCache: SentRequest[] | null = null;
+let sentMemory: SentRequest[] = [];
+let sentStorageWorks = true;
+const sentListeners = new Set<() => void>();
+
+function parseSentLine(raw: unknown): SentLine | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const line = raw as Record<string, unknown>;
+  const unit = line.unit as Record<string, unknown> | undefined;
+  if (
+    !isText(line.slug, 200) ||
+    !SLUG.test(line.slug) ||
+    typeof line.quantity !== "number" ||
+    !Number.isInteger(line.quantity) ||
+    line.quantity < 1 ||
+    !(line.brand === null || isText(line.brand, 200)) ||
+    !isText(line.model, 300) ||
+    !isText(line.size, 300) ||
+    !unit ||
+    !isText(unit.one, 40) ||
+    !isText(unit.many, 40)
+  ) {
+    return null;
+  }
+  return {
+    slug: line.slug,
+    quantity: Math.min(line.quantity, CART_MAX_QUANTITY),
+    brand: line.brand,
+    model: line.model,
+    size: line.size,
+    unit: { one: unit.one, many: unit.many },
+  };
+}
+
+function parseSent(text: string | null): SentRequest[] {
+  if (!text) return [];
+  try {
+    const data: unknown = JSON.parse(text);
+    if (typeof data !== "object" || data === null) return [];
+    const { v, requests } = data as { v?: unknown; requests?: unknown };
+    if (v !== SENT_VERSION || !Array.isArray(requests)) return [];
+    const result: SentRequest[] = [];
+    for (const raw of requests) {
+      if (typeof raw !== "object" || raw === null) continue;
+      const entry = raw as Record<string, unknown>;
+      if (!isText(entry.id, 80) || !isText(entry.sentAt, 40)) continue;
+      if (Number.isNaN(Date.parse(entry.sentAt)) || !Array.isArray(entry.lines)) continue;
+      const lines = entry.lines
+        .slice(0, CART_MAX_LINES)
+        .map(parseSentLine)
+        .filter((line): line is SentLine => line !== null);
+      if (lines.length === 0) continue;
+      result.push({ id: entry.id, sentAt: entry.sentAt, lines });
+      if (result.length === SENT_MAX_REQUESTS) break;
+    }
+    return result;
+  } catch {
+    return [];
+  }
+}
+
+function loadSent(): SentRequest[] {
+  if (sentCache) return sentCache;
+  if (sentStorageWorks) {
+    try {
+      sentCache = parseSent(window.localStorage.getItem(SENT_KEY));
+      return sentCache;
+    } catch {
+      sentStorageWorks = false;
+    }
+  }
+  sentCache = sentMemory;
+  return sentCache;
+}
+
+function saveSent(requests: SentRequest[]): void {
+  sentCache = requests;
+  sentMemory = requests;
+  if (sentStorageWorks) {
+    try {
+      if (requests.length === 0) {
+        window.localStorage.removeItem(SENT_KEY);
+      } else {
+        window.localStorage.setItem(
+          SENT_KEY,
+          JSON.stringify({ v: SENT_VERSION, requests }),
+        );
+      }
+    } catch {
+      sentStorageWorks = false;
+    }
+  }
+  for (const listener of sentListeners) listener();
+}
+
+function onSentStorage(event: StorageEvent): void {
+  if (event.key !== SENT_KEY && event.key !== null) return;
+  sentCache = null;
+  for (const listener of sentListeners) listener();
+}
+
+function subscribeSent(listener: () => void): () => void {
+  if (sentListeners.size === 0) window.addEventListener("storage", onSentStorage);
+  sentListeners.add(listener);
+  return () => {
+    sentListeners.delete(listener);
+    if (sentListeners.size === 0) window.removeEventListener("storage", onSentStorage);
+  };
+}
+
+/** Sent requests, newest first, or `null` before hydration. */
+export function useSentRequests(): SentRequest[] | null {
+  return useSyncExternalStore<SentRequest[] | null>(subscribeSent, loadSent, serverSnapshot);
+}
+
+/** Keeps a record of a request that was just sent: the time and the products,
+ *  never the vehicle or anything the visitor typed. Returns the new entry. */
+export function recordSentRequest(lines: readonly CartLine[], now: Date = new Date()): SentRequest | null {
+  const sentLines: SentLine[] = lines.slice(0, CART_MAX_LINES).map(({ slug, quantity, item }) => ({
+    slug,
+    quantity,
+    brand: item.brand,
+    model: item.model,
+    size: item.size,
+    unit: { one: item.unit.one, many: item.unit.many },
+  }));
+  if (sentLines.length === 0) return null;
+  const entry: SentRequest = {
+    id: `${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    sentAt: now.toISOString(),
+    lines: sentLines,
+  };
+  saveSent([entry, ...loadSent()].slice(0, SENT_MAX_REQUESTS));
+  return entry;
+}
+
+export function clearSentRequests(): void {
+  saveSent([]);
 }
