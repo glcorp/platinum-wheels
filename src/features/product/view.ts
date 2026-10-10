@@ -354,8 +354,10 @@ function parseQuantity(params: ProductSearchParams): QuantityKey {
 
 /* --- Vehicle ----------------------------------------------------------------
    Present only when all three finder params are in the URL and non-empty
-   (`types.ts` `ProductView.vehicle` doc) — never invented (D47(5) precedent). */
-function parseVehicle(params: ProductSearchParams): Vehicle | null {
+   (`types.ts` `ProductView.vehicle` doc) — never invented (D47(5) precedent).
+   Exported for the page, which reads the same checked vehicle to narrow the
+   `Other sizes` row to what fits it (C1, `load.ts`). */
+export function parseVehicle(params: ProductSearchParams): Vehicle | null {
   const read = (key: string): string => {
     const raw = params[key];
     const value = Array.isArray(raw) ? raw[0] : raw;

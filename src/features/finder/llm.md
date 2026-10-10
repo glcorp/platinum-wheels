@@ -26,14 +26,28 @@ Built at `page home`, 2026-09-20.
   home panel unchanged — the −72px mobile / −120px desktop hero overlap, side margins and container cap
   (`:34-38`); `inline` (D45) drops all three so the finder sits in flow inside the `/tires` toolbar's
   `Change vehicle` disclosure (`:39-41`).
-- [`components/finder-model-sync.tsx`](components/finder-model-sync.tsx) — `FinderModelSync`, the
-  folder's leaf `"use client"` island besides `FinderSwitchSubmit` (**D70**, owner 2026-09-22: *"model
-  should only show for those whose make is selected"*; **D149**, LA-05 of the D145 audit: by year
-  too). Renders `null`. On mount and on every Year or Make change it sets `hidden` **and** `disabled` on
-  the Make options no model was built in that year, and on the Model `<optgroup>`s and `<option>`s that
-  are another make's or were not built that year (each option carries `data-years`). An `optgroup`'s
-  `hidden` does not hide its options, so both attributes go on the options too. Resets a Make or Model
-  the change orphans, and focuses `focusId` once on mount (the part-filled vehicle, below).
+- [`bind-finder.ts`](bind-finder.ts) — `bindFinder()`, the Year / Make / Model narrowing as one
+  **self-contained** function (**D168**): the server inlines it as a `<script>` after the form
+  (`bindFinder.toString()`, runs while the HTML is parsed, before React), and `FinderModelSync` calls it
+  on mount. First caller binds (an expando on the Model select); the other only re-checks. Make options:
+  `hidden` + `disabled` (React's nodes). Model: refilled with fresh copies after the server's placeholder
+  (D159(4), D160(6)). Builds the list on first touch or at once when Year or Make is already set, and
+  looks again on `DOMContentLoaded`, `load` and `pageshow` (WebKit restores Year and Make on Back after
+  the script ran). No imports, no module constants: anything it uses is defined inside it.
+- [`components/finder-model-sync.tsx`](components/finder-model-sync.tsx) — `FinderModelSync` (D70,
+  D149, **D168**). Renders the scripting-off `<noscript>` Model select from its `list` prop (so the list
+  travels once) and calls `bindFinder(ids, list)` on mount: after a client navigation the inline script
+  never runs and a client-drawn `<noscript>` is empty, which was the client's "have to refresh" bug.
+  Focuses `focusId` once (the part-filled vehicle).
+- [`components/home-finder.tsx`](components/home-finder.tsx) — `HomeFinder` (**D169**): async, reads
+  `loadFinderSizes()` and renders `<VehicleFinder switchable sizes />`. `/` renders this.
+- [`size-lists.ts`](size-lists.ts) — server only (**D169**): the home finder's size options (the rail's
+  values and labels) and the combinations that exist, as `a,b,c;…` strings, from the cached
+  `getCategoryBase`. `null` halves on a database error.
+- [`components/finder-mode-sync.tsx`](components/finder-mode-sync.tsx) — `FinderModeSync` (**D169**),
+  renders `null`: sets `data-finder-category` on the home form from the category store, disables every
+  select the current category and mode hide, and narrows each size select to the values found beside
+  the others (refilled with fresh copies, like Model).
 - [`data.ts`](data.ts) — client-safe. `FINDER_MAKES` (72 makes, 1,058 models since D155 and D156, each with its model years; Mazda and Tesla list as `Mazda3`, `Model 3` and so on, D156: the bare `3`, `S`, `X`, `Y` spellings are aliases only)
   from the generated `vehicle-list.ts`; `finderYears()` (next model year down to 2005, **computed on
   call**, D32/D66); `isFinderVehicle()` (D91b: a listed year, make, and a model of that make **built in
@@ -105,7 +119,15 @@ Built at `page home`, 2026-09-20.
   React owns removed). A part-filled vehicle that kept a model gets the whole list in the visible select,
   that model `selected`. Why: 1,100 options were about a fifth of `/` and `/tires` main-thread work on a
   phone. Measured 2026-10-06: JS off submits one `model` (the hidden select's only option is disabled);
-  keyboard focus on Model builds all 1,059 options.
+  keyboard focus on Model builds all 1,059 options. **Since D168** the `<noscript>` is rendered by
+  `FinderModelSync` from a prop, the visible select's placeholder is `dangerouslySetInnerHTML` (no
+  `defaultValue`), and the binding is `bindFinder()`, run by an inline script and by the island. Never
+  read the list back from the page alone: a client-drawn `<noscript>` is empty.
+- **The home finder's size mode works without JavaScript (D169).** The `Vehicle | Size` radios' `form`
+  attribute names no form (never submitted); CSS in the Stream C block of `globals.css` shows fields by
+  `data-finder-show` against `data-finder-category` and `:has(#finder-by-size:checked)`. The wheel size
+  selects are served `disabled` (tires and wheels both send `width`). Only `switchable` gets any of it;
+  the results pages' finders render exactly as before.
 - **Model narrows by removing the groups the island appended; Make narrows by attribute (D159).** iOS
   WebKit ignores `hidden` on options, so on an iPhone a chosen make still listed every make's models,
   greyed (owner's screenshot, 2026-10-07). The Model `<optgroup>`s are not React's (appended from the
@@ -161,6 +183,8 @@ Built at `page home`, 2026-09-20.
 | D155 | 2026-10-06 | `findFitment` resolves each fact from the generated `VEHICLE_SPECS` first, then the older sheets, then the nearest real year (per group, same bolt patterns); old model names resolve through `VEHICLE_ALIASES`; two bolt patterns are kept and both are listed; `tire-fit.ts` turns the fitment into the tire and wheel filters (best = factory size / inside the stock wheel envelope, similar = inside the stock tire envelope / outside the wheel envelope). | The finder's wheel and tire results need more than one bolt pattern and one rim. | Owner, 2026-10-06: *"priority is vendor then factory. use best and similar both techniques."*; *"Two bolt patterns in one model-year: Show wheels for both patterns."*; *"we have only commit a loose fit to the client. So you don't have to be precise to the last spec if major of the filters work correctly then it's good"*. Everything else in the row is *derived* (see `results/llm.md`, `catalog/llm.md`). |
 | D156 | 2026-10-06 | `VehicleFitment.tpms` (`boolean | null`) says whether the car has a tyre pressure sensor system; it feeds only the accessory split (a TPMS sensor or tool is similar for a car with none). On and off only, no frequency. | Auto Country carries `chassis.tpms` per trim; the owner ruled the frequency out of scope. | Owner, 2026-10-06, verbatim: *"for TM or TP MS frequency if auto country is giving on and off for car we can do the same and not focus on the frequency that is out of our scope"*. *Derived:* `off` before the 2008 model year when no trim says on (Auto Country never says off). |
 | D128 | 2026-10-03 | On `/` the header switches the hero finder between tires, wheels and accessories (`switchable`, `FinderSwitchSubmit`); the CTA aligns to its row's end from `sm:`; the hero panel compacts on short phones so it sits above the fold. | Owner: the CTA was "off if we change the resolution" (1084×1116), "visible only after scroll in the mobile view", and header Wheels / Accessories "should stay on the home page and refresh that part only". | Owner, 2026-10-03; D128 |
+| D168 | 2026-10-11 | The Model list binds from an inline script and from the island (`bindFinder()`), never only from the `<noscript>` text. | Empty after every client navigation; a gap before hydration. | Client and owner (C3); D168 |
+| D169 | 2026-10-11 | The home finder gains `Vehicle \| Size` and Season; sizes narrow to what exists; CTA above the fold at every D128/D158 size. | Client: size and season on the home page. | Owner: *"Vehicle / Size switch, season on tires"*; D169 |
 Governing: **D27, D28, D33, D39, D79**.
 
 ## Connects to
@@ -168,8 +192,10 @@ Governing: **D27, D28, D33, D39, D79**.
   (`useEffect`) in the leaf islands (D70, D128); `src/features/catalog/categories.ts`
   (`CATEGORY_CONFIG`, D37's sanctioned edge) and `src/lib/finder-category.ts` +
   `finder-category-store.ts` (D128); the `fold-short` variant and `finder-cta-label` in `globals.css`.
-- Depended on by: `src/app/(storefront)/page.tsx` (home §1 row 3, `variant="hero"`, `switchable` since
-  D128); `src/components/site/site-nav-links.tsx` and `site-nav-drawer.tsx` write the category it reads,
+- Depended on by: `src/app/(storefront)/page.tsx` (home §1 row 3, `HomeFinder` since D169, which
+  renders `variant="hero"`, `switchable`, D128); `size-lists.ts` reads `catalog/queries.ts`
+  `getCategoryBase` (D169); `src/features/product/load.ts` reads `fitment.ts` and `tire-fit.ts` for the
+  `Other sizes` row (D171); `src/components/site/site-nav-links.tsx` and `site-nav-drawer.tsx` write the category it reads,
   through `src/lib/`, never by importing this folder (D37);
   `src/features/results/components/results-toolbar.tsx` — the `Change vehicle` `<details>` disclosure
   renders `<VehicleFinder variant="inline" action={route} cta={…} />` on all three results routes

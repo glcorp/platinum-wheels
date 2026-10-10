@@ -9,7 +9,9 @@ Delete this folder and `/` renders header and footer around nothing.
 ## Owns
 One file per manifest section (`design/manifest.md` §1); each header comment carries its measured
 sources (`design/inventory/home.md` §2.x). All Server Components except the carousel island.
-- [`components/hero.tsx`](components/hero.tsx) — `Hero`, no props. Full-bleed `hero-tread.webp`, scrim, eyebrow / h1 / lede. home.md §2.1. Since **D134** two starting-price tags sit under the lede (`STARTING_PRICES`, `src/lib/site.ts`), each a link to `/tires` / `/wheels`: undrawn, owner's words verbatim, shown whatever `PRICES_VISIBLE` says.
+- [`components/hero.tsx`](components/hero.tsx) — `Hero`, no props. Its minimum height is
+  `hero-fit-finder` (Stream C block, **D169**, `DEVIATIONS.md` #137), re-measured for the home finder's
+  `Vehicle | Size` row; the D128 `hero-fit` is no longer used on `/`. Full-bleed `hero-tread.webp`, scrim, eyebrow / h1 / lede. home.md §2.1. Since **D134** two starting-price tags sit under the lede (`STARTING_PRICES`, `src/lib/site.ts`), each a link to `/tires` / `/wheels`: undrawn, owner's words verbatim, shown whatever `PRICES_VISIBLE` says.
 - [`components/category-tiles.tsx`](components/category-tiles.tsx) — `CategoryTiles`. "Shop by category" (D93b, DEVIATIONS #87: section numbers dropped), `md:category-grid` 2fr/1fr; the D35 text-colour hover stays suppressed, and since D92b the tiles take the card's border + 2px lift hover (DEVIATIONS #77). home.md §2.4.
 - [`components/winter-promo.tsx`](components/winter-promo.tsx) — `WinterPromo`. Full-bleed photo + tinted panel, computed `Winter <year>` (D32), spec chips inline (not `Chip`). home.md §2.5.
 - [`components/how-it-works.tsx`](components/how-it-works.tsx) — `HowItWorks`, `id="how-it-works"`. Four steps as data; eyebrow only, no h2. home.md §2.6.
