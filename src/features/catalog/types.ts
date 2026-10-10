@@ -128,6 +128,13 @@ export interface Product {
    */
   image?: string;
   /**
+   * Every photo of the product, in the admin's order, the first being
+   * `image` (D167). Set only on the product page, whose read loads them all
+   * (`getProductBySlug`); a card shows its first photo alone and leaves this
+   * absent. Each is a full URL or a site-root path, like `image`.
+   */
+  images?: readonly string[];
+  /**
    * `Zeta`. Rendered twice per card — the top-right stamp inside the image
    * (`design/assets/results-desktop.html:167`) and the body's brand line
    * (`:171`) — and again as the first half of the image `alt`

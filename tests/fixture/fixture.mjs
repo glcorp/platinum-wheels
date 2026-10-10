@@ -164,6 +164,15 @@ async function seedExtras() {
         "insert into product_images (product_id, url, alt, sort_order) values ($1, $2, $3, 0)",
         [row.id, `${PHOTO_ORIGIN}/catalog/${row.category}/${hash}-1000.webp`, `${row.brand} ${row.name}`.slice(0, 120)],
       );
+      // The named tire carries three photos, so its page is a gallery (D167).
+      if (row.slug === slugs.tire) {
+        for (const order of [1, 2]) {
+          await client.query(
+            "insert into product_images (product_id, url, alt, sort_order) values ($1, $2, $3, $4)",
+            [row.id, `${PHOTO_ORIGIN}/catalog/${row.category}/${order}${order}${hash.slice(2)}-1000.webp`, `${row.brand} ${row.name}`.slice(0, 120), order],
+          );
+        }
+      }
     }
 
     // Payment links, one per state a customer can meet (D100, D108).

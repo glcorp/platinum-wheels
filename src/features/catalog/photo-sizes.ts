@@ -19,9 +19,15 @@ import { PHOTO_WIDTH, type PhotoSize } from "./photo-files";
 /** WebP quality for both sizes. */
 const WEBP_QUALITY = 82;
 
-/** Refuse anything over 100 megapixels before decoding it: a small file can
- *  claim a huge canvas, and a phone photo is under 50. */
-const MAX_INPUT_PIXELS = 100_000_000;
+/** Refuse anything over 250 megapixels before decoding it: a small file can
+ *  claim a huge canvas. 100 until D166, when uploads grew to 50 MB, which is
+ *  where 102 MP medium-format camera files and 200 MP phone photos
+ *  (16320×12240) live. Measured on 2026-10-11 with both sizes made in
+ *  parallel, as `makePhotoSizes` does: a 51 MB 200 MP JPEG took 0.53 s at
+ *  220 MB peak RSS (libvips shrinks a JPEG while decoding it), a 47 MB PNG
+ *  0.34 s at 233 MB, and the worst case the cap admits, a 225 MP PNG of one
+ *  colour (a 2.8 MB file), 0.26 s at 344 MB. A Vercel function has 2 GB. */
+const MAX_INPUT_PIXELS = 250_000_000;
 
 export type PhotoFiles = Record<PhotoSize, Buffer>;
 
