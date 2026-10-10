@@ -23,7 +23,8 @@ import { RouteErrorPanel } from "@/components/site/route-error";
 import { QuoteSuccess } from "@/features/cart/components/quote-success";
 import { CartLineRow } from "@/features/cart/components/cart-line";
 import { CartEmpty, CartRemovedNote, CartSummary } from "@/features/cart/components/cart-view";
-import type { CartLine } from "@/lib/cart";
+import { SentLines, SentRequestList, sentLabel } from "@/features/cart/components/sent-requests";
+import type { CartLine, SentRequest } from "@/lib/cart";
 import type { Product } from "@/features/catalog/types";
 import { Select } from "@/components/ui/select";
 import { StripeDivider } from "@/components/ui/stripe-divider";
@@ -278,6 +279,37 @@ const CART_SAMPLES: CartLine[] = [
       available: false,
       unit: { one: "1 wheel", many: "wheels" },
     },
+  },
+];
+
+/** Two sent requests (D162), fixed times so the page renders the same on
+ *  every build. Products and times only, as the live record keeps. */
+const SENT_SAMPLES: SentRequest[] = [
+  {
+    id: "styleguide-sent-2",
+    sentAt: "2026-10-11T19:42:00.000Z",
+    lines: CART_SAMPLES.map(({ slug, quantity, item }) => ({
+      slug,
+      quantity,
+      brand: item.brand,
+      model: item.model,
+      size: item.size,
+      unit: item.unit,
+    })),
+  },
+  {
+    id: "styleguide-sent-1",
+    sentAt: "2026-10-04T14:05:00.000Z",
+    lines: [
+      {
+        slug: "styleguide-sample-tire",
+        quantity: 2,
+        brand: "Zeta",
+        model: "Antarctica Sport",
+        size: "215/55R16 · 97T XL",
+        unit: { one: "1 tire", many: "tires" },
+      },
+    ],
   },
 ];
 
@@ -768,6 +800,21 @@ export default function StyleguidePage() {
           <div className="border-border-strong flex flex-col gap-6 border p-4">
             <CartRemovedNote count={1} />
             <CartEmpty />
+          </div>
+        </div>
+
+        {/* Sent quote requests (D162): the newest one stays on `/cart` after a
+            refresh in the success panel, the earlier ones are listed. Inert,
+            from fixed samples; the live list reads the browser's own record. */}
+        <div className="mt-10">
+          <p className="numeral text-12 text-ink-dim mb-4">
+            Sent requests, after a refresh · src/features/cart/components/sent-requests.tsx
+          </p>
+          <div className="border-border-strong flex flex-col gap-10 border p-4">
+            <QuoteSuccess sentLabel={sentLabel(SENT_SAMPLES[0].sentAt)}>
+              <SentLines lines={SENT_SAMPLES[0].lines} />
+            </QuoteSuccess>
+            <SentRequestList requests={SENT_SAMPLES.slice(1)} title="Earlier requests" />
           </div>
         </div>
 

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
-import { CONTACTS, SITE } from "@/lib/site";
+import { PRIMARY_CONTACT, SITE } from "@/lib/site";
 import { PayButton } from "@/features/payments/components/pay-button";
 import { displayCents } from "@/features/payments/money";
 import { getPayPage } from "@/features/payments/service";
@@ -59,7 +59,7 @@ export default async function PayPage({ params }: { params: Promise<{ token: str
   const { link, state, latestAttempt } = view;
   const amount = displayCents(link.amountCents);
   const notice = state === "active" ? attemptNotice(latestAttempt) : null;
-  const contact = CONTACTS[0];
+  const contact = PRIMARY_CONTACT;
 
   return (
     <main id="main" tabIndex={-1} className="w-full flex-1 px-4 pt-8 pb-20 sm:px-8 sm:pt-14">
@@ -144,7 +144,7 @@ export default async function PayPage({ params }: { params: Promise<{ token: str
         </section>
 
         <p className="text-ink-dim text-13 leading-body">
-          Questions? Call {contact.name} at{" "}
+          Questions? Call us at{" "}
           <a className="text-ink underline" href={`tel:${contact.tel}`}>
             {contact.display}
           </a>{" "}

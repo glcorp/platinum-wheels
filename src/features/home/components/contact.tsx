@@ -10,7 +10,7 @@
 
    ONE DOM (D22): rather than two DOM orders for two viewports, this is a
    single flat grid of four blocks — A (eyebrow+h2+paragraph), B (hours+email),
-   C (two contact cards), D (photo panel) — placed with explicit grid position
+   C (the phone card, D161), D (photo panel) — placed with explicit grid position
    at `sm:`/`md:` and CSS `order` on mobile. Desktop visual result: A/B stacked
    left (5fr), C/D stacked right (7fr) — `design/inventory/home.md:77`. Mobile
    visual result: A, then C, then B, with D hidden below 720 (D22: "contact
@@ -42,7 +42,7 @@
 
 import Image from "next/image";
 
-import { CONTACTS, SITE } from "@/lib/site";
+import { PRIMARY_CONTACT, SITE } from "@/lib/site";
 
 export function Contact() {
   return (
@@ -74,59 +74,53 @@ export function Contact() {
           </p>
         </div>
 
-        {/* C — two contact cards. `design/inventory/home.md:77,323,331`.
-            D91b (NJR-7): the cards stack in the undrawn tablet band (D41) and
-            sit side by side again from `md:`. At 720–1099 the 11/20 column
-            gives each of two cards 99–203px inside its padding, and the
-            phone pill needs 215.5px on one line — so the number broke across
-            2–4 lines (Firefox refused the break and overflowed the page).
-            Stacked, a card is 278px+ inside. 390 and 1440 are unchanged. */}
-        <div className="order-2 flex flex-col gap-3 sm:order-none sm:col-span-11 sm:col-start-10 sm:row-start-1 sm:grid sm:grid-cols-1 sm:gap-4 md:col-span-1 md:col-start-2 md:grid-cols-2">
-          {CONTACTS.map((contact, index) => (
-            <div
-              key={contact.tel}
-              data-probe={index === 0 ? "contact-card-1" : undefined}
-              /* `md:p-6 lg:p-8` (D91b, NJR-7): at 1100 two cards leave 205px
-                 inside a 32px padding, 10px short of the one-line pill; 24px
-                 gives 221px. The drawn 32px (1440) returns from `lg:` 1320,
-                 where it leaves 269px. */
-              className="bg-surface border-border-strong flex flex-col items-start gap-3.5 border p-5 sm:gap-5 sm:p-8 md:p-6 lg:p-8"
+        {/* C — the phone card. The artboards draw two named cards
+            (`design/inventory/home.md:77,323,331`); since D161 there is one
+            number and no name (client, 2026-10-11: "Remove names from
+            contact, just leave one number there"), so one card spans the
+            column at every width and its display line names the channel
+            rather than a person (`design/DEVIATIONS.md` #129). Box, padding,
+            type and the phone pill are the drawn card's. */}
+        <div className="order-2 flex flex-col gap-3 sm:order-none sm:col-span-11 sm:col-start-10 sm:row-start-1 md:col-span-1 md:col-start-2">
+          <div
+            data-probe="contact-card-1"
+            /* `md:p-6 lg:p-8` (D91b, NJR-7) kept from the two-card layout:
+               the drawn 32px returns from `lg:` 1320. */
+            className="bg-surface border-border-strong flex flex-col items-start gap-3.5 border p-5 sm:gap-5 sm:p-8 md:p-6 lg:p-8"
+          >
+            {/* `calc(40px * var(--scale-h2))` desktop, `calc(28px * var(--scale-h3))`
+                mobile — `design/inventory/home.md:77`. */}
+            <span className="display text-ink text-display-28 sm:text-display-40">
+              Call or text
+            </span>
+            {/* Phone link, NOT `Button` — its own border/height/type
+                (`design/inventory/home.md:77,331`). Hover only draws on
+                desktop in the artboard but Tailwind's `hover:` is already
+                `@media (hover: hover)`-scoped, so it stays unprefixed
+                (D17). `active:translate-y-px` is the D92b boxed-control
+                press. `whitespace-nowrap` (D91b, NJR-7): a phone number
+                never breaks mid-number. */}
+            <a
+              href={`tel:${PRIMARY_CONTACT.tel}`}
+              data-probe="contact-phone-1"
+              className="numeral border-accent text-ink hover:bg-accent hover:text-on-accent inline-flex h-13 w-full touch-manipulation items-center whitespace-nowrap justify-center gap-2.5 rounded-ctl border text-17 leading-flat active:translate-y-px sm:mt-auto sm:h-14 sm:w-auto sm:justify-start sm:gap-3 sm:px-5 sm:text-18"
             >
-              {/* `calc(40px * var(--scale-h2))` desktop, `calc(28px * var(--scale-h3))`
-                  mobile — `design/inventory/home.md:77`. */}
-              <span className="display text-ink text-display-28 sm:text-display-40">
-                {contact.name}
-              </span>
-              {/* Phone link, NOT `Button` — its own border/height/type
-                  (`design/inventory/home.md:77,331`). Hover only draws on
-                  desktop in the artboard but Tailwind's `hover:` is already
-                  `@media (hover: hover)`-scoped, so it stays unprefixed
-                  (D17). `active:translate-y-px` is the D92b boxed-control
-                  press. `whitespace-nowrap` (D91b, NJR-7): a phone number
-                  never breaks mid-number — the card layout above makes room
-                  for it instead. */}
-              <a
-                href={`tel:${contact.tel}`}
-                data-probe={index === 0 ? "contact-phone-1" : undefined}
-                className="numeral border-accent text-ink hover:bg-accent hover:text-on-accent inline-flex h-13 w-full touch-manipulation items-center whitespace-nowrap justify-center gap-2.5 rounded-ctl border text-17 leading-flat active:translate-y-px sm:mt-auto sm:h-14 sm:w-auto sm:justify-start sm:gap-3 sm:px-5 sm:text-18"
+              <svg
+                aria-hidden="true"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <svg
-                  aria-hidden="true"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.6}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
-                </svg>
-                {contact.display}
-              </a>
-            </div>
-          ))}
+                <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
+              </svg>
+              {PRIMARY_CONTACT.display}
+            </a>
+          </div>
         </div>
 
         {/* B — hours + email. `design/inventory/home.md:77,79,332`. */}

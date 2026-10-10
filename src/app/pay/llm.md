@@ -21,13 +21,13 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
   without the agreed Basic credentials. Never answers with payment data.
 - [`not-found.tsx`](not-found.tsx) — the pay host's 404 (D145 audit, COPY / SEC-EDGE; D151): the
   pay page's logo row and panel, *Payment link not found*, and the shop's phone and email from
-  `CONTACTS[0]` and `SITE.email`. No storefront link. Answers an unknown token, every path below.
+  `PRIMARY_CONTACT` (no name, "Call us at", D161) and `SITE.email`. No storefront link. Answers an unknown token, every path below.
 - [`page.tsx`](page.tsx) and [`[...missing]/page.tsx`](%5B...missing%5D/page.tsx) — `notFound()` only,
   so bare `/pay` and any deeper unknown path render that 404, not the storefront's. In production
   `decideHostRouting` rewrites every non-`/pay` path on the pay host to `/pay` (`PAY_NOT_FOUND_PATH`).
 - [`done/page.tsx`](done/page.tsx) — `/pay/done`, the neutral landing page for every return not bound to
   the browser's own link (no cookie, an expired one, or not a customer). It says the payment could not
-  be confirmed, not to pay twice, and to call or email the shop (from `CONTACTS[0]` and `SITE.email`).
+  be confirmed, not to pay twice, and to call or email the shop (from `PRIMARY_CONTACT` (no name, "Call us at", D161) and `SITE.email`).
 
 ## Rules
 

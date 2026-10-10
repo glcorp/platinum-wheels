@@ -173,7 +173,7 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   artboards draw". `design/DESIGN.md` §4 says `--border-strong` and loses.
 - **Contact data comes only from `src/lib/site.ts`.** "Contact data lives in `src/lib/site.ts` as named
   constants, never hardcoded in components" (`docs/decisions.md:129`). The header CTA and any call
-  button use `PRIMARY_CONTACT`; the footer uses `CONTACTS` and `SITE`. **The phone CTA's label is
+  button use `PRIMARY_CONTACT`; the footer uses `SITE`. No person's name appears in this folder (D161). **The phone CTA's label is
   therefore variable-width** — no file in this folder may pin it. The artboards drew a 195.02px pill on
   a 17-character label; since **D76** (2026-09-22) the number is `+1 (437) 882-5000` and the same pill
   measures **223.48px** (`design/DEVIATIONS.md` #66). It hugs its content, is `whitespace-nowrap` from
@@ -233,7 +233,7 @@ Governing global rows: **D7** / DEVIATIONS #11 (composition), **D26** (link plan
 all widths, hide rather than remove).
 
 ## Connects to
-- **Depends on:** `src/lib/site.ts` (`SITE`, `CONTACTS`, `PRIMARY_CONTACT`) and `src/lib/routes.ts`;
+- **Depends on:** `src/lib/site.ts` (`SITE`, `PRIMARY_CONTACT`) and `src/lib/routes.ts`;
   `src/lib/finder-category.ts` + `finder-category-store.ts` (D128: ids, guards, the shared value);
   `src/components/ui/button.tsx` for the header CTA; `src/app/globals.css` tokens; `next/image`,
   `next/link`; `public/images/` for the badge PNG.
