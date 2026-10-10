@@ -12,6 +12,7 @@
 
 import type {
   AccessoryKind,
+  CatalogImage,
   CatalogProduct,
   TireSeason,
 } from "./catalog-types";
@@ -177,11 +178,18 @@ function cardSizeLine(product: CatalogProduct): string {
   return facts.length === 0 ? base : [base, ...facts].filter(Boolean).join(" · ");
 }
 
-export function toProduct(product: CatalogProduct): Product {
+export function toProduct(
+  product: CatalogProduct & { images?: readonly CatalogImage[] },
+): Product {
   const base = {
     category: product.category,
     slug: product.slug,
     image: product.image?.url,
+    /* D167: the product page's read carries every photo (`images`); a
+       listing's carries the first alone, and the card needs no more. */
+    ...(product.images === undefined
+      ? {}
+      : { images: product.images.map((photo) => photo.url) }),
     brand: product.brand,
     // A product with no model (most accessories) leads with its name. The
     // brand is shown on its own line above it, so a model that begins with the
@@ -191,8 +199,15 @@ export function toProduct(product: CatalogProduct): Product {
     // keeps a row written some other way from reading `from $0`.
     price: product.price !== null && product.price > 0 ? product.price : null,
     currency: "CAD",
-    // `discontinued` is the only "can't get it" state (D105b).
-    available: product.status === "published",
+    /* D164 (owner, 2026-10-11): "for a end user, there is no difference
+       between an active or discontinued product". `discontinued` is staff
+       information only (the vendor stopped the line; staff hide the product
+       once stock runs out), so every product a storefront read returns is
+       shown as available: no dimmed card, no unavailable badge, the primary
+       `Add to cart`. `hidden` never reaches this function. The unavailable
+       variant stays in the components and on `/styleguide`; nothing in the
+       catalogue selects it today. `DEVIATIONS.md` #134. */
+    available: true,
   };
 
   switch (product.category) {

@@ -15,7 +15,7 @@ import {
   loadProductRows,
   loadTitleSiblings,
 } from "@/features/product/load";
-import { productView } from "@/features/product/view";
+import { parseVehicle, productView } from "@/features/product/view";
 import { JsonLd } from "@/features/seo/json-ld";
 import { pageMetadata } from "@/features/seo/metadata";
 import {
@@ -128,7 +128,13 @@ export default async function ProductPage({
   /* Read once: `productView` derives from it, and `BuyPanel` passes it down to
      `QuantityControl` so a `?qty=` link changes that param and preserves every
      other one (D50). */
-  const view = productView(detail, query, await loadProductRows(detail));
+  /* The checked vehicle also narrows `Other sizes` to the sizes that fit it
+     (C1); `productView` checks it again from the same params. */
+  const view = productView(
+    detail,
+    query,
+    await loadProductRows(detail, parseVehicle(query)),
+  );
   const { product } = view;
   const breadcrumb = <PdpBreadcrumb view={view} />;
   const seo = toProductSeo(product, view);
@@ -152,6 +158,7 @@ export default async function ProductPage({
                 model={product.model}
                 slug={product.slug}
                 image={product.image}
+                images={product.images}
                 accessoryType={product.accessoryType}
                 /* Mobile draws the badge row over the image; from `sm:` it moves
                    into the buy panel, which is where the desktop artboard puts

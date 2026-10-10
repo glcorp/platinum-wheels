@@ -110,10 +110,25 @@ test("add a tire, request one quote, see the success panel, and the cart empties
   await expect(cartLink(page)).toHaveAttribute("aria-label", "Cart, current page");
   expect(await page.evaluate(() => window.localStorage.getItem("pw-cart")), "cart storage after a send").toBeNull();
 
-  // A reload agrees: the cart is empty, not "sent".
+  // D162: a reload keeps "Quote request sent." with its time and product,
+  // read from the browser's own record, which holds no personal details.
   await page.reload();
   await settle(page);
+  const kept = page.getByRole("status").filter({ hasText: "Quote request sent." });
+  await expect(kept).toBeVisible();
+  await expect(kept).toContainText(/^Sent /i);
+  await expect(kept.getByRole("link", { name: /Antarctica Sport/ })).toHaveAttribute(
+    "href",
+    new RegExp(`/products/${SLUG.tire}`),
+  );
+  const record = await page.evaluate(() => window.localStorage.getItem("pw-quotes-sent"));
+  expect(record, "the sent record").not.toBeNull();
+  expect(record).not.toMatch(/Fixture Customer|fixture\.customer|555-0142|Civic, fixture/);
+
+  // Clearing the record leaves the plain empty cart.
+  await page.getByRole("button", { name: "Clear sent requests" }).click();
   await expect(page.getByText(/^Your cart is empty\./)).toBeVisible();
+  expect(await page.evaluate(() => window.localStorage.getItem("pw-quotes-sent"))).toBeNull();
   expect(problems, "uncaught page errors").toEqual([]);
 });
 

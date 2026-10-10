@@ -9,7 +9,9 @@ Delete this folder and `/` renders header and footer around nothing.
 ## Owns
 One file per manifest section (`design/manifest.md` §1); each header comment carries its measured
 sources (`design/inventory/home.md` §2.x). All Server Components except the carousel island.
-- [`components/hero.tsx`](components/hero.tsx) — `Hero`, no props. Full-bleed `hero-tread.webp`, scrim, eyebrow / h1 / lede. home.md §2.1. Since **D134** two starting-price tags sit under the lede (`STARTING_PRICES`, `src/lib/site.ts`), each a link to `/tires` / `/wheels`: undrawn, owner's words verbatim, shown whatever `PRICES_VISIBLE` says.
+- [`components/hero.tsx`](components/hero.tsx) — `Hero`, no props. Its minimum height is
+  `hero-fit-finder` (Stream C block, **D169**, `DEVIATIONS.md` #137), re-measured for the home finder's
+  `Vehicle | Size` row; the D128 `hero-fit` is no longer used on `/`. Full-bleed `hero-tread.webp`, scrim, eyebrow / h1 / lede. home.md §2.1. Since **D134** two starting-price tags sit under the lede (`STARTING_PRICES`, `src/lib/site.ts`), each a link to `/tires` / `/wheels`: undrawn, owner's words verbatim, shown whatever `PRICES_VISIBLE` says.
 - [`components/category-tiles.tsx`](components/category-tiles.tsx) — `CategoryTiles`. "Shop by category" (D93b, DEVIATIONS #87: section numbers dropped), `md:category-grid` 2fr/1fr; the D35 text-colour hover stays suppressed, and since D92b the tiles take the card's border + 2px lift hover (DEVIATIONS #77). home.md §2.4.
 - [`components/winter-promo.tsx`](components/winter-promo.tsx) — `WinterPromo`. Full-bleed photo + tinted panel, computed `Winter <year>` (D32), spec chips inline (not `Chip`). home.md §2.5.
 - [`components/how-it-works.tsx`](components/how-it-works.tsx) — `HowItWorks`, `id="how-it-works"`. Four steps as data; eyebrow only, no h2. home.md §2.6.
@@ -25,7 +27,7 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
   cards in an unnamed container. The only paint it adds is the global focus ring.
 - [`components/brand-strip.tsx`](components/brand-strip.tsx) — `BrandStrip`. The drawn band (fill, hairlines, margins, paddings: home.md §2.8) holding a **CSS-only ticker of real brand logos** since **D129**: the list twice in a track that slides one list's width, the copy `aria-hidden`; pause on hover only since D139; it moves with Reduce Motion on too since D159. Mechanics are the `brand-marquee` utility (`globals.css`, "Brand marquee (D129)"). No longer reads `BRANDS`.
 - [`brand-logos.ts`](brand-logos.ts) — `BRAND_LOGOS`: the nineteen ticker brands in display order, each with its file slug (`public/images/brands/<slug>.svg`), measured `aspect` and optical `scale` (D129). Sources: `design/ASSET-CREDITS.md` "Brand logos".
-- [`components/contact.tsx`](components/contact.tsx) — `Contact`, `id="contact"`. One DOM, four blocks placed by grid per width (D22). home.md §2.9.
+- [`components/contact.tsx`](components/contact.tsx) — `Contact`, `id="contact"`. One DOM, four blocks placed by grid per width (D22). home.md §2.9. **Since D161 one phone card, `Call or text` and `PRIMARY_CONTACT`, where two named cards were drawn** (`design/DEVIATIONS.md` #129); no person's name.
 
 ## Rules
 - One file per manifest section, named by the section: `hero.tsx`, `category-tiles.tsx`,

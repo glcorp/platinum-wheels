@@ -214,8 +214,10 @@ export interface ProductFilters {
      *  never matches it; a pair (`121/118`) is read by its first number. */
     loadIndexMin?: number;
     /** A vehicle's tires. With `sizeMatch: "exact"` it keeps the best matches;
-     *  with `"near"`, the similar ones (`TireVehicleFit`). Never sent together
-     *  with an explicit size part. */
+     *  with `"near"`, the similar ones (`TireVehicleFit`). Beside an explicit
+     *  size part (C2, owner 2026-10-11) it no longer picks the size: the
+     *  picked parts are matched and the car bounds only the overall diameter,
+     *  to its stock height range widened 3% each way. */
     vehicleFit?: TireVehicleFit;
   };
   wheel?: {
@@ -232,8 +234,12 @@ export interface ProductFilters {
     /** `wheel_specs.finish_family`, matched exactly as the facet spells it. */
     finishes?: readonly string[];
     /** A vehicle's wheels (`WheelVehicleFit`). With `sizeMatch: "exact"` it
-     *  keeps the best matches; with `"near"`, the similar ones. Never sent
-     *  together with an explicit size part. */
+     *  keeps the best matches; with `"near"`, the similar ones. Beside an
+     *  explicit size part (C2, owner 2026-10-11) the picked parts are matched
+     *  and the car still holds its bolt pattern, the hub bore and, with a
+     *  stock envelope, the stock width stretched to +1 inch (unless a width
+     *  was picked) and the stock offset widened 5 mm each way; the similar
+     *  row is the picked diameter on the car's pattern, not a best match. */
     vehicleFit?: WheelVehicleFit;
   };
   accessory?: {

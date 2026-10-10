@@ -15,7 +15,7 @@ the next session guesses which of the two phone numbers is real.
   emitted class string must stay byte-identical, and the consolidation was verified by diffing the
   `class="…"` attributes of all six rendered pages before and after. Zero imports, which is what keeps
   `src/lib/` free of any feature dependency (D37).
-- [`site.ts`](site.ts) — eight named exports. Four are sourced from `design/DESIGN.md` "Contact block
+- [`site.ts`](site.ts) — seven named exports. Four are sourced from `design/DESIGN.md` "Contact block
   (canonical)" (`site.ts:1-8`); two were added by D112, one by D122 and one by D134:
   - `PRICES_VISIBLE` — `NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED === "true"` (D122). Off for launch: no price
     anywhere, no price filter or sort, and the footer shows `SITE.placeNote` (`Brampton, Ontario`)
@@ -33,17 +33,17 @@ the next session guesses which of the two phone numbers is real.
     (record source)"*; the owner confirmed both prices are true; D153). The source is the owner's word.
   - `CONTACT_HOURS` — `SITE.hours` as data (days, `09:00`, `20:00`) for structured data only. **Phone
     hours, not opening hours**: there is no shop (owner, 2026-09-30).
-  - `SITE` — `name`, `legalName` (`Platinum Wheels and Tire Solutions Inc.`, with the `Inc.`; owner, 2026-10-05; print it as is and append nothing), `tagline`, `city`, `province`, `email`, `hours`, `hoursLabel`, and
+  - `SITE` — `name`, `legalName`, `serviceArea` (`the GTA and surrounding areas`, D163, read after
+    "serving"; the address stays the city) (`Platinum Wheels and Tire Solutions Inc.`, with the `Inc.`; owner, 2026-10-05; print it as is and append nothing), `tagline`, `city`, `province`, `email`, `hours`, `hoursLabel`, and
     `priceNote` (`Brampton, Ontario · Prices in CAD, before tax`, the footer line required by
     `docs/decisions.md` §7). **Load-bearing (D77):** prices render a bare `$` with no currency code,
     so this string is the only place the site states its currency — it may not be removed, shortened
     past `CAD`, or hidden at any width. `as const`.
-  - `CONTACTS` — the two people, each `{ name, display, tel }`. `display` is the verbatim human-readable
-    string and `tel` is E.164 for the `href`. Both rows use the owner's format (country code,
-    parentheses): `CONTACTS[0]` `+1 (437) 882-5000` since **D76**, `CONTACTS[1]` `+1 (365) 998-0990`
-    since **D139** (2026-10-04), so the two-format split `design/DEVIATIONS.md` #66 recorded is gone.
-  - `PRIMARY_CONTACT` — `CONTACTS[0]`, Inderpal Singh. The number used by the header CTA and the mobile
-    call button (`site.ts:32-33`).
+  - `PRIMARY_CONTACT` — the shop's one number, `{ display, tel }`: `+1 (437) 882-5000`,
+    `tel:+14378825000`. **No name, and no second number (D161, 2026-10-11)**: client, *"No personal contact
+    or names throughout the website"*; the `CONTACTS` list of two named people (D76, D139) is gone. Every
+    call button, `Call us` line, the quote emails and the structured data read it. Keep the shape: other
+    features read only `display` and `tel`.
   - `BRANDS` — twelve wordmarks in a deliberate order: house brands first (`Zeta`, `ZMAX`, `Mazzini`,
     `Touren`, `Spec-1`), then the majors (`Michelin`, `Bridgestone`, `Continental`, `Pirelli`,
     `Goodyear`, `Hankook`, `Toyo`) — the order in `design/DESIGN.md` "Contact block" and in the artboard
@@ -60,7 +60,12 @@ the next session guesses which of the two phone numbers is real.
   catalogue's fresh facts; `null` removes a line), `onCartAdded` for the header prompt, and the invisible
   ceilings `CART_MAX_LINES` 200 / `CART_MAX_QUANTITY` 9,999 (D123). Imports no feature, which is why it
   lives here: the header reads it. `CartItem.brand` is `null` for an unbranded accessory (D125); a stored
-  line with either a string or `null` there is accepted.
+  line with either a string or `null` there is accepted. **Since D162** a second entry, `pw-quotes-sent`,
+  keeps the requests sent from this browser, newest first, at most `SENT_MAX_REQUESTS` (20):
+  `useSentRequests()`, `recordSentRequest(lines)` (called once a send succeeds, before the cart is
+  emptied) and `clearSentRequests()`. Each holds the ISO time and the products (slug, quantity, brand,
+  model, size, unit words) and **nothing the visitor typed and no vehicle** (owner, 2026-10-11:
+  *"Products and time only"*). Same checks, fallback and cross-tab sync as the cart.
 - [`product-name.ts`](product-name.ts) — `productName(brand, model)`: `Zeta Antarctica Sport`, or the bare
   name when an accessory has no brand (**D125**), never a leading space or a stand-in brand. The one join
   for card alt text, the PDP title, structured data, the cart, the owner alert and photo alt text. Zero
@@ -97,20 +102,14 @@ the next session guesses which of the two phone numbers is real.
 ## Rules
 - **Nothing contact-related is hardcoded in a component.** Phone, email, hours, address, legal name and
   the price note all come from here (`docs/decisions.md:129`).
-- **The two phone numbers are two named people**, not a placeholder and a typo — Inderpal Singh and
-  Harman Singh. The canonical contact block settles it (`docs/decisions.md:130-131`, `site.ts:4-7`),
-  closing what was `design/DEVIATIONS.md` open item B. **D76** (2026-09-22) repointed Inderpal Singh's
-  number to `+1 (437) 882-5000` on the owner's instruction *"change number to +1 (437) 882-5000
-  everywhere"*; Harman Singh's number was deliberately **not** changed, because the instruction
-  gave one number and the two rows are two people. **D139** (2026-10-04) kept his number and gave it
-  the same `+1 (…)` format. Whether the second row should also move, or be
-  removed, is Open #3 below.
+- **One phone number and no personal names (D161, 2026-10-11).** Client: *"Remove names from contact,
+  just leave one number there- ending in 5000"*; owner: keep the email and `+1 (437) 882-5000`, with the
+  `+1`, everywhere. Never add a person's name or a personal number back to this file.
 - **`BRANDS` renders as text wordmarks** on `/about`. The home strip's logos (D129) live in
   `src/features/home/brand-logos.ts` and `public/images/brands/`, not here.
-- **`display` strings ship verbatim** — verbatim from whoever is authoritative for that row: the owner
-  for `CONTACTS[0]` (D76), the artboards for `CONTACTS[1]`. Never renormalise one to match the other.
-  The `tel` field is the only reformatting, it is E.164, and it is **never** built by concatenating or
-  stripping the `display` string — every call site reads `contact.tel` directly.
+- **`display` ships verbatim** in the owner's format (D76). The `tel` field is the only reformatting, it
+  is E.164, and it is **never** built by concatenating or stripping the `display` string; every call
+  site reads `PRIMARY_CONTACT.tel` directly.
 - Every export is `as const` — these are constants, not state.
 - No JSX, no React import, no component here: this folder is "site constants, data, helpers"
   (`docs/decisions.md:66`).
@@ -119,7 +118,7 @@ the next session guesses which of the two phone numbers is real.
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
-| D93b | 2026-09-30 | `CONTACTS[0].display` uses U+00A0 for its spaces and U+2060 after the hyphen so the number never wraps; `tel` stays E.164. Tests that match the displayed number strip U+2060. | The number broke across lines in narrow pills (WDG-15). | Owner ruling 2026-09-30; QA pass WDG-15; D93b |
+| D93b | 2026-09-30 | `PRIMARY_CONTACT.display` (then `CONTACTS[0]`) uses U+00A0 for its spaces and U+2060 after the hyphen so the number never wraps; `tel` stays E.164. Tests that match the displayed number strip U+2060. | The number broke across lines in narrow pills (WDG-15). | Owner ruling 2026-09-30; QA pass WDG-15; D93b |
 | — | — | None folder-scoped. | The one ruling this folder encodes is `docs/decisions.md` §8. | — |
 
 Referenced: **D39** (route map lives here; undesigned targets get `PageStub` pages), **D2** (`@/*` → `./src/*`, which is how `@/lib/site` resolves), **D32** (the year is computed
@@ -158,7 +157,7 @@ constants).
 2. **Address and map.** `SITE` carries `city` and `province` but no street address, while
    `docs/decisions.md:101` specifies a static map image plus a "Get directions" link. The address is not
    in the canonical contact block. Owner or client.
-3. **Which number is "primary", and what happens to the second.** `PRIMARY_CONTACT` picks `CONTACTS[0]`
+3. **Closed 2026-10-11 by D161: one number, no names.** **Which number is "primary", and what happens to the second.** `PRIMARY_CONTACT` picks `CONTACTS[0]`
    because the header CTA in the artboards reads `Call <primary>` (D7 / DEVIATIONS #11). Nobody has
    confirmed that Inderpal Singh should receive every header and mobile call tap (root `llm.md` §7.14).
    **Sharpened by D76:** the owner said "change number to +1 (437) 882-5000 **everywhere**", and only

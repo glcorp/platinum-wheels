@@ -63,8 +63,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   0.5 mm bore tolerance and the 0.5 in slack beyond the stock wheel width (coordinator, 2026-10-06, after a
   vendor spot check: DAI's fit lists run wider than the stock range and list GM 78.1 hubs with 77.8 wheels;
   "we have only commit a loose fit to the client"), a range bound of 0 or missing meaning unbounded on that
-  side, the rim-rule fallback). Wheel and tire sizes the buyer picks themselves still win over the
-  vehicle (the vehicle's bolt pattern is then not applied; whether it should be is open, #10)
+  side, the rim-rule fallback). **Since D170** a size the buyer picks no longer drops the vehicle: wheels
+  keep its bolt pattern, a bore at least the hub's and a stretched envelope (width stock minimum less 0.5"
+  to maximum plus 1", offset ±5 mm), the picked diameter unbounded; tires keep an overall diameter within
+  3% of stock; the wheel size selects list only what is drilled for the car (`catalogFilters` sends the
+  fit always; the rules are `queries.ts` `wheelPickedBest` / `tireHeightBand`)
   (D67 asymmetry unchanged: a product is demoted only when it STATES a contradiction).
   **What D108b changed, because 9 products and 45,000 behave differently:** a size now *filters*
   (`best` is that size; `similar` is the sizes next to it, `sizeMatch: "near"`, not "everything else");
@@ -172,6 +175,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   or more patterns (`/wheels` with a vehicle that came with two): *"This model year came with two bolt
   patterns: 5x114.3 and 5x120. Check your trim before you order."* (new copy, *derived*; three or more
   read "three", "four"; the count word and the patterns are filled in).
+  **D165 (owner, 2026-10-11):** the similar section is a native `<details>` headed `May also fit` (`<h2>` inside
+  the `<summary>`, a chevron), closed while best has matches, open when best is empty or when the last
+  `Load more` grew it (`show - step >= bestTotal`); that press's `Load more` and ceiling note sit inside it, and
+  the section carries the 120px desktop page foot (`md:pb-30`). The count line and its live region are
+  unchanged. `load-more-landing.tsx` opens a closed list before landing on a card in it. DEVIATIONS #132.
 - [`components/call-cta-panel.tsx`](components/call-cta-panel.tsx) — `CallCtaPanel()`, Server,
   `md:hidden`. `Not sure which one?` panel, `tel:` CTA from `PRIMARY_CONTACT` (D47(1)).
 
@@ -296,9 +304,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
    `Change vehicle` form does not carry `brands=all`; and with JS off, a fold opened by hand is not
    carried by a submit unless it holds a ticked brand.
 9. ~~**The vehicle → size map is still the placeholder `FITMENT` table.**~~ Closed by D155.
-10. **A size picked by hand drops the vehicle's bolt pattern on `/wheels`** (an explicit size always wins,
-    D48): choose a diameter with a vehicle in the URL and wheels that do not fit the car list as matches.
-    Applying the vehicle's pattern beside an explicit size would be a one-line change in `catalogFilters`;
-    not done, since it was not asked for. Owner.
+10. ~~**A size picked by hand drops the vehicle's bolt pattern on `/wheels`**~~ Closed by D170 (client
+    C2, owner 2026-10-11).
 11. **Whether to hide a wheel whose bore is narrower than the hub** is parked (owner, 2026-10-06); it is
     `similar` today.

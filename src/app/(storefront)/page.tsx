@@ -4,7 +4,7 @@ import { PageTransition } from "@/components/site/page-transition";
 import { ScrollReveal } from "@/components/site/scroll-reveal";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
+import { HomeFinder } from "@/features/finder/components/home-finder";
 import { BrandStrip } from "@/features/home/components/brand-strip";
 import { CategoryTiles } from "@/features/home/components/category-tiles";
 import { Contact } from "@/features/home/components/contact";
@@ -66,7 +66,7 @@ export default function HomePage() {
       <PageTransition>
         <main id="main" tabIndex={-1} className="flex-1">
           <Hero />
-          <VehicleFinder switchable />
+          <HomeFinder />
           <CategoryTiles />
           <WinterPromo />
           <HowItWorks />

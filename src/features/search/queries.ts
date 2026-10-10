@@ -26,7 +26,7 @@ import {
   wheelSpecs,
 } from "@/db/schema";
 import { accessoryParam, seasonParam, toProduct } from "@/features/catalog/adapter";
-import type { CatalogProduct, ProductStatus } from "@/features/catalog/catalog-types";
+import type { CatalogProduct } from "@/features/catalog/catalog-types";
 import { CATEGORY_CONFIG, EXTRA_PARAM } from "@/features/catalog/categories";
 import {
   loadImages,
@@ -35,19 +35,13 @@ import {
   withSpecs,
   type Executor,
 } from "@/features/catalog/rows";
+import { listedStatus } from "@/features/catalog/listing-status";
 import { listingFacts } from "@/features/catalog/siblings";
 import type { Product, ProductCategory } from "@/features/catalog/types";
 import { PRICES_VISIBLE } from "@/lib/site";
 
 import { FLOTATION_RATIO, measuringRatio, metricMeasuringRim, RIM_SLACK, wheelWidthRange } from "./fit";
 import type { ParsedSearch } from "./parse";
-
-/* TODO(stream-b): import `listedStatus()` from
-   `@/features/catalog/listing-status` once it is on `main`. Mirrored here:
-   a listing shows published and discontinued products alike, never hidden
-   ones (owner, 2026-10-11: "for a end user, there is no difference between
-   an active or discontinued product"). */
-const LISTED_STATUSES: ProductStatus[] = ["published", "discontinued"];
 
 export const SEARCH_CATEGORIES: readonly ProductCategory[] = ["tires", "wheels", "accessories"];
 
@@ -243,7 +237,7 @@ async function readGroup(
 ) {
   const condition = and(
     eq(products.category, category),
-    inArray(products.status, LISTED_STATUSES),
+    listedStatus(),
     ...where,
   );
   const keys = orderKeys(category, parsed);
@@ -300,7 +294,7 @@ async function readSiblings(db: Executor, shown: readonly CatalogProduct[]): Pro
   }
   if (keys.size === 0) return [];
   const rows = await withSpecs(db.select(PRODUCT_SELECTION).from(products).$dynamic())
-    .where(and(inArray(products.status, LISTED_STATUSES), or(...keys.values())))
+    .where(and(listedStatus(), or(...keys.values())))
     .limit(2000);
   return rows.map((row) => toCatalogProduct(row, null));
 }
@@ -316,7 +310,7 @@ async function readExactBrands(db: Executor, parsed: ParsedSearch): Promise<Map<
   const rows = await db
     .selectDistinct({ category: products.category, brand: products.brand })
     .from(products)
-    .where(and(inArray(products.status, LISTED_STATUSES), inArray(sql`lower(${products.brand})`, spelled)));
+    .where(and(listedStatus(), inArray(sql`lower(${products.brand})`, spelled)));
   for (const row of rows) if (row.brand) found.set(row.category, row.brand);
   return found;
 }

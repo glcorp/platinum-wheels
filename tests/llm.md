@@ -66,6 +66,11 @@ rules in this file apply to all of them.
   the four link states with axe, 404s, the capability headers, `/pay/return` never leaving the cookie's own link
   (LA-01/LA-02), `/pay/done`, and Pay with an unreachable gateway. Admin: the gate, `/admin` a 404 (D115), a wrong
   password, sign in, edit a product, save, a fresh session reads it back, the storefront shows it.
+- `e2e/listings.spec.ts` (**D164–D167**, 2026-10-11) — `chromium-1440`, serial: `May also fit` closed with best
+  matches, open with none, `Load more` inside it landing on `#similar-4` with focus, a grown list arriving open with
+  JS off; a discontinued product listed with no unavailable mark and a hidden one absent; the three-photo gallery
+  (arrows wrap, thumbnails, Home / End, the 704px box) and its no-JS state; and an admin `Make main` reordering the
+  gallery, then put back. `fixture.mjs` gives the named tire three photos for it.
 - `e2e/**/__screenshots__/` — `toHaveScreenshot` baselines (macOS, Chromium only). Committed.
 
 ## Rules
@@ -74,7 +79,7 @@ rules in this file apply to all of them.
   :3100 — **so after any `src/` change, stop that server first** or the suite tests the old build.
 - **`npm run test:e2e:fixture`** is the one command: Postgres (`:55600`), the fixture loaded, photos
   (`:3590`), `next build` and `next start` (`:3500`), Playwright on `chromium-1440` over `seo routes smoke
-  error-boundary cart-send pay-states search admin-save`, then a **second build with `SEARCH_INDEXING_ENABLED=true`
+  error-boundary cart-send pay-states search admin-save listings finder-fit`, then a **second build with `SEARCH_INDEXING_ENABLED=true`
   and `seo` again** (the flag is fixed at build time, D112), then everything stopped. Pass Playwright arguments
   after `--` to run something else against the same fixture (`npm run test:e2e:fixture -- smoke --project=webkit-1280`);
   `FIXTURE_ONE_PASS=1` skips the indexing pass, `FIXTURE_SKIP_BUILD=1` reuses `.next`. `...:up` / `...:down` leave

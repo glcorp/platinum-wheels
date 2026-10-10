@@ -140,17 +140,24 @@ function catalogFilters(
   price: PriceFacet,
 ): ProductFilters {
   const { tire, wheel } = sizeFilters(size);
-  /* A vehicle in the URL narrows tires and wheels only while every size select
-     is still at `Any`: an explicit size always wins (D48, LA-05). What it
-     lends is per category, because a car determines different things for
-     different goods (owner, 2026-09-21): tires get its factory sizes and
-     stock envelope, wheels its bolt patterns, envelope and hub bore, and
-     accessories (no size group) its lug thread, fastener and hub bore, below
-     (D67, D155). An unknown vehicle resolves to nothing, so the page behaves
-     exactly as with no vehicle at all (D110). */
-  const free = !hasSize(size);
-  const tireVehicle = query.category === "tires" && free ? tireFit(fit) : null;
-  const wheelVehicle = query.category === "wheels" && free ? wheelFit(fit) : null;
+  /* A vehicle in the URL narrows tires and wheels. What it lends is per
+     category, because a car determines different things for different goods
+     (owner, 2026-09-21): tires get its factory sizes and stock envelope,
+     wheels its bolt patterns, envelope and hub bore, and accessories (no size
+     group) its lug thread, fastener and hub bore, below (D67, D155). An
+     unknown vehicle resolves to nothing, so the page behaves exactly as with
+     no vehicle at all (D110).
+
+     A size the buyer picks no longer drops the car (C2, owner 2026-10-11;
+     until then an explicit size always won, D48, LA-05). The client: "if we
+     try to upgrade to 18 inch wheels ... only the same size wheels are
+     displayed regardless of their vehicle specs." So the fit travels beside
+     the picked size, and `queries.ts` reads the two together: the picked
+     parts are matched exactly, and the car keeps a tire to its stock height
+     (within 3%) and a wheel to its bolt pattern, hub bore and a stretched
+     stock width and offset (`tireHeightBand`, `wheelPickedBest`). */
+  const tireVehicle = query.category === "tires" ? tireFit(fit) : null;
+  const wheelVehicle = query.category === "wheels" ? wheelFit(fit) : null;
   return {
     category: query.category,
     brands: query.brands,
@@ -726,7 +733,10 @@ async function readCatalogue(
     listProducts({ ...filters, sort: query.sort, limit: query.show }),
     /* The size options narrow on the buyer's own choice, `query.size`, not
        on `size`: a size lent by the vehicle is not shown in the selects, so
-       it does not narrow them either (D132). */
+       it does not narrow them either (D132). The car's bolt patterns do
+       narrow the wheel selects, read from `filters` inside `getFacets` (C2):
+       a picked wheel size keeps the car's pattern, so only diameters and
+       widths that come in it are worth offering. */
     getFacets(filters, sizeFilters(query.size), base),
     narrows && !expanded ? readSimilar(RESULTS_WINDOW.similar) : null,
   ]);
@@ -760,8 +770,9 @@ async function readCatalogue(
     facets: buildFacets(query, catalog, price),
     best: best.items.map(toProduct),
     similar: similar.items.map(toProduct),
-    /* The patterns of a vehicle that came with two, only while the vehicle
-       is what narrows the wheels (D155): the page says to check the trim. */
+    /* The patterns of a vehicle that came with two (D155): the page says to
+       check the trim. With or without a picked size, since a picked size
+       keeps the car's patterns (C2). */
     boltChoice:
       (filters.wheel?.vehicleFit?.boltPatterns.length ?? 0) > 1
         ? (filters.wheel?.vehicleFit?.boltPatterns ?? [])

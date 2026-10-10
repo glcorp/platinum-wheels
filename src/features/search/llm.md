@@ -20,8 +20,8 @@ header's search icon have nothing behind them.
 ## Rules
 - **Visibility mirrors the listings**: `published` and `discontinued`, never `hidden`, with no order
   between the two (Stream B, owner 2026-10-11: *"for a end user, there is no difference between an active
-  or discontinued product"*). `LISTED_STATUSES` in `queries.ts` mirrors B's `listedStatus()`; switch to
-  the import once `src/features/catalog/listing-status.ts` is on `main`.
+  or discontinued product"*). `queries.ts` uses B's `listedStatus()` from
+  `src/features/catalog/listing-status.ts` (D164), the one rule every storefront list shares.
 - **No vendor data**: never select or match `product_sources` (vendor, SKU, vendor price). Owner,
   2026-10-11, chose *"No, part numbers only (Recommended)"*: a vendor SKU finds nothing.
 - **No price leaves the server while `PRICES_VISIBLE` is off** (D124): `queries.ts` nulls it as
@@ -49,4 +49,3 @@ header's search icon have nothing behind them.
 - Don't search `product_sources`, even for staff convenience: this is the storefront.
 
 ## Open
-- When Stream B's `listing-status.ts` lands, import `listedStatus()` instead of the mirror. Coordinator.

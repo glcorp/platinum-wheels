@@ -18,7 +18,10 @@
    centred at `--container-dialog` from `md:`.
 
    States: before hydration (the cart lives in the browser, so the server knows
-   nothing: a quiet line of the right height), empty, filled, and sent. When
+   nothing: a quiet line of the right height), empty, filled, and sent. Since
+   D162 "sent" is read from the browser's record of sent requests, so it
+   survives a refresh: an empty cart with a record shows the newest request's
+   panel and lists the earlier ones; a full cart lists them all below it. When
    the page opens, the catalogue's current facts replace each line's snapshot;
    a product the catalogue no longer lists is removed and a note says how many
    (owner ruling). If the catalogue cannot be read, the cart keeps its
@@ -33,6 +36,12 @@ import { CartLineRow } from "@/features/cart/components/cart-line";
 import { QuoteForm } from "@/features/cart/components/quote-form";
 import { QuoteSuccess } from "@/features/cart/components/quote-success";
 import {
+  CLEAR_LABEL,
+  SentLines,
+  SentRequestList,
+  sentLabel,
+} from "@/features/cart/components/sent-requests";
+import {
   pickQuoteCopy,
   type PostedLine,
   type QuoteCopyByCategory,
@@ -40,10 +49,13 @@ import {
 import {
   cartUnits,
   clearCart,
+  clearSentRequests,
   reconcileCart,
+  recordSentRequest,
   removeFromCart,
   setCartQuantity,
   useCartLines,
+  useSentRequests,
   type CartLine,
 } from "@/lib/cart";
 import { ROUTES } from "@/lib/routes";
@@ -175,8 +187,11 @@ export interface CartViewProps {
 
 export function CartView({ copy }: CartViewProps) {
   const lines = useCartLines();
+  /** Requests sent from this browser, newest first (D162). */
+  const sent = useSentRequests();
   const [removed, setRemoved] = useState(0);
-  const [sent, setSent] = useState(false);
+  /** A request went out in this visit: focus its panel once it renders. */
+  const [justSent, setJustSent] = useState(false);
   const [open, setOpen] = useState(false);
   /** `performance.now()` at the dialog's FIRST opening, `0` before it. The
    *  fill timer counts from here, so a close and reopen does not restart it
@@ -225,7 +240,7 @@ export function CartView({ copy }: CartViewProps) {
   // The cart emptied under an open dialog (another tab sent or cleared it, or
   // the refresh removed every line): close it rather than unmount it open.
   // Adjusting state during render, React's documented pattern.
-  if (open && lines !== null && lines.length === 0 && !sent) {
+  if (open && lines !== null && lines.length === 0) {
     setOpen(false);
   }
 
@@ -244,13 +259,12 @@ export function CartView({ copy }: CartViewProps) {
     };
   }, [open]);
 
-  // Sent: the success panel is already on screen, then the cart empties, so
-  // the empty state never paints in between.
+  // Sent: the record and the emptied cart land in the same render (both are
+  // synchronous store writes in `handleSuccess`), so the empty state never
+  // paints in between; then the newest request's panel takes focus.
   useEffect(() => {
-    if (!sent) return;
-    clearCart();
-    successRef.current?.focus();
-  }, [sent]);
+    if (justSent) successRef.current?.focus();
+  }, [justSent]);
 
   const getLines = useCallback(
     (): PostedLine[] =>
@@ -269,7 +283,7 @@ export function CartView({ copy }: CartViewProps) {
   };
 
   /* The pinned phone bar hides while the summary box is on screen. */
-  const hasLines = !sent && (lines?.length ?? 0) > 0;
+  const hasLines = (lines?.length ?? 0) > 0;
   useEffect(() => {
     const summary = summaryRef.current;
     if (!hasLines || summary === null) return;
@@ -280,10 +294,26 @@ export function CartView({ copy }: CartViewProps) {
     return () => observer.disconnect();
   }, [hasLines]);
 
+  /* The request is in (D162): keep a record of what was sent (the time and
+     the products, never the visitor's details), then empty the cart. The
+     record is what keeps "Quote request sent." on this page after a refresh. */
   const handleSuccess = useCallback(() => {
+    recordSentRequest(linesRef.current);
+    clearCart();
     setOpen(false);
-    setSent(true);
+    setJustSent(true);
   }, []);
+
+  /** Empties the sent record. Focus goes to the count line beside a full
+   *  cart, or to `<main>` when the panel it sat in is gone. */
+  function clearSent() {
+    clearSentRequests();
+    if ((lines ?? []).length > 0) {
+      countRef.current?.focus();
+    } else {
+      document.getElementById("main")?.focus();
+    }
+  }
 
   /** Removing the focused line's button would drop focus to `<body>`: hand
    *  it to the count line, or to `<main>` when the cart is now empty. */
@@ -305,21 +335,7 @@ export function CartView({ copy }: CartViewProps) {
     </p>
   );
 
-  if (sent) {
-    return (
-      <>
-        {announcer}
-        <div className="flex flex-col items-start gap-6">
-          <QuoteSuccess ref={successRef} role="status" tabIndex={-1} />
-          <Button href={ROUTES.tires} variant="secondary" size="promo">
-            Keep shopping
-          </Button>
-        </div>
-      </>
-    );
-  }
-
-  if (lines === null) {
+  if (lines === null || sent === null) {
     // Before hydration, and forever with JavaScript off (the page's
     // `<noscript>` says why): an empty box one line tall, so nothing jumps.
     return (
@@ -331,6 +347,42 @@ export function CartView({ copy }: CartViewProps) {
   }
 
   if (lines.length === 0) {
+    const [latest, ...earlier] = sent;
+    if (latest) {
+      /* The newest sent request stands where the empty cart would (D162):
+         after a send, and after any refresh until the record is cleared. */
+      return (
+        <>
+          {announcer}
+          <div className="flex flex-col gap-10 sm:gap-12">
+            <div className="flex flex-col items-start gap-6">
+              <CartRemovedNote count={removed} />
+              <QuoteSuccess
+                ref={successRef}
+                role="status"
+                tabIndex={-1}
+                sentLabel={sentLabel(latest.sentAt)}
+              >
+                <SentLines lines={latest.lines} />
+              </QuoteSuccess>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Button href={ROUTES.tires} variant="secondary" size="promo">
+                  Keep shopping
+                </Button>
+                <button
+                  type="button"
+                  onClick={clearSent}
+                  className="text-ink-muted tap-extend text-14 leading-body underline underline-offset-3 hover:text-ink active:opacity-70"
+                >
+                  {CLEAR_LABEL}
+                </button>
+              </div>
+            </div>
+            <SentRequestList requests={earlier} title="Earlier requests" />
+          </div>
+        </>
+      );
+    }
     return (
       <>
         {announcer}
@@ -372,6 +424,14 @@ export function CartView({ copy }: CartViewProps) {
           <CartSummary products={lines.length} onRequest={request} />
         </div>
       </div>
+
+      {/* Requests already sent from this browser stay listed under a new
+          cart (D162). */}
+      {sent.length > 0 ? (
+        <div className="pt-6 sm:pt-8">
+          <SentRequestList requests={sent} title="Sent from this browser" onClear={clearSent} />
+        </div>
+      ) : null}
 
       {/* Below 1100 the summary sits under every line, so on a phone its
           button was a long scroll away (owner, 2026-10-07: "request a quote

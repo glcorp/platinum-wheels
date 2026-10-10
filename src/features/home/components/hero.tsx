@@ -46,7 +46,7 @@ export function Hero() {
            900 (were `min-h-180 sm:min-h-190 md:min-h-225`) wherever the screen
            is tall enough, and otherwise shrinks so the finder below it, CTA
            included, is on screen before any scroll. */
-        "hero-fit",
+        "hero-fit-finder",
         // Insets: 16px mobile -> 48px desktop; bottom 100px -> 200px
         // (home.md:22 mobile, :21 desktop). Were the copy's absolute offsets.
         "px-4 pt-17 pb-25 sm:px-12 sm:pt-22 sm:pb-50",

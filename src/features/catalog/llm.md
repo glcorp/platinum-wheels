@@ -81,6 +81,14 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   (since D125 the vendors' fifteen labels verbatim, `Center Caps` … `Tire Bags & Storage`). The
   one place the two shapes meet (D108b). Pure, client-safe. `baseSizeLine()` is the size line from the
   product's own columns; `toProduct()` appends `tellingFacts` to it (D153).
+- [`listing-status.ts`](listing-status.ts) — `listedStatus()` / `LISTED_STATUSES` (**D164**): a storefront list
+  shows `published` and `discontinued`, never `hidden`. `queries.ts` uses it for the results listings, every
+  facet, the category base and the sitemap; stream D's search reuses it. **Discontinued is staff-only
+  information** (owner, 2026-10-11: *"for a end user, there is no difference between an active or discontinued
+  product"*), so `toProduct()` returns `available: true` for every product and nothing shows the unavailable
+  variant. `Other sizes`, `Similar products` and the home row still read `published` only (stream C, parked).
+- **`Product.images`** (**D167**): every photo in order, set by `toProduct()` from the product page's read
+  only; `PdpGallery` turns two or more into a gallery.
 - [`cache-tag.ts`](cache-tag.ts) — `CATALOGUE_TAG`, the one tag for a cached catalogue read; the product
   admin's actions expire it on every write.
 - [`components/product-photo-placeholder.tsx`](components/product-photo-placeholder.tsx) — the tile a
@@ -197,7 +205,12 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   The builder merges; nothing here de-duplicates. An accessory slug is brand + name + part number (the
   `part_number` column since D142), the
   brand dropped from the name when it already leads (`slug.ts`, `stripBrandPrefix`); a product may carry
-  20 sources. Wheel `getOtherSizes` keeps only wheels sharing a bolt pattern (D137). A wheel's size
+  20 sources. Wheel `getOtherSizes` keeps only wheels sharing a bolt pattern (D137); with a searched car
+  (`OtherSizesFit`, D171) it keeps only what fits it, `tireVehicleBest` / `wheelVehicleBest`.
+  **A size picked beside a car keeps the car (D170):** `exactSize` / `nearSize` apply
+  `wheelPickedBest` (bolt pattern, bore, width −0.5" / +1", offset ±5 mm, `PICKED_WHEEL`) and
+  `tireHeightBand` (overall diameter within 3% of stock, `PICKED_TIRE_HEIGHT`); `narrowWheelLists`
+  keeps the wheel size options to the car's patterns. With no size picked the SQL is as before. A wheel's size
   line carries offset and finish (`adapter.ts`, D136).
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
   `hidden` product or a vendor source; `store.ts` returns both (D105b).
