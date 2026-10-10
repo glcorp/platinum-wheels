@@ -55,6 +55,11 @@ rules in this file apply to all of them.
   `<main>`, one robots meta). Parked specs that assume 1,058 Model options at load (`finder`, `nojs`,
   `results`, `crawl`, `environment`, `product`) must focus a finder select first, or read
   `#finder-model-all` with JS off, when they return.
+- `e2e/search.spec.ts` (D173, 2026-10-11) — in the fixture gate. Six spellings of 225/60R17 find the
+  same tires; the size brings the 17-inch wheels 7.5 and 8 in wide and not 8.5 or 9; a part number with and
+  without dashes; the hidden tire never shows; the no-matches state; `noindex` and no price in the HTML; JS
+  off (header link, GET form); the header field opens focused, Esc closes it and Enter searches; `Show more`.
+  Runs on `chromium-1440` and the iPhone projects.
 - `e2e/cart-send.spec.ts`, `e2e/pay-states.spec.ts`, `e2e/admin-save.spec.ts` (new, 2026-10-05) — one
   project each (`chromium-1440`). Cart: add a tire, open `/cart`, the quote dialog, an empty send refused, a valid
   send, the success panel, the cart empties (email flag OFF: the app's own success path; nothing is sent). Pay:
@@ -69,7 +74,7 @@ rules in this file apply to all of them.
   :3100 — **so after any `src/` change, stop that server first** or the suite tests the old build.
 - **`npm run test:e2e:fixture`** is the one command: Postgres (`:55600`), the fixture loaded, photos
   (`:3590`), `next build` and `next start` (`:3500`), Playwright on `chromium-1440` over `seo routes smoke
-  error-boundary cart-send pay-states admin-save`, then a **second build with `SEARCH_INDEXING_ENABLED=true`
+  error-boundary cart-send pay-states search admin-save`, then a **second build with `SEARCH_INDEXING_ENABLED=true`
   and `seo` again** (the flag is fixed at build time, D112), then everything stopped. Pass Playwright arguments
   after `--` to run something else against the same fixture (`npm run test:e2e:fixture -- smoke --project=webkit-1280`);
   `FIXTURE_ONE_PASS=1` skips the indexing pass, `FIXTURE_SKIP_BUILD=1` reuses `.next`. `...:up` / `...:down` leave

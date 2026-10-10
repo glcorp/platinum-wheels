@@ -11,6 +11,7 @@ import { Price } from "@/components/ui/price";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { CategoryTabs } from "@/components/site/category-tabs";
 import { ProductCard } from "@/features/catalog/components/product-card";
+import { SearchEmpty } from "@/features/search/components/search-results";
 import { VehicleFinder } from "@/features/finder/components/vehicle-finder";
 import {
   BoltChoiceNote,
@@ -633,6 +634,18 @@ export default function StyleguidePage() {
                 the grid shell supplies it — so the demo box adds it back. */}
             <div className="border-border-strong border md:p-6">
               <ResultsEmpty clearHref={ROUTES.tires} as="h2" />
+            </div>
+          </div>
+
+          {/* Search, nothing found (D173). `/search?q=` with a query that
+              matches no product: a call and an email. Rendered from the real
+              component; `as="h2"` as above. */}
+          <div className="mt-10">
+            <p className="numeral text-12 text-ink-dim mb-4">
+              Search, no matches · src/features/search/components/search-results.tsx
+            </p>
+            <div className="border-border-strong border p-4 md:p-6">
+              <SearchEmpty query="qqqzzz" as="h2" />
             </div>
           </div>
 

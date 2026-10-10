@@ -260,6 +260,7 @@ try {
     "error-boundary",
     "cart-send",
     "pay-states",
+    "search",
     "admin-save",
     "--project=chromium-1440",
     // One retry, reported as "flaky" and never hidden: a 130-test run on a loaded

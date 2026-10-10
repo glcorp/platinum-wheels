@@ -43,6 +43,13 @@
       "when": 1791113088296,
       "tag": "0005_part_number_mud_snow",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791660590975,
+      "tag": "0006_search_trgm",
+      "breakpoints": true
     }
   ]
 }

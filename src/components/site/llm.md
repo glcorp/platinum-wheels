@@ -45,6 +45,12 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
 - [`site-footer.tsx`](site-footer.tsx) — Server Component, named export `SiteFooter`, no props.
   120px logo badge, Shop/Company/Legal link columns (`ROUTES`), a computed `Winter <year>` link
   and bottom-bar `© <year> {SITE.legalName}` (D32; the legal name carries its own `Inc.`, so the footer appends nothing, D153). Social row omitted per D34.
+- [`site-search.tsx`](site-search.tsx) — `"use client"`, named export `SiteSearch` (**D173**). The header's
+  search icon, 44×44 in the cart and menu icons' stroke, before the cart at every width. Hydrated, it toggles a
+  panel pinned under the bar (`absolute top-full` in the header) holding a `next/form` GET to `/search?q=`;
+  Esc, the close button, a press outside or a submit closes it, and a page change does too. Before
+  hydration and with JS off it is a plain link to `/search`. Imports no feature (D37): it only posts `q`.
+  `DEVIATIONS.md` #141.
 - [`cart-link.tsx`](cart-link.tsx) — `"use client"`, named export `CartLink` (**D122**). The header's
   cart: a 44×44 link to `/cart` in the menu trigger's box and stroke weight, after the phone CTA and
   before the menu at every width (owner: "it doesn't need to be inside the hamburger"). An accent count

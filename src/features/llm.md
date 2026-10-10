@@ -39,6 +39,8 @@ composition only, `docs/decisions.md:62`); this is where the actual page content
   D117), home (D118).
 - [`payments/`](payments/llm.md) — **built** 2026-09-24. Converge adapter, link and attempt service, the Pay
   island (D99–D107). The only code that names the gateway.
+- [`search/`](search/llm.md) — **built** 2026-10-11 (D173). Free-text search: the query parser and the
+  grouped reads behind `/search?q=`. Imports `catalog/` and nothing else.
 - [`seo/`](seo/llm.md) — **built** 2026-09-30 (D112). The indexing flag, `pageMetadata()`, the sitemap, the
   structured data and the two link-preview cards. No UI of its own beyond `JsonLd`; the routes that
   serve it are in `src/app/`.

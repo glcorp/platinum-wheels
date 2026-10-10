@@ -36,6 +36,10 @@ Since D105b it also holds the catalogue: products, their specs, images and vendo
   (`products_part_number_length`); a tire never has one (`products_part_number_not_tire`). `mud_snow` is
   the M+S marking, `false` for both "no" and "not stated", the shape of `winter_approved`. `0005` moved
   the values itself and left `slug` and `updated_at` alone.
+- **`products_search_trgm_idx` (D173, migration `0006`)** is a GIN trigram index over
+  `productSearchText()`, defined beside `products` in `catalog-schema.ts`. `0006` also creates the `pg_trgm`
+  extension (hand-added above drizzle-kit's output; drizzle-kit does not manage extensions). The search
+  query filters on the same function, so the index and the query cannot spell the expression two ways.
 - **A spec row's category is pinned by the database.** Each spec table carries a `category` column with a
   CHECK and a composite foreign key to `products (id, category)`. Don't drop either half.
 - **A uniqueness that a foreign key points at is a table `unique()`, not a `uniqueIndex()`.** drizzle-kit
