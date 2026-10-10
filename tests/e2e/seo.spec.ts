@@ -312,7 +312,8 @@ test("the home page describes an online store: no street address, no opening hou
     url: SITE_URL,
     email: "sales@platinumwheels.ca",
     telephone: "+14378825000",
-    areaServed: { "@type": "City", name: "Brampton" },
+    // D163 (client, 2026-10-11): "serving the GTA and surrounding areas".
+    areaServed: { "@type": "AdministrativeArea", name: "Greater Toronto Area" },
   });
   // Where the business is based, and nothing a customer could travel to.
   expect(org!.address).toEqual({
@@ -326,8 +327,11 @@ test("the home page describes an online store: no street address, no opening hou
   for (const key of FORBIDDEN_KEYS) expect(keys.has(key), `forbidden key "${key}"`).toBe(false);
 
   // The phone hours appear only as contact hours, on the contact points.
+  // D161: one number, no names.
   const points = org!.contactPoint as Node[];
-  expect(points).toHaveLength(2);
+  expect(points).toHaveLength(1);
+  expect(points[0]).toMatchObject({ telephone: "+14378825000" });
+  expect(JSON.stringify(nodes)).not.toMatch(/Inderpal|Harman|3659980990/);
   for (const point of points) {
     expect(point.hoursAvailable).toMatchObject({ opens: "09:00", closes: "20:00" });
   }

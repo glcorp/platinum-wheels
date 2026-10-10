@@ -6,8 +6,9 @@
  * opens database connections (`src/db/llm.md`).
  *
  * Visibility is decided here and nowhere else:
- *   - listings, facets, "other sizes", "similar" and the sitemap see
- *     `published` products only;
+ *   - the results listings, their facets and the sitemap see `published`
+ *     and `discontinued` products (`listedStatus()`, `listing-status.ts`,
+ *     D164); "other sizes", "similar" and the home row see `published` only;
  *   - a product page loads `published` and `discontinued`;
  *   - `hidden` is never returned by anything in this file.
  * Vendor sources are staff-only and are not read here at all: no query in
@@ -77,6 +78,7 @@ import {
   type ProductJoinRow,
 } from "./rows";
 import { CACHE_DEPLOYMENT, CATALOGUE_TAG } from "./cache-tag";
+import { listedStatus } from "./listing-status";
 import { listingFacts } from "./siblings";
 import { normalizeBoltPattern, normalizeThreadSize } from "./size";
 
@@ -904,7 +906,8 @@ function conditions(
 ): SQL[] {
   const where: SQL[] = [
     eq(products.category, filters.category),
-    eq(products.status, "published"),
+    // Discontinued lists too, mixed in, and counts in every facet (D164).
+    listedStatus(),
   ];
 
   // Exact, because the brand facet groups exactly: the count beside a brand
@@ -1012,7 +1015,8 @@ function clampOffset(offset: number | undefined): number {
 /* --- Listings ------------------------------------------------------------ */
 
 /**
- * One page of a category's published products, and how many match in all.
+ * One page of a category's listed products (published and discontinued,
+ * D164), and how many match in all.
  * Backs `/tires`, `/wheels` and `/accessories`. Call it once with
  * `sizeMatch: "exact"` for the matches and once with `"near"` for the
  * "similar options" row beneath them.
@@ -1086,7 +1090,7 @@ function sortedNumbers(values: ReadonlyArray<number | null>): number[] {
     .sort((a, b) => a - b);
 }
 
-/** The lowest and highest price among a category's published products.
+/** The lowest and highest price among a category's listed products.
  *  `null` when nothing in it is priced. */
 async function readPriceBounds(
   category: ProductCategory,
@@ -1096,13 +1100,13 @@ async function readPriceBounds(
     .select({ min: min(products.price), max: max(products.price) })
     .from(products)
     .where(
-      and(eq(products.category, category), eq(products.status, "published")),
+      and(eq(products.category, category), listedStatus()),
     );
   return { min: row?.min ?? null, max: row?.max ?? null };
 }
 
 /**
- * Every brand with a published product in a category, whatever else is
+ * Every brand with a listed product in a category, whatever else is
  * filtered. `getFacets` counts brands under the other filters; this is the
  * list that says whether the category carries a brand at all (D111).
  */
@@ -1113,7 +1117,7 @@ async function readBrands(category: ProductCategory): Promise<string[]> {
     .where(
       and(
         eq(products.category, category),
-        eq(products.status, "published"),
+        listedStatus(),
         // An unbranded accessory (D125) is no brand to filter on.
         isNotNull(products.brand),
       ),
@@ -1134,10 +1138,7 @@ async function readExtraValues(
   category: ProductCategory,
 ): Promise<{ finishes: string[]; threads: string[] }> {
   const db = getDb();
-  const published = and(
-    eq(products.category, category),
-    eq(products.status, "published"),
-  );
+  const listed = and(eq(products.category, category), listedStatus());
   const [finishRows, threadRows] = await Promise.all([
     category === "wheels"
       ? db
@@ -1146,7 +1147,7 @@ async function readExtraValues(
           .innerJoin(products, eq(products.id, wheelSpecs.productId))
           .where(
             and(
-              published,
+              listed,
               isNotNull(wheelSpecs.finishFamily),
               ne(wheelSpecs.finishFamily, ""),
             ),
@@ -1160,7 +1161,7 @@ async function readExtraValues(
           .innerJoin(products, eq(products.id, accessorySpecs.productId))
           .where(
             and(
-              published,
+              listed,
               inArray(accessorySpecs.accessoryType, [
                 "lug_nuts",
                 "lug_bolts",
@@ -1376,10 +1377,7 @@ async function readWheelBase(
 async function readCategoryBase(
   category: ProductCategory,
 ): Promise<CategoryBase> {
-  const inCategory = and(
-    eq(products.category, category),
-    eq(products.status, "published"),
-  );
+  const inCategory = and(eq(products.category, category), listedStatus());
   const [brands, extraValues, price, tire, wheel] = await Promise.all([
     readBrands(category),
     readExtraValues(category),
@@ -2276,7 +2274,8 @@ export async function getProductsBySlugs(
 /* --- Sitemap ------------------------------------------------------------- */
 
 /**
- * Every published product's slug and last change, for one category. One
+ * Every listed product's slug and last change, for one category (published
+ * and discontinued, D164: a discontinued page still answers 200). One
  * sitemap file tops out at 50,000 URLs and the catalogue is close to that, so
  * the sitemap is built per category, never as one list.
  */
@@ -2286,8 +2285,6 @@ export async function listProductUrls(
   return getDb()
     .select({ slug: products.slug, updatedAt: products.updatedAt })
     .from(products)
-    .where(
-      and(eq(products.category, category), eq(products.status, "published")),
-    )
+    .where(and(eq(products.category, category), listedStatus()))
     .orderBy(asc(products.slug));
 }

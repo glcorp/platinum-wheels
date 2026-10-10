@@ -97,6 +97,14 @@ export function LoadMoreLanding({ show }: LoadMoreLandingProps) {
     const card = document.getElementById(id);
     if (card === null) return;
 
+    /* D165: the similar cards sit in the `May also fit` disclosure. The
+       server renders it open whenever a press grew it, and the press came
+       from inside it, so it is open already; a list the reader closed in
+       between is opened here, because a card inside a closed `<details>` has
+       no box to scroll to or focus. */
+    const list = card.closest("details");
+    if (list !== null && !list.open) list.open = true;
+
     /* `instant`, not `auto`: `<html>` is `scroll-behavior: smooth` since D92b
        and `auto` defers to it, which is the glide this file exists to avoid.
        The offset is CSS: `scroll-padding-top` under the sticky bar below

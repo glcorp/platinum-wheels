@@ -4,7 +4,8 @@
    ProductPhotos — add, order and remove one product's photos (D117).
 
    On the edit page only: a photo belongs to a product that already exists.
-   Rules, owner 2026-10-01: up to 8 photos, 10 MB each, JPEG / PNG / WebP;
+   Rules, owner 2026-10-01: up to 8 photos, JPEG / PNG / WebP, 50 MB each
+   since D166 (was 10 MB);
    shown whole inside the square, never cropped; the first is the main photo
    (the storefront card's); removing one deletes the file too, after a
    confirm. No drag and drop: on a phone or tablet, buttons are the reliable
@@ -81,7 +82,7 @@ export function ProductPhotos({
       return `${file.name}: use a JPEG, PNG or WebP photo.`;
     }
     if (file.size > PHOTO_LIMITS.maxBytes) {
-      return `${file.name}: ${(file.size / MB).toFixed(1)} MB is over the 10 MB limit.`;
+      return `${file.name}: ${(file.size / MB).toFixed(1)} MB is over the ${PHOTO_LIMITS.maxMegabytes} MB limit.`;
     }
 
     const ticketForm = baseForm();
@@ -270,7 +271,7 @@ export function ProductPhotos({
             </Button>
           </div>
           <p className="text-ink-dim text-13 leading-body">
-            {`JPEG, PNG or WebP, up to 10 MB each. Room for ${room === 1 ? "1 more" : `${room} more`}.`}
+            {`JPEG, PNG or WebP, up to ${PHOTO_LIMITS.maxMegabytes} MB each. Room for ${room === 1 ? "1 more" : `${room} more`}.`}
           </p>
         </div>
       ) : (

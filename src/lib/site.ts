@@ -1,10 +1,9 @@
 /**
  * Canonical site constants.
  *
- * Source: design/DESIGN.md "Contact block (canonical)". Nothing here is
- * hardcoded in a component — DEVIATIONS.md open item B (which of the two phone
- * numbers was canonical) is closed by that block: they are two named people,
- * not a placeholder and a typo.
+ * Source: design/DESIGN.md "Contact block (canonical)", narrowed by D161 to
+ * one phone number and no personal names. Nothing here is hardcoded in a
+ * component.
  */
 
 /**
@@ -22,6 +21,10 @@ export const SITE = {
   tagline: "Wheels, tires & accessories in Brampton, ON",
   city: "Brampton",
   province: "ON",
+  /** Where the shop sells to (D163). Client, 2026-10-11: "Platinum…. Deal in
+   *  tires…… serving the GTA and surrounding areas". Read in running text after
+   *  "serving". The address stays the city (`city`, `province`). */
+  serviceArea: "the GTA and surrounding areas",
   email: "sales@platinumwheels.ca",
   hours: "Every day, 9 am to 8 pm",
   hoursLabel: "Phone & inquiry hours",
@@ -105,42 +108,30 @@ export const CONTACT_HOURS = {
 } as const;
 
 /**
- * Two named contacts, both canonical. `tel` is E.164 for the href; `display` is
- * the human-readable string.
+ * The shop's one phone number. `tel` is E.164 for the href; `display` is the
+ * human-readable string.
  *
- * Both rows use the owner's format, country code and parentheses: `CONTACTS[0]`
- * since D76, `CONTACTS[1]` since D139 (owner, 2026-10-04: "add +1 to harman's
- * number"), which retires the two-format inconsistency DEVIATIONS #66 recorded.
+ * One number and no names (D161). Client, 2026-10-11: "Remove names from
+ * contact, just leave one number there- ending in 5000" and "No personal
+ * contact or names throughout the website". Owner: keep the email and
+ * +1 (437) 882-5000, with the +1, everywhere. Until then this file held two
+ * named people (D76, D139); the second number is gone from the site.
+ *
+ * `display` is the owner's exact format (D76): country code and parentheses,
+ * NOT renormalised to the artboards' dash convention (`design/DEVIATIONS.md`
+ * #66). WDG-15 (owner ruling 2026-09-30): its spaces are U+00A0 and the hyphen
+ * is followed by U+2060 WORD JOINER, so the number is one unbreakable unit in
+ * running text and never wraps mid-number. Both code points draw nothing
+ * extra; written as escapes so the source stays readable. Plain-text output
+ * (the quote emails) strips them.
+ *
+ * Used by the header CTA, the mobile call button and every "Call us" on the
+ * site. Keep the shape: other files read only `display` and `tel`.
  */
-export const CONTACTS = [
-  /* Owner instruction 2026-09-22 (D76): "change number to +1 (437) 882-5000
-     everywhere". The `display` string is the owner's exact format — country
-     code and parentheses — and is NOT renormalised to the dash convention the
-     artboards drew, or to the one `CONTACTS[1]` still uses. It is therefore no
-     longer the artboard's formatting for this row (`design/DEVIATIONS.md` #66).
-     `tel` stays E.164 and is the only reformatting. */
-  /* WDG-15 (owner ruling 2026-09-30): the spaces in `display` are U+00A0 and
-     the hyphen is followed by U+2060 WORD JOINER, so the number is one
-     unbreakable unit wherever it is set in running text ("Call …", the quote
-     success sentence) and never wraps mid-number. Every glyph is identical to
-     the owner's verbatim D76 string; the two extra code points draw nothing
-     (NBSP is a space, WJ is zero-width) and only the line-break class differs.
-     Written as escapes so the source stays readable. `tel` is untouched. */
-  {
-    name: "Inderpal Singh",
-    display: "+1\u00a0(437)\u00a0882-\u20605000",
-    tel: "+14378825000",
-  },
-  /* D139: same format and the same WDG-15 no-break code points as above. */
-  {
-    name: "Harman Singh",
-    display: "+1\u00a0(365)\u00a0998-\u20600990",
-    tel: "+13659980990",
-  },
-] as const;
-
-/** The number used by the header CTA and the mobile call button. */
-export const PRIMARY_CONTACT = CONTACTS[0];
+export const PRIMARY_CONTACT = {
+  display: "+1\u00a0(437)\u00a0882-\u20605000",
+  tel: "+14378825000",
+} as const;
 
 /**
  * Brands carried in the mockups (DESIGN.md contact block). House brands first,

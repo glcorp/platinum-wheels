@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { CONTACTS, SITE } from "@/lib/site";
+import { PRIMARY_CONTACT, SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
    The pay host's 404 (D145 audit, COPY / SEC-EDGE; D151).
@@ -14,7 +14,7 @@ import { CONTACTS, SITE } from "@/lib/site";
 
    So it carries no site chrome and no storefront link (this folder's rule),
    only the way out a customer actually has: the shop's phone and email, from
-   `CONTACTS[0]` and `SITE.email`, never typed here. The logo row and the
+   `PRIMARY_CONTACT` and `SITE.email`, never typed here. The logo row and the
    surface panel are the `/pay/<token>` page's own, so a customer who mistypes
    a link sees the same page frame as the one they meant to open.
 
@@ -24,7 +24,7 @@ import { CONTACTS, SITE } from "@/lib/site";
    --------------------------------------------------------------------------- */
 
 export default function PayNotFound() {
-  const contact = CONTACTS[0];
+  const contact = PRIMARY_CONTACT;
 
   return (
     <main id="main" tabIndex={-1} className="w-full flex-1 px-4 pt-8 pb-20 sm:px-8 sm:pt-14">
@@ -49,7 +49,7 @@ export default function PayNotFound() {
             email and make sure the whole link was copied.
           </p>
           <p className="text-ink-muted text-15 leading-body">
-            Still stuck? Call {contact.name} at{" "}
+            Still stuck? Call us at{" "}
             <a className="text-ink underline" href={`tel:${contact.tel}`}>
               {contact.display}
             </a>{" "}

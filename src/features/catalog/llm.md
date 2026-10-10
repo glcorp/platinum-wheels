@@ -81,6 +81,14 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   (since D125 the vendors' fifteen labels verbatim, `Center Caps` … `Tire Bags & Storage`). The
   one place the two shapes meet (D108b). Pure, client-safe. `baseSizeLine()` is the size line from the
   product's own columns; `toProduct()` appends `tellingFacts` to it (D153).
+- [`listing-status.ts`](listing-status.ts) — `listedStatus()` / `LISTED_STATUSES` (**D164**): a storefront list
+  shows `published` and `discontinued`, never `hidden`. `queries.ts` uses it for the results listings, every
+  facet, the category base and the sitemap; stream D's search reuses it. **Discontinued is staff-only
+  information** (owner, 2026-10-11: *"for a end user, there is no difference between an active or discontinued
+  product"*), so `toProduct()` returns `available: true` for every product and nothing shows the unavailable
+  variant. `Other sizes`, `Similar products` and the home row still read `published` only (stream C, parked).
+- **`Product.images`** (**D167**): every photo in order, set by `toProduct()` from the product page's read
+  only; `PdpGallery` turns two or more into a gallery.
 - [`cache-tag.ts`](cache-tag.ts) — `CATALOGUE_TAG`, the one tag for a cached catalogue read; the product
   admin's actions expire it on every write.
 - [`components/product-photo-placeholder.tsx`](components/product-photo-placeholder.tsx) — the tile a

@@ -69,8 +69,9 @@ import { requireAdminAction } from "./session";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** How long an upload link stays good. Long enough for a slow phone upload
- *  of 10 MB, short enough that a leaked one is soon useless. */
+/** How long an upload link stays good. Long enough for a 50 MB upload on a
+ *  slow connection (about 0.7 Mbit/s fills it), short enough that a leaked
+ *  one is soon useless. */
 const TICKET_LIFETIME_SECONDS = 10 * 60;
 
 const NOT_SET_UP = "Photo uploads are not set up on this deployment.";
@@ -156,7 +157,7 @@ export async function requestPhotoUpload(formData: FormData): Promise<PhotoUploa
     return { ok: false, message: "Use a JPEG, PNG or WebP photo." };
   }
   if (!Number.isFinite(size) || size <= 0 || size > PHOTO_LIMITS.maxBytes) {
-    return { ok: false, message: "Use a photo of 10 MB or less." };
+    return { ok: false, message: `Use a photo of ${PHOTO_LIMITS.maxMegabytes} MB or less.` };
   }
   if (!UUID.test(productId) || !(await getProductById(productId))) {
     return { ok: false, message: "This product no longer exists. Go back to the list." };

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { CONTACTS, SITE } from "@/lib/site";
+import { PRIMARY_CONTACT, SITE } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
    /pay/done — where `/pay/return` lands every return it will not send to a
@@ -18,13 +18,13 @@ export const metadata: Metadata = {
 };
 
 export default function PayDonePage() {
-  const contact = CONTACTS[0];
+  const contact = PRIMARY_CONTACT;
   return (
     <main id="main" tabIndex={-1} className="w-full flex-1 px-4 pt-14 pb-20 sm:px-8">
       <div className="bg-surface border-border-strong mx-auto flex w-full max-w-measure flex-col gap-4 border p-5 sm:p-8">
         <h1 className="display text-ink text-display-28 sm:text-display-40">We couldn&apos;t confirm your payment</h1>
         <p className="text-ink-muted text-15 leading-body">
-          If you finished paying, please don&apos;t pay again. Call {contact.name} at{" "}
+          If you finished paying, please don&apos;t pay again. Call us at{" "}
           <a className="text-ink underline" href={`tel:${contact.tel}`}>
             {contact.display}
           </a>{" "}

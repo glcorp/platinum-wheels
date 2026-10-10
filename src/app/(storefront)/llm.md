@@ -68,6 +68,9 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   legal pages hold one `SECTIONS` array, mapped straight into `ProseSection`s. `wheels/` and
   `accessories/` left this list on 2026-09-21 (D58); `PageStub`'s only caller now is
   `src/app/not-found.tsx`.
+  **2026-10-11:** `/about`'s "Talk to us" shows the shop's one number with no names (D161) and "Who we
+  are" says the shop serves the GTA and surrounding areas (D163, `SITE.serviceArea`); `/privacy`'s
+  "Cookies and tracking" names the second browser entry, the sent-requests record (D162).
   **What "add style" did not license, either pass:** no new fact about the business, and on the legal
   pages no new obligation — structure and typesetting only. See `src/components/site/llm.md` Owns/Rules.
 - [`styleguide/page.tsx`](styleguide/page.tsx) (471 ln) — route `/styleguide`, `noindex` via

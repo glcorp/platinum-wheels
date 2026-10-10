@@ -158,6 +158,7 @@ export default async function ProductPage({
                 model={product.model}
                 slug={product.slug}
                 image={product.image}
+                images={product.images}
                 accessoryType={product.accessoryType}
                 /* Mobile draws the badge row over the image; from `sm:` it moves
                    into the buy panel, which is where the desktop artboard puts

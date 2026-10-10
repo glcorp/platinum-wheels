@@ -175,6 +175,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   or more patterns (`/wheels` with a vehicle that came with two): *"This model year came with two bolt
   patterns: 5x114.3 and 5x120. Check your trim before you order."* (new copy, *derived*; three or more
   read "three", "four"; the count word and the patterns are filled in).
+  **D165 (owner, 2026-10-11):** the similar section is a native `<details>` headed `May also fit` (`<h2>` inside
+  the `<summary>`, a chevron), closed while best has matches, open when best is empty or when the last
+  `Load more` grew it (`show - step >= bestTotal`); that press's `Load more` and ceiling note sit inside it, and
+  the section carries the 120px desktop page foot (`md:pb-30`). The count line and its live region are
+  unchanged. `load-more-landing.tsx` opens a closed list before landing on a card in it. DEVIATIONS #132.
 - [`components/call-cta-panel.tsx`](components/call-cta-panel.tsx) — `CallCtaPanel()`, Server,
   `md:hidden`. `Not sure which one?` panel, `tel:` CTA from `PRIMARY_CONTACT` (D47(1)).
 

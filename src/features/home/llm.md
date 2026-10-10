@@ -27,7 +27,7 @@ sources (`design/inventory/home.md` §2.x). All Server Components except the car
   cards in an unnamed container. The only paint it adds is the global focus ring.
 - [`components/brand-strip.tsx`](components/brand-strip.tsx) — `BrandStrip`. The drawn band (fill, hairlines, margins, paddings: home.md §2.8) holding a **CSS-only ticker of real brand logos** since **D129**: the list twice in a track that slides one list's width, the copy `aria-hidden`; pause on hover only since D139; it moves with Reduce Motion on too since D159. Mechanics are the `brand-marquee` utility (`globals.css`, "Brand marquee (D129)"). No longer reads `BRANDS`.
 - [`brand-logos.ts`](brand-logos.ts) — `BRAND_LOGOS`: the nineteen ticker brands in display order, each with its file slug (`public/images/brands/<slug>.svg`), measured `aspect` and optical `scale` (D129). Sources: `design/ASSET-CREDITS.md` "Brand logos".
-- [`components/contact.tsx`](components/contact.tsx) — `Contact`, `id="contact"`. One DOM, four blocks placed by grid per width (D22). home.md §2.9.
+- [`components/contact.tsx`](components/contact.tsx) — `Contact`, `id="contact"`. One DOM, four blocks placed by grid per width (D22). home.md §2.9. **Since D161 one phone card, `Call or text` and `PRIMARY_CONTACT`, where two named cards were drawn** (`design/DEVIATIONS.md` #129); no person's name.
 
 ## Rules
 - One file per manifest section, named by the section: `hero.tsx`, `category-tiles.tsx`,

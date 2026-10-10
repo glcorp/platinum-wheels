@@ -30,9 +30,14 @@ export interface QuoteSuccessProps {
   /** `-1` in the live form so `QuoteForm` can focus it. */
   tabIndex?: number;
   ref?: React.Ref<HTMLDivElement>;
+  /** `Sent Oct 11, 2026, 3:42 p.m.` (D162): the panel now stays on `/cart`
+   *  after a refresh, so it says when. Omitted on `/styleguide`'s plain copy. */
+  sentLabel?: string;
+  /** The products that request covered (`SentLines`, D162). */
+  children?: React.ReactNode;
 }
 
-export function QuoteSuccess({ role, tabIndex, ref }: QuoteSuccessProps) {
+export function QuoteSuccess({ role, tabIndex, ref, sentLabel, children }: QuoteSuccessProps) {
   return (
     <div
       ref={ref}
@@ -51,6 +56,9 @@ export function QuoteSuccess({ role, tabIndex, ref }: QuoteSuccessProps) {
     >
       {/* `h2` under the cart page's `Your cart` (D122). It used to be an
           `h3` under the quote band's own `h2`. */}
+      {sentLabel ? (
+        <span className="label text-ink-dim text-11 tracking-14 sm:text-12">{sentLabel}</span>
+      ) : null}
       <h2 className="display text-ink text-display-28 sm:text-display-40">
         Quote request sent.
       </h2>
@@ -61,6 +69,7 @@ export function QuoteSuccess({ role, tabIndex, ref }: QuoteSuccessProps) {
       <p className="text-ink-muted text-15 leading-body sm:text-16">
         {`We'll check fitment and stock, then get back to you within 1-2 business days. Need it sooner? Call ${PRIMARY_CONTACT.display}.`}
       </p>
+      {children ? <div className="w-full pt-2">{children}</div> : null}
     </div>
   );
 }
