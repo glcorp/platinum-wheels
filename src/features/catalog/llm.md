@@ -197,7 +197,12 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   The builder merges; nothing here de-duplicates. An accessory slug is brand + name + part number (the
   `part_number` column since D142), the
   brand dropped from the name when it already leads (`slug.ts`, `stripBrandPrefix`); a product may carry
-  20 sources. Wheel `getOtherSizes` keeps only wheels sharing a bolt pattern (D137). A wheel's size
+  20 sources. Wheel `getOtherSizes` keeps only wheels sharing a bolt pattern (D137); with a searched car
+  (`OtherSizesFit`, D171) it keeps only what fits it, `tireVehicleBest` / `wheelVehicleBest`.
+  **A size picked beside a car keeps the car (D170):** `exactSize` / `nearSize` apply
+  `wheelPickedBest` (bolt pattern, bore, width −0.5" / +1", offset ±5 mm, `PICKED_WHEEL`) and
+  `tireHeightBand` (overall diameter within 3% of stock, `PICKED_TIRE_HEIGHT`); `narrowWheelLists`
+  keeps the wheel size options to the car's patterns. With no size picked the SQL is as before. A wheel's size
   line carries offset and finish (`adapter.ts`, D136).
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
   `hidden` product or a vendor source; `store.ts` returns both (D105b).

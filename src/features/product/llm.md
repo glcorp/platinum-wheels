@@ -31,7 +31,10 @@ Action, its emails and its two authored states moved there.
   and value as stored. **A row with no value is dropped** (D53(1), D109(6)), which is also how an
   unbranded accessory loses its `Brand` row. `fullName` is `productName()` (`src/lib/product-name.ts`),
   so it is the bare name when there is no brand. The vehicle is accepted only via `isFinderVehicle` (D91b).
-- `load.ts` — server only (D108b). `loadProduct(slug)` in React `cache()`, and `loadProductRows(detail)`.
+- `load.ts` — server only (D108b). `loadProduct(slug)` in React `cache()`, and `loadProductRows(detail,
+  vehicle)`: since **D171** the page's checked vehicle (`view.ts` `parseVehicle`, now exported) is read
+  through the finder's `findFitment` + `tireFit` / `wheelFit`, and `Other sizes` lists only the sizes
+  that fit it (the results pages' best list); no car, or no data for it, is the nearest sizes as before.
   Since the launch audit (D145; D151) also `loadTitleSiblings(detail)`, memoised, read by both
   `generateMetadata` and the page: `view.ts` passes them to `catalog/siblings.ts` and ends `sizeLine`
   with what tells this product from others of the same name and size (`· Centre bore 72.6 mm`), so the
@@ -117,7 +120,8 @@ rulings), **D6** (no sticky buy bar), **D21** (`Price context="pdp"`), **D37** (
   `AddToCartButton`, `cartItem()`, `configFor` / `categoryConfig`, `productImageSrc` (D37);
   `src/components/ui/` — `Badge`, `Button`, `Price`, `Input`, `FieldLabel`, `FieldError`;
   `src/components/site/` — `SiteHeader`, `SiteFooter`; `src/lib/{site,routes,cart}.ts`
-  (`PRICES_VISIBLE`, `CartItem`); `src/app/globals.css` for `pdp-split`, `qty-grid`, `similar-track`.
+  (`PRICES_VISIBLE`, `CartItem`); `src/app/globals.css` for `pdp-split`, `qty-grid`, `similar-track`;
+  `src/features/finder/fitment.ts` and `tire-fit.ts` in `load.ts` only (D171, one way).
 - **Depended on by:** `src/app/(storefront)/products/[slug]/page.tsx` (five sections + `productView`).
 
 ## Don't

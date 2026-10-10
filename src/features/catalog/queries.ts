@@ -286,6 +286,11 @@ const BORE_TOLERANCE = 0.5;
  *  match (loose fit; derived): most wheels a vendor lists for a car and the
  *  stock range misses are 0.5 to 1 inch over. */
 const WHEEL_WIDTH_SLACK = 0.5;
+/** A wheel size the buyer picked with a car in the URL (owner, 2026-10-11:
+ *  "Width up to +1", offset ±5 mm): how far the car's stock width and offset
+ *  stretch. Narrower than stock by the usual half inch, wider by a whole
+ *  inch, because an upgrade goes wider; the offset 5 mm either side. */
+const PICKED_WHEEL = { widthBelow: 0.5, widthAbove: 1, offset: 5 } as const;
 
 /** True for a hub ring whose inner diameter is another size than the
  *  vehicle's hub bore. A ring states the bore it fits as its inner diameter,
@@ -349,6 +354,11 @@ const FIT_RIM = { down: 1, up: 2 } as const;
  *  be. The vendors round the envelope to whole inches, so half an inch is the
  *  rounding, not a plus size. */
 const FIT_DIAMETER_SLACK = 0.5;
+/** A tire size the buyer picked with a car in the URL (owner, 2026-10-11:
+ *  "keep tires within 3% of stock height"): the share of the stock overall
+ *  diameter a tire may be shorter or taller by. The trade's own plus-sizing
+ *  rule, so the speedometer and the wheel well stay where the car expects. */
+const PICKED_TIRE_HEIGHT = 0.03;
 
 type TireFitInput = NonNullable<NonNullable<ProductFilters["tire"]>["vehicleFit"]>;
 
@@ -460,6 +470,52 @@ function tireVehicleNear(fit: TireFitInput): SQL {
   return and(near, not(best)) ?? NOTHING;
 }
 
+/**
+ * A picked tire size that keeps the car (owner, 2026-10-11, C2): with a
+ * vehicle in the URL AND a size part the buyer chose, the car no longer
+ * decides the size, it bounds the HEIGHT. A tire is kept when its overall
+ * diameter is within `PICKED_TIRE_HEIGHT` (3%) of the car's stock height
+ * range: `diameterMin x 0.97` to `diameterMax x 1.03`, from the envelope
+ * `tire-fit.ts` sends (Auto Country's tire range, else the one it derives
+ * from the factory sizes), and from the factory sizes' own diameters for a
+ * bound the envelope leaves at 0. Section width and rim are NOT bounded:
+ * plus sizing changes both, which is the point of picking a size. A car with
+ * no factory sizes (the rim rule) has no stock height, so `null`: the picked
+ * size alone decides, as before C2.
+ */
+function tireHeightBand(fit: TireFitInput): SQL | null {
+  const factory = [
+    ...fit.sizes
+      .slice(0, MAX_FACTORY_SIZES)
+      .map((s) => s.rim + (2 * s.width * s.profile) / 2540),
+    ...fit.flotation.slice(0, MAX_FLOTATION_SIZES).map((s) => s.diameter),
+  ].filter((d) => measure(d) !== undefined);
+  const dMin =
+    measure(fit.range?.diameterMin) ??
+    (factory.length > 0 ? Math.min(...factory) : undefined);
+  const dMax =
+    measure(fit.range?.diameterMax) ??
+    (factory.length > 0 ? Math.max(...factory) : undefined);
+  const parts: SQL[] = [];
+  if (dMin !== undefined) {
+    parts.push(sql`${OVERALL_DIAMETER_IN} >= ${dMin * (1 - PICKED_TIRE_HEIGHT)}`);
+  }
+  if (dMax !== undefined) {
+    parts.push(sql`${OVERALL_DIAMETER_IN} <= ${dMax * (1 + PICKED_TIRE_HEIGHT)}`);
+  }
+  if (parts.length === 0) return null;
+  return sql`coalesce(${and(...parts)}, false)`;
+}
+
+/** Whether the buyer chose any tire size part (a select off `Any`). */
+function tireSizePicked(parts: TireParts): boolean {
+  return (
+    parts.width !== undefined ||
+    parts.aspectRatio !== undefined ||
+    parts.rimDiameter !== undefined
+  );
+}
+
 /* A vehicle's wheels (`finder/tire-fit.ts` `wheelFit`, D155). */
 type WheelFitInput = NonNullable<NonNullable<ProductFilters["wheel"]>["vehicleFit"]>;
 
@@ -505,12 +561,86 @@ function wheelVehicleBest(fit: WheelFitInput): SQL {
       parts.push(sql`(${wheelSpecs.offsetMm} is null or ${wheelSpecs.offsetMm} <= ${oMax})`);
     }
   }
+  const bore = boreFits(fit);
+  if (bore !== undefined) parts.push(bore);
+  return sql`coalesce(${and(...parts)}, false)`;
+}
+
+/** A centre bore at least the hub's, less `BORE_TOLERANCE`. A wheel that
+ *  states no bore passes only when the car has no envelope (with one, it is
+ *  similar: nobody can say it centres). `undefined` = the hub bore is unknown,
+ *  so nothing is checked. */
+function boreFits(fit: WheelFitInput): SQL | undefined {
   const bore = measure(fit.hubBore ?? undefined);
-  if (bore !== undefined) {
-    parts.push(
-      sql`coalesce(${wheelSpecs.centerBoreMm} >= ${bore - BORE_TOLERANCE}, ${range === null ? sql`true` : sql`false`})`,
-    );
+  if (bore === undefined) return undefined;
+  return sql`coalesce(${wheelSpecs.centerBoreMm} >= ${bore - BORE_TOLERANCE}, ${fit.range === null ? sql`true` : sql`false`})`;
+}
+
+/** Which wheel size parts the buyer chose (a select off `Any`). */
+interface WheelPicked {
+  diameter: boolean;
+  width: boolean;
+}
+
+/**
+ * A picked wheel size that keeps the car (owner, 2026-10-11, C2). The client:
+ * "if we try to upgrade to 18 inch wheels ... their bolt pattern and all
+ * specs change and only the same size wheels are displayed regardless of
+ * their vehicle specs." So with a vehicle in the URL AND a size part the
+ * buyer chose, the picked parts are matched exactly (by `exactSize`) and this
+ * keeps what the car still decides: one of its bolt patterns, a centre bore
+ * that clears the hub (`boreFits`, the same rule as `wheelVehicleBest`) and,
+ * with a stock envelope, a width from `widthMin - 0.5` to `widthMax + 1`
+ * unless the buyer picked a width, the stock diameters unless the buyer
+ * picked a diameter, and an offset within the stock range widened by 5 mm
+ * either side (a wheel with no offset on record is not outside it). No lift
+ * size is added (D156(2)): a picked diameter is simply not bounded, so any
+ * diameter drilled for the car's pattern can be chosen. Without an envelope
+ * only the bolt pattern and the bore apply.
+ *
+ * A bolt pattern the buyer picks that is not one of the car's lists only the
+ * wheels drilled for both (a dual-drilled wheel), so nearly nothing: kept
+ * simple on purpose, the car's pattern is never dropped. A vehicle whose
+ * pattern is unknown has no `vehicleFit` at all (`wheelFit` sends none), so
+ * the picked size alone decides there, as before C2.
+ */
+function wheelPickedBest(fit: WheelFitInput, picked: WheelPicked): SQL {
+  const bolt = wheelBolt(fit);
+  if (bolt === null) return sql`true`;
+  const parts: SQL[] = [bolt];
+  const range = fit.range;
+  if (range !== null) {
+    if (!picked.diameter) {
+      const dMin = measure(range.diameterMin);
+      const dMax = measure(range.diameterMax);
+      if (dMin !== undefined) parts.push(gte(wheelSpecs.diameter, dMin));
+      if (dMax !== undefined) parts.push(lte(wheelSpecs.diameter, dMax));
+    }
+    if (!picked.width) {
+      const wMin = measure(range.widthMin);
+      const wMax = measure(range.widthMax);
+      if (wMin !== undefined) {
+        parts.push(gte(wheelSpecs.width, wMin - PICKED_WHEEL.widthBelow));
+      }
+      if (wMax !== undefined) {
+        parts.push(lte(wheelSpecs.width, wMax + PICKED_WHEEL.widthAbove));
+      }
+    }
+    const oMin = signedMeasure(range.offsetMin ?? undefined);
+    const oMax = signedMeasure(range.offsetMax ?? undefined);
+    if (oMin !== undefined) {
+      parts.push(
+        sql`(${wheelSpecs.offsetMm} is null or ${wheelSpecs.offsetMm} >= ${oMin - PICKED_WHEEL.offset})`,
+      );
+    }
+    if (oMax !== undefined) {
+      parts.push(
+        sql`(${wheelSpecs.offsetMm} is null or ${wheelSpecs.offsetMm} <= ${oMax + PICKED_WHEEL.offset})`,
+      );
+    }
   }
+  const bore = boreFits(fit);
+  if (bore !== undefined) parts.push(bore);
   return sql`coalesce(${and(...parts)}, false)`;
 }
 
@@ -530,8 +660,14 @@ function exactSize(filters: ProductFilters): SQL | null {
   if (contradiction !== null) parts.push(not(contradiction));
   if (filters.category === "tires") {
     const tire = sizeParts(filters).tire;
-    if (filters.tire?.vehicleFit) {
-      parts.push(tireVehicleBest(filters.tire.vehicleFit));
+    const fit = filters.tire?.vehicleFit;
+    /* A vehicle alone decides the size (D155); beside a size the buyer
+       picked it bounds the height only (C2, `tireHeightBand`). */
+    if (fit && !tireSizePicked(tire)) {
+      parts.push(tireVehicleBest(fit));
+    } else if (fit) {
+      const height = tireHeightBand(fit);
+      if (height !== null) parts.push(height);
     }
     const width = tireWidthIs(tire);
     const profile = tireProfileIs(tire);
@@ -543,8 +679,20 @@ function exactSize(filters: ProductFilters): SQL | null {
   }
   if (filters.category === "wheels") {
     const { diameter, width, boltPattern } = sizeParts(filters).wheel;
-    if (filters.wheel?.vehicleFit) {
-      parts.push(wheelVehicleBest(filters.wheel.vehicleFit));
+    const fit = filters.wheel?.vehicleFit;
+    /* A vehicle alone decides the size (D155); beside a size the buyer
+       picked it keeps its bolt pattern, bore and stretched envelope (C2,
+       `wheelPickedBest`). */
+    if (fit) {
+      const picked: WheelPicked = {
+        diameter: diameter !== undefined,
+        width: width !== undefined,
+      };
+      parts.push(
+        picked.diameter || picked.width || boltPattern !== undefined
+          ? wheelPickedBest(fit, picked)
+          : wheelVehicleBest(fit),
+      );
     }
     if (diameter !== undefined) parts.push(eq(wheelSpecs.diameter, diameter));
     if (width !== undefined) parts.push(eq(wheelSpecs.width, width));
@@ -572,13 +720,52 @@ function nearSize(filters: ProductFilters): SQL {
   const contradiction = accessoryContradiction(filters);
   if (contradiction !== null) return contradiction;
 
-  /* A vehicle's own fit decides the similar row on its own terms (D155): it
-     is never sent beside an explicit size part. */
-  if (filters.category === "tires" && filters.tire?.vehicleFit) {
-    return tireVehicleNear(filters.tire.vehicleFit);
+  /* A vehicle alone decides the similar row on its own terms (D155). Beside
+     a size the buyer picked (C2, owner 2026-10-11) the picked size's own
+     similar row is read below, and the car still holds it: tires to the
+     stock height, wheels to the car's bolt pattern. */
+  const tireFitIn =
+    filters.category === "tires" ? filters.tire?.vehicleFit : undefined;
+  if (tireFitIn && !tireSizePicked(sizeParts(filters).tire)) {
+    return tireVehicleNear(tireFitIn);
   }
   if (filters.category === "wheels" && filters.wheel?.vehicleFit) {
-    return wheelVehicleNear(filters.wheel.vehicleFit);
+    const fit = filters.wheel.vehicleFit;
+    const { diameter, width, boltPattern } = sizeParts(filters).wheel;
+    if (
+      diameter === undefined &&
+      width === undefined &&
+      boltPattern === undefined
+    ) {
+      return wheelVehicleNear(fit);
+    }
+    /* Picked: the picked diameter (and pattern, if one was picked) on the
+       car's bolt pattern, never a best match. So the wheels that bolt on but
+       miss the stretched width, the offset or a stated bore. The picked width
+       is what relaxes here, as `NEAR.wheelWidth` relaxes it without a car. A
+       car whose patterns are unreadable falls through to the plain picked
+       size, as before C2. */
+    const bolt = wheelBolt(fit);
+    if (bolt !== null) {
+      if (boltPattern === null) return NOTHING;
+      const best = exactSize(filters);
+      const parts: SQL[] = [bolt];
+      if (diameter !== undefined) {
+        parts.push(eq(wheelSpecs.diameter, diameter));
+      } else if (fit.range !== null) {
+        /* No diameter picked (a width or a pattern only): the car's stock
+           diameters, so the row is not every size up to 26 inches. */
+        const dMin = measure(fit.range.diameterMin);
+        const dMax = measure(fit.range.diameterMax);
+        if (dMin !== undefined) parts.push(gte(wheelSpecs.diameter, dMin));
+        if (dMax !== undefined) parts.push(lte(wheelSpecs.diameter, dMax));
+      }
+      if (boltPattern) {
+        parts.push(arrayContains(wheelSpecs.boltPatterns, [boltPattern]));
+      }
+      if (best !== null) parts.push(not(sql`coalesce(${best}, false)`));
+      return and(...parts) ?? NOTHING;
+    }
   }
 
   const exact = exactSize(filters);
@@ -634,10 +821,14 @@ function nearSize(filters: ProductFilters): SQL {
         ),
       );
     }
+    /* With a car beside the picked size (C2), the similar sizes keep to its
+       stock height too; `exact` already carries the same band. */
+    const height = tireFitIn ? tireHeightBand(tireFitIn) : null;
     return (
       and(
         rim,
         or(and(...metric), and(...flotation)),
+        height ?? undefined,
         not(sql`coalesce(${exact}, false)`),
       ) ?? NOTHING
     );
@@ -1300,9 +1491,20 @@ function wholeWheelLists(base: NonNullable<CategoryBase["wheel"]>) {
   };
 }
 
+/**
+ * The wheel lists for the sizes found together with the OTHER parts chosen.
+ * `vehicleFit` is the searched car's (C2, owner 2026-10-11): since a picked
+ * size keeps the car's bolt pattern, every list also keeps to the combos
+ * drilled for one of the car's patterns, so the Diameter and Width selects
+ * offer only what bolts onto it and the Bolt pattern select only the car's
+ * own (the URL's own value is kept by `search.ts` `buildSizeGroup`, D132).
+ * A car with no readable pattern narrows nothing. Combos are per pattern, so
+ * a dual-drilled wheel's other pattern does not widen the car's lists.
+ */
 function narrowWheelLists(
   base: NonNullable<CategoryBase["wheel"]>,
   choice: Pick<ProductFilters, "tire" | "wheel">,
+  vehicleFit?: WheelFitInput,
 ): WheelSizeOptions {
   const { diameter, width, boltPattern } = sizeParts(choice).wheel;
   const diameterIs = ([d]: WheelCombo) =>
@@ -1313,21 +1515,32 @@ function narrowWheelLists(
   const boltIs = ([, , pattern]: WheelCombo) =>
     boltPattern === undefined ||
     (boltPattern !== null && pattern !== null && pattern === boltPattern);
+  const carPatterns = new Set(
+    (vehicleFit?.boltPatterns ?? [])
+      .slice(0, 6)
+      .flatMap((raw) => normalizeBoltPattern(raw) ?? []),
+  );
+  const carIs = ([, , pattern]: WheelCombo) =>
+    carPatterns.size === 0 || (pattern !== null && carPatterns.has(pattern));
   return {
     diameters: sortedNumbers([
       ...new Set(
-        base.combos.filter((c) => widthIs(c) && boltIs(c)).map((c) => c[0]),
+        base.combos
+          .filter((c) => widthIs(c) && boltIs(c) && carIs(c))
+          .map((c) => c[0]),
       ),
     ]),
     widths: sortedNumbers([
       ...new Set(
-        base.combos.filter((c) => diameterIs(c) && boltIs(c)).map((c) => c[1]),
+        base.combos
+          .filter((c) => diameterIs(c) && boltIs(c) && carIs(c))
+          .map((c) => c[1]),
       ),
     ]),
     boltPatterns: boltPatternList([
       ...new Set(
         base.combos.flatMap((c) =>
-          c[2] !== null && diameterIs(c) && widthIs(c) ? [c[2]] : [],
+          c[2] !== null && diameterIs(c) && widthIs(c) && carIs(c) ? [c[2]] : [],
         ),
       ),
     ]),
@@ -1367,7 +1580,10 @@ export function wholeCategoryFacets(
  * `sizeChoice` is the size the buyer chose, which narrows the size options
  * (D132). It is separate from `filters` because a vehicle can lend `filters`
  * a size the selects do not show (D48(4)): with a vehicle and every select at
- * `Any`, the options stay whole. `base` is the category's cached whole-category
+ * `Any`, the tire options stay whole. The wheel options do follow the car's
+ * bolt patterns (`filters.wheel.vehicleFit`, C2): a picked wheel size keeps
+ * the car's pattern, so a diameter no wheel for that pattern comes in is no
+ * option. `base` is the category's cached whole-category
  * data (`getCategoryBase`): the size lists and bounds come from it, and only
  * the counts that depend on the filters are read here, all at once: the brand
  * counts, plus the season (tires), type (accessories) or finish (wheels)
@@ -1519,7 +1735,9 @@ export async function getFacets(
     sizeOptions: {
       tire: base.tire === null ? null : narrowTireLists(base.tire, sizeChoice),
       wheel:
-        base.wheel === null ? null : narrowWheelLists(base.wheel, sizeChoice),
+        base.wheel === null
+          ? null
+          : narrowWheelLists(base.wheel, sizeChoice, filters.wheel?.vehicleFit),
     },
   };
 }
@@ -1579,6 +1797,13 @@ export async function productPageExists(slug: string): Promise<boolean> {
   return row !== undefined;
 }
 
+/** A searched car's fit, as `getOtherSizes` reads it (`finder/tire-fit.ts`
+ *  builds both halves; `null` = no data for that category). */
+export interface OtherSizesFit {
+  tire: TireFitInput | null;
+  wheel: WheelFitInput | null;
+}
+
 /**
  * The same brand and model in its other sizes, nearest to this product's own
  * size first. Nearest, not smallest: a wheel model can come in hundreds of
@@ -1590,10 +1815,21 @@ export async function productPageExists(slug: string): Promise<boolean> {
  * so it is left out (a wheel with no pattern on record shares none, and has no
  * other sizes). They rank by diameter, then width, then offset. Only the page
  * itself is excluded.
+ *
+ * With a searched car (`fit`, C1, owner 2026-10-11: "Exact fit only; nearest
+ * without a car") the row keeps only the sizes that fit it, the same best
+ * match the results pages use: a tire the car's factory size
+ * (`tireVehicleBest`; the rim rule's best for a car with rims but no factory
+ * sizes), a wheel on its bolt pattern, hub bore and stock envelope
+ * (`wheelVehicleBest`). Still nearest first; none fitting is an empty row,
+ * which the page hides. With no car, or a car with no data for the product's
+ * category (`fit.tire` / `fit.wheel` `null`), the row is as it was.
+ * Accessories never narrow.
  */
 export async function getOtherSizes(
   product: CatalogProduct,
   limit = 24,
+  fit: OtherSizesFit | null = null,
 ): Promise<CatalogProduct[]> {
   if (product.model === null) return [];
   const db = getDb();
@@ -1647,6 +1883,12 @@ export async function getOtherSizes(
     if (offsetMm !== null) {
       nearest.push(sql`abs(${wheelSpecs.offsetMm} - ${offsetMm}) asc nulls last`);
     }
+  }
+  if (product.category === "tires" && fit?.tire) {
+    where.push(tireVehicleBest(fit.tire));
+  }
+  if (product.category === "wheels" && fit?.wheel) {
+    where.push(wheelVehicleBest(fit.wheel));
   }
 
   const rows = await withSpecs(

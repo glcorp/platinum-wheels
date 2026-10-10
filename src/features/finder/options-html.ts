@@ -80,3 +80,26 @@ export function modelOptionsHtml(
   }
   return modelPlaceholderHtml(true) + groups(selected);
 }
+
+/**
+ * A home-finder size select's inside (D169): the field's own name as an empty
+ * option (a field left alone sends no filter, as the rail's `Any` does,
+ * D47(4); selectable, so a choice can be cleared), then the catalogue's
+ * values. Markup, not elements, for the Model list's reason:
+ * `FinderModeSync` refills these selects with what the other fields allow, and
+ * React must not reconcile nodes it did not put there.
+ */
+export function sizeOptionsHtml(
+  name: string,
+  options: ReadonlyArray<{ value: string; label: string }>,
+): string {
+  return (
+    `<option value="" selected>${escapeHtml(name)}</option>` +
+    options
+      .map(
+        ({ value, label }) =>
+          `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`,
+      )
+      .join("")
+  );
+}
