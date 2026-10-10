@@ -12,7 +12,7 @@
  *                   two links share a name while pointing at different targets.
  *   3. LINKS      — every same-origin href answers < 400 (a redirect is reported,
  *                   not failed), same-page and cross-page `#fragments` resolve,
- *                   every `tel:` is E.164 AND one of `CONTACTS`, `mailto:` is
+ *                   every `tel:` is E.164 AND `PRIMARY_CONTACT` (D161), `mailto:` is
  *                   well formed, no `href="#"`, no `javascript:`.
  *   4. EFFECT     — every non-submit button / summary / select / checkbox /
  *                   radio / range is activated with real input and must change
@@ -46,7 +46,7 @@ import path from "node:path";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
 import { ROUTES, scrollSettled, settle, usesSheet, viewportWidth } from "../helpers";
-import { CONTACTS, SITE } from "../../src/lib/site";
+import { PRIMARY_CONTACT, SITE } from "../../src/lib/site";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -632,7 +632,7 @@ async function htmlOf(page: Page, url: string) {
 
 const E164 = /^tel:\+[1-9]\d{6,14}$/;
 const MAILTO = /^mailto:[^@\s?]+@[^@\s?]+\.[^@\s?]+(\?.*)?$/;
-const CONTACT_TELS = CONTACTS.map((c) => `tel:${c.tel}`);
+const CONTACT_TELS = [`tel:${PRIMARY_CONTACT.tel}`];
 
 // ---------------------------------------------------------------------------
 // The crawl
@@ -750,7 +750,7 @@ for (const route of ROUTES) {
         if (attr.startsWith("tel:")) {
           telCount++;
           if (!E164.test(attr)) defects.tel.push(`${attr} is not E.164`);
-          else if (!CONTACT_TELS.includes(attr)) defects.tel.push(`${attr} is not one of CONTACTS (${CONTACT_TELS.join(", ")})`);
+          else if (!CONTACT_TELS.includes(attr)) defects.tel.push(`${attr} is not PRIMARY_CONTACT (${CONTACT_TELS.join(", ")})`);
           continue;
         }
         if (attr.startsWith("mailto:")) {
@@ -987,7 +987,7 @@ for (const route of ROUTES) {
       expect.soft(defects.focusableHidden, "tabbable controls inside aria-hidden").toEqual([]);
       expect.soft(defects.deadHref, 'links with href="#", empty or javascript:').toEqual([]);
       expect.soft(defects.scheme, "unexpected link schemes").toEqual([]);
-      expect.soft(defects.tel, "tel: links must be E.164 and one of CONTACTS").toEqual([]);
+      expect.soft(defects.tel, "tel: links must be E.164 and PRIMARY_CONTACT").toEqual([]);
       expect.soft(defects.mailto, "mailto: links must be well formed").toEqual([]);
       expect.soft(defects.linkStatus, "same-origin links answering >= 400").toEqual([]);
       expect.soft(defects.linkHash, "#fragments with no target").toEqual([]);

@@ -35,9 +35,14 @@ entire site loses its type or its palette at once.
   of the create-next-app default: `favicon.ico` holds 16, 32 and 48 px PNG frames, `icon.png` is 192 px
   transparent, `apple-icon.png` is 180 px on `--bg` `#0B0B0D` (iOS fills transparency with black). Made
   once with `sharp` by a throwaway script (not committed); regenerate the same way if the logo changes.
-  No SVG: the logo exists only as a raster, and a traced vector would be a new mark. **At 16 px the
-  badge reads as a round dark disc, not as the logo**; at 32 px the wheel shape shows and the lettering
-  does not. A simpler mark for small sizes is the owner's call.
+  No SVG: the logo exists only as a raster, and a traced vector would be a new mark. **Remade 2026-10-11
+  (D163)**: the owner chose the logo itself over a simpler mark (*"logo"*, offered PW letters and a hub-cap
+  mark). The badge is trimmed to its own edges so it fills the square; the 16, 32 and 48 px frames are
+  supersampled with more contrast and sharpened so the silver ring, the wheel and the name plate separate
+  from the black (at 32 px the `PLATINUM` plate reads; at 16 px it is the badge's shape, not its words);
+  `icon.png` and `apple-icon.png` are palette PNGs, the Apple one on `#0B0B0D` with a 12 px margin. The
+  `favicon.ico` frames are PNGs written by hand (sharp writes no ICO). The throwaway script is in the
+  D163 PR description.
 - [`not-found.tsx`](not-found.tsx) — global 404 on `PageStub`; one of the undrawn states (`design/manifest.md`).
   Its metadata sets `robots: null`, which removes the layout's site-wide `robots` on the 404, because
   Next already writes `noindex` on every 404; with the indexing flag on the page carried two

@@ -14,7 +14,11 @@
      "City-only address"): where the business is based, not a place to visit.
    - **9 am to 8 pm is when the owners answer the phone.** It appears once, as
      `hoursAvailable` on each `ContactPoint`: contact hours, not opening hours.
-   - **Brampton only.** `areaServed` is the city, not the GTA.
+   - **The GTA.** `areaServed` is the Greater Toronto Area (D163, client
+     2026-10-11: "serving the GTA and surrounding areas"), replacing D112(3)'s
+     Brampton only. The address stays the city.
+   - **One phone number, no names** (D161): one `ContactPoint`, the shop's
+     number. No person is named anywhere in the markup.
    - **No prices go to Google.** A `Product` carries name, brand, size, category
      and image. It has **no `offers`, no price, no currency and no
      availability**. Google's product rich result needs one of `offers`,
@@ -33,7 +37,7 @@ import {
 } from "@/features/catalog/types";
 import { productName } from "@/lib/product-name";
 import { ROUTES, productRoute } from "@/lib/routes";
-import { CONTACTS, CONTACT_HOURS, SITE, SITE_URL } from "@/lib/site";
+import { CONTACT_HOURS, PRIMARY_CONTACT, SITE, SITE_URL } from "@/lib/site";
 
 export type JsonLdNode = Readonly<Record<string, unknown>>;
 
@@ -80,7 +84,7 @@ export function organizationSchema(): JsonLdNode {
     url: SITE_URL,
     logo: absoluteUrl(LOGO_PATH),
     email: SITE.email,
-    telephone: CONTACTS[0].tel,
+    telephone: PRIMARY_CONTACT.tel,
     address: {
       "@type": "PostalAddress",
       addressLocality: SITE.city,
@@ -88,13 +92,13 @@ export function organizationSchema(): JsonLdNode {
       addressCountry: "CA",
     },
     areaServed: {
-      "@type": "City",
-      name: SITE.city,
-      sameAs: "https://en.wikipedia.org/wiki/Brampton",
+      "@type": "AdministrativeArea",
+      name: "Greater Toronto Area",
+      sameAs: "https://en.wikipedia.org/wiki/Greater_Toronto_Area",
     },
-    /* Both numbers, without the two owners' names: a search engine needs the
-       line, not the person. */
-    contactPoint: CONTACTS.map((contact) => ({
+    /* One number and no name (D161): a search engine needs the line, not a
+       person. Still a list, as schema.org writes it. */
+    contactPoint: [PRIMARY_CONTACT].map((contact) => ({
       "@type": "ContactPoint",
       contactType: "sales",
       telephone: contact.tel,

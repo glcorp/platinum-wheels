@@ -166,9 +166,11 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
 - The home brand strip shows real brand logos in one muted colour, as a moving ticker, for brands the
   loaded catalogue carries (amended 2026-10-03 by D129: owner, *"we have permission to add brand logos"*).
   Elsewhere (`/about`) brand names stay text wordmarks.
-- Contact data lives in `src/lib/site.ts` as named constants, never hardcoded in components. The spec's
-  canonical contact block resolves the two phone numbers: they are two named people, not a placeholder
-  and a typo — Inderpal Singh 647-989-6178 and Harman Singh 365-998-0990.
+- Contact data lives in `src/lib/site.ts` as named constants, never hardcoded in components. **Amended
+  2026-10-11 (D161):** the site shows one phone number, `+1 (437) 882-5000`, and the email
+  `sales@platinumwheels.ca`, and **no person's name or personal number anywhere** (client: *"No personal
+  contact or names throughout the website"*). The spec's canonical contact block named two people with two
+  numbers; that block is superseded here and `design/DESIGN.md` is left frozen.
 - Sample personal data in the exports (`Priya Sandhu`, `priya.s@…`, `(905) 000-0000`) is form placeholder
   content and must not ship. See the bottom of `design/DEVIATIONS.md`.
 

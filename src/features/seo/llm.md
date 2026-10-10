@@ -73,7 +73,9 @@ and the `metadata` of `layout.tsx` and of each indexable page.
 - **No street address, no postal code, no `geo`, no map and no opening hours, anywhere.** There is no
   shop (owner, 2026-09-30). The business is an `OnlineStore` based in Brampton. Its `address` is **city,
   province and country only** (owner, 2026-09-30, choosing *"City-only address"*). 9 am to 8 pm appears
-  only as `hoursAvailable` on the two contact points. **`areaServed` is Brampton only**, not the GTA.
+  only as `hoursAvailable` on the one contact point. **`areaServed` is the Greater Toronto Area**
+  (`AdministrativeArea`, D163, client 2026-10-11: *"serving the GTA and surrounding areas"*), replacing
+  D112(3)'s Brampton only. **One contact point, the shop's number, and no person's name (D161).**
 - **No price, offer, currency or availability in structured data** (owner, 2026-09-30), and no rating or
   review ever (`docs/decisions.md` §8). A `Product` carries name, brand, size, category, image and URL.
   **An unbranded accessory (D125) carries no `brand` at all**, never an empty or stand-in one, and its
@@ -102,7 +104,7 @@ and the `metadata` of `layout.tsx` and of each indexable page.
 | — | 2026-09-30 | With the flag off, `robots.txt` disallows **and** pages say `noindex`, although a disallow keeps Google from reading the `noindex`. | Owner: *"i js want to keep the site hidden until its ready"*. No pre-launch host has inbound links; the risk that matters is a flag-off build reaching the apex, which `todo.md` S1 guards. | Owner; D112 |
 
 ## Connects to
-- Depends on: `src/lib/site.ts` (`SITE_URL`, `SITE`, `CONTACTS`, `CONTACT_HOURS`), `src/lib/routes.ts`,
+- Depends on: `src/lib/site.ts` (`SITE_URL`, `SITE`, `PRIMARY_CONTACT`, `CONTACT_HOURS`), `src/lib/routes.ts`,
   `src/lib/product-name.ts`,
   `src/features/catalog/` (`queries.ts` `listProductUrls`, `types.ts`, `adapter.ts`), `next/og`, `sharp`,
   `public/images/logo/` and `public/images/products/`, `next.config.ts` (`outputFileTracingIncludes`
