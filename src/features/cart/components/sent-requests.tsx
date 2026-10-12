@@ -30,15 +30,19 @@ function amount(line: SentLine): string {
 /** New copy: the one control that empties the record. */
 export const CLEAR_LABEL = "Clear sent requests";
 
-/** `Sent Oct 11, 2026, 3:42 p.m.`, Brampton time (D118). */
+/** `Sent Oct 11, 2026, 3:42 p.m. ET`, Brampton time (D118). The zone is named
+ *  because a visitor in Vancouver would otherwise read it as their own clock
+ *  (QA CART-4; owner, 2026-10-13: "Show ET on sent times", D185). `ET` and not
+ *  `EDT`/`EST`: it is right in both halves of the year. Only this label wants
+ *  it, so the shared `SHOP_DATE_TIME` (the admin's formats) is left alone. */
 export function sentLabel(sentAt: string): string {
-  return `Sent ${SHOP_DATE_TIME.format(new Date(sentAt))}`;
+  return `Sent ${SHOP_DATE_TIME.format(new Date(sentAt))} ET`;
 }
 
 /** The products of one request: name linked to its page, size, amount. */
 export function SentLines({ lines }: { lines: readonly SentLine[] }) {
   return (
-    <ul className="flex flex-col">
+    <ul className="flex min-w-0 flex-col">
       {lines.map((line) => (
         <li
           key={line.slug}
@@ -47,13 +51,13 @@ export function SentLines({ lines }: { lines: readonly SentLine[] }) {
           <span className="flex min-w-0 flex-col gap-0.5">
             <Link
               href={productRoute(line.slug)}
-              className="text-ink tap-extend text-15 leading-snug font-medium break-words underline-offset-3 hover:underline active:opacity-70 sm:text-16"
+              className="text-ink tap-extend text-15 leading-snug font-medium wrap-anywhere underline-offset-3 hover:underline active:opacity-70 sm:text-16"
             >
               {/* The brand's own spelling, never translated (D93b, WDG-15). */}
               {line.brand ? <span translate="no">{line.brand} </span> : null}
               {line.model}
             </Link>
-            <span className="numeral text-ink-muted text-13 leading-tight sm:text-14">
+            <span className="numeral text-ink-muted text-13 leading-tight wrap-anywhere sm:text-14">
               {line.size}
             </span>
           </span>
@@ -106,7 +110,7 @@ export function SentRequestList({ requests, title, onClear }: SentRequestListPro
         {requests.map((request) => (
           <li
             key={request.id}
-            className="bg-surface border-border-strong flex flex-col gap-4 border p-5 sm:p-6"
+            className="bg-surface border-border-strong flex min-w-0 flex-col gap-4 border p-5 sm:p-6"
           >
             <span className="label text-ink-dim text-11 tracking-14 sm:text-12">
               <time dateTime={request.sentAt}>{sentLabel(request.sentAt)}</time>

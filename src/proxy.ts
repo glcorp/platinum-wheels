@@ -10,6 +10,7 @@ import {
   normalizeHost,
 } from "@/features/admin/host-routing";
 import { productPageExists } from "@/features/catalog/queries";
+import { payLinkExists } from "@/features/payments/service";
 
 /* ---------------------------------------------------------------------------
    Request proxy — host routing for the admin (D97, D115) and payments (D105)
@@ -53,6 +54,15 @@ import { productPageExists } from "@/features/catalog/queries";
    page gives a 404 whose body only JavaScript paints. That is the one
    database read proxy makes; see the `pass` case below.
 
+   **Pay 404 (D184, QA COPY-1).** The same empty-shell behaviour hit
+   `/pay/<unknown token>`, bare `/pay` and every deeper pay path, and a plain
+   rewrite to a 404 path would render the storefront's page, whose links are
+   dead on the pay host. On `/pay` document requests proxy asks
+   `payLinkExists` (one indexed read) and, for a path that will 404, fetches
+   the branded page `/pay/link-not-found` from the same deployment and returns
+   its HTML with status 404 (`payNotFound`). A failed fetch falls back to the
+   storefront 404; a database error lets the request through.
+
    Server Actions are POSTs to the page's own URL, so an admin form posted to
    `/products` is rewritten to `/admin/products` like the page itself was
    (Next's proxy docs: "Server Functions … are handled as POST requests to the
@@ -68,6 +78,16 @@ const NOT_FOUND_PATH = "/_admin-not-served-on-this-host";
 /** `/products/<slug>` and nothing deeper (`/products/<slug>/og.jpg` is a route
  *  handler that already answers a real 404 by itself). */
 const PRODUCT_PAGE = /^\/products\/([^/]+)\/?$/;
+
+/** The pay host's 404 as a real page (`src/app/pay/link-not-found`). Fetched
+ *  by `payNotFound` below; never linked. */
+const PAY_NOT_FOUND_PAGE = "/pay/link-not-found";
+
+/** `/pay/<segment>` routes that exist, so they are never a 404. */
+const PAY_ROUTES = new Set(["done", "return", "notify", "link-not-found"]);
+
+/** A payment link token (the shape `[token]/page.tsx` accepts). */
+const PAY_TOKEN = /^[A-Za-z0-9_-]{22,64}$/;
 
 /** `true` when the path cannot be percent-decoded. `nextUrl.pathname` is
  *  still encoded (WHATWG URL parsing never decodes), so this is the same
@@ -94,19 +114,76 @@ function productSlugToCheck(request: NextRequest): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+/** `true` when a `/pay` document request will end in the pay 404: bare `/pay`,
+ *  a path deeper than `/pay/<one segment>`, one segment that is neither a pay
+ *  route nor a token-shaped string, or a token no payment link carries. Only a
+ *  browser navigation is looked at (client navigations carry an `RSC` header
+ *  and keep the page's own `notFound()`). A database error returns `false`: an
+ *  outage must never turn a real link into a 404 (D157's rule for products). */
+async function isPayNotFound(request: NextRequest): Promise<boolean> {
+  if (request.method !== "GET" && request.method !== "HEAD") return false;
+  if (request.headers.has("rsc")) return false;
+  const segments = request.nextUrl.pathname.split("/").filter(Boolean);
+  if (segments[0] !== "pay") return false;
+  if (segments.length === 1 || segments.length > 2) return true;
+  const segment = decodeURIComponent(segments[1]);
+  if (PAY_ROUTES.has(segment)) return false;
+  if (!PAY_TOKEN.test(segment)) return true;
+  try {
+    return !(await payLinkExists(segment));
+  } catch {
+    return false;
+  }
+}
+
+/** The pay 404 with a real server-rendered body (QA COPY-1, D184).
+ *
+ *  A rewrite to an unmatched path gets Next's server-rendered 404 with the 404
+ *  status, but that is the STOREFRONT's page (links dead on the pay host), and
+ *  a `notFound()` thrown from a pay page is the empty JavaScript-only shell
+ *  (`src/app/pay/link-not-found/page.tsx`). So the branded page is fetched
+ *  from the same deployment and returned here with status 404. Rewrites cannot
+ *  set a status, a response built here can. The pay security headers still
+ *  apply: `next.config.ts` rules run on the URL as requested, before proxy.
+ *  If the fetch fails for any reason, the storefront 404 (a real 404, no
+ *  phone-and-email) is the fallback, never a blank page or a 200. */
+async function payNotFound(request: NextRequest): Promise<NextResponse> {
+  try {
+    const page = await fetch(new URL(PAY_NOT_FOUND_PAGE, request.url), {
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(4_000),
+    });
+    if (page.status === 200) {
+      const html = request.method === "HEAD" ? null : await page.text();
+      return new NextResponse(html, {
+        status: 404,
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          "cache-control": "private, no-store",
+        },
+      });
+    }
+  } catch {
+    // Fall through to the storefront's 404.
+  }
+  return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url));
+}
+
 export async function proxy(request: NextRequest) {
   if (isUndecodable(request.nextUrl.pathname)) {
     const host = request.headers.get("host");
     const isProduction = process.env.VERCEL_ENV === "production";
+    if (isProduction && !isAdminHost(host, isProduction) && normalizeHost(host) === PAY_HOST) {
+      return payNotFound(request);
+    }
     // Each host's own 404: the admin's catch-all (`src/app/admin/[...missing]`)
-    // on the admin host, the pay 404 on the pay host in production (the same
-    // target `decideHostRouting` uses for a stray path there), the
-    // storefront's everywhere else. No target carries the bad bytes.
+    // on the admin host, the pay 404 on the pay host in production (the
+    // server-rendered one, `payNotFound`), the storefront's everywhere else.
+    // No target carries the bad bytes.
     const target = isAdminHost(host, isProduction)
       ? `${ADMIN_FOLDER}/_undecodable`
-      : isProduction && normalizeHost(host) === PAY_HOST
-        ? PAY_NOT_FOUND_PATH
-        : NOT_FOUND_PATH;
+      : NOT_FOUND_PATH;
     return NextResponse.rewrite(new URL(target, request.url));
   }
 
@@ -121,6 +198,9 @@ export async function proxy(request: NextRequest) {
 
   switch (decision.kind) {
     case "rewrite": {
+      // Production only: a stray path on the pay host, answered by the pay
+      // 404 rather than the storefront's (D105, D151, D184).
+      if (decision.pathname === PAY_NOT_FOUND_PATH) return payNotFound(request);
       // Clone so the query string (`?page=2`, the list filters) is kept.
       const url = request.nextUrl.clone();
       url.pathname = decision.pathname;
@@ -140,6 +220,7 @@ export async function proxy(request: NextRequest) {
          a product is hidden between this check and the render. A database
          error lets the request through: an outage must never turn a real
          product into a 404. */
+      if (await isPayNotFound(request)) return payNotFound(request);
       const slug = productSlugToCheck(request);
       if (slug !== null) {
         let exists = true;
