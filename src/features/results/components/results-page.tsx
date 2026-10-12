@@ -92,7 +92,7 @@ export async function ResultsPage({
           <FilterSortBar view={view} tabs={tabs} active={category} />
           {/* The vehicle sheet (D159), once per page: the mobile bar's and the
               desktop rail's vehicle buttons both open it. */}
-          <VehiclePanel query={view.query} />
+          <VehiclePanel query={view.query} fits={view.vehicleNarrows} />
           <div className="md:px-12 md:pt-10">
             <div className="md:results-grid lg:mx-auto lg:max-w-content">
               <FilterRail view={view} />

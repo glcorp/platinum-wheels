@@ -706,8 +706,7 @@ async function readCatalogue(
      wheels, or when its thread, fastener or hub bore does (accessories). With
      nothing narrowing, every match is a best match and the similar row does
      not render (D47(8)), so it is not even asked for. */
-  const narrows =
-    hasSize(size) ||
+  const vehicleNarrows =
     filters.tire?.vehicleFit !== undefined ||
     filters.wheel?.vehicleFit !== undefined ||
     (category === "accessories" &&
@@ -715,6 +714,7 @@ async function readCatalogue(
         (fit?.fastener ?? null) !== null ||
         (fit?.centreBore ?? null) !== null ||
         fit?.tpms === false));
+  const narrows = hasSize(size) || vehicleNarrows;
   /* D175: the similar row has its own window, `query.similarShow`, so it is
      read together with the best matches and the facets on every page: one
      round of reads. It used to grow off best's `Load more` once best was
@@ -751,6 +751,7 @@ async function readCatalogue(
       (filters.wheel?.vehicleFit?.boltPatterns.length ?? 0) > 1
         ? (filters.wheel?.vehicleFit?.boltPatterns ?? [])
         : [],
+    vehicleNarrows: query.vehicle !== null && vehicleNarrows,
     bestTotal: best.total,
     similarTotal: similar.total,
     total: best.total + similar.total,
