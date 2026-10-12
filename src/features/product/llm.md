@@ -45,8 +45,12 @@ Action, its emails and its two authored states moved there.
 - `components/pdp-gallery-carousel.tsx` (**D167**, `"use client"`) — the gallery when a product has two or
   more photos: a native scroll-snap track (swipe, trackpad, arrow keys on the focused track, all without JS),
   Prev / Next and a `2 / 5` counter on the photo, ArrowLeft / ArrowRight / Home / End, thumbnails under the
-  box from 1100. Server-rendered controls, hidden with JS off by `noscript:`. Only the first slide is the
-  morph's end (`pdp-gallery.tsx` hands it in). One photo or none renders as before. Supersedes D53(4)'s
+  box from 1100. Server-rendered controls, hidden with JS off by `noscript:`. The morph's end (D92b, D144)
+  is the **showing** slide (D184, D185: "Back morph from any photo"): the island wraps every slide in a
+  `<ViewTransition share="morph" default="none">` and gives the shared name to the current one only, so
+  the name stays on one element; a visit starts on photo 1, so a card still lands on the first slide, and
+  the crumb's `product-back` flies the photo on screen. The current thumbnail also takes a thicker
+  `Highlight` frame in forced colours (D184, QA GATE-2). One photo or none renders as before. Supersedes D53(4)'s
   "one image" for multi-photo products; DEVIATIONS #133.
 - `components/add-to-cart-panel.tsx` — the buy panel's primary CTA (D122), a client island. Adds the
   selected cell's count through the catalogue's `AddToCartButton`; while `Custom` is selected it shows

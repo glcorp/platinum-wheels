@@ -22,11 +22,19 @@
      keeps the height `pdp-gallery-band` gives it (D151, D153): `Add to cart`
      still ends on a phone's first screen.
 
+   - The card-to-product morph (D92b, D144) ends on whichever slide is
+     showing (D184, owner 2026-10-13: "Back morph from any photo"): every slide
+     sits in a `<ViewTransition>` but only the current one carries the shared
+     name, so the name is on one element at a time. A visit starts on photo 1,
+     so a card still lands on the first slide; the crumb's `product-back` flies
+     the photo that is on screen.
+
    The box classes come from the caller, so the frame, the band and the badge
    overlay stay written once, in `pdp-gallery.tsx`.
    --------------------------------------------------------------------------- */
 
 import {
+  ViewTransition,
   useEffect,
   useRef,
   useState,
@@ -50,8 +58,12 @@ function prefersReducedMotion(): boolean {
 export interface PdpGalleryCarouselProps {
   /** The photo box's own classes (frame, band height, margins). */
   boxClassName: string;
-  /** One node per photo, in order. The first holds the morph target. */
+  /** One node per photo, in order. The first holds the picture, the card-size
+   *  underlay and the vignette (D144); each is wrapped here in the morph. */
   slides: readonly ReactNode[];
+  /** The shared-element name the showing slide takes (`product-photo-<slug>`,
+   *  the card's name). */
+  morphName: string;
   /** One thumbnail image per photo, same order. Shown from 1100. */
   thumbs: readonly ReactNode[];
   /** Product name, for the region's and the controls' accessible names. */
@@ -65,6 +77,7 @@ export function PdpGalleryCarousel({
   slides,
   thumbs,
   name,
+  morphName,
   overlay,
 }: PdpGalleryCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -164,7 +177,13 @@ export function PdpGalleryCarousel({
               aria-label={`Photo ${position + 1} of ${count}`}
               className="relative h-full w-full shrink-0 snap-start snap-always"
             >
-              {slide}
+              <ViewTransition
+                name={position === index ? morphName : undefined}
+                share="morph"
+                default="none"
+              >
+                <div className="relative h-full w-full">{slide}</div>
+              </ViewTransition>
             </div>
           ))}
         </div>
@@ -232,8 +251,12 @@ export function PdpGalleryCarousel({
               onClick={() => go(position)}
               className={cx(
                 "bg-bg relative aspect-square overflow-hidden border active:translate-y-px",
+                /* Forced colours map `--accent` and `--border` to the same
+                   `CanvasText`, so the current thumbnail also takes a thicker
+                   `Highlight` frame there (QA GATE-2, D184; the quantity cell's
+                   treatment, `globals.css` forced-colours block). */
                 position === index
-                  ? "border-accent"
+                  ? "border-accent forced-colors:border-[3px] forced-colors:border-[Highlight]"
                   : "border-border hover:border-ink-dim",
               )}
             >

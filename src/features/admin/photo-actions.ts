@@ -156,7 +156,10 @@ export async function requestPhotoUpload(formData: FormData): Promise<PhotoUploa
   if (!isAllowedType(contentType)) {
     return { ok: false, message: "Use a JPEG, PNG or WebP photo." };
   }
-  if (!Number.isFinite(size) || size <= 0 || size > PHOTO_LIMITS.maxBytes) {
+  if (size === 0) {
+    return { ok: false, message: "The file is empty." };
+  }
+  if (!Number.isFinite(size) || size < 0 || size > PHOTO_LIMITS.maxBytes) {
     return { ok: false, message: `Use a photo of ${PHOTO_LIMITS.maxMegabytes} MB or less.` };
   }
   if (!UUID.test(productId) || !(await getProductById(productId))) {
