@@ -6,6 +6,7 @@ import type { ProductCategory } from "@/features/catalog/types";
 import { measuringRatio, FLOTATION_RATIO, wheelWidthRange } from "@/features/search/fit";
 import type { ParsedSearch } from "@/features/search/parse";
 import type { SearchGroup, SearchOutcome } from "@/features/search/queries";
+import { SearchLanding } from "@/features/search/components/search-landing";
 import { ROUTES } from "@/lib/routes";
 import { PRIMARY_CONTACT, SITE } from "@/lib/site";
 
@@ -24,7 +25,9 @@ import { PRIMARY_CONTACT, SITE } from "@/lib/site";
 
 const HEADING = "display text-ink text-display-32 md:text-display-40";
 const HEAD_STACK = "flex flex-col gap-2.5 md:gap-3";
-const SUPPORT = "text-ink-muted text-15 leading-body max-w-measure";
+/* `wrap-anywhere`: the no-matches line quotes the query, and a pasted URL or
+   part code has no spaces to break at (QA LAYOUT-1, D141, D151). */
+const SUPPORT = "text-ink-muted text-15 leading-body max-w-measure wrap-anywhere";
 const COUNT = "text-ink-muted text-14 leading-flat tabular-nums md:text-15";
 /* D180: a phone shows 3 cards a group, not 4 (owner, 2026-10-11: "in
    mobile dont display more than 3 options for each search. user should not
@@ -61,34 +64,55 @@ function inches(value: number): string {
 /**
  * What the search read the query as, in one plain line, when it found a
  * size. Shoppers type sizes loosely; saying back what was understood is how
- * they can tell `2453519` was read as 245/35R19.
+ * they can tell `2453519` was read as 245/35R19. It names only the
+ * categories actually searched (`scope`): `245/35R19 winter` looks at tires
+ * alone, so the line does not promise wheels (QA SEARCH-4).
  */
-export function readAs(parsed: ParsedSearch): string | null {
+export function readAs(parsed: ParsedSearch, scope: readonly ProductCategory[]): string | null {
   const { tire, wheel, bolt } = parsed;
+  const tires = scope.includes("tires");
+  const wheels = scope.includes("wheels");
+  let line: string | null = null;
   if (tire !== null) {
     if (tire.format === "metric" && tire.rim === null) {
-      return `Tires in ${tire.width}/${tire.aspectRatio}, any rim size.`;
+      line = tires ? `Tires in ${tire.width}/${tire.aspectRatio}, any rim size.` : null;
+    } else if (tire.rim !== null) {
+      const size =
+        tire.format === "metric"
+          ? `${tire.serviceType ?? ""}${tire.width}/${tire.aspectRatio}R${tire.rim}`
+          : `${tire.overallDiameter}x${tire.sectionWidth.toFixed(2)}R${tire.rim}`;
+      const measuring =
+        tire.format === "metric"
+          ? (tire.width * measuringRatio(tire.aspectRatio)) / 25.4
+          : tire.sectionWidth * FLOTATION_RATIO;
+      const range = wheelWidthRange(measuring);
+      const min = Math.ceil(range.min * 2) / 2;
+      const max = Math.floor(range.max * 2) / 2;
+      const fits = `${tire.rim}-inch wheels from ${inches(min)} to ${inches(max)} inches wide`;
+      if (tires && wheels) line = `Tires in ${size}, and ${fits}.`;
+      else if (tires) line = `Tires in ${size}.`;
+      else if (wheels) line = `${fits[0]?.toUpperCase()}${fits.slice(1)}, to suit ${size}.`;
     }
-    const size =
-      tire.format === "metric"
-        ? `${tire.serviceType ?? ""}${tire.width}/${tire.aspectRatio}R${tire.rim}`
-        : `${tire.overallDiameter}x${tire.sectionWidth.toFixed(2)}R${tire.rim}`;
-    const measuring =
-      tire.format === "metric"
-        ? (tire.width * measuringRatio(tire.aspectRatio)) / 25.4
-        : tire.sectionWidth * FLOTATION_RATIO;
-    const range = wheelWidthRange(measuring);
-    const min = Math.ceil(range.min * 2) / 2;
-    const max = Math.floor(range.max * 2) / 2;
-    return `Tires in ${size}, and ${tire.rim}-inch wheels from ${inches(min)} to ${inches(max)} inches wide.`;
-  }
-  if (wheel !== null) {
+  } else if (wheel !== null) {
     const pattern = bolt === null ? "" : ` with a ${timesSign(bolt)} bolt pattern`;
-    return `Wheels in ${timesSign(`${wheel.diameter}x${wheel.width}`)}${pattern}, and tires that suit them.`;
+    const size = `Wheels in ${timesSign(`${wheel.diameter}x${wheel.width}`)}${pattern}`;
+    line = tires ? `${size}, and tires that suit them.` : `${size}.`;
+  } else if (bolt !== null) {
+    line = `Wheels with a ${timesSign(bolt)} bolt pattern.`;
+  } else if (parsed.rim !== null) {
+    line =
+      tires && wheels
+        ? `Tires and wheels for ${parsed.rim}-inch rims.`
+        : tires
+          ? `Tires for ${parsed.rim}-inch rims.`
+          : `Wheels for ${parsed.rim}-inch rims.`;
   }
-  if (bolt !== null) return `Wheels with a ${timesSign(bolt)} bolt pattern.`;
-  if (parsed.rim !== null) return `Tires and wheels for ${parsed.rim}-inch rims.`;
-  return null;
+  /* A season is a tire fact: with tires out of scope it filters nothing. */
+  if (parsed.seasons.length > 0 && !tires) {
+    const note = "A season only applies to tires, so it is left out.";
+    line = line === null ? note : `${line} ${note}`;
+  }
+  return line;
 }
 
 /* --- Group ------------------------------------------------------------- */
@@ -211,16 +235,23 @@ export function SearchResults({
       : groups.length === 0
         ? "0 matches"
         : groups.map((group) => counted(group.category, group.total)).join(" · ");
-  const interpretation = outcome === null ? null : readAs(parsed);
+  const interpretation = outcome === null ? null : readAs(parsed, outcome.scope);
 
   return (
     <div className="flex flex-col gap-14 md:gap-20">
       {/* The count is the page's one live region, present in every state so it
           is never remounted (D72): a new search announces its counts. */}
       <div className={HEAD_STACK}>
-        <p className={COUNT} aria-live="polite" aria-atomic="true">
+        <p
+          id="search-summary"
+          tabIndex={-1}
+          className={COUNT}
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {summary}
         </p>
+        <SearchLanding query={query} />
         {interpretation !== null ? <p className={SUPPORT}>{interpretation}</p> : null}
         {groups.length > 1 ? (
           <nav aria-label="Jump to" className="flex flex-wrap gap-x-6 gap-y-2 pt-1">

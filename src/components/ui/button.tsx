@@ -200,9 +200,12 @@ const variantClass: Record<ButtonVariant, string> = {
    CTA — `gap:12px` desktop, `10px` mobile (product.md §3.5). `min-w-0` and
    `text-center` are declared on the card CTA (results.md §3.6). `rounded-ctl`
    is `--radius-ctl` 2px, the only radius any control takes (product.md §5.4).
-   `touch-manipulation` per docs/decisions.md §5. */
+   `touch-manipulation` per docs/decisions.md §5. `enabled:cursor-pointer`:
+   a `<button>` is `cursor: default` under Tailwind's preflight, so every
+   button showed the arrow; links already show the pointer, and a disabled
+   button keeps its arrow (QA SEARCH-6, D184). */
 const buttonBase =
-  "label inline-flex min-w-0 items-center justify-center rounded-ctl text-center no-underline touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-0";
+  "label inline-flex min-w-0 items-center justify-center rounded-ctl text-center no-underline touch-manipulation enabled:cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-0";
 
 function buttonClasses(
   variant: ButtonVariant,

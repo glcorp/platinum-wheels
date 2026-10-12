@@ -109,7 +109,8 @@ One line each; measurements and per-variant tables live in each file's header co
 |---|---|---|---|---|
 | D91b | 2026-09-29 | Checkbox consent variant: the comment on its 44px floor corrected; the floor itself is recorded as DEVIATIONS #80. | The comment claimed the floor never engaged; at 1440 it does (quote band +26px). | D91b |
 | D151 | 2026-10-04 | (1) `Button` `primary` carries `border border-transparent` and pads 1px smaller (`sizePadPrimary`), so its border box is unchanged and forced colours draw its edge. (2) `Chip` carries `data-chip` + `data-selected`, `ChipCheckbox` `data-chip`: hooks for the forced-colours `Highlight` rule in globals.css. | Forced colours repaint every fill as `Canvas`: the filled button lost its edge and a selected chip read as unselected (launch audit, D145, A11Y-MANUAL). | Owner, 2026-10-04: "Apply all code items" |
-| — | — | None folder-scoped. | Every ruling here is already global. | — |
+| D184 | 2026-10-13 | `Button` base carries `enabled:cursor-pointer`: a `<button>` is `cursor: default` under preflight, so no button showed the pointer (QA SEARCH-6). A disabled button keeps the arrow; links were already pointer. | D177 says every search control shows the pointer; the two search submits are `Button`s. | Owner, 2026-10-13: fix every P2 and P3 |
+| — | — | None other folder-scoped. | Every ruling here is already global. | — |
 
 Referenced: **D12** (chip radius 0), **D13** (button tracking .08/.04em), **D14**, **D15** (mobile
 textarea 16px), **D16**, **D17**, **D21** (price suffix per context, extended per category by **D58**). Authored states — focus, active,
