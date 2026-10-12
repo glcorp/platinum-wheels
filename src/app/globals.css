@@ -1742,6 +1742,19 @@ html {
     scroll-padding-top: 210px;
   }
 }
+/* D185 (owner, 2026-10-13, "Unpin bars on sideways phones"): under 500px tall
+   the bar scrolls away (`filter-sort-bar.tsx`), so only the header (68px,
+   88px from `sm:`) is left to clear. */
+@media (max-height: 499.98px) and (max-width: 1099.98px) {
+  html:has([data-sticky-filter-bar]) {
+    scroll-padding-top: 68px;
+  }
+}
+@media (max-height: 499.98px) and (min-width: 720px) and (max-width: 1099.98px) {
+  html:has([data-sticky-filter-bar]) {
+    scroll-padding-top: 88px;
+  }
+}
 
 /* Forced colours (KBD-3, KBD-4). The system palette replaces every background
    with `Canvas`, so anything that signals state with a fill disappears: the
