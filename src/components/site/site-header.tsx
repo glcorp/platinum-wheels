@@ -182,7 +182,7 @@ export function SiteHeader({
               icon that opens a field pinned under the bar below it. A leaf
               island; the box is a plain GET form and the icon a link to
               `/search` until it hydrates. */}
-          <SiteSearch />
+          <SiteSearch vehicle={vehicle} />
 
           {/* Phone CTA — accent Button, compact size, visible from sm: (720px).
               No gap override: the `compact` size's own `gap-2.5 sm:gap-3` is

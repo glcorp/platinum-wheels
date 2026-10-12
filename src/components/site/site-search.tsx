@@ -13,8 +13,18 @@
    script. Once hydrated it is a toggle: the panel opens with the field
    focused, and Esc, the close button, a click outside it or a submit closes
    it. A submit is `next/form` with a string action, a GET to `/search?q=`
-   (client navigation, the loader starts as for any GET form, D92b). It does
+   (client navigation). `next/form` prevents the default, which `NavProgress`
+   path (b) skips, so both forms carry `data-nav-progress` to opt in: the
+   loader then starts as for a link click (QA SEARCH-3, D184). It does
    not import `src/features/search` (D37): it only posts `q` to the route.
+
+   D185 (owner, 2026-10-13, "Search keeps the vehicle"): a page that carries a
+   searched car (D158) hands it here as `vehicle`, already checked by the
+   page, and both forms post it as hidden `year`/`make`/`model`, so `/search`
+   can add the car to its `See all` links. And a submit leaves a short-lived
+   flag in sessionStorage that `/search`'s `SearchLanding` reads to move focus
+   to the results (QA SEARCH-8); the key is spelled in both files because
+   neither may import the other (D37).
 
    D177 (owner, 2026-10-11: "on search icon, hover doesnt change to hand,
    keep left of call, also add a search box with search texxt and icon"):
@@ -39,7 +49,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES, type VehicleParams } from "@/lib/routes";
 
 const subscribeNever = () => () => {};
 function useHydrated(): boolean {
@@ -49,6 +59,31 @@ function useHydrated(): boolean {
 /** Longest query `/search` reads (`QUERY_MAX_LENGTH` in
  *  `src/features/search/parse.ts`, which this file may not import). */
 const MAX_LENGTH = 100;
+
+/** Read by `SearchLanding` (`src/features/search/components/search-landing.tsx`). */
+const LANDING_KEY = "pw-search-landing";
+
+/** Remember that a header search is in flight, so the results page can take
+ *  focus once (WCAG 2.4.3). Timestamped so a stale flag is ignored. */
+function markLanding() {
+  try {
+    window.sessionStorage.setItem(LANDING_KEY, String(Date.now()));
+  } catch {
+    /* Storage blocked: focus simply stays where the browser puts it. */
+  }
+}
+
+/** The searched car (D158) as hidden fields, so a search keeps it (D185). */
+function VehicleFields({ vehicle }: { vehicle: VehicleParams | null }) {
+  if (vehicle === null) return null;
+  return (
+    <>
+      <input type="hidden" name="year" value={vehicle.year} />
+      <input type="hidden" name="make" value={vehicle.make} />
+      <input type="hidden" name="model" value={vehicle.model} />
+    </>
+  );
+}
 
 /* `sm:hidden`: from 720 the box below replaces the icon (D177). */
 const TRIGGER_CLASS =
@@ -99,10 +134,17 @@ const BOX_ICON = (
 );
 
 /** The header search box, 720 and up (D177). */
-function SearchBox() {
+function SearchBox({ vehicle }: { vehicle: VehicleParams | null }) {
   const id = useId();
   return (
-    <Form action={ROUTES.search} role="search" className="relative hidden sm:block">
+    <Form
+      action={ROUTES.search}
+      role="search"
+      aria-label="Site search"
+      data-nav-progress=""
+      onSubmit={markLanding}
+      className="relative hidden sm:block"
+    >
       <label htmlFor={id} className="sr-only">
         Search by tire size, wheel size, part number or brand
       </label>
@@ -120,11 +162,12 @@ function SearchBox() {
         placeholder="Search"
         className={BOX_CLASS}
       />
+      <VehicleFields vehicle={vehicle} />
     </Form>
   );
 }
 
-export function SiteSearch() {
+export function SiteSearch({ vehicle = null }: { vehicle?: VehicleParams | null }) {
   const hydrated = useHydrated();
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -170,7 +213,7 @@ export function SiteSearch() {
   if (!hydrated) {
     return (
       <>
-        <SearchBox />
+        <SearchBox vehicle={vehicle} />
         <a href={ROUTES.search} aria-label="Search" className={TRIGGER_CLASS}>
           {SEARCH_ICON}
         </a>
@@ -180,7 +223,7 @@ export function SiteSearch() {
 
   return (
     <>
-      <SearchBox />
+      <SearchBox vehicle={vehicle} />
       <button
         ref={triggerRef}
         type="button"
@@ -208,7 +251,12 @@ export function SiteSearch() {
           <Form
             action={ROUTES.search}
             role="search"
-            onSubmit={() => setOpen(false)}
+            aria-label="Site search"
+            data-nav-progress=""
+            onSubmit={() => {
+              markLanding();
+              setOpen(false);
+            }}
             className="flex items-center gap-2 lg:mx-auto lg:max-w-content"
           >
             <label htmlFor={inputId} className="sr-only">
@@ -227,6 +275,7 @@ export function SiteSearch() {
               placeholder="245/35R19, Michelin"
               className="min-w-0 flex-1"
             />
+            <VehicleFields vehicle={vehicle} />
             <Button type="submit" variant="primary" size="promo" aria-label="Search" className="shrink-0">
               <span className="sm:hidden">{SEARCH_ICON}</span>
               <span className="hidden sm:inline">Search</span>

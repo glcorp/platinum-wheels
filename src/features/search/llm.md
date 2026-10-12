@@ -18,7 +18,12 @@ header's search box and icon have nothing behind them.
 - [`components/search-results.tsx`](components/search-results.tsx) — the page body: the field, the group
   jump links, the three groups and the no-results state. Server Component.
 - [`components/search-form.tsx`](components/search-form.tsx) — the plain GET `<form>` the page renders
-  (works with JS off). Server Component.
+  (works with JS off). `"use client"` since D184: the field is controlled and resynced to the URL's `q` during
+  render (the D84 pattern), so Back and a header search update it.
+- [`components/search-landing.tsx`](components/search-landing.tsx) — `"use client"` leaf island rendering
+  `null` (D184): after a header search it focuses `#search-summary`, the count line, once.
+- [`vehicle.ts`](vehicle.ts) — pure: `year`/`make`/`model` in the URL accepted only through `isFinderVehicle`
+  (D185); the car then rides into the `See all` links and the page's own field and header.
 
 ## Rules
 - **Visibility mirrors the listings**: `published` and `discontinued`, never `hidden`, with no order
@@ -36,6 +41,8 @@ header's search box and icon have nothing behind them.
 ## Decisions
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
+| D184 | 2026-10-13 | QA fixes: a thread search's `See all accessories` names the three threaded types (D137); the page field follows the URL; the "read as" line names only the categories searched (`SearchOutcome.scope`) and says a season is left out of a wheels-only search; the no-matches line wraps (`wrap-anywhere`); the search forms opt into the loader and focus lands on the count after a header search. | QA streams report (SEARCH-1..6, 8, LAYOUT-1). | Owner, 2026-10-13: fix every P2 and P3 |
+| D185 | 2026-10-13 | A search started with a searched car keeps it: `year`/`make`/`model` ride into `/search` and onto its `See all` links. | Owner, 2026-10-13: "Search keeps the vehicle". | Owner |
 | D173 | 2026-10-11 | The search exists; rulings (1)–(4) in root `llm.md` §5b. | Client and owner asked for it. | Owner |
 | D174 | 2026-10-11 | Derived rulings (parsing, ordering, limits). | Built under D173. | *derived* |
 

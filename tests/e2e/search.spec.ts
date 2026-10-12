@@ -13,7 +13,7 @@
  * then `See all` on its category page (D178).
  */
 import { test, expect, type Page } from "@playwright/test";
-import { SLUG, settle } from "../helpers";
+import { SLUG, VEHICLE, settle } from "../helpers";
 
 test.beforeEach(({}, info) => {
   test.skip(info.project.name !== "chromium-1440" && !info.project.name.startsWith("iphone"), "server results: one desktop and one phone run");
@@ -117,8 +117,10 @@ test("works with JavaScript off", async ({ browser, baseURL }, info) => {
     await expect(icon).toHaveAttribute("href", "/search");
     await icon.click();
     await expect(page).toHaveURL(/\/search$/);
-    await page.getByLabel("Tire size, wheel size, part number or brand").fill("225/60R17");
-    await page.getByLabel("Tire size, wheel size, part number or brand").press("Enter");
+    // Scoped to `main`: the header's own (hidden) field carries the same label (GATE-4).
+    const field = page.getByRole("main").getByLabel("Tire size, wheel size, part number or brand");
+    await field.fill("225/60R17");
+    await field.press("Enter");
   } else {
     // The header box is a plain GET form.
     const box = page.getByRole("banner").getByRole("searchbox");
@@ -171,4 +173,86 @@ test("each group shows one row, then See all on its category page", async ({ pag
   // Free words the category page cannot filter on still get a link (D178).
   await search(page, "zeta antarctica");
   await expect(page.locator("#search-tires").getByRole("link", { name: "See all tires" })).toBeVisible();
+});
+
+/* QA SEARCH-1 (D184): a thread search names the three threaded accessory types
+   in its `See all` link, because the category page applies a thread only while
+   one of them is ticked (D137); without them it landed on the whole category. */
+test("a thread search's See all lands on the group's set, not the whole category", async ({ page }) => {
+  await search(page, "12x1.5");
+  const group = page.locator("#search-accessories");
+  const total = Number((await page.locator("#search-summary").innerText()).split(" ")[0]?.replace(/,/g, ""));
+  expect(total).toBeGreaterThan(0);
+  const all = group.getByRole("link", { name: "See all accessories" });
+  const href = (await all.getAttribute("href")) ?? "";
+  const types = new URL(href, "http://x").searchParams.getAll("type");
+  expect(types.sort()).toEqual(["lug-bolts", "lug-nuts", "wheel-locks"]);
+  expect(new URL(href, "http://x").searchParams.get("thread")).toBe("12x1.5");
+  await all.click();
+  await expect(page).toHaveURL(/\/accessories\?/);
+  const landed = page.locator("main").getByText(/^[\d,]+ matches?$/).first();
+  await expect(landed).toBeVisible();
+  const count = Number((await landed.innerText()).split(" ")[0]?.replace(/,/g, ""));
+  // The page may lack products the group counts that carry no thread type, never the reverse.
+  expect(count).toBeGreaterThan(0);
+  expect(count).toBeLessThanOrEqual(total);
+});
+
+/* QA SEARCH-2 (D184): the page field follows the URL after Back and after a
+   search made from the header. */
+test("the page field follows the URL after Back and a header search", async ({ page }) => {
+  await search(page, "zeta");
+  const field = page.getByRole("main").getByLabel("Tire size, wheel size, part number or brand");
+  await field.fill("fuel");
+  await field.press("Enter");
+  await expect(page).toHaveURL(/q=fuel/);
+  await expect(field).toHaveValue("fuel");
+  await page.goBack();
+  await expect(page).toHaveURL(/q=zeta/);
+  await expect(field).toHaveValue("zeta");
+  if (!isPhone(page)) {
+    const box = page.getByRole("banner").getByRole("searchbox");
+    await box.fill("lug nuts");
+    await box.press("Enter");
+    await expect(page).toHaveURL(/q=lug(\+|%20)nuts/);
+    await expect(field).toHaveValue("lug nuts");
+  }
+});
+
+/* QA LAYOUT-1 (D184): the no-matches line quotes the query, and a long
+   unbroken one (a pasted URL or code) must wrap, not widen the page. */
+test("a long unbroken query wraps and never scrolls the page sideways", async ({ page }) => {
+  await search(page, "B".repeat(100));
+  await expect(page.getByRole("heading", { level: 2, name: "No matches" })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+/* QA SEARCH-5 (D184): two search landmarks, two names. */
+test("the header and page search landmarks have different names", async ({ page }) => {
+  test.skip(isPhone(page), "the header box is the 720+ landmark");
+  await search(page, "zeta");
+  await expect(page.getByRole("search", { name: "Site search" })).toHaveCount(1);
+  await expect(page.getByRole("search", { name: "Search the catalogue" })).toHaveCount(1);
+});
+
+/* QA SEARCH-7 (D185): a search started on a page with a searched car keeps the
+   car, and only a car the finder offers. */
+test("a searched car rides into the search and its See all links", async ({ page }) => {
+  test.skip(isPhone(page), "header box path; the 390 panel carries the same hidden fields");
+  await page.goto(`/tires?${VEHICLE}`);
+  await settle(page);
+  const box = page.getByRole("banner").getByRole("searchbox");
+  await box.fill("zeta");
+  await box.press("Enter");
+  await expect(page).toHaveURL(/year=2021&make=Honda&model=Civic/);
+  const href = await page.locator("#search-tires").getByRole("link", { name: "See all tires" }).getAttribute("href");
+  expect(href).toContain("year=2021");
+  expect(href).toContain("make=Honda");
+  expect(href).toContain("model=Civic");
+  // An unchecked car is no car: nothing of it reaches a link.
+  await page.goto("/search?q=zeta&year=1&make=%3Cb%3E&model=x");
+  const bare = await page.locator("#search-tires").getByRole("link", { name: "See all tires" }).getAttribute("href");
+  expect(bare).not.toContain("year=");
+  expect(bare).not.toContain("make=");
 });
