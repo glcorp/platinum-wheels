@@ -52,7 +52,7 @@ export function QuoteSuccess({ role, tabIndex, ref, sentLabel, children }: Quote
          announces content, not opacity or position, so the motion does not
          delay the announcement, and `QuoteForm`'s focus move is untouched. */
       data-probe="quote-success"
-      className="bg-surface border-border-strong flex flex-col items-start gap-3 border p-5 sm:gap-4 sm:p-8 enter-rise"
+      className="bg-surface border-border-strong flex min-w-0 max-w-full flex-col items-start gap-3 border p-5 sm:gap-4 sm:p-8 enter-rise"
     >
       {/* `h2` under the cart page's `Your cart` (D122). It used to be an
           `h3` under the quote band's own `h2`. */}
@@ -69,7 +69,7 @@ export function QuoteSuccess({ role, tabIndex, ref, sentLabel, children }: Quote
       <p className="text-ink-muted text-15 leading-body sm:text-16">
         {`We'll check fitment and stock, then get back to you within 1-2 business days. Need it sooner? Call ${PRIMARY_CONTACT.display}.`}
       </p>
-      {children ? <div className="w-full pt-2">{children}</div> : null}
+      {children ? <div className="w-full min-w-0 pt-2">{children}</div> : null}
     </div>
   );
 }

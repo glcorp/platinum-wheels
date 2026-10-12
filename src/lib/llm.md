@@ -52,7 +52,8 @@ the next session guesses which of the two phone numbers is real.
 
 - [`time.ts`](time.ts) — `SHOP_TIME_ZONE` (`America/Toronto`), `SHOP_DATE_TIME`, `SHOP_WEEKDAY_DATE` and
   `shopHour()`. Every date and time the application shows or reasons about is Brampton time (D118); format
-  through these, never with a zone typed at the call site. Zero imports.
+  through these, never with a zone typed at the call site. Zero imports. `SHOP_DATE_TIME` carries no zone
+  name; the one place that shows it, the cart's `Sent <time> ET` label, appends it itself (D185).
 - [`cart.ts`](cart.ts) — the browser cart (**D122**): one `localStorage` entry (`pw-cart`, versioned,
   every field re-checked on read), an in-memory fallback when storage is blocked, `useCartLines()` through
   `useSyncExternalStore` (`null` on the server), cross-tab sync via the `storage` event, `addToCart`
@@ -158,14 +159,6 @@ constants).
 2. **Address and map.** `SITE` carries `city` and `province` but no street address, while
    `docs/decisions.md:101` specifies a static map image plus a "Get directions" link. The address is not
    in the canonical contact block. Owner or client.
-3. **Closed 2026-10-11 by D161: one number, no names.** **Which number is "primary", and what happens to the second.** `PRIMARY_CONTACT` picks `CONTACTS[0]`
-   because the header CTA in the artboards reads `Call <primary>` (D7 / DEVIATIONS #11). Nobody has
-   confirmed that Inderpal Singh should receive every header and mobile call tap (root `llm.md` §7.14).
-   **Sharpened by D76:** the owner said "change number to +1 (437) 882-5000 **everywhere**", and only
-   `CONTACTS[0]` was changed. `/` §04 Contact and `/about` therefore still list Harman Singh on
-   `365-998-0990`. Three exits, none taken without the owner: (a) leave it — two people, two numbers,
-   which is what the canonical contact block describes; (b) point both rows at the new number — then the
-   two contact cards show one number twice, which reads as a bug; (c) drop `CONTACTS[1]` — then the
-   contact grid goes from two cards to one and `design/reports/home.md` rows 58 and 102 change shape, not
-   just width. **The second half is settled by D139 (2026-10-04): exit (a)**, Harman Singh keeps his own
-   number, now written `+1 (365) 998-0990`. Who receives the header and mobile call taps is still open. Owner.
+3. **Closed 2026-10-11 by D161.** The shop has one phone number and no personal names anywhere a visitor reads,
+   so `PRIMARY_CONTACT` is the only contact and the question of who receives the call taps no longer
+   arises. The earlier options, and the second-number rows of D76 and D139, are history (root `llm.md` §5b).

@@ -108,6 +108,36 @@ for (const [what, token] of [
   });
 }
 
+/* The pay 404 must paint without JavaScript (QA COPY-1, D184): Next 16.4 gives a
+   `notFound()` thrown from a page an empty shell that only a browser running
+   scripts fills, so `src/proxy.ts` serves the branded page itself. A customer
+   with scripting off, or a mail client's link preview, still reads the phone
+   and email. */
+test.describe("the pay 404 without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  for (const path of [`/pay/${PAY_TOKEN.unknown}`, "/pay", "/pay/not/a/page", "/pay/short"]) {
+    test(`${path} is a 404 with the branded page, the shop's phone and email and the pay headers`, async ({
+      page,
+    }) => {
+      const res = await page.goto(path);
+      expect(res?.status()).toBe(404);
+      expect(res?.headers()["x-robots-tag"]).toContain("noindex");
+      expect(res?.headers()["cache-control"]).toContain("no-store");
+      await expect(page.getByRole("heading", { level: 1, name: "Payment link not found" })).toBeVisible();
+      await expect(page.getByRole("link", { name: /^\+1 / })).toHaveAttribute("href", /^tel:\+1\d{10}$/);
+      await expect(page.getByRole("link", { name: /@/ })).toHaveAttribute("href", /^mailto:/);
+      await expect(page.getByRole("button", { name: /^Pay / })).toHaveCount(0);
+    });
+  }
+
+  test("a link that exists is not caught by it", async ({ page }) => {
+    const res = await page.goto(`/pay/${PAY_TOKEN.open}`);
+    expect(res?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1, name: "Payment request" })).toBeVisible();
+  });
+});
+
 /* ---------- headers: the URL is a capability (D105) ---------- */
 
 test("a link page is never cached, never indexed and leaks only an origin", async ({ request }) => {
