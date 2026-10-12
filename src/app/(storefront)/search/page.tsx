@@ -7,6 +7,7 @@ import { SearchForm } from "@/features/search/components/search-form";
 import { SearchResults } from "@/features/search/components/search-results";
 import { hasCriteria, parseSearch } from "@/features/search/parse";
 import { searchCatalog } from "@/features/search/queries";
+import { searchVehicle } from "@/features/search/vehicle";
 
 /* ---------------------------------------------------------------------------
    `/search?q=` — composition only (`docs/decisions.md` §3). D173.
@@ -31,11 +32,13 @@ function first(value: string | string[] | undefined): string {
 export default async function SearchPage({ searchParams }: PageProps<"/search">) {
   const params = await searchParams;
   const parsed = parseSearch(first(params.q));
-  const outcome = hasCriteria(parsed) ? await searchCatalog(parsed) : null;
+  /* D185: a search started with a searched car keeps it (checked here). */
+  const vehicle = searchVehicle(params);
+  const outcome = hasCriteria(parsed) ? await searchCatalog(parsed, vehicle) : null;
 
   return (
     <>
-      <SiteHeader variant="solid" />
+      <SiteHeader variant="solid" vehicle={vehicle} />
       <PageTransition>
         <main id="main" tabIndex={-1} className="flex-1">
           <div className="px-4 pt-8 pb-14 sm:px-8 sm:pt-12 md:px-12 md:pb-30">
@@ -45,7 +48,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
                 <div className="w-full max-w-dialog">
                   {/* Focused only when there is nothing typed yet, so a
                       result page does not raise the phone keyboard over it. */}
-                  <SearchForm query={parsed.text} autoFocus={parsed.text === ""} />
+                  <SearchForm query={parsed.text} autoFocus={parsed.text === ""} vehicle={vehicle} />
                 </div>
               </div>
               <SearchResults query={parsed.text} parsed={parsed} outcome={outcome} />
