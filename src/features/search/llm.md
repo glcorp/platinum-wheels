@@ -4,14 +4,17 @@
 Free-text storefront search (D173): the header's search field and `/search?q=`. A shopper types a tire
 size in any common spelling, a wheel size, a bolt pattern, a part number, or brand and model words, and
 gets the matching tires, wheels and accessories grouped on one page. Delete it and `/search` and the
-header's search icon have nothing behind them.
+header's search box and icon have nothing behind them.
 
 ## Owns
 - [`parse.ts`](parse.ts) — pure: query text → `ParsedSearch` (tire, wheel, bolt and rim sizes, category,
   season and accessory-type words, leftover words). No I/O, no imports beyond types and `catalog/size.ts`.
 - [`fit.ts`](fit.ts) — pure: which wheel widths suit a tire, and the reverse (D173(1)).
 - [`queries.ts`](queries.ts) — server only: one read per group, the trigram text match, look-alike facts,
-  the "See all" links' filters. Never imported by a client file.
+  the "See all" links' filters. `GROUP_LIMIT` 4 cards a group (one desktop row), then every group links
+  to its category page, `See all tires` / `wheels` / `accessories`, with every filter the query maps onto
+  (**D178**: no `Show more`, no `?more=`; words the category page cannot filter on are left off the link,
+  `seeAll.exact` false). Never imported by a client file.
 - [`components/search-results.tsx`](components/search-results.tsx) — the page body: the field, the group
   jump links, the three groups and the no-results state. Server Component.
 - [`components/search-form.tsx`](components/search-form.tsx) — the plain GET `<form>` the page renders

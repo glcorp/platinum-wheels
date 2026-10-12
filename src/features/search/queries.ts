@@ -45,26 +45,26 @@ import type { ParsedSearch } from "./parse";
 
 export const SEARCH_CATEGORIES: readonly ProductCategory[] = ["tires", "wheels", "accessories"];
 
-/** Cards per group: two rows of four on a laptop, four of two on a tablet.
- *  `Show more` raises one group to `GROUP_MORE`; past that the group says
- *  how many match and the shopper narrows the search or follows `See all`. */
-export const GROUP_LIMIT = 8;
-export const GROUP_MORE = 48;
+/** Cards per group: one row of four on a laptop (D178). Every group then
+ *  offers `See all`, the category page with the search's filters set; the
+ *  page has the filters, sort and `Load more` a long list needs. Owner,
+ *  2026-10-11: "on search page display some results and then an option to go
+ *  to tires page to see all results, same for wheels and tires". */
+export const GROUP_LIMIT = 4;
 
 export interface SearchGroup {
   category: ProductCategory;
   products: Product[];
   total: number;
-  /** The same products on the category page, with its filters set, when
-   *  the query maps onto them. */
-  seeAll: { href: string; label: string } | null;
+  /** The category page with every filter the query maps onto (D178). Always
+   *  there; it carries the whole search when `exact`, else only the parts the
+   *  category page can filter on (free words and part numbers it cannot). */
+  seeAll: { href: string; label: string; exact: boolean };
 }
 
 export interface SearchOutcome {
   /** Groups that matched something, in category order. */
   groups: SearchGroup[];
-  /** The group `?more=` expanded, if any. */
-  expanded: ProductCategory | null;
 }
 
 /* --- Which groups, and on what ------------------------------------------ */
@@ -322,9 +322,10 @@ function seeAllFor(
   parsed: ParsedSearch,
   brand: string | undefined,
 ): SearchGroup["seeAll"] {
-  /* Only when every word is the brand: the category pages cannot filter on
-     free text. */
-  if (parsed.words.length > 0 && brand === undefined) return null;
+  /* The category pages cannot filter on free text, so a search with words
+     that are not exactly a brand links to the page with its other filters
+     only (D178; before, it offered no link at all). */
+  let exact = parsed.words.length === 0 || brand !== undefined;
   const params = new URLSearchParams();
   const config = CATEGORY_CONFIG[category];
   let label = `See all ${config.crumb.toLowerCase()}`;
@@ -342,7 +343,9 @@ function seeAllFor(
       params.set("profile", String(tire.sectionWidth));
       params.set("rim", String(tire.rim));
     } else if (wheel !== null) {
-      return null;
+      /* A wheel size searched: its tires are those for its rim. */
+      params.set("rim", String(wheel.diameter));
+      exact = false;
     } else if (parsed.rim !== null) {
       params.set("rim", String(parsed.rim));
     }
@@ -369,7 +372,7 @@ function seeAllFor(
 
   if (brand !== undefined) params.set("brand", brand);
   const query = params.toString();
-  return { href: query === "" ? config.route : `${config.route}?${query}`, label };
+  return { href: query === "" ? config.route : `${config.route}?${query}`, label, exact };
 }
 
 /* --- Entry point --------------------------------------------------------- */
@@ -377,21 +380,17 @@ function seeAllFor(
 const storefrontPrice = (product: CatalogProduct): CatalogProduct =>
   PRICES_VISIBLE ? product : { ...product, price: null };
 
-export async function searchCatalog(
-  parsed: ParsedSearch,
-  more: ProductCategory | null,
-): Promise<SearchOutcome> {
+export async function searchCatalog(parsed: ParsedSearch): Promise<SearchOutcome> {
   const db = getDb();
   const plans = scopeOf(parsed)
     .map((category) => ({ category, where: groupConditions(category, parsed) }))
     .filter((plan): plan is { category: ProductCategory; where: SQL[] } => plan.where !== null);
-  if (plans.length === 0) return { groups: [], expanded: null };
+  if (plans.length === 0) return { groups: [] };
 
-  const expanded = more !== null && plans.some((plan) => plan.category === more) ? more : null;
   const [results, brands] = await Promise.all([
     Promise.all(
       plans.map((plan) =>
-        readGroup(db, plan.category, plan.where, parsed, plan.category === expanded ? GROUP_MORE : GROUP_LIMIT),
+        readGroup(db, plan.category, plan.where, parsed, GROUP_LIMIT),
       ),
     ),
     readExactBrands(db, parsed),
@@ -427,5 +426,5 @@ export async function searchCatalog(
       seeAll: seeAllFor(plan.category, parsed, brands.get(plan.category)),
     });
   });
-  return { groups, expanded: expanded !== null && groups.some((g) => g.category === expanded) ? expanded : null };
+  return { groups };
 }

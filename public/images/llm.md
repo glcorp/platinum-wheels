@@ -21,7 +21,7 @@ renders empty until the pipeline is re-run.
   winter pre-cropped (`CROPS`). Sources and licences: `design/ASSET-CREDITS.md`. The original client PNGs stay
   in `design/assets/photos/` (frozen) and are overwritten in the output by the replacements. The filename
   `winter-tacoma` is kept because two components import it; it no longer shows a Tacoma.
-- `brands/*.svg` — **19 brand logos for the home ticker (D129)**, the one folder here that is **not** pipeline output and not
+- `brands/*.svg` — **19 brand logos for the home ticker (D129), plus the extra logos only the `/about` grid draws (D182)**, the one folder here that is **not** pipeline output and not
   webp: each is the brand's own vector logo, fetched 2026-10-03, metadata stripped, flattened to one colour (`#000`) and cropped
   to its painted bounds. The page never shows the file's colour: `brand-strip.tsx` paints a token through it as a CSS mask.
   Filenames are the slugs in `src/features/home/brand-logos.ts`. Sources, the per-file notes (wordmark-only, knockout,

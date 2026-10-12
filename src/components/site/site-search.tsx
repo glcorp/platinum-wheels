@@ -16,6 +16,16 @@
    (client navigation, the loader starts as for any GET form, D92b). It does
    not import `src/features/search` (D37): it only posts `q` to the route.
 
+   D177 (owner, 2026-10-11: "on search icon, hover doesnt change to hand,
+   keep left of call, also add a search box with search texxt and icon"):
+   from `sm:` (720) the header carries a real search box instead of the
+   icon, a magnifier and a `Search` placeholder inside a bordered field, left
+   of the phone CTA; Enter sends it to `/search?q=`. It is a plain GET form,
+   so it works before hydration and with JS off. Below 720 the bar has no
+   room for a box beside the logo, call, cart and menu, so the icon and its
+   panel stay, now left of the call button too. Every control here shows the
+   pointer: a `<button>` is `cursor: default` under Tailwind's preflight.
+
    The panel is `absolute top-full` inside the header, which is `fixed` on
    `/` and `sticky` elsewhere, so it stays pinned with it. It takes the
    header's own side padding and the 1344px frame (D141), and a hairline on
@@ -40,8 +50,18 @@ function useHydrated(): boolean {
  *  `src/features/search/parse.ts`, which this file may not import). */
 const MAX_LENGTH = 100;
 
+/* `sm:hidden`: from 720 the box below replaces the icon (D177). */
 const TRIGGER_CLASS =
-  "text-on-photo inline-flex size-11 touch-manipulation items-center justify-center bg-transparent active:translate-y-px";
+  "text-on-photo inline-flex size-11 cursor-pointer touch-manipulation items-center justify-center bg-transparent active:translate-y-px sm:hidden";
+
+/* The header box (D177): 44px, the header's control height (the call pill
+   and the icons), on the field recipe's tokens (`fieldBoxClasses`): the
+   `--surface-2` fill, `--border-control` edge, `--border-ink-dim` on hover
+   and the accent focus. 16px value, the inputs' floor (`.claude/rules/ui.md`),
+   regular weight so the placeholder reads as a hint. The icon sits inside
+   the left padding and ignores the pointer, so a click on it focuses the field. */
+const BOX_CLASS =
+  "bg-surface-2 rounded-ctl border-border-control hover:border-ink-dim text-ink placeholder:text-ink-muted focus-visible:border-accent focus-visible:outline-accent h-11 w-44 cursor-pointer touch-manipulation border pr-3 pl-10 font-sans text-16 leading-flat focus-visible:cursor-text focus-visible:outline-2 focus-visible:outline-offset-0 md:w-52";
 
 /* 22x22, stroke 1.6, round caps: the menu and cart icons' drawing. */
 const SEARCH_ICON = (
@@ -59,6 +79,50 @@ const SEARCH_ICON = (
     <path d="M15.5 15.5L21 21" />
   </svg>
 );
+
+/* The box's magnifier: the same drawing at 18px, `--text-muted`. */
+const BOX_ICON = (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    aria-hidden="true"
+    className="text-ink-muted pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
+  >
+    <circle cx="10.5" cy="10.5" r="6.5" />
+    <path d="M15.5 15.5L21 21" />
+  </svg>
+);
+
+/** The header search box, 720 and up (D177). */
+function SearchBox() {
+  const id = useId();
+  return (
+    <Form action={ROUTES.search} role="search" className="relative hidden sm:block">
+      <label htmlFor={id} className="sr-only">
+        Search by tire size, wheel size, part number or brand
+      </label>
+      {BOX_ICON}
+      <input
+        id={id}
+        name="q"
+        type="search"
+        inputMode="search"
+        maxLength={MAX_LENGTH}
+        autoComplete="off"
+        autoCapitalize="none"
+        spellCheck={false}
+        enterKeyHint="search"
+        placeholder="Search"
+        className={BOX_CLASS}
+      />
+    </Form>
+  );
+}
 
 export function SiteSearch() {
   const hydrated = useHydrated();
@@ -105,14 +169,18 @@ export function SiteSearch() {
 
   if (!hydrated) {
     return (
-      <a href={ROUTES.search} aria-label="Search" className={TRIGGER_CLASS}>
-        {SEARCH_ICON}
-      </a>
+      <>
+        <SearchBox />
+        <a href={ROUTES.search} aria-label="Search" className={TRIGGER_CLASS}>
+          {SEARCH_ICON}
+        </a>
+      </>
     );
   }
 
   return (
     <>
+      <SearchBox />
       <button
         ref={triggerRef}
         type="button"
@@ -167,7 +235,7 @@ export function SiteSearch() {
               type="button"
               aria-label="Close search"
               onClick={close}
-              className="text-ink inline-flex size-11 shrink-0 touch-manipulation items-center justify-center bg-transparent active:translate-y-px"
+              className="text-ink inline-flex size-11 shrink-0 cursor-pointer touch-manipulation items-center justify-center bg-transparent active:translate-y-px"
             >
               <svg
                 width="22"

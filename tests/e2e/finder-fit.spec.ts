@@ -29,6 +29,24 @@ test("Model list fills after a client navigation (vehicle sheet)", async ({ page
   expect(await modelOptions(page)).toContain("Civic");
 });
 
+/* D176: adding a car keeps the size already picked. */
+test("adding a vehicle keeps the picked tire size", async ({ page }) => {
+  await page.goto("/tires?width=225&profile=60&rim=17");
+  await settle(page);
+  await page.locator('[data-probe="vehicle-button"]:visible').first().click();
+  await expect(page.locator("#vehicle-sheet[open]")).toHaveCount(1);
+  await page.selectOption("#finder-year", "2020");
+  await page.selectOption("#finder-make", "Honda");
+  await page.selectOption("#finder-model", "Civic");
+  await page.locator('#vehicle-sheet button[type="submit"]').click();
+  await page.waitForURL(/year=2020/);
+  const url = new URL(page.url());
+  expect(url.searchParams.get("model")).toBe("Civic");
+  expect(url.searchParams.get("width")).toBe("225");
+  expect(url.searchParams.get("profile")).toBe("60");
+  expect(url.searchParams.get("rim")).toBe("17");
+});
+
 test("Model list fills before the page's JavaScript has run", async ({ page }) => {
   let release!: () => void;
   const held = new Promise<void>((resolve) => (release = resolve));

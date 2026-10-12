@@ -1958,6 +1958,78 @@ dialog:modal {
 }
 
 /* ---------------------------------------------------------------------------
+   Brand grid (D182) — the About page's "What we sell" logos. Owned by
+   src/app/(storefront)/about/page.tsx; nothing else uses it.
+   A static wrapped grid of the same logo files the home ticker paints (D129,
+   `brand-logos.ts`), one colour through a CSS mask, `--text-dim` at rest and
+   `--text` on hover (the colour is the cell's, set in the page). About is a
+   reading page, so nothing moves. 24 brands, so every row is full at 2 and 4
+   across. Each logo is flush-left in its cell. Not 6 across on wide
+   screens: in the About column a sixth of the width is ~121px, which shrank
+   wide wordmarks (Nitto, Michelin) to 10-13px tall (measured at 1440).
+     cell      a fixed-height row box; the logo or the text wordmark sits on
+               its vertical centre
+     logo      height = base x the logo's optical scale, width from its
+               aspect, never wider than the cell (wide marks shrink to fit)
+   Base heights: 24px phone, 28px from 720, 32px from 1320.
+   =========================================================================== */
+@utility brand-grid {
+  --brand-logo-h: calc(var(--spacing) * 6);
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: calc(var(--spacing) * 6);
+  row-gap: calc(var(--spacing) * 6);
+
+  @media (min-width: 720px) {
+    --brand-logo-h: calc(var(--spacing) * 7);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: calc(var(--spacing) * 8);
+    row-gap: calc(var(--spacing) * 8);
+  }
+
+  @media (min-width: 1320px) {
+    --brand-logo-h: calc(var(--spacing) * 8);
+  }
+
+  & > li {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    height: calc(var(--brand-logo-h) * 1.5);
+    transition: color var(--duration-feedback) var(--ease-card);
+  }
+
+  & [data-brand="logo"] {
+    display: block;
+    width: min(100%, calc(var(--brand-logo-h) * var(--logo-scale, 1) * var(--logo-aspect, 4)));
+    aspect-ratio: var(--logo-aspect, 4);
+    background-color: currentColor;
+    -webkit-mask: var(--logo-src) left center / contain no-repeat;
+    mask: var(--logo-src) left center / contain no-repeat;
+  }
+
+  /* Forced colours replace every background with Canvas, which would blank
+     the logos; paint them in the user's own text colour instead. Print keeps
+     them in ink for the same reason. */
+  @media (forced-colors: active) {
+    & [data-brand="logo"] {
+      forced-color-adjust: none;
+      background-color: CanvasText;
+    }
+  }
+
+  @media print {
+    & [data-brand="logo"] {
+      background-color: CanvasText !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+}
+/* Brand grid (D182) — END. */
+
+/* ---------------------------------------------------------------------------
    Stream C (D168-D172) — the home finder's size search (D169, C4).
    Owner, 2026-10-11, choosing "Vehicle / Size switch, season on tires".
    Everything here is the home hero and its finder; nothing else uses it.

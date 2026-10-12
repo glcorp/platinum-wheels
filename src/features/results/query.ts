@@ -144,6 +144,13 @@ function parseShow(raw: string | null): number {
   return Math.min(Math.max(parsed, RESULTS_WINDOW.best), RESULTS_WINDOW.max);
 }
 
+/** `?similar=12` → 12, clamped to the similar window's bounds (D175). */
+function parseSimilarShow(raw: string | null): number {
+  if (raw === null || !/^\d{1,4}$/.test(raw)) return RESULTS_WINDOW.similar;
+  const parsed = Number.parseInt(raw, 10);
+  return Math.min(Math.max(parsed, RESULTS_WINDOW.similar), RESULTS_WINDOW.max);
+}
+
 export function parseResultsQuery(
   category: ProductCategory,
   params: RawSearchParams,
@@ -251,6 +258,7 @@ export function parseResultsQuery(
     sort,
     /* `Load more` is a link that raises `show` (D44, D108b). */
     show: parseShow(firstValue(params, RESULTS_PARAM.show)),
+    similarShow: parseSimilarShow(firstValue(params, RESULTS_PARAM.similar)),
     allBrands: firstValue(params, RESULTS_PARAM.brands) === ALL_BRANDS,
   };
 }
@@ -263,11 +271,12 @@ export function parseResultsQuery(
  *  param (repeated), then the extra groups (load, bore, offset_min,
  *  offset_max, finish*, thread*; none on tires but `load`), then brand
  *  (repeated), min, max, `sort` (omitted at the
- *  default), `show` (omitted at the default window) and `brands=all` (only
+ *  default), `show` (omitted at the default window), `similar` (likewise,
+ *  D175) and `brands=all` (only
  *  while the brand fold is open, D132) — defaults omitted throughout, so equal
  *  queries give equal hrefs. For tires this is exactly today's order:
  *  year, make, model, width, profile, rim, season, brand, min, max, sort, show,
- *  brands. */
+ *  similar, brands. */
 export function resultsHref(query: ResultsQuery): string {
   const config = CATEGORY_CONFIG[query.category];
   const search = new URLSearchParams();
@@ -315,6 +324,9 @@ export function resultsHref(query: ResultsQuery): string {
   if (query.sort !== DEFAULT_SORT) search.append(RESULTS_PARAM.sort, query.sort);
   if (query.show !== RESULTS_WINDOW.best) {
     search.append(RESULTS_PARAM.show, String(query.show));
+  }
+  if (query.similarShow !== RESULTS_WINDOW.similar) {
+    search.append(RESULTS_PARAM.similar, String(query.similarShow));
   }
   /* Last, so every href without it is byte-identical to before D132. */
   if (query.allBrands) search.append(RESULTS_PARAM.brands, ALL_BRANDS);
@@ -406,6 +418,7 @@ export function clearFilters(query: ResultsQuery): ResultsQuery {
     priceMax: null,
     sort: query.sort,
     show: RESULTS_WINDOW.best,
+    similarShow: RESULTS_WINDOW.similar,
     /* `Clear all` starts over: the brand fold closes too. */
     allBrands: false,
   };
@@ -413,7 +426,12 @@ export function clearFilters(query: ResultsQuery): ResultsQuery {
 
 /** Same query with a different sort; closes the window back to its default. */
 export function withSort(query: ResultsQuery, sort: SortKey): ResultsQuery {
-  return { ...query, sort, show: RESULTS_WINDOW.best };
+  return {
+    ...query,
+    sort,
+    show: RESULTS_WINDOW.best,
+    similarShow: RESULTS_WINDOW.similar,
+  };
 }
 
 /** Same query with one more step of best matches — the `Load more` href. */
@@ -422,4 +440,14 @@ export function withMore(query: ResultsQuery): ResultsQuery {
     ...query,
     show: Math.min(query.show + RESULTS_WINDOW.step, RESULTS_WINDOW.max),
   };
+}
+
+/** Same query with more `May also fit` cards — that list's `Show more` href
+ *  (D175): one row (3) opens to 12, then a step (24) a press, to the ceiling. */
+export function withMoreSimilar(query: ResultsQuery): ResultsQuery {
+  const next =
+    query.similarShow < RESULTS_WINDOW.similarExpanded
+      ? RESULTS_WINDOW.similarExpanded
+      : query.similarShow + RESULTS_WINDOW.step;
+  return { ...query, similarShow: Math.min(next, RESULTS_WINDOW.max) };
 }

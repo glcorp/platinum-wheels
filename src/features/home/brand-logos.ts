@@ -20,8 +20,10 @@
    are spread out, including across the loop's seam (Nexen → Michelin).
 
    Every brand here is carried by the loaded catalogue. `BRANDS` in
-   `src/lib/site.ts` is a different list (the /about page's wordmarks) and is
-   not read here.
+   `src/lib/site.ts` is a different list (the /about page's grid, D182) and is
+   not read here. `BRAND_LOGOS` is the ticker's list and order; the About
+   grid also draws `MORE_BRAND_LOGOS`, logos the ticker does not show (the
+   owner has not asked for them there). `brandLogo(name)` finds either.
    --------------------------------------------------------------------------- */
 
 export type BrandLogo = {
@@ -54,3 +56,23 @@ export const BRAND_LOGOS: readonly BrandLogo[] = [
   { name: "General Tire", slug: "general-tire", aspect: 7.767, scale: 0.85 },
   { name: "Nexen", slug: "nexen", aspect: 2.515, scale: 1.2 },
 ];
+
+/** Logos the About grid draws and the ticker does not (D182). Same rules as
+ *  above: the brand's own vector, flattened, sources in
+ *  `design/ASSET-CREDITS.md`. `scale` starts at sqrt(5 / aspect), clamped to
+ *  0.62–1.2, then checked by eye in the grid. A brand in `BRANDS` with no entry
+ *  in either list shows as a text wordmark. */
+export const MORE_BRAND_LOGOS: readonly BrandLogo[] = [
+  { name: "Braelin", slug: "braelin", aspect: 8.186, scale: 0.78 },
+  { name: "Fast Wheels", slug: "fast-wheels", aspect: 4.039, scale: 1.11 },
+  { name: "Niche", slug: "niche", aspect: 7.322, scale: 0.83 },
+];
+
+/** The logo for a brand name as `BRANDS` spells it, or `undefined` when no
+ *  clean vector exists and the brand shows as a text wordmark. */
+export function brandLogo(name: string): BrandLogo | undefined {
+  return (
+    BRAND_LOGOS.find((logo) => logo.name === name) ??
+    MORE_BRAND_LOGOS.find((logo) => logo.name === name)
+  );
+}

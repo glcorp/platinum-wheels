@@ -8,8 +8,9 @@
  * a tire size brings the 17-inch wheels that suit it and leaves out the ones
  * too wide, a part number is found with or without its punctuation, a hidden
  * product never shows, no price reaches the page while prices are off, the
- * page is `noindex`, works with JS off, and the header's icon opens a field
- * that searches.
+ * page is `noindex`, works with JS off, the header's box searches from 720
+ * and its icon opens a field below that (D177), and every group shows one row
+ * then `See all` on its category page (D178).
  */
 import { test, expect, type Page } from "@playwright/test";
 import { SLUG, settle } from "../helpers";
@@ -98,46 +99,76 @@ test("never indexed, and no price leaves the server", async ({ request }) => {
   expect(html).not.toMatch(/\$100\b/);
 });
 
-test("works with JavaScript off", async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
+/** The header's search: a box from 720, an icon below (D177). */
+const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1440) < 720;
+
+test("works with JavaScript off", async ({ browser, baseURL }, info) => {
+  const phone = info.project.name.startsWith("iphone");
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    baseURL,
+    ...(phone ? { viewport: { width: 390, height: 844 } } : {}),
+  });
   const page = await context.newPage();
   await page.goto("/tires");
-  // The header icon is a plain link to /search until a script runs.
-  const icon = page.getByRole("banner").getByRole("link", { name: "Search" });
-  await expect(icon).toHaveAttribute("href", "/search");
-  await icon.click();
-  await expect(page).toHaveURL(/\/search$/);
-  await page.getByLabel("Tire size, wheel size, part number or brand").fill("225/60R17");
-  await page.getByLabel("Tire size, wheel size, part number or brand").press("Enter");
+  if (phone) {
+    // The header icon is a plain link to /search until a script runs.
+    const icon = page.getByRole("banner").getByRole("link", { name: "Search" });
+    await expect(icon).toHaveAttribute("href", "/search");
+    await icon.click();
+    await expect(page).toHaveURL(/\/search$/);
+    await page.getByLabel("Tire size, wheel size, part number or brand").fill("225/60R17");
+    await page.getByLabel("Tire size, wheel size, part number or brand").press("Enter");
+  } else {
+    // The header box is a plain GET form.
+    const box = page.getByRole("banner").getByRole("searchbox");
+    await box.fill("225/60R17");
+    await box.press("Enter");
+  }
   await expect(page).toHaveURL(/\/search\?q=225%2F60R17/);
   await expect(page.locator(`main a[href="/products/${TIRE_225}"]`).first()).toBeVisible();
   await context.close();
 });
 
-test("the header icon opens a field that searches, and Esc closes it", async ({ page }) => {
+test("the header search sits left of the call button and searches", async ({ page }) => {
   await page.goto("/tires");
   await settle(page);
-  const trigger = page.getByRole("banner").getByRole("button", { name: "Search", exact: true });
-  await trigger.click();
-  const field = page.getByRole("banner").getByRole("searchbox");
-  await expect(field).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(field).toHaveCount(0);
-  await expect(trigger).toBeFocused();
+  const banner = page.getByRole("banner");
+  const call = banner.locator('a[href^="tel:"]:visible').first();
 
-  await trigger.click();
-  await page.keyboard.type("2256017");
-  await page.keyboard.press("Enter");
+  if (isPhone(page)) {
+    const trigger = banner.getByRole("button", { name: "Search", exact: true });
+    expect((await trigger.boundingBox())!.x).toBeLessThan((await call.boundingBox())!.x);
+    await expect(trigger).toHaveCSS("cursor", "pointer");
+    await trigger.click();
+    const field = banner.getByRole("searchbox");
+    await expect(field).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(field).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await page.keyboard.type("2256017");
+    await page.keyboard.press("Enter");
+  } else {
+    const box = banner.getByRole("searchbox");
+    await expect(box).toHaveAttribute("placeholder", "Search");
+    expect((await box.boundingBox())!.x).toBeLessThan((await call.boundingBox())!.x);
+    await box.click();
+    await page.keyboard.type("2256017");
+    await page.keyboard.press("Enter");
+  }
   await expect(page).toHaveURL(/\/search\?q=2256017/);
-  await expect(page.getByRole("banner").getByRole("searchbox")).toHaveCount(0);
   await expect(page.locator(`main a[href="/products/${TIRE_225}"]`).first()).toBeVisible();
 });
 
-test("Show more raises one group and keeps the others", async ({ page }) => {
+test("each group shows one row, then See all on its category page", async ({ page }) => {
   await search(page, "tires");
   const tires = page.locator("#search-tires");
-  await expect(tires.locator("article")).toHaveCount(8);
-  await tires.getByRole("link", { name: "Show more" }).click();
-  await expect(page).toHaveURL(/more=tires/);
-  await expect(page.locator("#search-tires article")).not.toHaveCount(8);
+  await expect(tires.locator("article")).toHaveCount(4);
+  await expect(tires.getByRole("link", { name: "Show more" })).toHaveCount(0);
+  const all = tires.getByRole("link", { name: "See all tires" });
+  await expect(all).toHaveAttribute("href", "/tires");
+  // Free words the category page cannot filter on still get a link (D178).
+  await search(page, "zeta antarctica");
+  await expect(page.locator("#search-tires").getByRole("link", { name: "See all tires" })).toBeVisible();
 });

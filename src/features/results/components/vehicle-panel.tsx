@@ -13,9 +13,11 @@
      per page in `results-page.tsx`.
 
    The finder submits to the category's own route and carries the page's
-   other filters (WDG-17, owner 2026-09-30: "Keep filters, stay empty"); size
-   is left out because the new vehicle derives it, `show` because a new search
-   resets the Load-more window (D44). With a vehicle chosen the sheet also
+   other filters (WDG-17, owner 2026-09-30: "Keep filters, stay empty"),
+   picked size included since D176: a size beside a car keeps the car (D170),
+   so adding a car no longer drops the size (owner, 2026-10-11: "when I added
+   the vehicle, the tire size got removed, keep them too"). `show` and
+   `similar` are left out because a new search resets the windows (D44). With a vehicle chosen the sheet also
    offers `Remove vehicle`, the same URL without the car.
    --------------------------------------------------------------------------- */
 
@@ -124,6 +126,13 @@ function carriedFilters(query: ResultsQuery): Array<[string, string]> {
   const config = CATEGORY_CONFIG[query.category];
   const chipParam = config.chips?.param;
   const carried: Array<[string, string]> = [
+    /* D176: the picked size, in the selects' own params (`width`, `profile`,
+       `rim`; `diameter`, `width`, `bolt`). The sheet's finder draws no size
+       field, so nothing else in the form sends these names. */
+    ...(config.size?.fields ?? []).flatMap((field): Array<[string, string]> => {
+      const value = query.size[field.param] ?? null;
+      return value === null || value === "" ? [] : [[field.param, value]];
+    }),
     ...(chipParam === undefined
       ? []
       : query.chips.map((chip): [string, string] => [chipParam, chip])),
@@ -161,7 +170,12 @@ export function VehiclePanel({ query }: { query: ResultsQuery }) {
           <span className="text-ink font-bold">{label}</span>
           {". "}
           <Link
-            href={resultsHref({ ...query, vehicle: null, show: RESULTS_WINDOW.best })}
+            href={resultsHref({
+              ...query,
+              vehicle: null,
+              show: RESULTS_WINDOW.best,
+              similarShow: RESULTS_WINDOW.similar,
+            })}
             className="text-ink underline underline-offset-4 hover:decoration-accent active:opacity-70"
           >
             Remove vehicle

@@ -134,9 +134,17 @@ export const PRIMARY_CONTACT = {
 } as const;
 
 /**
- * Brands carried in the mockups (DESIGN.md contact block). House brands first,
- * then the majors. Rendered as text wordmarks — no logo files exist, and
- * DESIGN.md §5 allows logos only if supplied as monochrome white.
+ * The brands the /about page shows (D182; owner, 2026-10-11: "add more brnads
+ * and their logo like on the main ticker"). 24, so the grid's rows are full
+ * at 2 and 4 across. House brands first, then tires, then wheels; within
+ * each, the order is the owner's pick. Chosen from the loaded catalogue by
+ * product count (tires and wheels), with the house brands and the well-known
+ * tire makers kept; Hankook (38 products) was dropped by the owner.
+ *
+ * Each name is matched to a logo by `brandLogo()` in
+ * `src/features/home/brand-logos.ts`; a brand with no clean vector logo
+ * shows as a text wordmark. Spelled as that file spells it where a logo
+ * exists. The home ticker has its own list and does not read this one.
  */
 export const BRANDS = [
   "Zeta",
@@ -149,6 +157,18 @@ export const BRANDS = [
   "Continental",
   "Pirelli",
   "Goodyear",
-  "Hankook",
-  "Toyo",
+  "Toyo Tires",
+  "Yokohama",
+  "Nexen",
+  "Nitto",
+  "Sentali",
+  "Fuel Off-Road",
+  "Braelin",
+  "Fast Wheels",
+  "KMC",
+  "GT Off-Road",
+  "Black Rhino",
+  "American Racing",
+  "Rotiform",
+  "Niche",
 ] as const;
