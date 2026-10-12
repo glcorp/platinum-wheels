@@ -1,5 +1,7 @@
 # QA of streams A–D and PR #59 — 2026-10-11 to 2026-10-13
 
+**Update 2026-10-13: every P2 and P3 below is fixed (D184) or ruled (D185); see §8. The P1 stays open by the owner's ruling.**
+
 A rigorous QA pass over everything the four parallel streams built (D161–D171, D173, D174) and the
 follow-up PR #59 (D175–D182), front end and back end, on every device class the suite knows. Owner brief,
 2026-10-11. **Report only: nothing under `src/` was changed.** Fixes wait for the owner's approval, item by
@@ -243,10 +245,65 @@ wordmark leaves its cell (the brand names' 1 px `sr-only` text sits just outside
 |---|---|---|
 | PR60-1 | The widest logos are now 5–9 px tall: at 1100 Nitto 5.3, Michelin 6.1, Toyo Tires 6.5, Black Rhino 6.6, Braelin 7.5, Bridgestone 7.6, Niche 8.4, Yokohama 8.7 (each capped by its 61 px cell); at 320 the smallest is 5.4 px. Black Rhino reads as a faint line. D182 had dropped 6 across because "wide marks fell to 10px tall"; D183 now goes to 8 across. Evidence `qa/out/PR60/about-1100-prod.jpg`. | P3 owner decision: keep, or raise the floor for wide marks (fewer across, or a min height) |
 
-## 7. Needs you
+## 7. Needs you (as of the report; see §8 for what was done)
 
 1. **Approve fixes**, item by item. Recommended now: PDP-1 (P1, two CSS lines), SEARCH-1, SEARCH-2,
    SEARCH-3, LAYOUT-1, MODEL-1, GATE-1, HOMEFIND-4, FIT-1 and the small P3 copy and doc fixes.
 2. **Decide CART-2** (a too-fast quote shows "sent" and is not emailed).
 3. **The nine owner questions** in §3 (none blocks launch).
 4. **Check PDP-1 on a real iPad or Mac Safari** once fixed, and the iOS Model picker on your iPhone.
+
+## 8. Fixes applied, 2026-10-13 (D184, D185)
+
+Owner, 2026-10-13: *"fix all p2 and p3"*, *"p1 is not important"*, then rulings on every decision item
+(D185). Five Sonnet agents fixed on disjoint files and branches; the coordinator merged them, wrote the
+`globals.css` and register changes, and two fresh Sonnet agents re-ran every original failing check on the
+merged build (`qa-streams-report` at `b07f55c`, then two doc-only commits).
+
+**Gate on the merged build:** `npm run check` clean; `npm run test:e2e:fixture` pass 1 **177 passed, 2
+skipped, 0 failed, 0 flaky** (was 155: the fix agents added tests to `search`, `finder-fit`, `listings`,
+`cart-send` and `pay-states`), pass 2 (indexing on) **32 passed**.
+
+| Finding | Status | Re-check (engines) |
+|---|---|---|
+| PDP-1 (P1) | **Open by owner ruling** (*"p1 is not important"*); fix in §3 if wanted | — |
+| SEARCH-1 | Fixed: the link carries the three threaded types; `12x1.5` lands on 103 (47 + 35 + 21, the 11 spacers left out) | PASS, FULL + FIX |
+| SEARCH-2 | Fixed: the page field follows the URL | PASS, Chromium + WebKit |
+| SEARCH-3 | Fixed: the loader starts on `next/form` search submits; never on a fast one | PASS, Chromium + WebKit |
+| SEARCH-4 | Fixed: `Tires in 245/35R19.`; `winter rims` says the season is left out | PASS |
+| SEARCH-5 | Fixed: named landmarks; axe 0 | PASS |
+| SEARCH-6 | Fixed: `enabled:cursor-pointer` on `Button` | PASS |
+| SEARCH-7 | Ruled and built (D185(6)): a checked car rides into `/search` and its `See all` links; forged cars dropped | PASS, incl. JS off |
+| SEARCH-8 | Fixed: focus lands on the result count | PASS, Chromium + WebKit |
+| LAYOUT-1 | Fixed: the no-matches line wraps | PASS, 3 engines, 0 px overflow |
+| LAYOUT-2 | Fixed: the vehicle label wraps to two lines, button height unchanged | PASS |
+| LAYOUT-3 | Ruled and built (D185(4)): under 500 px tall the rows scroll; header pinned; scroll padding follows | PASS, focus never covered |
+| MODEL-1 | Fixed: JS-off sheet panel on screen | PASS, 12/12 cells |
+| MODEL-2 | Hardened: Model re-narrows on mount, `load`, `pageshow` | PASS, 180 runs, 0 empty |
+| GATE-1, GATE-2 | Fixed: forced-colours selection on the switch and the current thumbnail; normal look unchanged (0 channel difference) | PASS, Chromium + Firefox (+ WebKit for GATE-2) |
+| GATE-3, GATE-4 | Fixed: the two specs run on phone projects | PASS (17/17, 12/12) |
+| HOMEFIND-2 | Fixed: Back shows Tires with the Vehicle radio; WebKit still restores hidden select values (harmless, noted) | PASS, 18/18 |
+| HOMEFIND-3 | Ruled and built (D185(7)): Season narrows by size; 315/70R22 offers all-weather only | PASS, 15/15 vs SQL (fresh build; see note) |
+| HOMEFIND-4 | Fixed: at 320 Bolt pattern has its own row; CTA still on the first screen | PASS, Chromium + WebKit |
+| HOMEFIND-5 | Fixed: no empty keys | PASS |
+| FIT-1 | Fixed: `Other sizes` / `Similar products` include discontinued siblings | PASS, FULL |
+| FIT-2, PDP-5, COPY-7 | Docs corrected | — |
+| FIT-3 | Ruled and built (D185(3)): *"We don't have fit data for your <car> yet, so everything is shown."* | PASS, 10/10 |
+| PDP-3 | Fixed: decimal 50 MB with matching messages; 0-byte refused | PASS, Chromium |
+| PDP-4 | Ruled and built (D185(8)): back morph from any photo | PASS, Chromium + WebKit |
+| CART-1, CART-3, CART-5 | Fixed | PASS |
+| CART-2 | Ruled and built (D185(1)): 1 s timer | PASS (0.5 s silent, 1.2 s real path) |
+| CART-4 | Ruled and built (D185(2)): `ET` on sent times | PASS, 3 time zones |
+| COPY-1 | Fixed: branded pay 404 renders without JS (proxy check + same-deployment fetch) | PASS, 3 engines; Vercel run pending |
+| COPY-3 | Ruled and built (D185(9)): redrawn 16 and 32 px icon frames | PASS (frames 16/32/48) |
+| PR60-1 | Ruled and built (D185(5)): wide About logos take two cells; ≥ 12 px from 390 up, 10.7–11.9 px for four marks at 320 | PASS, 5 widths |
+
+**Notes from the re-check.** (1) A local server whose `.next` cache predates the fix served an empty Season
+list (`TireCombo` gained a sixth part); a clean build is correct, and Vercel's cache key carries the
+deployment, so production cannot see a stale entry. (2) `/pay/%FF` on a non-production host answers the
+storefront 404; the production pay host routes it to the pay 404 (not runnable locally). (3) Not verified:
+real Safari and iOS, WebKit's Tab walk and axe in WebKit for every page, the pay 404's same-deployment
+fetch and the 1 s timer on Vercel.
+
+**For the owner:** confirm the redrawn tab icon (sheets in the session scratchpad, `qa/fx/ICON/`); the
+photo cap is now exactly 50 MB, 2.4 MB tighter than D166's 50 MiB.
