@@ -42,7 +42,8 @@ export interface PhotoView {
   alt: string;
 }
 
-const MB = 1024 * 1024;
+/** Decimal megabytes, the unit the limit is stated in (`PHOTO_LIMITS`, D184). */
+const MB = 1_000_000;
 
 export function ProductPhotos({
   productId,
@@ -81,8 +82,13 @@ export function ProductPhotos({
     if (!(PHOTO_LIMITS.contentTypes as readonly string[]).includes(file.type)) {
       return `${file.name}: use a JPEG, PNG or WebP photo.`;
     }
+    if (file.size === 0) {
+      return `${file.name}: the file is empty.`;
+    }
     if (file.size > PHOTO_LIMITS.maxBytes) {
-      return `${file.name}: ${(file.size / MB).toFixed(1)} MB is over the ${PHOTO_LIMITS.maxMegabytes} MB limit.`;
+      /* Rounded UP to a tenth, so a file a few bytes over reads 50.1 MB and
+         never "50.0 MB is over the 50 MB limit". */
+      return `${file.name}: ${(Math.ceil(file.size / (MB / 10)) / 10).toFixed(1)} MB is over the ${PHOTO_LIMITS.maxMegabytes} MB limit.`;
     }
 
     const ticketForm = baseForm();

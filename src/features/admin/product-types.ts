@@ -160,9 +160,11 @@ export const PHOTO_FIELD = {
  *  only so a client island can state it without importing that module. */
 export const PHOTO_LIMITS = {
   perProduct: 8,
-  /** Stated to staff in every message about the limit. */
+  /** Stated to staff in every message about the limit. Decimal megabytes, the
+   *  unit Finder and Explorer show, so `maxBytes` is 50 MB to the byte (D184,
+   *  QA PDP-3: it was 50 MiB = 52.4 MB under an "MB" label). */
   maxMegabytes: 50,
-  maxBytes: 50 * 1024 * 1024,
+  maxBytes: 50 * 1_000_000,
   contentTypes: ["image/jpeg", "image/png", "image/webp"],
 } as const;
 

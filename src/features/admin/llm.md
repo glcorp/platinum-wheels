@@ -51,7 +51,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   validate with `parseProductInput()` in between.
 - [`photo-actions.ts`](photo-actions.ts) — `"use server"`, D117, storage D126b. `requestPhotoUpload` (signs a
   10-minute R2 link for `PUT`s of one type at one staging key `uploads/<product>/<stem>-<id>`), `addPhoto`
-  (takes that key, checks it with a `HEAD`, reads exactly that version with a 50 MB cap (D166; was 10 MB), makes the 480 and
+  (takes that key, checks it with a `HEAD`, reads exactly that version with a 50 MB cap (D166; was 10 MB; **50,000,000 bytes, decimal, the number Finder shows, D184**), makes the 480 and
   1000 sizes, stores them under `products/<product>/`,
   deletes the original, then records the row), `removePhoto` (row, then both sizes), `movePhoto`. Each
   calls `requireAdminAction(formData)` first. The only admin file that writes to the bucket.
@@ -156,7 +156,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   marked immutable, so a copy Cloudflare or a browser cached may answer the (unlinked) URL until it
   expires.
 - **A photo is recorded only after R2 confirms it** (D117, D126b): `addPhoto` accepts only a staging key
-  this product's handshake could have issued, `HEAD`s it for an allowed type within 50 MB (D166), and records the
+  this product's handshake could have issued, `HEAD`s it for an allowed type within 50 MB (D166, decimal, D184), and records the
   stored `full` URL, never one the browser sends.
 
 ## Decisions
