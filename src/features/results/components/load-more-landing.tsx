@@ -50,7 +50,9 @@
    never on Back / Forward to a `#result-N` URL, never on a filter change
    (the islands' `resultsHref` carries no fragment). So the press records the
    fragment it asked for, and the next commit that changes `show` honours it
-   only if the URL still carries it, then forgets it either way.
+   only if the URL still carries it, then forgets it either way. Since D175
+   `May also fit` has its own `Show more` (`?similar=`), so the trigger is the
+   pair of windows, `show:similar`, and either press lands.
    --------------------------------------------------------------------------- */
 
 import { useEffect, useLayoutEffect } from "react";
@@ -64,11 +66,11 @@ const LOAD_MORE_ATTR = "data-load-more";
 let pendingId: string | null = null;
 
 export interface LoadMoreLandingProps {
-  /** `view.query.show`. Every `Load more` press changes it. */
-  show: number;
+  /** `show:similar` (D175). Every `Load more` and `Show more` press changes it. */
+  windows: string;
 }
 
-export function LoadMoreLanding({ show }: LoadMoreLandingProps) {
+export function LoadMoreLanding({ windows }: LoadMoreLandingProps) {
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0) return;
@@ -97,14 +99,6 @@ export function LoadMoreLanding({ show }: LoadMoreLandingProps) {
     const card = document.getElementById(id);
     if (card === null) return;
 
-    /* D165: the similar cards sit in the `May also fit` disclosure. The
-       server renders it open whenever a press grew it, and the press came
-       from inside it, so it is open already; a list the reader closed in
-       between is opened here, because a card inside a closed `<details>` has
-       no box to scroll to or focus. */
-    const list = card.closest("details");
-    if (list !== null && !list.open) list.open = true;
-
     /* `instant`, not `auto`: `<html>` is `scroll-behavior: smooth` since D92b
        and `auto` defers to it, which is the glide this file exists to avoid.
        The offset is CSS: `scroll-padding-top` under the sticky bar below
@@ -121,7 +115,7 @@ export function LoadMoreLanding({ show }: LoadMoreLandingProps) {
       card.tabIndex = -1;
       card.focus({ preventScroll: true });
     }
-  }, [show]);
+  }, [windows]);
 
   return null;
 }

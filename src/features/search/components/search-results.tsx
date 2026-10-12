@@ -26,7 +26,12 @@ const HEADING = "display text-ink text-display-32 md:text-display-40";
 const HEAD_STACK = "flex flex-col gap-2.5 md:gap-3";
 const SUPPORT = "text-ink-muted text-15 leading-body max-w-measure";
 const COUNT = "text-ink-muted text-14 leading-flat tabular-nums md:text-15";
-const CARD_GRID = "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-4";
+/* D180: a phone shows 3 cards a group, not 4 (owner, 2026-10-11: "in
+   mobile dont display more than 3 options for each search. user should not
+   scroll so much"); the fourth is in the page for the 2-up and 4-up grids
+   and hidden below 720, where cards stack one a row. */
+const CARD_GRID =
+  "grid grid-cols-1 gap-3 max-sm:*:nth-[n+4]:hidden sm:grid-cols-2 sm:gap-4 md:grid-cols-4";
 /* 1-up below 720 (the viewport less 16px gutters), 2-up to 1099 (under
    50vw), 4-up in the 1344px frame from 1100 (at most 324px). */
 const CARD_SIZES = "(min-width: 1100px) 336px, (min-width: 720px) 50vw, 100vw";
@@ -46,12 +51,6 @@ function counted(category: ProductCategory, total: number): string {
 
 export function groupId(category: ProductCategory): string {
   return `search-${category}`;
-}
-
-/** `/search?q=…&more=tires#search-tires`: one group raised to `GROUP_MORE`. */
-function moreHref(query: string, category: ProductCategory): string {
-  const params = new URLSearchParams({ q: query, more: category });
-  return `${ROUTES.search}?${params.toString()}#${groupId(category)}`;
 }
 
 /** Inches, in half-inch steps inside the range, as a shopper reads them. */
@@ -96,14 +95,10 @@ export function readAs(parsed: ParsedSearch): string | null {
 
 function Group({
   group,
-  query,
-  expanded,
   priority,
   alone,
 }: {
   group: SearchGroup;
-  query: string;
-  expanded: boolean;
   priority: boolean;
   /** The only group: the summary above already says its count. */
   alone: boolean;
@@ -129,25 +124,22 @@ function Group({
           />
         ))}
       </div>
-      {hidden > 0 || seeAll !== null ? (
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          {hidden > 0 && !expanded ? (
-            <Button variant="secondary" size="compact" href={moreHref(query, category)} scroll={false}>
-              Show more
-            </Button>
-          ) : null}
-          {seeAll !== null ? (
-            <Button variant="tertiary" size="compact" href={seeAll.href}>
-              {seeAll.label}
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-      {hidden > 0 && expanded ? (
-        <p className={SUPPORT}>
-          {`Showing ${COUNT_FORMAT.format(products.length)} of ${counted(category, total)}. Add a brand or a size to narrow it.`}
-        </p>
-      ) : null}
+      {/* D178: one row, then the category page for the rest, on every
+          group. The `Load more` treatment (accent outline, full width on a
+          phone, its own row from 1100), the results page's own "more of
+          this list" control. With every card already shown it still offers
+          the page, quieter, for its filters. */}
+      <div className="md:flex md:justify-start">
+        <Button
+          variant={hidden > 0 ? "accent" : "secondary"}
+          size={hidden > 0 ? "load" : "compact"}
+          fullWidth
+          className="md:w-auto"
+          href={seeAll.href}
+        >
+          {seeAll.label}
+        </Button>
+      </div>
     </section>
   );
 }
@@ -251,8 +243,6 @@ export function SearchResults({
         <Group
           key={group.category}
           group={group}
-          query={query}
-          expanded={outcome?.expanded === group.category}
           priority={index === 0}
           alone={groups.length === 1}
         />

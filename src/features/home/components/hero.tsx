@@ -121,7 +121,8 @@ export function Hero() {
             data-probe="hero-eyebrow"
             className="label text-accent text-11 leading-relaxed tracking-14 sm:text-12 sm:leading-flat sm:tracking-16"
           >
-            Brampton · Tires · Wheels · Accessories
+            {/* D179 (owner, 2026-10-11): "remove bramption from display". */}
+            Tires · Wheels · Accessories
           </p>
 
           <h1

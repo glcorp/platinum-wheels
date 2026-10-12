@@ -5,13 +5,18 @@ import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import type { Product } from "@/features/catalog/types";
 import { LoadMoreLanding } from "@/features/results/components/load-more-landing";
-import { clearFilters, resultsHref, withMore } from "@/features/results/query";
+import {
+  clearFilters,
+  resultsHref,
+  withMore,
+  withMoreSimilar,
+} from "@/features/results/query";
 import { RESULTS_WINDOW, type ResultsView, type Vehicle } from "@/features/results/types";
 import { PRIMARY_CONTACT } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
-   ResultsGrid — `Best matches`, `May also fit` (D165, was `Similar matches`),
-   the load-more window and
+   ResultsGrid — `Best matches`, `May also fit` (D165, was `Similar matches`;
+   always open with its own `Show more` since D175), the load-more windows and
    the empty state. Server Component: the window is a URL read, not state
    (D44), and `Load more` is a `?show=all` link, not a button.
 
@@ -273,104 +278,84 @@ export function ResultsGrid({ view }: ResultsGridProps) {
      counts (D47(7)). The lists arrive already cut to that window: the
      database returns one page and the totals, never the whole set (D108b).
 
-     `Load more` raises `?show=` by one step. It has something to do while
-     best matches remain and the window is below its ceiling, or, on the first
-     press, while the similar row is still at three of more. */
+     `Load more` raises `?show=` by one step while best matches remain below
+     the ceiling; `Show more` does the same for `?similar=` (D175). */
   const { best, similar } = view;
   /* D122: the search vehicle rides on every card's `Add to cart`. `query.ts`
      has already dropped any vehicle the finder does not offer (D91b). */
   const vehicle = view.query.vehicle;
   const bestHidden = view.bestTotal - best.length;
   const similarHidden = view.similarTotal - similar.length;
-  const atCeiling = view.query.show >= RESULTS_WINDOW.max;
-  const growsBest = bestHidden > 0 && !atCeiling;
-  /* Once best is fully shown, `Load more` keeps growing the similar row
-     (`search.ts` sizes it) until the window's ceiling. */
-  const growsSimilar = bestHidden === 0 && similarHidden > 0 && !atCeiling;
-  const canLoadMore = growsBest || growsSimilar;
-  /* D133 — where `Load more` lands: the first card the press adds. That is
-     the next best match whenever best grows (with a size set it grows ABOVE
-     the similar row and the button, which is why holding the scroll showed
-     the reader the wrong list), else the fourth similar card on the one press
-     that only opens the similar row. Both exist on arrival: `bestHidden > 0`
-     guarantees card `best.length + 1`, and the similar-only press is taken
-     only while `similarHidden > 0`. */
-  const landingId = growsBest
-    ? `result-${best.length + 1}`
-    : `similar-${similar.length + 1}`;
 
-  /* The ceiling note and `Load more` sit under the list they grow: under
-     `Best matches` while best is what grows or is capped, else inside
-     `May also fit` (D165) for the presses that grow the similar row.
-     Rendered at the foot of the page they read as belonging to similar
-     (owner, 2026-10-06). `underBest` drops the page-foot padding, which
-     exists to space the button from the footer, not from another section. */
-  const ceilingHit = atCeiling && bestHidden > 0;
-  const ceilingSimilar = atCeiling && bestHidden === 0 && similarHidden > 0;
-  const underBest = growsBest || ceilingHit;
-  /* D165 — `May also fit` renders open when best is empty (its cards are then
-     the page's only cards), or when the last `Load more` press grew this
-     list: the press before it already showed every best match, which is
-     `show - step >= bestTotal` (the default window, `show` 6, never
-     qualifies). That press's button, ceiling note and landing card are
-     inside the list, so it must arrive open, with JavaScript or without. */
-  const similarOpen =
-    view.bestTotal === 0 ||
-    view.query.show - RESULTS_WINDOW.step >= view.bestTotal;
-  const ceiling = ceilingHit || ceilingSimilar ? (
+  /* Two windows, two buttons (D175). `Load more` under `Best matches` grows
+     best only (`?show=`); `Show more` under `May also fit` grows that list
+     only (`?similar=`). Each lands on the first card its press adds (D133):
+     `#result-N` or `#similar-N`, both of which exist on arrival because the
+     press is offered only while cards are hidden. */
+  const bestAtCeiling = view.query.show >= RESULTS_WINDOW.max;
+  const similarAtCeiling = view.query.similarShow >= RESULTS_WINDOW.max;
+  const growsBest = bestHidden > 0 && !bestAtCeiling;
+  const growsSimilar = similarHidden > 0 && !similarAtCeiling;
+
+  const ceilingNote = (shown: number, total: number, noun: string) => (
     <p data-probe="load-ceiling" className={SUPPORT}>
-      {ceilingHit
-        ? `Showing ${COUNT_FORMAT.format(best.length)} of ${COUNT_FORMAT.format(view.bestTotal)}. Filter by size or brand to narrow it down.`
-        : `Showing ${COUNT_FORMAT.format(similar.length)} of ${COUNT_FORMAT.format(view.similarTotal)} similar. Filter by size or brand to narrow it down.`}
+      {`Showing ${COUNT_FORMAT.format(shown)} of ${COUNT_FORMAT.format(total)}${noun}. Filter by size or brand to narrow it down.`}
     </p>
-  ) : null;
-  const loadMore = !canLoadMore ? null : (
-    /* D: its own row, `justify-content:center` + `padding-bottom:120px`
-       (results-desktop.html:498) — the 120px is why the page's footer
-       wrapper adds no desktop margin. M: full width inside the flow,
-       `margin-top:12px` (results-mobile.html:299). Under the best grid it
-       is a flex item of that section, which already owns the side padding
-       and the gap, so it adds neither.
-       The `accent` variant is the drawn treatment exactly: `1px --accent`
-       border, `--text` ink (`--on-photo` is the same #F4F4F5), filling
-       lime with `--on-accent` ink on hover (`.x77:hover`). Tailwind's
-       `hover:` compiles to `@media (hover:hover)`, so the mobile artboard's
-       missing hover rule is honoured for free (D17). */
-    <div
-      data-probe="load-more"
-      className={
-        underBest
-          ? "md:flex md:justify-center"
-          : "mt-3 md:mt-0 md:flex md:justify-center"
-      }
-    >
+  );
+  const bestCeiling =
+    bestAtCeiling && bestHidden > 0
+      ? ceilingNote(best.length, view.bestTotal, "")
+      : null;
+  const similarCeiling =
+    similarAtCeiling && similarHidden > 0
+      ? ceilingNote(similar.length, view.similarTotal, " similar")
+      : null;
+
+  /* D: its own row, `justify-content:center` (results-desktop.html:498).
+     M: full width inside the flow. Both buttons are flex items of their
+     section, which already owns the side padding and the gap.
+     The `accent` variant is the drawn treatment exactly: `1px --accent`
+     border, `--text` ink (`--on-photo` is the same #F4F4F5), filling
+     lime with `--on-accent` ink on hover (`.x77:hover`). Tailwind's
+     `hover:` compiles to `@media (hover:hover)`, so the mobile artboard's
+     missing hover rule is honoured for free (D17). */
+  const moreButton = (probe: string, href: string, label: string) => (
+    <div data-probe={probe} className="md:flex md:justify-center">
       <Button
         variant="accent"
         size="load"
         fullWidth
         className="md:w-auto"
-        href={`${resultsHref(withMore(view.query))}#${landingId}`}
+        href={href}
         /* The hook `LoadMoreLanding` listens for. Written out, not
            imported: every export of a "use client" module reaches a
            Server Component as a client reference, never as its value. */
         data-load-more=""
-        /* `scroll={false}`: this is a `?show=` link (D44), and Next
-           scrolls a navigation to the top by default — so pressing
-           `Load more` threw the reader back to the header, away from the
-           cards it had just revealed. Measured before the fix: scrollY
-           2146 → 0 (D68).
-           D133: the href names the first new card (`#result-7`): without
-           JS the browser lands on it; with JS `scroll={false}` still keeps
-           Next out of it (its fragment scroll can glide short, D91b, and
-           `HashScroll` only corrects pathname changes) and
-           `LoadMoreLanding` scrolls there instantly and moves focus to
-           that card's product link. */
+        /* `scroll={false}`: a `?show=` / `?similar=` link (D44), and Next
+           scrolls a navigation to the top by default, which threw the reader
+           back to the header (D68). The href names the first new card: without
+           JS the browser lands on it; with JS `LoadMoreLanding` scrolls there
+           instantly and moves focus to that card's product link (D133). */
         scroll={false}
       >
-        Load more
+        {label}
       </Button>
     </div>
   );
+  const loadMore = growsBest
+    ? moreButton(
+        "load-more",
+        `${resultsHref(withMore(view.query))}#result-${best.length + 1}`,
+        "Load more",
+      )
+    : null;
+  const showMore = growsSimilar
+    ? moreButton(
+        "similar-more",
+        `${resultsHref(withMoreSimilar(view.query))}#similar-${similar.length + 1}`,
+        "Show more",
+      )
+    : null;
 
   return (
     <div className="flex flex-col md:gap-20">
@@ -462,88 +447,51 @@ export function ResultsGrid({ view }: ResultsGridProps) {
             vehicle={vehicle}
           />
         )}
-        {underBest ? (
-          <>
-            {ceiling}
-            {loadMore}
-          </>
-        ) : null}
+        {bestCeiling}
+        {loadMore}
       </section>
 
       {/* Omitted entirely when there is nothing similar — with no size in the
           URL every result is a best match (D47(8)).
 
-          D165 — `May also fit` is a collapsible list (owner, 2026-10-11: "We
-          can give a collapsible list instead of showing them always."). A
-          native `<details>`, so it opens and closes with JavaScript off, the
-          D44/D45 pattern; the `<h2>` sits inside the `<summary>` (one heading
-          is allowed there), so the outline is unchanged. It renders closed
-          while there are best matches, and open when best is empty (the list
-          is then the page's only cards) or when the last `Load more` press
-          grew this list (`similarOpen`, below): that press's button lives
-          inside it, and a no-JS arrival at `#similar-N` must land on an open
-          list. A list the reader opened stays open across filter changes:
-          React only writes `open` when the prop itself changes. The global
-          `details` fade (globals.css, D67/D92b) animates the body.
-          `DEVIATIONS.md` #132. */}
+          D175 — always open, as drawn: the hairline, the `<h2>` and one row
+          of cards (3, the desktop artboard's own count, D47(7)), then
+          `Show more` while more are hidden. Owner, 2026-10-11, on the D165
+          collapsed list: "this doesn't look right, better to keep like
+          before, show one row and add an option to show more". The heading
+          keeps D165's `May also fit`. `DEVIATIONS.md` #132.
+
+          `md:pb-30`: the 120px page foot the drawn `Load more` row carries
+          (results-desktop.html:498); this section is the page's last, so it
+          carries the foot whether or not `Show more` renders. */}
       {similar.length === 0 ? null : (
-        /* `md:pb-30`: the 120px page foot the drawn `Load more` row carries
-           (results-desktop.html:498). Closed, the list's summary row is the
-           page's last element on desktop and sat flush on the footer's
-           hairline, so the section carries the foot itself and the button
-           and note inside it do not. */
         <section
           data-probe="similar"
           className={`${SECTION} pt-14 md:pb-30`}
         >
-          <details
-            data-probe="similar-details"
-            open={similarOpen}
-            className="group/similar"
-          >
-            {/* `border-top:1px solid --border-strong` + `padding-top:24px`
-                M (results-mobile.html:221); `32px` D (results-desktop.html:383).
-                The whole row is the toggle, at least 44px tall. */}
-            <summary className="border-border-strong text-ink-dim hover:text-ink flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 border-t pt-6 md:pt-8 [&::-webkit-details-marker]:hidden">
-              <h2 data-probe="similar-heading" className={HEADING}>
-                May also fit
-              </h2>
-              <svg
-                aria-hidden="true"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.5}
-                className="shrink-0 transition-transform ease-card duration-150 group-open/similar:rotate-180"
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </summary>
-            {/* The section's own gap, now inside the disclosure: `gap:20px`
-                M, `32px` D. */}
-            <div className="flex flex-col gap-5 pt-5 md:gap-8 md:pt-8">
-              <CardGrid
-                products={similar}
-                probe="similar-grid"
-                anchorPrefix="similar"
-                vehicle={vehicle}
-              />
-              {underBest ? null : (
-                <>
-                  {ceiling}
-                  {loadMore}
-                </>
-              )}
-            </div>
-          </details>
+          {/* `border-top:1px solid --border-strong` + `padding-top:24px` M
+              (results-mobile.html:221); `32px` D (results-desktop.html:383). */}
+          <div className={`${HEAD_STACK} border-border-strong border-t pt-6 md:pt-8`}>
+            <h2 data-probe="similar-heading" className={HEADING}>
+              May also fit
+            </h2>
+          </div>
+          <CardGrid
+            products={similar}
+            probe="similar-grid"
+            anchorPrefix="similar"
+            vehicle={vehicle}
+          />
+          {similarCeiling}
+          {showMore}
         </section>
       )}
 
       {/* D133. Renders nothing; mounted in every state, after every slot the
           live-region note above depends on, so it changes no DOM. */}
-      <LoadMoreLanding show={view.query.show} />
+      <LoadMoreLanding
+        windows={`${view.query.show}:${view.query.similarShow}`}
+      />
     </div>
   );
 }

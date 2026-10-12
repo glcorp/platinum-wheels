@@ -59,7 +59,6 @@ import {
   withPriceBounds,
 } from "./query";
 import {
-  RESULTS_WINDOW,
   type ExtraFacet,
   type FacetOption,
   type Facets,
@@ -716,20 +715,11 @@ async function readCatalogue(
         (fit?.fastener ?? null) !== null ||
         (fit?.centreBore ?? null) !== null ||
         fit?.tpms === false));
-  const expanded = query.show > RESULTS_WINDOW.best;
-
-  /* The similar row's window depends on how many best matches there are only
-     once `Load more` has been pressed (below). On the first view, the one
-     nearly every visit lands on, its window is fixed, so it is read together
-     with the best matches and the facets: one round of reads, not two. */
-  const readSimilar = (limit: number) =>
-    listProducts({
-      ...filters,
-      sizeMatch: "near",
-      sort: query.sort,
-      limit,
-    });
-  const [best, catalog, similarEarly] = await Promise.all([
+  /* D175: the similar row has its own window, `query.similarShow`, so it is
+     read together with the best matches and the facets on every page: one
+     round of reads. It used to grow off best's `Load more` once best was
+     complete, which needed best's total first. */
+  const [best, catalog, similarList] = await Promise.all([
     listProducts({ ...filters, sort: query.sort, limit: query.show }),
     /* The size options narrow on the buyer's own choice, `query.size`, not
        on `size`: a size lent by the vehicle is not shown in the selects, so
@@ -738,32 +728,16 @@ async function readCatalogue(
        a picked wheel size keeps the car's pattern, so only diameters and
        widths that come in it are worth offering. */
     getFacets(filters, sizeFilters(query.size), base),
-    narrows && !expanded ? readSimilar(RESULTS_WINDOW.similar) : null,
+    narrows
+      ? listProducts({
+          ...filters,
+          sizeMatch: "near",
+          sort: query.sort,
+          limit: query.similarShow,
+        })
+      : null,
   ]);
-
-  /* Collapsed the similar row shows 3; the first `Load more` opens it to 12;
-     once the best list is fully shown each further press adds a step to it,
-     the way best grew (owner, 2026-10-06: the button vanished after one press
-     with 136 similar left). `bestEnd` is the `show` value at which best became
-     complete, the first of 6, 30, 54 ... at or past the total. So an expanded
-     page reads the similar row after the best matches, and only when
-     something narrows. */
-  let similar: ProductList = { items: [], total: 0 };
-  if (similarEarly !== null) {
-    similar = similarEarly;
-  } else if (narrows) {
-    const bestEnd =
-      RESULTS_WINDOW.best +
-      RESULTS_WINDOW.step *
-        Math.ceil(
-          Math.max(0, best.total - RESULTS_WINDOW.best) / RESULTS_WINDOW.step,
-        );
-    const opened = RESULTS_WINDOW.best + RESULTS_WINDOW.step;
-    similar = await readSimilar(
-      RESULTS_WINDOW.similarExpanded +
-        Math.max(0, query.show - Math.max(opened, bestEnd)),
-    );
-  }
+  const similar: ProductList = similarList ?? { items: [], total: 0 };
 
   return {
     query,

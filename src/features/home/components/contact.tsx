@@ -163,8 +163,15 @@ export function Contact() {
             aria-hidden="true"
             className="photo-caption-scrim absolute inset-0"
           />
-          <span className="text-on-photo leading-relaxed text-15 absolute bottom-6 left-6 font-medium">
-            Call or text us.
+          {/* D181 (owner, 2026-10-11: "remove this and add something else
+              that is meaningfull"): the area the shop serves, in the
+              client's own words (`SITE.serviceArea`, D163), for the drawn
+              "Call or text us." The phone,
+              hours and email already sit beside the photo. `right-6` lets
+              the longer line wrap inside the photo in the 720 band.
+              `DEVIATIONS.md` #142. */}
+          <span className="text-on-photo leading-relaxed text-15 absolute right-6 bottom-6 left-6 font-medium">
+            {`Serving ${SITE.serviceArea}.`}
           </span>
         </div>
       </div>

@@ -44,11 +44,11 @@ the next session guesses which of the two phone numbers is real.
     or names throughout the website"*; the `CONTACTS` list of two named people (D76, D139) is gone. Every
     call button, `Call us` line, the quote emails and the structured data read it. Keep the shape: other
     features read only `display` and `tel`.
-  - `BRANDS` — twelve wordmarks in a deliberate order: house brands first (`Zeta`, `ZMAX`, `Mazzini`,
-    `Touren`, `Spec-1`), then the majors (`Michelin`, `Bridgestone`, `Continental`, `Pirelli`,
-    `Goodyear`, `Hankook`, `Toyo`) — the order in `design/DESIGN.md` "Contact block" and in the artboard
-    brand strip (`design/inventory/home.md:728`). Since **D129** (2026-10-03) it feeds only the `/about`
-    wordmarks; the home strip reads its own logo list, `src/features/home/brand-logos.ts`.
+  - `BRANDS` — the `/about` brand grid's 24 names (**D182**, 2026-10-11): house brands first (`Zeta`,
+    `ZMAX`, `Mazzini`, `Touren`, `Spec-1`), then tires, then wheels, the owner's pick from the catalogue
+    by product count (Hankook dropped). Names are spelled as `src/features/home/brand-logos.ts` spells a
+    logo, so `brandLogo()` finds it; a brand without one renders as a text wordmark. The home ticker
+    reads its own list (D129) and not this one.
 
 - [`time.ts`](time.ts) — `SHOP_TIME_ZONE` (`America/Toronto`), `SHOP_DATE_TIME`, `SHOP_WEEKDAY_DATE` and
   `shopHour()`. Every date and time the application shows or reasons about is Brampton time (D118); format
@@ -105,8 +105,9 @@ the next session guesses which of the two phone numbers is real.
 - **One phone number and no personal names (D161, 2026-10-11).** Client: *"Remove names from contact,
   just leave one number there- ending in 5000"*; owner: keep the email and `+1 (437) 882-5000`, with the
   `+1`, everywhere. Never add a person's name or a personal number back to this file.
-- **`BRANDS` renders as text wordmarks** on `/about`. The home strip's logos (D129) live in
-  `src/features/home/brand-logos.ts` and `public/images/brands/`, not here.
+- **`BRANDS` is names only.** The logos (D129, D182) live in `src/features/home/brand-logos.ts` and
+  `public/images/brands/`, not here; keep 24 names (or another multiple of 4) so the About
+  grid's rows stay full.
 - **`display` ships verbatim** in the owner's format (D76). The `tel` field is the only reformatting, it
   is E.164, and it is **never** built by concatenating or stripping the `display` string; every call
   site reads `PRIMARY_CONTACT.tel` directly.

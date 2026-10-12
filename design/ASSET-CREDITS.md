@@ -85,6 +85,26 @@ and looked at before use.
 | `moto-metal.svg` | Moto Metal | [motometal.com header logo](https://www.motometal.com/static/version1790065637/frontend/WheelProsNew/motometal/en_US/images/logo/logo.svg) | |
 | `tsw.svg` | TSW | [tsw.com header logo](https://www.tsw.com/static/version1790065637/frontend/WheelProsNew/tsw/en_US/images/logo/logo.svg) | (Commons' `TSW Emblem.svg` is unrelated.) |
 
+### Added for the About grid (D182, 2026-10-11)
+
+`/about` draws 24 brands (`src/lib/site.ts` `BRANDS`) from the same files plus three more, fetched
+2026-10-11 and processed the same way (one colour, cropped, looked at on `--surface-2`). They are in
+`MORE_BRAND_LOGOS` and **not** on the home ticker. Permission is the same owner statement (D129, D153).
+
+| File (`public/images/brands/`) | Brand | Source | Notes |
+|---|---|---|---|
+| `braelin.svg` | Braelin | [fastco.ca Braelin logo](https://www.fastco.ca/Fastco/media/braelin/logo-dark.svg), from `fastco.ca/Braelin` | Brand's own site (Fastco owns Braelin). Wordmark only. |
+| `fast-wheels.svg` | Fast Wheels | [fastco.ca Fast Wheels logo](https://www.fastco.ca/Fastco/media/fastwheels/logo-dark.svg), from `fastco.ca/Fast-Wheels` | Brand's own site. `FAST` over a tracked `WHEELS`; the A's cut-out is a hole in the source. |
+| `niche.svg` | Niche | [nicheroadwheels.com header logo](https://www.nicheroadwheels.com/static/version1791186905/frontend/WheelProsNew/niche/en_US/images/logo/logo.svg) | Brand's own site (Wheel Pros theme, the brand's folder, not the group mark). A source `translate` was folded into the viewBox. |
+
+**Shown as text wordmarks, not logos (no clean vector exists, checked 2026-10-11; nothing traced):**
+Zeta (zetatire.com serves its wordmark as PNG only; its one SVG is a bare `Z` icon, not the logo),
+ZMAX (no brand site: `zmaxtires.ca` is parked, `zmax.ca` unconnected), Mazzini (mazzinitires.ca: PNG
+only), Touren (no tire-brand site; `tourenwheels.com` is a different, Wheel Pros wheel brand and was
+not used), Spec-1 (spec1wheels.com: PNG only), Sentali (sentaliwheels.com: PNG and WebP; its only SVG is
+an auto-traced loader graphic, not the brand's artwork), GT Off-Road (gtoffroad.ca: WebP only). A
+clean vector from the brand or its distributor would replace the wordmark.
+
 The Wheel Pros sites' `images/logo.svg` (one level up) is the Wheel Pros group mark on every site and
 `images/logo/logo-white.svg` is another brand's artwork (`SPRIG`); neither is used. The `version…`
 segment in those URLs changes when the sites redeploy.

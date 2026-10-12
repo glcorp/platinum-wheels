@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 
 import {
   CAPTION,
@@ -6,6 +7,7 @@ import {
   ProsePage,
   ProseSection,
 } from "@/components/site/prose-page";
+import { brandLogo } from "@/features/home/brand-logos";
 import { pageMetadata } from "@/features/seo/metadata";
 import { ROUTES } from "@/lib/routes";
 import { BRANDS, PRIMARY_CONTACT, SITE } from "@/lib/site";
@@ -29,7 +31,7 @@ import { BRANDS, PRIMARY_CONTACT, SITE } from "@/lib/site";
    No new facts at any point. What changed is structure: a 12-column page
    header, a full-width fact band read out of `SITE`, four plain side-head
    sections instead of four stacked 420px blocks, and two existing data sets
-   given a place to sit — `BRANDS` (already rendered on `/` by `BrandStrip`)
+   given a place to sit — `BRANDS` (since D182 the About logo grid's own list)
    and `PRIMARY_CONTACT` (already rendered by the home contact section and
    the header CTA). Both are shown here in the same treatment their existing call sites
    use, so neither asserts anything new.
@@ -113,26 +115,48 @@ export default function AboutPage() {
       <ProseSection
         title="What we sell"
         wide={
-          /* The same twelve names, in the same order, that `BrandStrip`
-             already renders on `/` (`src/lib/site.ts` `BRANDS`; house brands
-             first, then the majors — do not reorder). Text wordmarks, not
-             logos: the brands are separate trademarks and no licensed
-             monochrome marks exist (D63, `docs/decisions.md` §8). The strip's
-             own type treatment is reused: display face, 700, +0.02em, no
-             `display` utility, because these marks carry positive tracking
-             rather than the display role's -0.015em. */
-          <ul
-            aria-label="Brands we carry"
-            className="flex flex-wrap gap-x-8 gap-y-3"
-          >
-            {BRANDS.map((brand) => (
-              <li
-                key={brand}
-                className="font-display text-ink-dim leading-flat tracking-2 text-display-20 font-bold whitespace-nowrap uppercase sm:text-display-24"
-              >
-                {brand}
-              </li>
-            ))}
+          /* D182 (owner, 2026-10-11: "add more brnads and their logo like on
+             the main ticker"): the 24 brands in `src/lib/site.ts` `BRANDS`,
+             in its order, as a static grid of the ticker's own logo files
+             (`brand-logos.ts`, D129: one colour through a mask, `--text-dim`
+             at rest, `--text` on hover). The owner's statement is the logo
+             permission (D129, D153). A brand with no clean vector logo shows
+             its name as a text wordmark in the same cell, in the type the
+             old list used: display face, 700, +0.02em. Mechanics in the
+             `brand-grid` utility (`globals.css`). */
+          <ul aria-label="Brands we carry" className="brand-grid">
+            {BRANDS.map((brand) => {
+              const logo = brandLogo(brand);
+              return (
+                <li key={brand} className="text-ink-dim hover:text-ink">
+                  {logo === undefined ? (
+                    <span
+                      translate="no"
+                      className="font-display leading-flat tracking-2 text-display-20 truncate font-bold uppercase sm:text-display-24"
+                    >
+                      {brand}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="sr-only" translate="no">
+                        {logo.name}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        data-brand="logo"
+                        style={
+                          {
+                            "--logo-src": `url("/images/brands/${logo.slug}.svg")`,
+                            "--logo-aspect": logo.aspect,
+                            "--logo-scale": logo.scale,
+                          } as CSSProperties
+                        }
+                      />
+                    </>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         }
       >

@@ -69,6 +69,8 @@ export const RESULTS_PARAM = {
   max: "max",
   sort: "sort",
   show: "show",
+  /** `?similar=12`: how many `May also fit` cards to render (D175). */
+  similar: "similar",
   /** `?brands=all`: the brand fold is open (D132). */
   brands: "brands",
 } as const;
@@ -139,6 +141,14 @@ export interface ResultsQuery {
    * maximum: with a real catalogue "all" can be thousands of cards.
    */
   show: number;
+  /**
+   * `?similar=12` — how many `May also fit` cards to render (D175).
+   * `RESULTS_WINDOW.similar` (one desktop row) by default; the list's own
+   * `Show more` opens it to `RESULTS_WINDOW.similarExpanded`, then adds
+   * `RESULTS_WINDOW.step` a press, up to `RESULTS_WINDOW.max`. Independent of
+   * `show`: best's `Load more` never grows this list, and this never grows best.
+   */
+  similarShow: number;
   /**
    * `?brands=all` — the visitor had `Show all brands` open when they last
    * changed a filter, so the fold renders open again (D132). The form is

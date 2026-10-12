@@ -3,11 +3,10 @@ import type { Metadata } from "next";
 import { PageTransition } from "@/components/site/page-transition";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import type { ProductCategory } from "@/features/catalog/types";
 import { SearchForm } from "@/features/search/components/search-form";
 import { SearchResults } from "@/features/search/components/search-results";
 import { hasCriteria, parseSearch } from "@/features/search/parse";
-import { SEARCH_CATEGORIES, searchCatalog } from "@/features/search/queries";
+import { searchCatalog } from "@/features/search/queries";
 
 /* ---------------------------------------------------------------------------
    `/search?q=` — composition only (`docs/decisions.md` §3). D173.
@@ -32,11 +31,7 @@ function first(value: string | string[] | undefined): string {
 export default async function SearchPage({ searchParams }: PageProps<"/search">) {
   const params = await searchParams;
   const parsed = parseSearch(first(params.q));
-  const moreParam = first(params.more);
-  const more = (SEARCH_CATEGORIES as readonly string[]).includes(moreParam)
-    ? (moreParam as ProductCategory)
-    : null;
-  const outcome = hasCriteria(parsed) ? await searchCatalog(parsed, more) : null;
+  const outcome = hasCriteria(parsed) ? await searchCatalog(parsed) : null;
 
   return (
     <>

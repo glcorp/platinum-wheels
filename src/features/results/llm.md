@@ -32,8 +32,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 - [`search.ts`](search.ts) — server only and **async** since D108b: `searchResults()` asks the catalogue
   (`catalog/queries.ts`) for one page of best matches, the similar row and the facets, and maps them into
   a `ResultsView`. Reads the database; never imported by a client file. **Since D157** one cached
-  category base read (`getCategoryBase`), then one round: best, similar and facets together (only an
-  expanded `Load more` page reads similar after best). A URL value the category does not hold (size,
+  category base read (`getCategoryBase`), then one round: best, similar and facets together (since **D175** always: the similar row has its own
+  window, `query.similarShow`, so it no longer waits on best's total). A URL value the category does not hold (size,
   brand, finish, thread, load, bore, offset) is settled against the base before the read, so a hand-typed
   unknown size no longer costs a second read. An explicit URL size wins;
   with every size select at `Any`, a vehicle narrows the page from `src/features/finder/fitment.ts`
@@ -109,7 +109,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   squeezed it to 28px); `Add vehicle` outline in `--accent` or
   the D72 chip naming the car (mobile bar; top of the rail with a `Change` cue). `VehiclePanel({ query })`:
   the sheet with `VehicleFinder variant="sheet"` (submits to this category, carries the page's filters,
-  WDG-17) and `Remove vehicle`; rendered once in `results-page.tsx` so the finder's ids stay unique (D88).
+  WDG-17, and since **D176** the picked size too, because a size beside a car keeps the car, D170) and
+  `Remove vehicle`; rendered once in `results-page.tsx` so the finder's ids stay unique (D88).
 - [`components/vehicle-sheet.tsx`](components/vehicle-sheet.tsx) — `"use client"`. `VehicleSheet`: the
   dialog (filter sheet's pattern, `sheet-panel` with `data-fit` = content height, centred at
   `max-w-dialog` from `md:`). Opens on any click of an `a[href="#vehicle-sheet"]` (capture listener), so
@@ -151,7 +152,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   with no count (#74, **D85**, superseding #72 and D49's "keeps the total" clause) — size splits the set
   rather than shrinking it (D47(8)), so two counts are true at once and the button carries neither.
 - [`components/load-more-landing.tsx`](components/load-more-landing.tsx) — `"use client"` leaf island,
-  renders `null` (D133): records the `a[data-load-more]` press and, on the next `show` change, scrolls
+  renders `null` (D133): records the `a[data-load-more]` press and, on the next `show` or `similar` change (D175), scrolls
   instantly to the first new card and focuses its `data-card-link`. Cards carry position ids
   `result-N` / `similar-N`; the `Load more` href ends in the first new card's id; `scroll={false}` stays (D68).
 - Only the **first** best-match card is eager with `fetchPriority="high"` (`priorityCount={1}`, D153, launch audit mobile LCP): three marked high at once on a one-column phone made two compete with the one that is the LCP. The home featured row passes no priority (below the fold; the hero owns it).
@@ -159,13 +160,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   `ResultsEmpty({ clearHref, as?, body? })`, Server. `body` defaults to the category copy so the
   `/styleguide` call site stays untouched (one sentence for all three today, D73). `Best matches` is the
   `<h1>` (D47(6)), `Similar matches` an `<h2>` (omitted when empty); `RESULTS_WINDOW` 6 + 3 by
-  default; `Load more` = `Button size="load"` link that raises `?show=` by 24 up to 150 and opens the
-  similar row to 12, then, once best is fully shown, grows similar by the same step to the ceiling (`search.ts`
-  reads similar after best for that; owner, 2026-10-06: the button vanished after one press with 136 similar left) (D108b; it used to be `?show=all`, which is thousands of cards now), rendered only
-  while it has something to reveal (D47(7)); **it sits under the list it grows**: inside the `Best matches`
-  section (with the ceiling note) while best grows or is capped, at the page foot only for the press that
-  just opens the similar row (owner, 2026-10-06: it read as belonging to similar); at the ceiling a line says how many are shown and to narrow
-  the filters and carrying `scroll={false}` since **D68**, because Next scrolls a navigation to the top by
+  default; `Load more` = `Button size="load"` link that raises `?show=` by 24 up to 150 (D108b; it used to be
+  `?show=all`, which is thousands of cards now) and **since D175 grows best only**; the similar list has
+  its own `Show more` (`?similar=`: 3 → 12, then +24 to 150, `withMoreSimilar`). Each is rendered only
+  while it has something to reveal (D47(7)) and sits under the list it grows (owner, 2026-10-06); at a
+  ceiling a line says how many are shown and to narrow the filters; both carry and carrying `scroll={false}` since **D68**, because Next scrolls a navigation to the top by
   default and the reader was thrown back to the header (2146 → 0); the empty state is new copy (D47(4)).
   Since **D72** the count and `countCopy` live here as the second line of the `Best matches` header stack
   (#63), and `ResultsGrid` composes the zero-results state itself from the shared `SECTION` /
@@ -175,11 +174,12 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   or more patterns (`/wheels` with a vehicle that came with two): *"This model year came with two bolt
   patterns: 5x114.3 and 5x120. Check your trim before you order."* (new copy, *derived*; three or more
   read "three", "four"; the count word and the patterns are filled in).
-  **D165 (owner, 2026-10-11):** the similar section is a native `<details>` headed `May also fit` (`<h2>` inside
-  the `<summary>`, a chevron), closed while best has matches, open when best is empty or when the last
-  `Load more` grew it (`show - step >= bestTotal`); that press's `Load more` and ceiling note sit inside it, and
-  the section carries the 120px desktop page foot (`md:pb-30`). The count line and its live region are
-  unchanged. `load-more-landing.tsx` opens a closed list before landing on a card in it. DEVIATIONS #132.
+  **D165 (owner, 2026-10-11)** renamed the similar section `May also fit` and made it a closed `<details>`;
+  **D175 (owner, same day) reverted the disclosure**: the section is always open as drawn (hairline, `<h2>`,
+  one row of 3 cards), then `Show more` while more are hidden. It carries the 120px desktop page foot
+  (`md:pb-30`). The count line and its live region are unchanged. `load-more-landing.tsx` lands on
+  `#similar-N` after `Show more` as it does on `#result-N` after `Load more` (it watches `show:similar`).
+  DEVIATIONS #132.
 - [`components/call-cta-panel.tsx`](components/call-cta-panel.tsx) — `CallCtaPanel()`, Server,
   `md:hidden`. `Not sure which one?` panel, `tel:` CTA from `PRIMARY_CONTACT` (D47(1)).
 

@@ -25,47 +25,43 @@ test.beforeEach(({}, info) => {
   test.skip(info.project.name !== "chromium-1440", "one project; the admin step needs Chromium");
 });
 
-/* ---------- D165: May also fit ---------- */
+/* ---------- D175: May also fit, one row and Show more ---------- */
 
-test("`May also fit` is closed while there are best matches, and opens", async ({ page }) => {
+test("`May also fit` shows one row under the best matches", async ({ page }) => {
   await page.goto(SIZED);
   await settle(page);
-  const list = page.locator("[data-probe=similar-details]");
-  await expect(list).not.toHaveAttribute("open");
   await expect(page.getByRole("heading", { level: 2, name: "May also fit" })).toBeVisible();
   // The count line is unchanged (D57, D72).
   await expect(page.locator("[data-probe=count]")).toHaveText(/\d+ match(es)? · \d+ similar/);
-  await expect(list.locator("article").first()).toBeHidden();
-  await list.locator("summary").click();
-  await expect(list).toHaveAttribute("open", "");
-  await expect(list.locator("article").first()).toBeVisible();
+  const grid = page.locator("[data-probe=similar-grid]");
+  await expect(grid.locator("article").first()).toBeVisible();
+  expect(await grid.locator("article").count()).toBeLessThanOrEqual(3);
+  await expect(page.locator("[data-probe=similar] details")).toHaveCount(0);
 });
 
-test("`May also fit` is open when there is no exact match", async ({ page }) => {
+test("`May also fit` shows when there is no exact match", async ({ page }) => {
   await page.goto(NO_EXACT);
   await settle(page);
   await expect(page.locator("[data-probe=best-none]")).toBeVisible();
-  await expect(page.locator("[data-probe=similar-details]")).toHaveAttribute("open", "");
+  await expect(page.locator("[data-probe=similar-grid] article").first()).toBeVisible();
 });
 
-test("`Load more` inside the list lands on the first new card, list open", async ({ page }) => {
+test("`Show more` grows only the list, and lands on its first new card", async ({ page }) => {
   await page.goto(SIZED);
   await settle(page);
-  const list = page.locator("[data-probe=similar-details]");
-  await list.locator("summary").click();
-  const more = list.getByRole("link", { name: "Load more" });
-  await expect(more).toHaveAttribute("href", /#similar-4$/);
+  const more = page.locator("[data-probe=similar-more]").getByRole("link", { name: "Show more" });
+  await expect(more).toHaveAttribute("href", /similar=12#similar-4$/);
+  const bestBefore = await page.locator("[data-probe=best-grid] article").count();
   await more.click();
-  await expect(page).toHaveURL(/show=30#similar-4$/);
-  await expect(list).toHaveAttribute("open", "");
+  await expect(page).toHaveURL(/similar=12#similar-4$/);
   await expect(page.locator("#similar-4 [data-card-link]")).toBeFocused();
+  await expect(page.locator("[data-probe=best-grid] article")).toHaveCount(bestBefore);
 });
 
-test("without JavaScript, a grown list arrives open", async ({ browser }) => {
+test("without JavaScript, `?similar=` arrives with the cards", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
-  await page.goto(`${SIZED}&show=30#similar-4`);
-  await expect(page.locator("[data-probe=similar-details]")).toHaveAttribute("open", "");
+  await page.goto(`${SIZED}&similar=12#similar-4`);
   await expect(page.locator("#similar-4")).toBeVisible();
   await context.close();
 });
