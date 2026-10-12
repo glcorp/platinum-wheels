@@ -132,7 +132,7 @@ export default function AboutPage() {
                   {logo === undefined ? (
                     <span
                       translate="no"
-                      className="font-display leading-flat tracking-2 text-display-20 truncate font-bold uppercase sm:text-display-24"
+                      className="font-display leading-flat tracking-2 text-12 font-bold uppercase break-words sm:text-14 md:text-15"
                     >
                       {brand}
                     </span>

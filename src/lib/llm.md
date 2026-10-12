@@ -106,7 +106,7 @@ the next session guesses which of the two phone numbers is real.
   just leave one number there- ending in 5000"*; owner: keep the email and `+1 (437) 882-5000`, with the
   `+1`, everywhere. Never add a person's name or a personal number back to this file.
 - **`BRANDS` is names only.** The logos (D129, D182) live in `src/features/home/brand-logos.ts` and
-  `public/images/brands/`, not here; keep 24 names (or another multiple of 4) so the About
+  `public/images/brands/`, not here; keep 24 names (4, 6 and 8 across all divide 24, D183) so the About
   grid's rows stay full.
 - **`display` ships verbatim** in the owner's format (D76). The `tel` field is the only reformatting, it
   is E.164, and it is **never** built by concatenating or stripping the `display` string; every call

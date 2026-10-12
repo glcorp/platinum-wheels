@@ -1963,40 +1963,44 @@ dialog:modal {
    A static wrapped grid of the same logo files the home ticker paints (D129,
    `brand-logos.ts`), one colour through a CSS mask, `--text-dim` at rest and
    `--text` on hover (the colour is the cell's, set in the page). About is a
-   reading page, so nothing moves. 24 brands, so every row is full at 2 and 4
-   across. Each logo is flush-left in its cell. Not 6 across on wide
-   screens: in the About column a sixth of the width is ~121px, which shrank
-   wide wordmarks (Nitto, Michelin) to 10-13px tall (measured at 1440).
+   reading page, so nothing moves. 24 brands, so every row is full at 4, 6
+   and 8 across (D183). Each logo is flush-left in its cell.
      cell      a fixed-height row box; the logo or the text wordmark sits on
                its vertical centre
      logo      height = base x the logo's optical scale, width from its
                aspect, never wider than the cell (wide marks shrink to fit)
-   Base heights: 24px phone, 28px from 720, 32px from 1320.
    =========================================================================== */
 @utility brand-grid {
-  --brand-logo-h: calc(var(--spacing) * 6);
+  /* D183 (owner, 2026-10-12: "make them smaller and 8 per row / in mobile
+     too, make them atleast 4 per row"): 4 across on a phone, 6 from 720,
+     8 from 1100; all three divide 24, so every row is full. Logo base
+     heights 14 / 16 / 18px. */
+  --brand-logo-h: calc(var(--spacing) * 3.5);
 
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: calc(var(--spacing) * 6);
-  row-gap: calc(var(--spacing) * 6);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: calc(var(--spacing) * 3);
+  row-gap: calc(var(--spacing) * 4);
 
   @media (min-width: 720px) {
-    --brand-logo-h: calc(var(--spacing) * 7);
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    column-gap: calc(var(--spacing) * 8);
-    row-gap: calc(var(--spacing) * 8);
+    --brand-logo-h: calc(var(--spacing) * 4);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    column-gap: calc(var(--spacing) * 5);
+    row-gap: calc(var(--spacing) * 5);
   }
 
-  @media (min-width: 1320px) {
-    --brand-logo-h: calc(var(--spacing) * 8);
+  @media (min-width: 1100px) {
+    --brand-logo-h: calc(var(--spacing) * 4.5);
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    column-gap: calc(var(--spacing) * 6);
+    row-gap: calc(var(--spacing) * 6);
   }
 
   & > li {
     display: flex;
     align-items: center;
     min-width: 0;
-    height: calc(var(--brand-logo-h) * 1.5);
+    height: calc(var(--brand-logo-h) * 2);
     transition: color var(--duration-feedback) var(--ease-card);
   }
 
