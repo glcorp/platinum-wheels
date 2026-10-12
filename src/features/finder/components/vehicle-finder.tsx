@@ -204,8 +204,12 @@ function switchOptions(fallbackCta: string) {
  */
 function ModeSwitch() {
   const segment = (id: string, value: string, label: string, first: boolean) => (
+    /* `data-segment` on the label, not the sr-only input: the forced-colours
+       rule is `[data-segment]:has(input:checked)`, which needs a parent of
+       the radio (QA GATE-1). */
     <label
       htmlFor={id}
+      data-segment=""
       className={[
         "font-sans flex flex-1 cursor-pointer items-center justify-center text-14 leading-flat font-medium",
         "text-ink-muted hover:text-ink active:opacity-70",
@@ -221,7 +225,7 @@ function ModeSwitch() {
         value={value}
         form={MODE_FORM}
         defaultChecked={first}
-        data-segment=""
+        autoComplete="off"
         className="sr-only"
       />
       {label}
@@ -299,13 +303,16 @@ function SizeFields({ sizes }: { sizes: FinderSizeLists }) {
       ) : null}
       {sizes.wheel !== null ? (
         <>
-          <div data-finder-show={SHOW.wheelSize}>
+          {/* Under 360px a two-up select is 119px wide, which clips `Bolt
+              pattern` and `10x285.75` (QA HOMEFIND-4): there Bolt pattern
+              takes the row to itself, Diameter and Width share the next. */}
+          <div data-finder-show={SHOW.wheelSize} className="max-[359px]:col-span-2">
             <SizeSelect id={SIZE_ID.bolt} name="bolt" label="Bolt pattern" options={sizes.wheel.bolt} disabled />
           </div>
           <div data-finder-show={SHOW.wheelSize}>
             <SizeSelect id={SIZE_ID.diameter} name="diameter" label="Diameter" options={sizes.wheel.diameter} disabled />
           </div>
-          <div data-finder-show={SHOW.wheelSize} className="finder-cell-wide">
+          <div data-finder-show={SHOW.wheelSize} className="finder-cell-wide max-[359px]:col-span-1!">
             <SizeSelect id={SIZE_ID.wheelWidth} name="width" label="Width" options={sizes.wheel.width} disabled />
           </div>
         </>
@@ -314,20 +321,22 @@ function SizeFields({ sizes }: { sizes: FinderSizeLists }) {
         <FieldLabel htmlFor={SIZE_ID.season} className={HOME_LABEL}>
           Season
         </FieldLabel>
-        <Select id={SIZE_ID.season} name="season" autoComplete="off" defaultValue="">
-          <option value="">Season</option>
-          {seasons.map(({ value, label }) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </Select>
+        {/* Markup, not elements: `FinderModeSync` narrows these to the
+            seasons that exist for the chosen size (D185), and React must not
+            reconcile nodes it did not put there. */}
+        <Select
+          id={SIZE_ID.season}
+          name="season"
+          autoComplete="off"
+          dangerouslySetInnerHTML={{ __html: sizeOptionsHtml("Season", seasons) }}
+        />
       </div>
       <FinderModeSync
         formId={FINDER_FORM_ID}
         sizeRadioId={MODE_ID.size}
         tireIds={TIRE_IDS}
         wheelIds={WHEEL_IDS}
+        seasonId={SIZE_ID.season}
         tireCombos={sizes.tire?.combos ?? null}
         wheelCombos={sizes.wheel?.combos ?? null}
       />

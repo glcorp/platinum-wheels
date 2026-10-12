@@ -8,7 +8,8 @@
  * Visibility is decided here and nowhere else:
  *   - the results listings, their facets and the sitemap see `published`
  *     and `discontinued` products (`listedStatus()`, `listing-status.ts`,
- *     D164); "other sizes", "similar" and the home row see `published` only;
+ *     D164), and so do "other sizes" and "similar" (QA FIT-1); the home row sees
+ *     `published` only;
  *   - a product page loads `published` and `discontinued`;
  *   - `hidden` is never returned by anything in this file.
  * Vendor sources are staff-only and are not read here at all: no query in
@@ -1267,13 +1268,17 @@ function boltPatternList(value: unknown): string[] {
 
 /** One tire size as the catalogue holds it: width, aspect ratio, overall
  *  diameter, section width, rim diameter. Metric sizes fill the first two,
- *  flotation sizes the next two; any may be `null`. */
+ *  flotation sizes the next two; any may be `null`. The sixth part is the
+ *  season (`tire_season`, `all_season` ...): one size is a row per season, so
+ *  the home finder's Season select can offer only what exists for the size
+ *  (D185). Every other reader ignores it and de-duplicates by value. */
 type TireCombo = readonly [
   number | null,
   number | null,
   number | null,
   number | null,
   number | null,
+  string | null,
 ];
 
 /** One wheel size and bolt pattern: diameter, width, pattern. A wheel drilled
@@ -1306,7 +1311,8 @@ async function readTireBase(
         ${tireSpecs.aspectRatio}::text as aspect_ratio,
         ${tireSpecs.overallDiameter}::text as overall_diameter,
         ${tireSpecs.sectionWidth}::text as section_width,
-        ${tireSpecs.rimDiameter}::text as rim_diameter
+        ${tireSpecs.rimDiameter}::text as rim_diameter,
+        ${tireSpecs.season}::text as season
       from ${tireSpecs}
       inner join ${products} on ${products.id} = ${tireSpecs.productId}
       where ${inCategory}
@@ -1326,6 +1332,7 @@ async function readTireBase(
         nullableNumber(row.overall_diameter),
         nullableNumber(row.section_width),
         nullableNumber(row.rim_diameter),
+        typeof row.season === "string" ? row.season : null,
       ],
     ),
     loadIndexes: numberList(loads.rows[0]?.all_load_indexes),
@@ -1834,7 +1841,7 @@ export async function getOtherSizes(
 
   const where: SQL[] = [
     eq(products.category, product.category),
-    eq(products.status, "published"),
+    listedStatus(),
     product.brand === null
       ? isNull(products.brand)
       : eq(products.brand, product.brand),
@@ -2139,7 +2146,7 @@ export async function getSimilarProducts(
 
   const where: SQL[] = [
     eq(products.category, product.category),
-    eq(products.status, "published"),
+    listedStatus(),
     ne(products.id, product.id),
   ];
   // Other sizes of this model belong to `getOtherSizes`. A product with no

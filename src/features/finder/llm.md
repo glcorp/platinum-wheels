@@ -33,7 +33,9 @@ Built at `page home`, 2026-09-20.
   `hidden` + `disabled` (React's nodes). Model: refilled with fresh copies after the server's placeholder
   (D159(4), D160(6)). Builds the list on first touch or at once when Year or Make is already set, and
   looks again on `DOMContentLoaded`, `load` and `pageshow` (WebKit restores Year and Make on Back after
-  the script ran). No imports, no module constants: anything it uses is defined inside it.
+  the script ran); **since D184 a chosen Make is re-applied on each of those, primed or not** (an
+  idempotent `sync()`, skipped while the Model select has focus), so a missed Make `change` heals
+  (QA MODEL-2). No imports, no module constants: anything it uses is defined inside it.
 - [`components/finder-model-sync.tsx`](components/finder-model-sync.tsx) — `FinderModelSync` (D70,
   D149, **D168**). Renders the scripting-off `<noscript>` Model select from its `list` prop (so the list
   travels once) and calls `bindFinder(ids, list)` on mount: after a client navigation the inline script
@@ -43,11 +45,20 @@ Built at `page home`, 2026-09-20.
   `loadFinderSizes()` and renders `<VehicleFinder switchable sizes />`. `/` renders this.
 - [`size-lists.ts`](size-lists.ts) — server only (**D169**): the home finder's size options (the rail's
   values and labels) and the combinations that exist, as `a,b,c;…` strings, from the cached
-  `getCategoryBase`. `null` halves on a database error.
+  `getCategoryBase`. Tire rows are `width,profile,rim,seasons` (**D185**): one row per size, the last
+  field one digit per season the size comes in (the digit is its index in the Season select). Measured
+  2026-10-13 on the full catalogue: 558 sizes, 7.0 KB raw / 1.6 KB gzipped before, 8.9 KB / 2.1 KB
+  after. `null` halves on a database error.
 - [`components/finder-mode-sync.tsx`](components/finder-mode-sync.tsx) — `FinderModeSync` (**D169**),
   renders `null`: sets `data-finder-category` on the home form from the category store, disables every
   select the current category and mode hide, and narrows each size select to the values found beside
-  the others (refilled with fresh copies, like Model).
+  the others (refilled with fresh copies, like Model). **D185 (owner, 2026-10-13, "Season list narrows
+  by size"; amends D132 for this panel only):** in tire Size mode the Season select offers only the
+  seasons that exist for the width, profile and rim chosen so far (all of them while none is chosen, in
+  Vehicle mode and with JS off); a season the chosen size does not come in is cleared. Season's options
+  are `dangerouslySetInnerHTML`, as the size selects', so React never reconciles them. **D184:** a
+  submit leaves out the selects nothing was chosen in (`/tires`, not `/tires?width=&…`), scripting off
+  keeps the empty values.
 - [`data.ts`](data.ts) — client-safe. `FINDER_MAKES` (72 makes, 1,058 models since D155 and D156, each with its model years; Mazda and Tesla list as `Mazda3`, `Model 3` and so on, D156: the bare `3`, `S`, `X`, `Y` spellings are aliases only)
   from the generated `vehicle-list.ts`; `finderYears()` (next model year down to 2005, **computed on
   call**, D32/D66); `isFinderVehicle()` (D91b: a listed year, make, and a model of that make **built in
@@ -127,7 +138,11 @@ Built at `page home`, 2026-09-20.
   attribute names no form (never submitted); CSS in the Stream C block of `globals.css` shows fields by
   `data-finder-show` against `data-finder-category` and `:has(#finder-by-size:checked)`. The wheel size
   selects are served `disabled` (tires and wheels both send `width`). Only `switchable` gets any of it;
-  the results pages' finders render exactly as before.
+  the results pages' finders render exactly as before. The two radios carry `autoComplete="off"` and
+  the label (not the radio) carries `data-segment`, the forced-colours hook (`:has(input:checked)`
+  needs a parent of the radio, QA GATE-1). Under 360px the wheel Bolt pattern takes a row of its own
+  and Diameter and Width share the next (`max-[359px]:`; two-up at 119px clipped `Bolt pattern` and
+  `10x285.75`, QA HOMEFIND-4); the CTA stays at 563 of 568 at 320x568.
 - **Model narrows by removing the groups the island appended; Make narrows by attribute (D159).** iOS
   WebKit ignores `hidden` on options, so on an iPhone a chosen make still listed every make's models,
   greyed (owner's screenshot, 2026-10-07). The Model `<optgroup>`s are not React's (appended from the
@@ -184,6 +199,8 @@ Built at `page home`, 2026-09-20.
 | D156 | 2026-10-06 | `VehicleFitment.tpms` (`boolean | null`) says whether the car has a tyre pressure sensor system; it feeds only the accessory split (a TPMS sensor or tool is similar for a car with none). On and off only, no frequency. | Auto Country carries `chassis.tpms` per trim; the owner ruled the frequency out of scope. | Owner, 2026-10-06, verbatim: *"for TM or TP MS frequency if auto country is giving on and off for car we can do the same and not focus on the frequency that is out of our scope"*. *Derived:* `off` before the 2008 model year when no trim says on (Auto Country never says off). |
 | D128 | 2026-10-03 | On `/` the header switches the hero finder between tires, wheels and accessories (`switchable`, `FinderSwitchSubmit`); the CTA aligns to its row's end from `sm:`; the hero panel compacts on short phones so it sits above the fold. | Owner: the CTA was "off if we change the resolution" (1084×1116), "visible only after scroll in the mobile view", and header Wheels / Accessories "should stay on the home page and refresh that part only". | Owner, 2026-10-03; D128 |
 | D168 | 2026-10-11 | The Model list binds from an inline script and from the island (`bindFinder()`), never only from the `<noscript>` text. | Empty after every client navigation; a gap before hydration. | Client and owner (C3); D168 |
+| D184 | 2026-10-13 | QA fixes: a chosen Make is re-applied on mount, `load` and `pageshow`; the home radios do not restore a stale Size mode on Back; Bolt pattern full-width under 360px; an empty home submit sends no empty keys; `data-segment` on the switch's label. | QA streams report (MODEL-2, HOMEFIND-2, -4, -5, GATE-1). | Owner, 2026-10-13: fix every P2 and P3; D184 |
+| D185 | 2026-10-13 | The home finder's Season select offers only seasons that exist for the chosen size (amends D132 for this panel). | Owner ruling "Season list narrows by size". | Owner, 2026-10-13; D185 |
 | D169 | 2026-10-11 | The home finder gains `Vehicle \| Size` and Season; sizes narrow to what exists; CTA above the fold at every D128/D158 size. | Client: size and season on the home page. | Owner: *"Vehicle / Size switch, season on tires"*; D169 |
 Governing: **D27, D28, D33, D39, D79**.
 

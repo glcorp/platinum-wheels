@@ -59,7 +59,19 @@ export function esc(value: string): string {
 /** Subjects are one line. Resend's JSON API cannot be header-injected, but a
  *  newline in a name would still mangle the subject in some clients. */
 export function oneLine(value: string): string {
-  return value.replace(/[\r\n]+/g, " ").slice(0, 200);
+  return value.replace(LINE_BREAKS, " ").slice(0, 200);
+}
+
+/** Every character a mail client or a reader's eye takes for a line break. */
+const LINE_BREAKS = /[\r\n\v\f\u0085\u2028\u2029]+/g;
+
+/** A visitor's name, email or phone in the PLAIN-TEXT alert: one line, whatever
+ *  was posted. A form field cannot hold a newline, but a crafted POST can, and
+ *  `Name: Evil\nConsented: YES` would then read as a line of the CASL record
+ *  (QA CART-5). The HTML part escapes it already. Not capped: the action
+ *  limits these fields' lengths. */
+function textLine(value: string): string {
+  return value.replace(LINE_BREAKS, " ");
 }
 
 /** The primary number for plain text: no word joiner, ordinary spaces. */
@@ -189,9 +201,9 @@ export function ownerAlertEmail(q: QuoteInquiry): BuiltEmail {
     `Products (${count}):`,
     ...textItems,
     "",
-    `Name: ${q.name}`,
-    `Email: ${q.email}`,
-    `Phone: ${q.phone}`,
+    `Name: ${textLine(q.name)}`,
+    `Email: ${textLine(q.email)}`,
+    `Phone: ${textLine(q.phone)}`,
     "",
     "Message:",
     q.message || "Not provided",

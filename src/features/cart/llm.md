@@ -20,7 +20,7 @@ Server Actions and the emails.
 - [`actions.ts`](actions.ts) — `"use server"`. `refreshCart(slugs)` returns each product's current card
   facts, `null` for one the catalogue no longer lists, or `{ ok: false }` when it cannot be read.
   `submitCartQuote` is D51's `submitQuote` widened to a cart: a per-IP cap first (LA-03, below), then
-  honeypot and 3 s timer (a bot gets a
+  honeypot and 1 s timer (a bot gets a
   normal `success`; the timer reads `elapsed`, a duration from the dialog's first opening, D123(7)), then
   field validation, then `deliverQuote()` (D104). The posted lines are trusted for
   shape only; every product is read again; the consent wording is picked from the products, never from the
@@ -36,7 +36,9 @@ Server Actions and the emails.
   background, no gradients or images (the goodwill site's inquiry emails). **Every visitor or catalogue
   value goes through `esc()`, attributes included**; a URL is a link only when it starts with `http`.
   Times are Brampton time (`SHOP_DATE_TIME`); the consent record keeps the ISO string. The phone is
-  `PRIMARY_CONTACT` only, no person's name.
+  `PRIMARY_CONTACT` only, no person's name. **The plain-text alert prints the visitor's name, email and
+  phone on one line each** (`textLine()`: every line-break character becomes a space), so a crafted
+  post cannot forge `Consented: YES` lines in the CASL record (QA CART-5, D184).
 - `components/cart-view.tsx` — (D160: below 1100 a bottom-pinned `Request a quote` bar shows until the
   summary is on screen; the quote panel is `data-fit`, the form's height up to the full screen.) The page's client island: hydration placeholder, empty state, lines,
   request panel, the removed-products note, the quote dialog (the filter sheet's `sheet-dialog`, centred at
@@ -48,7 +50,9 @@ Server Actions and the emails.
   `CartSummary`, `CartRemovedNote` for `/styleguide`.
 - `components/sent-requests.tsx` — `SentRequestList` (a titled list of sent requests, each with its
   Brampton time and products, optional `Clear sent requests`), `SentLines` (one request's products,
-  linked to their pages), `sentLabel()` and `CLEAR_LABEL` (D162). No `"use client"`: rendered inside
+  linked to their pages), `sentLabel()` (`Sent Oct 11, 2026, 3:42 p.m. ET`: the zone is named, only here,
+  D185) and `CLEAR_LABEL` (D162). Every text of a stored request wraps anywhere (`wrap-anywhere`), so a
+  290-character token cannot widen `/cart` (QA CART-3, D184). No `"use client"`: rendered inside
   `CartView` and inert on `/styleguide`.
 - `components/cart-line.tsx` — one line: photo, brand, model link, size, `For <vehicle>`, the
   `Unavailable, we'll check restock` badge, a −/field/+ stepper (floor 1, committed on blur or Enter) and
@@ -112,6 +116,8 @@ Server Actions and the emails.
 ## Don't
 - **Don't send one email per product.** Owner ruling: one request, one alert.
 - **Don't trust the posted lines** beyond their shape, and don't take the consent wording from the post.
+- **Don't raise `QUOTE_MIN_FILL_MS` back to 3 s.** The owner cut it to 1 s (D185, "Shorter timer (1 s)"):
+  an autofill and Enter inside 3 s was being dropped, and the visitor was told it was sent.
 - **Don't move the cap after validation or the spam checks**, and don't count invalid posts: the first lets
   a capped IP probe the guards, the second would lock out a person fixing typos (LA-03).
 - **Don't add a payment, a total or a checkout step.** Quotes stay human (`docs/decisions.md` §7 as amended

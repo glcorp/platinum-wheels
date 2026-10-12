@@ -19,6 +19,10 @@ business logic) and *constants*, so that a change lands in exactly one place.
   answers a `/products/<slug>` document request (no `RSC` header) for an unknown or hidden slug with the
   branded 404, after one indexed read (`productPageExists`, `features/catalog/queries.ts`): a `notFound()`
   thrown from the page gives a 404 whose body only JavaScript paints. A database error lets the request through.
+  **Since D184** the same is done for `/pay` document requests that will 404 (an unknown token via
+  `payLinkExists`, bare `/pay`, deeper or malformed pay paths, and in production a stray path or undecodable
+  path on the pay host): it fetches the branded page `/pay/link-not-found` from the same deployment and
+  returns its HTML with status 404 (`payNotFound`); a failed fetch falls back to the storefront 404.
 - [`components/ui/`](components/ui/llm.md) — ten token-only primitives (`badge`, `button`, `checkbox`,
   `chip`, `field-label`, `input`, `price`, `section-heading`, `select`, `stripe-divider`).
 - [`components/site/`](components/site/llm.md) — header, footer, mobile drawer. **Not created yet**;

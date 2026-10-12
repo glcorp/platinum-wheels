@@ -102,19 +102,26 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   Server. The mobile sticky bar (`top:68` / `sm:top-22`, `md:hidden`, `--bg` fill): since **D159** the
   category tabs (D158) over the `VehicleButton` beside a 120px `FilterSheet` trigger; with prices on,
   `Filters` + `SortSelect variant="bar"` share a second row. 122px tall; the `scroll-padding-top` rule in
-  `globals.css` (190 / 210px) must change with it.
+  `globals.css` (190 / 210px) must change with it. **Under 500px tall (a sideways phone) the whole bar is
+  `static`** (`[@media(max-height:499.98px)]:static`, **D185**, owner "Unpin bars on sideways phones");
+  the header stays pinned. At 568x320 the pinned stack had been 190px, 59% of the screen. The scroll
+  padding there is only the header's (68 / 88px): that rule is in `globals.css`, the coordinator's.
 - [`components/vehicle-panel.tsx`](components/vehicle-panel.tsx) — Server. `VehicleButton({ query,
   size?: "bar" | "rail", className? })`: a link to `#vehicle-sheet`; `bar` 44px, `rail` 64px with the label
   in the `Filters` title's type (28px condensed, owner 2026-10-07) and `shrink-0` (the scrolling rail
   squeezed it to 28px); `Add vehicle` outline in `--accent` or
-  the D72 chip naming the car (mobile bar; top of the rail with a `Change` cue). `VehiclePanel({ query })`:
+  the D72 chip naming the car (mobile bar; top of the rail with a `Change` cue); the label wraps to two
+  lines (`line-clamp-2`, QA LAYOUT-2) inside the same 44 / 64px box. `VehiclePanel({ query, fits })`
+  (`fits` = `ResultsView.vehicleNarrows`; `false` reads *"We don't have fit data for your <car> yet, so
+  everything is shown."*, owner "No-data car wording", **D185**):
   the sheet with `VehicleFinder variant="sheet"` (submits to this category, carries the page's filters,
   WDG-17, and since **D176** the picked size too, because a size beside a car keeps the car, D170) and
   `Remove vehicle`; rendered once in `results-page.tsx` so the finder's ids stay unique (D88).
 - [`components/vehicle-sheet.tsx`](components/vehicle-sheet.tsx) — `"use client"`. `VehicleSheet`: the
   dialog (filter sheet's pattern, `sheet-panel` with `data-fit` = content height, centred at
   `max-w-dialog` from `md:`). Opens on any click of an `a[href="#vehicle-sheet"]` (capture listener), so
-  the triggers stay server-rendered; without JS a `<noscript>` `:target` style shows it. A part-filled
+  the triggers stay server-rendered; without JS a `<noscript>` `:target` style shows it, and lifts the
+  panel's closed-state translate too (a targeted dialog is never `[open]`, QA MODEL-1, **D184**). A part-filled
   submit (`partialVehicle`) opens it on load and focuses the missing field. `VEHICLE_SHEET_ID` lives in
   `types.ts`: a server file cannot read a constant exported from a client module (measured: it rendered
   as a function's source in the `href`).
@@ -245,6 +252,7 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
 | D149, D151 | 2026-10-04 | The vehicle lookup takes the model year (`finder/fitment.ts`, server only); a part-filled finder submit sets `query.partialVehicle` and opens the toolbar's `Change vehicle` disclosure (`open`, server-rendered, so it works without JS) with Year/Make kept, a one-line prompt and the missing field focused. | LA-05 and the "finder silently discards a partly filled vehicle" P2 of the D145 audit. | Owner, 2026-10-04 (finder llm.md D149) |
 | D151 | 2026-10-04 | Range thumbs (price, wheel offset) are 24×24 hit boxes whose drawn 16×16 handle is the content box (`background-clip: content-box`, 4px transparent padding, `range-input` in globals.css); the travel box in `RangeGroup` hangs 12px past each track edge and is 24px tall (`-inset-x-3 -top-0.5 h-6`) so D69's alignment holds for a 24px border-box. The box and the utility change together or the handles drift 4px. Not a transparent border: the arithmetic is redone, not dodged. | WCAG 2.5.8: the inputs measured 20px tall and the real target, the thumb, 16px (launch audit, D145, A11Y-AUTO). | Owner, 2026-10-04: "Apply all code items" |
 | D155 | 2026-10-06 | The vehicle narrows tires, wheels and accessories through `tire-fit.ts` (see `search.ts` above); `ResultsView.boltChoice` and `BoltChoiceNote` say to check the trim when a model year came with two bolt patterns. | The finder's fit data grew from one bolt pattern and one rim to factory sizes, stock envelopes, two patterns, thread and fastener. | Owner, 2026-10-06 (quoted under `search.ts`) |
+| D184, D185 | 2026-10-13 | QA fixes: the no-JS vehicle sheet shows its panel; the vehicle button label wraps to two lines; `ResultsView.vehicleNarrows` and the no-data wording; the sticky bar is `static` under 500px tall. | QA streams report (MODEL-1, LAYOUT-2, LAYOUT-3, FIT-3). | Owner, 2026-10-13: fix every P2 and P3; *"No-data car wording"*, *"Unpin bars on sideways phones"*; D184, D185 |
 | — | — | None folder-scoped. | Governing rows: **D42–D49**, **D58**, **D59** (root `llm.md` §5b), D37, D39, D41. | — |
 
 ## Connects to

@@ -20,7 +20,8 @@ links point at nothing.
 - [`money.ts`](money.ts) — integer cents ⇄ `"452.60"` without floats.
 - [`service.ts`](service.ts) — every state change: `createLink` (idempotent), `cancelLink`, `listLinks`,
   `countOpenLinks` (the admin home's tile, D118),
-  `getPayPage`, `startAttempt` (row lock, then network), `handleReturn` (gated on the `pw_pay` cookie, LA-01/LA-02;
+  `getPayPage`, `payLinkExists` (one indexed read for `src/proxy.ts`, so an unknown token gets the pay 404
+  with a body that renders without JavaScript; QA COPY-1, D184), `startAttempt` (row lock, then network), `handleReturn` (gated on the `pw_pay` cookie, LA-01/LA-02;
   it also takes Converge's empty POSTs, looking the attempt up by its own invoice), `handleNotify` (D119).
   The money rules are listed at the top of the file.
 - [`payment-email.ts`](payment-email.ts) — the shop's "Payment received" / "Refund needed" email via

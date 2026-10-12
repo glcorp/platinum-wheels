@@ -34,8 +34,9 @@ export const QUOTE_FIELD = {
   website: "website",
 } as const;
 
-/** The timer half of the form protection (owner ruling 2026-09-23, D104). */
-export const QUOTE_MIN_FILL_MS = 3_000;
+/** The timer half of the form protection (owner ruling 2026-09-23, D104; cut from 3 s to 1 s by the
+ *  owner on 2026-10-13, "Shorter timer (1 s)", D185: a fast autofill-and-Enter was being dropped). */
+export const QUOTE_MIN_FILL_MS = 1_000;
 
 /**
  * What the Server Action returns. `idle` is the initial state; `invalid`

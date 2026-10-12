@@ -83,11 +83,11 @@ test("add a tire, request one quote, see the success panel, and the cart empties
   await expect(dialog).toBeVisible();
   const openedAt = await page.evaluate(() => performance.now());
 
-  // The server ignores a send made in under 3 s of the dialog first opening
-  // and answers success without validating (D104): even an empty one, which
-  // would empty the cart. Wait the real time first, on a condition, so what is
-  // proved below is the validation and the send, not the spam guard.
-  await page.waitForFunction((t0) => performance.now() - t0 > 3_500, openedAt);
+  // The server ignores a send made in under 1 s of the dialog first opening
+  // and answers success without validating (D104, D185): even an empty one,
+  // which would empty the cart. Wait the real time first, on a condition, so
+  // what is proved below is the validation and the send, not the spam guard.
+  await page.waitForFunction((t0) => performance.now() - t0 > 1_500, openedAt);
 
   // An empty send is refused with the summary and focus on the first field.
   await dialog.getByRole("button", { name: /^Send inquiry/ }).click();
@@ -116,7 +116,9 @@ test("add a tire, request one quote, see the success panel, and the cart empties
   await settle(page);
   const kept = page.getByRole("status").filter({ hasText: "Quote request sent." });
   await expect(kept).toBeVisible();
-  await expect(kept).toContainText(/^Sent /i);
+  // D185: the time names its zone (Brampton time), so a visitor elsewhere
+  // does not read it as their own clock.
+  await expect(kept).toContainText(/^Sent .+ ET/i);
   await expect(kept.getByRole("link", { name: /Antarctica Sport/ })).toHaveAttribute(
     "href",
     new RegExp(`/products/${SLUG.tire}`),
@@ -141,4 +143,25 @@ test("a cart line can be removed, and removing the last one empties the page", a
   await lines.getByRole("button", { name: /^Remove/ }).click();
   await expect(page.getByText(/^Your cart is empty\./)).toBeVisible();
   await expect(cartLink(page)).toHaveAttribute("aria-label", "Cart, current page");
+});
+
+test("a send under 1 s of opening the dialog is dropped silently; one after it is really validated (D185)", async ({
+  page,
+}) => {
+  await addToCart(page, SLUG.tire);
+  await page.goto("/cart");
+  await settle(page);
+
+  // Open the dialog and press Send from inside the page ~150 ms later, so the
+  // gap is the page's own and a slow machine cannot stretch it past 1 s. The
+  // form is EMPTY: a request the server actually looks at is refused with the
+  // summary, while one it drops as too fast answers success without validating.
+  await page.getByRole("button", { name: "Request a quote" }).first().evaluate(async (open) => {
+    (open as HTMLButtonElement).click();
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    document.querySelector<HTMLButtonElement>('dialog[open] button[type="submit"]')?.click();
+  });
+  const dropped = page.getByRole("status").filter({ hasText: "Quote request sent." });
+  await expect(dropped).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: /fields? need a fix/ })).toHaveCount(0);
 });

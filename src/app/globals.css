@@ -1742,6 +1742,19 @@ html {
     scroll-padding-top: 210px;
   }
 }
+/* D185 (owner, 2026-10-13, "Unpin bars on sideways phones"): under 500px tall
+   the bar scrolls away (`filter-sort-bar.tsx`), so only the header (68px,
+   88px from `sm:`) is left to clear. */
+@media (max-height: 499.98px) and (max-width: 1099.98px) {
+  html:has([data-sticky-filter-bar]) {
+    scroll-padding-top: 68px;
+  }
+}
+@media (max-height: 499.98px) and (min-width: 720px) and (max-width: 1099.98px) {
+  html:has([data-sticky-filter-bar]) {
+    scroll-padding-top: 88px;
+  }
+}
 
 /* Forced colours (KBD-3, KBD-4). The system palette replaces every background
    with `Canvas`, so anything that signals state with a fill disappears: the
@@ -1972,28 +1985,36 @@ dialog:modal {
    =========================================================================== */
 @utility brand-grid {
   /* D183 (owner, 2026-10-12: "make them smaller and 8 per row / in mobile
-     too, make them atleast 4 per row"): 4 across on a phone, 6 from 720,
-     8 from 1100; all three divide 24, so every row is full. Logo base
-     heights 14 / 16 / 18px. */
+     too, make them atleast 4 per row"): 4 across on a phone, 8 from 720.
+     Logo base heights 14 / 16 / 18px. D185 (owner, 2026-10-13, "Bigger
+     About logos"): no mark under 12px tall. A cell is ~61px at 1100, so a
+     10:1 wordmark there drew 6px; the eight marks 7:1 or wider (`data-wide`,
+     set in `about/page.tsx`) now take two cells, the column gap is 12px from
+     720 (was 20 / 24), and 720-1099 is 8 across (was 6). 24 brands + 8
+     doubles = 32 cells, so every row is still full at 4 and 8 across.
+     Measured 2026-10-13: every mark >= 12px at 390, 720, 1100 and 1440;
+     Fuel, Goodyear, Continental and Nitto are 10.7-11.9px at 320. */
   --brand-logo-h: calc(var(--spacing) * 3.5);
 
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: row dense;
   column-gap: calc(var(--spacing) * 3);
   row-gap: calc(var(--spacing) * 4);
 
   @media (min-width: 720px) {
     --brand-logo-h: calc(var(--spacing) * 4);
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    column-gap: calc(var(--spacing) * 5);
+    grid-template-columns: repeat(8, minmax(0, 1fr));
     row-gap: calc(var(--spacing) * 5);
   }
 
   @media (min-width: 1100px) {
     --brand-logo-h: calc(var(--spacing) * 4.5);
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    column-gap: calc(var(--spacing) * 6);
     row-gap: calc(var(--spacing) * 6);
+  }
+
+  & > li:has([data-wide]) {
+    grid-column: span 2;
   }
 
   & > li {
@@ -2006,7 +2027,10 @@ dialog:modal {
 
   & [data-brand="logo"] {
     display: block;
-    width: min(100%, calc(var(--brand-logo-h) * var(--logo-scale, 1) * var(--logo-aspect, 4)));
+    width: min(
+      100%,
+      calc(max(calc(var(--spacing) * 3), var(--brand-logo-h) * var(--logo-scale, 1)) * var(--logo-aspect, 4))
+    );
     aspect-ratio: var(--logo-aspect, 4);
     background-color: currentColor;
     -webkit-mask: var(--logo-src) left center / contain no-repeat;

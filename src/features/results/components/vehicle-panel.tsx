@@ -108,8 +108,11 @@ export function VehicleButton({
         "Add vehicle"
       ) : (
         <>
-          {/* `py-1` keeps descenders inside the truncation box (D91b). */}
-          <span className="min-w-0 flex-1 truncate py-1">{label}</span>
+          {/* Up to two lines, then an ellipsis, so "2019 Mercedes-Benz
+              GLE-Class" shows whole in the 44px bar and 64px rail button
+              (QA LAYOUT-2); `break-words` keeps one long word from widening
+              the page (D91b). `py-1` keeps descenders inside the clamp. */}
+          <span className="min-w-0 flex-1 break-words line-clamp-2 py-1">{label}</span>
           {rail ? (
             <span className="text-ink-muted shrink-0 font-sans text-12 font-medium normal-case underline underline-offset-4">
               Change
@@ -152,7 +155,16 @@ function carriedFilters(query: ResultsQuery): Array<[string, string]> {
   return carried;
 }
 
-export function VehiclePanel({ query }: { query: ResultsQuery }) {
+export function VehiclePanel({
+  query,
+  fits = true,
+}: {
+  query: ResultsQuery;
+  /** Whether the car narrows this category's list (`ResultsView.vehicleNarrows`).
+   *  `false`: no fit data, so everything is shown and the sheet says so
+   *  (owner, 2026-10-13: "No-data car wording", D185). */
+  fits?: boolean;
+}) {
   const config = CATEGORY_CONFIG[query.category];
   const finder = config.finder;
   if (finder === null) return null;
@@ -166,9 +178,9 @@ export function VehiclePanel({ query }: { query: ResultsQuery }) {
     >
       {label === null ? null : (
         <p className="text-ink-muted text-14 leading-body">
-          {"Showing what fits your "}
+          {fits ? "Showing what fits your " : "We don't have fit data for your "}
           <span className="text-ink font-bold">{label}</span>
-          {". "}
+          {fits ? ". " : " yet, so everything is shown. "}
           <Link
             href={resultsHref({
               ...query,

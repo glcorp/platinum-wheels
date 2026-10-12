@@ -144,6 +144,9 @@ export default function AboutPage() {
                       <span
                         aria-hidden="true"
                         data-brand="logo"
+                        /* D185: a mark 7:1 or wider takes two cells, so it
+                           can reach the grid's 12px floor. */
+                        data-wide={logo.aspect >= 7 ? "" : undefined}
                         style={
                           {
                             "--logo-src": `url("/images/brands/${logo.slug}.svg")`,

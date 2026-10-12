@@ -54,6 +54,11 @@ Without this folder a page can be called "done" on an opinion, which is exactly 
 - [`final-check-fixes-prompt.md`](final-check-fixes-prompt.md) — the prompt for the session that fixes the
   report's three important findings (product 404 blank without JS, results TTFB, phone main-thread time)
   and opens the PR; owner 2026-10-06: *"fix the three important ones and open a PR in a new session"*.
+- [`qa-streams.md`](qa-streams.md) — the QA pass over streams A–D and PR #59 (owner brief 2026-10-11), on
+  `main` at `80d7439` with a production read-only sample and a spot check of PR #60: per-stream verdict, the
+  device × check matrix, every finding re-checked by a second agent and ranked (0 P0, 1 latent P1, 8 P2),
+  owner decisions, accepted items, checked-and-cleared, not verified. Report only. The evidence folder lived
+  in the session scratchpad and is not committed.
 - [`final-check-fixes-parked.md`](final-check-fixes-parked.md) — what the fix session (D157) left for the
   owner: the proxy's product-404 read and the Neon timing to check after deploy, each with a recommendation.
 - [`fitment-questions-prompt.md`](fitment-questions-prompt.md) — the prompt for the session that settles the

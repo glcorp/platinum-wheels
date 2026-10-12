@@ -283,7 +283,7 @@ export async function submitCartQuote(
   }
 
   // Form protection (D104). A person never fills the off-screen honeypot and
-  // never sends within 3 s of opening the form. Either way: pretend it worked.
+  // never sends within 1 s of opening the form. Either way: pretend it worked.
   if (readString(formData, QUOTE_FIELD.website) !== "") {
     logSpam("honeypot");
     return { status: "success" };

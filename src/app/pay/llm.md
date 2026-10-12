@@ -25,6 +25,13 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
 - [`page.tsx`](page.tsx) and [`[...missing]/page.tsx`](%5B...missing%5D/page.tsx) — `notFound()` only,
   so bare `/pay` and any deeper unknown path render that 404, not the storefront's. In production
   `decideHostRouting` rewrites every non-`/pay` path on the pay host to `/pay` (`PAY_NOT_FOUND_PATH`).
+  **With JavaScript off those `notFound()`s paint nothing** (Next 16.4 canary answers a thrown `notFound()`
+  with an empty `<html id="__next_error__">` shell, as D157 found for products), so `src/proxy.ts` answers
+  every pay document request that would 404 itself: it fetches [`link-not-found/page.tsx`](link-not-found/page.tsx)
+  (a plain render of `not-found.tsx`, 200 and noindex, never linked) and returns its HTML with status 404
+  (QA COPY-1, D184). The `notFound()`s stay for client navigations.
+- [`link-not-found/page.tsx`](link-not-found/page.tsx) — the page the proxy fetches (above). Visited directly it
+  is a 200 with `noindex`; no token can collide with it (tokens are 22 to 64 characters).
 - [`done/page.tsx`](done/page.tsx) — `/pay/done`, the neutral landing page for every return not bound to
   the browser's own link (no cookie, an expired one, or not a customer). It says the payment could not
   be confirmed, not to pay twice, and to call or email the shop (from `PRIMARY_CONTACT` (no name, "Call us at", D161) and `SITE.email`).
@@ -53,13 +60,14 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
 
 ## Don't
 
+- Don't turn the pay 404 back into a bare `notFound()` for document requests: it is blank without
+  JavaScript (D184). Keep the proxy answer.
 - Don't render anything from the return request's fields. They are untrusted.
 - Don't build a `/pay/<token>` redirect from the return's fields (LA-02): invoice numbers are sequential
   and the token is the link's capability. Only the `pw_pay` cookie picks the link page.
 
 ## Open
 
-1. A stray path on the pay host (`/tires`) is served the pay 404 by a proxy rewrite, but `next.config.ts`
-   matches header rules on the URL as requested, so that answer lacks the `/pay/:path*` headers
-   (no-store, X-Robots-Tag, frame-ancestors). A host-keyed rule like the admin's (D115) would cover it.
-   Next's own 404 `noindex` and `robots.txt` (D112) still apply. Coordinator (owns `next.config.ts`).
+1. ~~A stray path on the pay host lacks the `/pay/:path*` headers.~~ **Closed.** D151 keyed the pay
+   headers on the host, and a production-mode run on 2026-10-13 (D184, QA COPY-1) saw `X-Robots-Tag`,
+   `X-Frame-Options` and `no-store` on stray pay-host paths, now answered by `payNotFound` in `src/proxy.ts`.

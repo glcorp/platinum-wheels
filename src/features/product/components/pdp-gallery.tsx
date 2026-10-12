@@ -117,20 +117,10 @@ export function PdpGallery({
         ? images.map((url) => url.trim()).filter(Boolean)
         : [photo];
 
-  /* The first photo, or the placeholder tile: the morph's end (D92b, D144). */
-  const firstSlide = (
-    <ViewTransition
-      name={`product-photo-${slug}`}
-      share="morph"
-      default="none"
-    >
-      {/* The morph's named element is this wrapper (owner, 2026-10-04:
-          "the image transition is not smooth"), so everything that should
-          travel travels as one: a `<ViewTransition>` names each host child,
-          and two named children would break the pair. The vignette is in
-          it too: left outside, it belonged to the page under the flying
-          photo and darkened the box in one step as the morph ended. */}
-      <div className="relative h-full w-full">
+  /* What the first photo's slot holds, or the placeholder tile (D92b, D144):
+     the picture or tile, the card-size underlay and the vignette. */
+  const firstContent = (
+    <>
         {photo === null ? (
           /* No photo on record: the placeholder tile (D108b). One resolver
              for the card and the gallery (`productImageSrc`), so a product
@@ -189,7 +179,25 @@ export function PdpGallery({
           aria-hidden="true"
           className="photo-vignette-gallery absolute inset-0 z-10"
         />
-      </div>
+    </>
+  );
+
+  /* The morph's end for a single photo (D92b, D144). With several photos the
+     carousel names whichever slide is showing instead (D184, QA PDP-4), so
+     going back from photo 2 or 3 also flies the photo that is on screen. */
+  const firstSlide = (
+    <ViewTransition
+      name={`product-photo-${slug}`}
+      share="morph"
+      default="none"
+    >
+      {/* The morph's named element is this wrapper (owner, 2026-10-04:
+          "the image transition is not smooth"), so everything that should
+          travel travels as one: a `<ViewTransition>` names each host child,
+          and two named children would break the pair. The vignette is in
+          it too: left outside, it belonged to the page under the flying
+          photo and darkened the box in one step as the morph ended. */}
+      <div className="relative h-full w-full">{firstContent}</div>
     </ViewTransition>
   );
 
@@ -240,8 +248,9 @@ export function PdpGallery({
         <PdpGalleryCarousel
           boxClassName={BOX}
           name={name}
+          morphName={`product-photo-${slug}`}
           slides={photos.map((url, position) =>
-            position === 0 ? firstSlide : (
+            position === 0 ? firstContent : (
               <Image
                 key={url}
                 {...photoSource(url, "full")}

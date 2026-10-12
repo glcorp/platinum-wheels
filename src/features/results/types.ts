@@ -315,6 +315,13 @@ export interface ResultsView {
    * tells the buyer to check their trim (D155).
    */
   boltChoice: readonly string[];
+  /**
+   * `true` when the URL's vehicle narrows this category's list; `false` with
+   * no vehicle, and for a car no source covers in this category (D155: it
+   * filters nothing). The vehicle sheet says so instead of "Showing what fits"
+   * (QA FIT-3, D185).
+   */
+  vehicleNarrows: boolean;
   /** How many products each list holds in all, of which the arrays above are
    *  the first few. `N matches · M similar`. */
   bestTotal: number;

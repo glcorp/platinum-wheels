@@ -77,8 +77,7 @@ const SECTIONS: ReadonlyArray<{
       <>
         <p>
           Only what you type into a quote request: your name, email address,
-          phone number, your preferred way to be contacted, and an optional
-          message. We also record the products and quantities in your request,
+          phone number, and an optional message. We also record the products and quantities in your request,
           and the vehicle you searched with if you used the vehicle finder.
         </p>
         <p>

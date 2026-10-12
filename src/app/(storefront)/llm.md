@@ -23,9 +23,11 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   shape to `tires/page.tsx`, differing only in the `category` they pass and their title. They have
   **no artboards** and are not parity rows: they inherit `/tires`' parity by rendering the same
   component tree (`design/manifest.md` Routes).
-- [`search/page.tsx`](search/page.tsx) — route `/search?q=&more=` (**D173**), dynamic. Header (no nav item
+- [`search/page.tsx`](search/page.tsx) — route `/search?q=` (**D173**; `?more=` gone since D178), dynamic. Header (no nav item
   current), the `Search` `<h1>`, `SearchForm` (a GET form, focused only while empty) and `SearchResults`,
-  from `src/features/search/`. `robots: noindex, nofollow` in both flag states; not in any sitemap.
+  from `src/features/search/`. `robots: noindex, nofollow` in both flag states; not in any sitemap. Since
+  **D185** it reads a searched car (`year`/`make`/`model`, kept only when `isFinderVehicle` accepts it) and
+  passes it to the header, the form and the results' `See all` links.
 - [`cart/page.tsx`](cart/page.tsx) — route `/cart` (**D122**), static. Header (no nav item current), the
   `Request a quote` eyebrow and `Your cart` `<h1>`, a `<noscript>` line with the phone (the cart needs the
   browser), and `CartView` from `src/features/cart/`, handed the quote copy resolved on the server.

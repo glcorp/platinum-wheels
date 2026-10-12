@@ -52,7 +52,10 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   panel pinned under the bar (`absolute top-full` in the header) holding a `next/form` GET to `/search?q=`;
   The icon's panel: Esc, the close button, a press outside or a submit closes it, and a page change does too. Before
   hydration and with JS off it is a plain link to `/search`. Imports no feature (D37): it only posts `q`.
-  `DEVIATIONS.md` #141.
+  `DEVIATIONS.md` #141. **D184/D185 (QA):** both forms carry `aria-label="Site search"` and `data-nav-progress`
+  (opts into the loader, SEARCH-3/5); `SiteHeader` hands it the page's checked `vehicle` (D158), posted as hidden
+  `year`/`make`/`model` (SEARCH-7); a submit leaves a timestamped `pw-search-landing` flag in sessionStorage that
+  `/search`'s `SearchLanding` reads to focus the results (SEARCH-8).
 - [`cart-link.tsx`](cart-link.tsx) — `"use client"`, named export `CartLink` (**D122**). The header's
   cart: a 44×44 link to `/cart` in the menu trigger's box and stroke weight, after the phone CTA and
   before the menu at every width (owner: "it doesn't need to be inside the hamburger"). An accent count
@@ -126,7 +129,9 @@ undesigned route and the global 404 (`src/app/not-found.tsx:2`).
   state: one effect writes `data-state` (`idle`/`loading`/`done`) on the `nav-progress` overlay — a
   `--scrim-mid` wash with the tyre in the centre, no box. Starts on an internal link click, a GET submit
   or `aria-busy="true"`; ends when the URL has committed and nothing is busy; 15s safety. A link marked
-  `data-no-progress` never starts it (the PDP quantity cells, handled in place since D160). Mounted in
+  `data-no-progress` never starts it (the PDP quantity cells, handled in place since D160). A GET form marked
+  `data-nav-progress` starts it even though `next/form` prevented the default (the three search forms,
+  D184 SEARCH-3), unless it would land on the URL already showing. Mounted in
   the root layout. Its listeners survive `pagehide` on purpose, so a bfcache-restored page still has a
   working loader. Centred by the owner's choice, DEVIATIONS #81.
 - [`scroll-reveal.tsx`](scroll-reveal.tsx) — `"use client"` leaf island rendering `null` (**D92b**). Arms

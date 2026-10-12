@@ -42,7 +42,12 @@ entire site loses its type or its palette at once.
   from the black (at 32 px the `PLATINUM` plate reads; at 16 px it is the badge's shape, not its words);
   `icon.png` and `apple-icon.png` are palette PNGs, the Apple one on `#0B0B0D` with a 12 px margin. The
   `favicon.ico` frames are PNGs written by hand (sharp writes no ICO). The throwaway script is in the
-  D163 PR description.
+  D163 PR description. **16 and 32 px frames redrawn 2026-10-13 (D184, owner ruling D185 "Redraw the small tab
+  icon")**: the whole badge shrunk read as a smear (the 32 px name plate was not legible), so those two frames are
+  a simplified drawing of the badge's strongest shape, a silver spoked wheel in front of the dark tire, on a dark
+  `#0B0B0D` rounded square (it reads on light and dark tabs), drawn as SVG, rendered at 16x supersample and
+  downsampled with Lanczos plus a light sharpen. The 48 px frame is unchanged (byte for byte). `icon.png` and
+  `apple-icon.png` are unchanged. Frame order is 16, 32, 48.
 - [`not-found.tsx`](not-found.tsx) — global 404 on `PageStub`; one of the undrawn states (`design/manifest.md`).
   Its metadata sets `robots: null`, which removes the layout's site-wide `robots` on the 404, because
   Next already writes `noindex` on every 404; with the indexing flag on the page carried two

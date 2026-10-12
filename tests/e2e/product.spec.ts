@@ -62,7 +62,7 @@ const categoryOf = (slug: string): Category | undefined =>
     (CATEGORY_SLUGS[c] as readonly string[]).includes(slug),
   );
 
-const ALLOWED_TEL = ["tel:+14378825000", "tel:+13659980990"];
+const ALLOWED_TEL = ["tel:+14378825000"]; // one number since D161
 
 const PDPS: Array<{ category: Category; slug: string; crumb: string; route: string; defaultQty: string; unitMany: string }> = [
   { category: "tires", slug: SLUG.tire, crumb: "Tires", route: "/tires", defaultQty: "1", unitMany: "tires" },

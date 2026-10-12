@@ -45,6 +45,12 @@
      (b) A `submit` of a GET form that nobody prevented — the vehicle finder,
          and the filter form with scripting half-loaded. POST forms (the quote
          form's Server Action) are excluded; they own their pending state.
+         A form marked `data-nav-progress` also counts when its default WAS
+         prevented: `next/form` (the three search forms) prevents the default
+         and navigates on the client, which is the same wait a link click
+         is (QA SEARCH-3, D184). It starts only when the form would land on a
+         different URL, so searching the text already in the URL never parks
+         the loader until the 15s safety.
      (c) Any element gaining `aria-busy="true"`: the filter form and the sort
          select set it for the length of their `router.replace` transition
          (D66). That covers the in-page filter updates, which prevent the
@@ -126,6 +132,28 @@ type BarState = "idle" | "loading" | "done";
 function withoutHash(href: string): string {
   const hash = href.indexOf("#");
   return hash === -1 ? href : href.slice(0, hash);
+}
+
+/** Would this GET form land on the page already showing? A GET form replaces
+ *  its action's query with its own fields (as `next/form` does), so the
+ *  target is the action's path plus those fields. Compared as parsed
+ *  parameters, so `%20` and `+` do not make a difference. */
+function landsOnCurrentUrl(form: HTMLFormElement): boolean {
+  try {
+    const target = new URL(form.action, window.location.href);
+    const fields = new URLSearchParams();
+    for (const [name, value] of new FormData(form)) {
+      if (typeof value === "string") fields.append(name, value);
+    }
+    const current = new URL(window.location.href);
+    return (
+      target.origin === current.origin &&
+      target.pathname === current.pathname &&
+      fields.toString() === new URLSearchParams(current.search).toString()
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function NavProgress() {
@@ -254,11 +282,13 @@ export function NavProgress() {
       start(window.location.href);
     }
 
-    /* (b) GET form submits nobody intercepted. */
+    /* (b) GET form submits nobody intercepted, and the opted-in `next/form`
+       ones that did. */
     function onSubmit(event: SubmitEvent) {
-      if (event.defaultPrevented) return;
       const form = event.target;
       if (!(form instanceof HTMLFormElement)) return;
+      const optedIn = form.hasAttribute("data-nav-progress");
+      if (event.defaultPrevented && !optedIn) return;
 
       const submitter = event.submitter;
       const method =
@@ -269,6 +299,7 @@ export function NavProgress() {
           : form.method;
       if (method.toLowerCase() !== "get") return;
 
+      if (optedIn && landsOnCurrentUrl(form)) return;
       start(window.location.href);
     }
 

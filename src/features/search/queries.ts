@@ -27,7 +27,11 @@ import {
 } from "@/db/schema";
 import { accessoryParam, seasonParam, toProduct } from "@/features/catalog/adapter";
 import type { CatalogProduct } from "@/features/catalog/catalog-types";
-import { CATEGORY_CONFIG, EXTRA_PARAM } from "@/features/catalog/categories";
+import {
+  CATEGORY_CONFIG,
+  EXTRA_PARAM,
+  THREADED_ACCESSORY_TYPES,
+} from "@/features/catalog/categories";
 import {
   loadImages,
   PRODUCT_SELECTION,
@@ -38,6 +42,7 @@ import {
 import { listedStatus } from "@/features/catalog/listing-status";
 import { listingFacts } from "@/features/catalog/siblings";
 import type { Product, ProductCategory } from "@/features/catalog/types";
+import type { VehicleParams } from "@/lib/routes";
 import { PRICES_VISIBLE } from "@/lib/site";
 
 import { FLOTATION_RATIO, measuringRatio, metricMeasuringRim, RIM_SLACK, wheelWidthRange } from "./fit";
@@ -65,6 +70,9 @@ export interface SearchGroup {
 export interface SearchOutcome {
   /** Groups that matched something, in category order. */
   groups: SearchGroup[];
+  /** The categories the query reads (`scopeOf`), whether or not each had a
+   *  match. The "read as" line says only what was searched (QA SEARCH-4). */
+  scope: ProductCategory[];
 }
 
 /* --- Which groups, and on what ------------------------------------------ */
@@ -321,6 +329,7 @@ function seeAllFor(
   category: ProductCategory,
   parsed: ParsedSearch,
   brand: string | undefined,
+  vehicle: VehicleParams | null,
 ): SearchGroup["seeAll"] {
   /* The category pages cannot filter on free text, so a search with words
      that are not exactly a brand links to the page with its other filters
@@ -367,10 +376,26 @@ function seeAllFor(
 
   if (category === "accessories") {
     for (const kind of parsed.accessoryKinds) params.append("type", accessoryParam(kind));
-    if (parsed.thread !== null) params.set(EXTRA_PARAM.thread, parsed.thread);
+    if (parsed.thread !== null) {
+      /* D137: the Thread size filter applies only while a threaded type is
+         ticked, so a thread search with no type named would land on the whole
+         category. Name the three threaded types (QA SEARCH-1); it then lands
+         on the group's set less the products with no thread. */
+      if (parsed.accessoryKinds.length === 0) {
+        for (const type of THREADED_ACCESSORY_TYPES) params.append("type", type);
+      }
+      params.set(EXTRA_PARAM.thread, parsed.thread);
+    }
   }
 
   if (brand !== undefined) params.set("brand", brand);
+  /* D185: the searched car rides along (already checked by the page), so the
+     category page splits Best and Similar for it. It narrows nothing. */
+  if (vehicle !== null) {
+    params.set("year", vehicle.year);
+    params.set("make", vehicle.make);
+    params.set("model", vehicle.model);
+  }
   const query = params.toString();
   return { href: query === "" ? config.route : `${config.route}?${query}`, label, exact };
 }
@@ -380,12 +405,16 @@ function seeAllFor(
 const storefrontPrice = (product: CatalogProduct): CatalogProduct =>
   PRICES_VISIBLE ? product : { ...product, price: null };
 
-export async function searchCatalog(parsed: ParsedSearch): Promise<SearchOutcome> {
+export async function searchCatalog(
+  parsed: ParsedSearch,
+  vehicle: VehicleParams | null = null,
+): Promise<SearchOutcome> {
   const db = getDb();
-  const plans = scopeOf(parsed)
+  const scope = scopeOf(parsed);
+  const plans = scope
     .map((category) => ({ category, where: groupConditions(category, parsed) }))
     .filter((plan): plan is { category: ProductCategory; where: SQL[] } => plan.where !== null);
-  if (plans.length === 0) return { groups: [] };
+  if (plans.length === 0) return { groups: [], scope };
 
   const [results, brands] = await Promise.all([
     Promise.all(
@@ -423,8 +452,8 @@ export async function searchCatalog(parsed: ParsedSearch): Promise<SearchOutcome
           }),
         );
       }),
-      seeAll: seeAllFor(plan.category, parsed, brands.get(plan.category)),
+      seeAll: seeAllFor(plan.category, parsed, brands.get(plan.category), vehicle),
     });
   });
-  return { groups };
+  return { groups, scope };
 }
