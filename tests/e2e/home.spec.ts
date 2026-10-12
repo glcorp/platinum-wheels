@@ -21,7 +21,7 @@ import {
 } from "../helpers";
 
 /** `src/lib/site.ts` CONTACTS — the only two numbers the site may dial. */
-const ALLOWED_TEL = ["tel:+14378825000", "tel:+13659980990"];
+const ALLOWED_TEL = ["tel:+14378825000"]; // one number since D161
 const PRIMARY_TEL = "tel:+14378825000";
 
 /** `src/features/catalog/data.ts` FEATURED_ROW (D74): the four drawn SKUs in
