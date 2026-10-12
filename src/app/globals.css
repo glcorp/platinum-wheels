@@ -1993,7 +1993,7 @@ dialog:modal {
      720 (was 20 / 24), and 720-1099 is 8 across (was 6). 24 brands + 8
      doubles = 32 cells, so every row is still full at 4 and 8 across.
      Measured 2026-10-13: every mark >= 12px at 390, 720, 1100 and 1440;
-     three 5.5-5.9:1 marks are ~11px at 320. */
+     Fuel, Goodyear, Continental and Nitto are 10.7-11.9px at 320. */
   --brand-logo-h: calc(var(--spacing) * 3.5);
 
   display: grid;
