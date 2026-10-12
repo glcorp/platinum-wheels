@@ -68,7 +68,6 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
 
 ## Open
 
-1. A stray path on the pay host (`/tires`) is served the pay 404 by a proxy rewrite, but `next.config.ts`
-   matches header rules on the URL as requested, so that answer lacks the `/pay/:path*` headers
-   (no-store, X-Robots-Tag, frame-ancestors). A host-keyed rule like the admin's (D115) would cover it.
-   Next's own 404 `noindex` and `robots.txt` (D112) still apply. Coordinator (owns `next.config.ts`).
+1. ~~A stray path on the pay host lacks the `/pay/:path*` headers.~~ **Closed.** D151 keyed the pay
+   headers on the host, and a production-mode run on 2026-10-13 (D184, QA COPY-1) saw `X-Robots-Tag`,
+   `X-Frame-Options` and `no-store` on stray pay-host paths, now answered by `payNotFound` in `src/proxy.ts`.
