@@ -136,7 +136,7 @@ export const PRIMARY_CONTACT = {
 /**
  * The brands the /about page shows (D182; owner, 2026-10-11: "add more brnads
  * and their logo like on the main ticker"). 24, so the grid's rows are full
- * at 2 and 4 across. House brands first, then tires, then wheels; within
+ * at 4, 6 and 8 across (D183). House brands first, then tires, then wheels; within
  * each, the order is the owner's pick. Chosen from the loaded catalogue by
  * product count (tires and wheels), with the house brands and the well-known
  * tire makers kept; Hankook (38 products) was dropped by the owner.
