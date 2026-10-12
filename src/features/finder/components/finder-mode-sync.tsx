@@ -27,6 +27,15 @@ import { useFinderCategory } from "@/lib/finder-category-store";
  *   its own value. The options are server markup React never reconciles
  *   (`dangerouslySetInnerHTML`), refilled with fresh copies on each change,
  *   the way the Model list is (iOS ignores `hidden` on an option).
+ * - Season (D185, QA HOMEFIND-3; amends D132 for this panel only): in tire
+ *   Size mode the Season select offers only the seasons that exist for the
+ *   width, profile and rim chosen so far (all of them while none is chosen),
+ *   from the digits `size-lists.ts` puts after each size. A season the
+ *   chosen size does not come in is cleared. Without it every season shows.
+ * - A submit leaves out the selects nothing was chosen in, so an empty
+ *   search is `/tires`, not `/tires?width=&profile=&rim=&season=` (QA
+ *   HOMEFIND-5). Scripting off keeps the empty values, which the results
+ *   page reads as no filter.
  */
 export interface FinderModeSyncProps {
   formId: string;
@@ -35,6 +44,8 @@ export interface FinderModeSyncProps {
   /** Size select ids per category, in combination order. */
   tireIds: readonly [width: string, profile: string, rim: string];
   wheelIds: readonly [bolt: string, diameter: string, width: string];
+  /** `id` of the Season select (tires only). */
+  seasonId: string;
   /** `a,b,c;a,b,c` per category (`size-lists.ts`), or `null` with no list. */
   tireCombos: string | null;
   wheelCombos: string | null;
@@ -81,6 +92,7 @@ export function FinderModeSync({
   sizeRadioId,
   tireIds,
   wheelIds,
+  seasonId,
   tireCombos,
   wheelCombos,
 }: FinderModeSyncProps) {
@@ -100,6 +112,7 @@ export function FinderModeSync({
       held.pwAll ??= Array.from(select.options);
       return { select, options: held.pwAll };
     };
+    const season = field(seasonId);
     const tire = tireIds.map(field).filter((f): f is Field => f !== null);
     const wheel = wheelIds.map(field).filter((f): f is Field => f !== null);
     const tireRows = parse(tireCombos);
@@ -117,8 +130,58 @@ export function FinderModeSync({
           select.disabled = !shown;
         }
       }
+      // The mode or category decides whether the sizes narrow Season.
+      narrowSeason();
     };
-    const onTireChange = () => narrow(tire, tireRows);
+    /* Selects with nothing chosen stay out of the query for the length of the
+       submit: the browser reads the form right after this event, so they are
+       given back a tick later. */
+    const onSubmit = () => {
+      const left: HTMLSelectElement[] = [];
+      for (const select of Array.from(form.querySelectorAll("select"))) {
+        if (select.name !== "" && !select.disabled && select.value === "") {
+          select.disabled = true;
+          left.push(select);
+        }
+      }
+      window.setTimeout(() => {
+        for (const select of left) select.disabled = false;
+      }, 0);
+    };
+    /* Tire Size mode only: in Vehicle mode the size selects are hidden and
+       must not decide what Season offers. */
+    const narrowSeason = () => {
+      if (season === null || tireRows.length === 0) return;
+      const chosen = tire.map(({ select }) => select.value);
+      const sized = category === "tires" && radio.checked && chosen.some((value) => value !== "");
+      const allowed = new Set<string>();
+      if (sized) {
+        for (const combo of tireRows) {
+          const fits = chosen.every((value, at) => value === "" || combo[at] === value);
+          if (!fits) continue;
+          // A row with no season digits (an older list) allows every season.
+          if (combo.length < 4) season.options.forEach((_, at) => allowed.add(String(at - 1)));
+          for (const digit of combo[3] ?? "") allowed.add(digit);
+        }
+      }
+      const current = season.select.value;
+      for (const node of Array.from(season.select.children)) {
+        if (node instanceof HTMLOptionElement && node.value === "") continue;
+        node.remove();
+      }
+      const fill = document.createDocumentFragment();
+      // `options[0]` is the placeholder; season N is `options[N + 1]`.
+      season.options.slice(1).forEach((option, at) => {
+        if (!sized || allowed.has(String(at))) fill.appendChild(option.cloneNode(true));
+      });
+      season.select.appendChild(fill);
+      season.select.value = current;
+      if (season.select.value !== current) season.select.value = "";
+    };
+    const onTireChange = () => {
+      narrow(tire, tireRows);
+      narrowSeason();
+    };
     const onWheelChange = () => narrow(wheel, wheelRows);
 
     apply();
@@ -128,15 +191,17 @@ export function FinderModeSync({
     const radios = Array.from(
       document.querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${radio.name}"]`),
     );
+    form.addEventListener("submit", onSubmit);
     for (const input of radios) input.addEventListener("change", apply);
     for (const { select } of tire) select.addEventListener("change", onTireChange);
     for (const { select } of wheel) select.addEventListener("change", onWheelChange);
     return () => {
+      form.removeEventListener("submit", onSubmit);
       for (const input of radios) input.removeEventListener("change", apply);
       for (const { select } of tire) select.removeEventListener("change", onTireChange);
       for (const { select } of wheel) select.removeEventListener("change", onWheelChange);
     };
-  }, [category, formId, sizeRadioId, tireIds, wheelIds, tireCombos, wheelCombos]);
+  }, [category, formId, sizeRadioId, tireIds, wheelIds, seasonId, tireCombos, wheelCombos]);
 
   return null;
 }

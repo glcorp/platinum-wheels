@@ -20,7 +20,9 @@
 
    Without JavaScript a link to `#vehicle-sheet` makes the dialog the URL's
    target, and a `<noscript>` style shows it in place (not modal), with the
-   close control a link back to the page. A part-filled finder submit
+   close control a link back to the page; the style also lifts the panel's
+   closed-state translate, which a targeted (never `[open]`) dialog keeps
+   (QA MODEL-1, D184). A part-filled finder submit
    (LA-05 P2) opens the sheet on load, focused on the field to finish.
    --------------------------------------------------------------------------- */
 
@@ -83,7 +85,10 @@ export function VehicleSheet({ title, openOnLoad = false, children }: VehicleShe
   return (
     <>
       <noscript>
-        <style>{`#${VEHICLE_SHEET_ID}:target{display:flex;z-index:40}`}</style>
+        {/* A targeted dialog is never `[open]`, so `sheet-dialog`'s closed-state
+            translate (down, and up from 1100) would keep the panel off screen
+            (QA MODEL-1). The id selector outranks both. */}
+        <style>{`#${VEHICLE_SHEET_ID}:target{display:flex;z-index:40}#${VEHICLE_SHEET_ID}:target .sheet-panel{translate:0 0}`}</style>
       </noscript>
       <dialog
         id={VEHICLE_SHEET_ID}

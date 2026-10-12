@@ -192,10 +192,14 @@ export function bindFinder(ids: FinderIds, list: string | null): void {
      ran) needs the narrowed list now. The browser may restore Year and Make
      only after this ran (WebKit does, measured on Back), so the same check
      runs again when the document has loaded, on a page-cache restore, and
-     when the island mounts (`pwFinderRefresh`). Each run is a no-op once the
-     list follows the visitor's own changes. */
+     when the island mounts (`pwFinderRefresh`). A chosen Make is re-applied
+     every time, primed or not (QA MODEL-2): a Make `change` that was missed
+     would otherwise leave the year-only list for good. `sync()` is idempotent;
+     it is skipped while the Model picker is the focused control, so a list
+     the visitor has open is never rebuilt under them. */
   const refresh = () => {
-    if (!primed && (year.value !== "" || make.value !== "")) onChange();
+    if (document.activeElement === model) return;
+    if ((!primed && year.value !== "") || make.value !== "") onChange();
   };
   marked.pwFinderRefresh = refresh;
   refresh();

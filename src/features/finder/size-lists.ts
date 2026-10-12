@@ -1,5 +1,6 @@
 import "server-only";
 
+import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { getCategoryBase } from "@/features/catalog/queries";
 
 /**
@@ -22,8 +23,12 @@ import { getCategoryBase } from "@/features/catalog/queries";
  *
  * The combinations travel as one compact string, `a,b,c;a,b,c`, about 23 KB
  * raw and 5 KB gzipped on the full catalogue (measured 2026-10-11: 553 tire
- * and 966 wheel combinations): tires `width,profile,rim`, wheels
+ * and 966 wheel combinations): tires `width,profile,rim,seasons`, wheels
  * `bolt,diameter,width` with an empty bolt for a wheel with no pattern.
+ * `seasons` (D185, QA HOMEFIND-3) is one digit per season the size comes in,
+ * each digit the season's position in the Season select
+ * (`CATEGORY_CONFIG.tires.chips`), so the Season select can offer only what
+ * exists for the chosen size; a size is one row however many seasons it has.
  */
 
 export interface FinderSizeOption {
@@ -56,6 +61,41 @@ const plain = (value: number): FinderSizeOption => ({
   label: String(value),
 });
 
+/** The Season select's values in its own order, as the database spells them
+ *  (`all-season` is `all_season`): a season's digit in a combination is its
+ *  index here. */
+const SEASON_ORDER = (CATEGORY_CONFIG.tires.chips?.options ?? []).map((option) =>
+  option.value.replace(/-/g, "_"),
+);
+
+/** `width,profile,rim,seasons` per distinct size. */
+function tireCombos(
+  rows: ReadonlyArray<
+    readonly [
+      number | null,
+      number | null,
+      number | null,
+      number | null,
+      number | null,
+      string | null,
+    ]
+  >,
+): string {
+  const sizes = new Map<string, Set<number>>();
+  for (const [width, profile, overall, section, rim, season] of rows) {
+    const key = [width ?? overall, profile ?? section, rim]
+      .map((part) => (part === null ? "" : String(part)))
+      .join(",");
+    const seasons = sizes.get(key) ?? new Set<number>();
+    const index = season === null ? -1 : SEASON_ORDER.indexOf(season);
+    if (index >= 0) seasons.add(index);
+    sizes.set(key, seasons);
+  }
+  return [...sizes]
+    .map(([key, seasons]) => `${key},${[...seasons].sort().join("")}`)
+    .join(";");
+}
+
 export async function loadFinderSizes(): Promise<FinderSizeLists> {
   try {
     const [tires, wheels] = await Promise.all([
@@ -84,13 +124,7 @@ export async function loadFinderSizes(): Promise<FinderSizeLists> {
                 value: String(value),
                 label: `R${value}`,
               })),
-              combos: tire.combos
-                .map(([width, profile, overall, section, rim]) =>
-                  [width ?? overall, profile ?? section, rim]
-                    .map((part) => (part === null ? "" : String(part)))
-                    .join(","),
-                )
-                .join(";"),
+              combos: tireCombos(tire.combos),
             },
       wheel:
         wheel === null || wheel.combos.length === 0

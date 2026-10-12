@@ -22,6 +22,12 @@
 
    Hidden from `md:` (1100px), where the rail takes over — D46.
 
+   Under 500px tall (a sideways phone) the whole bar, tabs row and vehicle /
+   Filters row, scrolls with the page and only the header stays pinned: at
+   568x320 the pinned stack was 190px, 59% of the screen (owner, 2026-10-13,
+   "Unpin bars on sideways phones", D185). The `scroll-padding-top` rule in
+   `globals.css` then needs only the header's height there.
+
    Server Component; both cells are the islands.
    --------------------------------------------------------------------------- */
 
@@ -48,7 +54,7 @@ export function FilterSortBar({ view, tabs, active }: FilterSortBarProps) {
       /* Hook for `globals.css`'s scroll-padding rule, which keeps a keyboard
          focus target from landing under this bar (WCAG 2.4.11, D91b). */
       data-sticky-filter-bar=""
-      className="sticky top-17 z-3 mt-4 flex flex-col gap-2 border-y border-border bg-bg px-4 py-3 sm:top-22 sm:px-8 md:hidden"
+      className="sticky top-17 z-3 mt-4 flex flex-col gap-2 border-y border-border bg-bg px-4 py-3 sm:top-22 sm:px-8 md:hidden [@media(max-height:499.98px)]:static"
     >
       <CategoryTabs items={tabs} active={active} />
       {/* The vehicle first, `Filters` beside it (owner, 2026-10-07: "instead
