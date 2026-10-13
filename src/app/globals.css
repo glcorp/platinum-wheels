@@ -2100,14 +2100,38 @@ dialog:modal {
     display: none;
   }
 }
-/* Accessories have no size: no switch, and Model takes Season's track. */
+/* Accessories have no size: no switch. */
 .finder-home[data-finder-category="accessories"] .finder-mode {
   display: none;
 }
-.finder-home[data-finder-category="wheels"] .finder-cell-model,
-.finder-home[data-finder-category="accessories"] .finder-cell-model,
-.finder-home .finder-cell-wide {
-  grid-column: span 2;
+/* Wheels and accessories have no Season, so three fields share the row.
+   Phones (two columns): Model, or the wheel Width, takes the whole second
+   row. From 720 the three are equal thirds, the CTA on its own row to 1099
+   and in the drawn 300px track from 1100 (D187, owner 2026-10-14: "make it
+   uniform size with others"; Model had spanned two tracks and read twice
+   the width of Year and Make). Tires keep the drawn row plus Season. */
+@media (max-width: 719.98px) {
+  .finder-home[data-finder-category="wheels"] .finder-cell-model,
+  .finder-home[data-finder-category="accessories"] .finder-cell-model,
+  .finder-home .finder-cell-wide {
+    grid-column: span 2;
+  }
+}
+@media (min-width: 720px) {
+  .finder-home:is([data-finder-category="wheels"], [data-finder-category="accessories"]) .finder-fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .finder-home:is([data-finder-category="wheels"], [data-finder-category="accessories"]) .finder-cta-cell {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1100px) {
+  .finder-home:is([data-finder-category="wheels"], [data-finder-category="accessories"]) .finder-fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 300px;
+  }
+  .finder-home:is([data-finder-category="wheels"], [data-finder-category="accessories"]) .finder-cta-cell {
+    grid-column: auto;
+  }
 }
 
 /* The hero's minimum height with the D169 panel (replaces `hero-fit`, D128,

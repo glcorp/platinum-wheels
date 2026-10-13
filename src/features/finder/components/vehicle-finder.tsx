@@ -446,7 +446,7 @@ export function VehicleFinder({
                  with the CTA on its own row, desktop the drawn row plus a
                  Season track (`finder-grid-home`, Stream C block). Cells sit on
                  the row's end, as `sm:items-end` does below (D128). */
-              "grid grid-cols-2 items-end gap-3 max-sm:fold-cramped:gap-2 sm:grid-cols-4 sm:gap-4 md:finder-grid-home"
+              "finder-fields grid grid-cols-2 items-end gap-3 max-sm:fold-cramped:gap-2 sm:grid-cols-4 sm:gap-4 md:finder-grid-home"
             : null,
           /* Every other finder (`/tires`, `/wheels`, `/accessories` sheet)
              keeps the D128 classes below, byte for byte. */
@@ -526,8 +526,9 @@ export function VehicleFinder({
           data-finder-show={home ? SHOW.vehicle : undefined}
           className={
             home
-              ? /* Spans two tracks where no Season sits beside it (wheels and
-                   accessories, Stream C rules). */
+              ? /* On a phone, takes the whole row where no Season sits
+                   beside it (wheels and accessories); from 720 an equal
+                   third (D187, Stream C rules). */
                 "finder-cell-model"
               : hero
                 ? "max-sm:fold-short:col-span-2"
@@ -606,7 +607,7 @@ export function VehicleFinder({
             formId={FINDER_FORM_ID}
             className={
               home
-                ? "col-span-2 mt-1 max-sm:fold-cramped:mt-0 sm:col-span-4 sm:mt-0 md:col-span-1"
+                ? "finder-cta-cell col-span-2 mt-1 max-sm:fold-cramped:mt-0 sm:col-span-4 sm:mt-0 md:col-span-1"
                 : hero
                   ? "mt-1 sm:mt-0 max-sm:fold-short:col-span-2"
                   : "mt-1 sm:mt-0"
