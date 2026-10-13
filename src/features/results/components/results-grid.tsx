@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CATEGORY_CONFIG } from "@/features/catalog/categories";
 import { ProductCard } from "@/features/catalog/components/product-card";
 import type { Product } from "@/features/catalog/types";
+import { DiameterStrip } from "@/features/results/components/diameter-strip";
 import { LoadMoreLanding } from "@/features/results/components/load-more-landing";
 import {
   clearFilters,
@@ -50,17 +51,19 @@ const SECTION =
    `repeat(3,minmax(0,1fr));gap:16px` D (results-desktop.html:154). The 2-up
    step at `sm:` is DESIGN.md §8 (D46); `minmax(0,1fr)` is what
    `grid-cols-<n>` already emits. */
-const CARD_GRID = "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3";
+const CARD_GRID = "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3";
+/* D186 (owner, 2026-10-14, on a vendor's phone grid: "make it like this so
+   more products can be browsed at once"): two cards a row below 720 too, so
+   a phone shows four cards where it showed one and a half. The cards take
+   `compactMobile`. `design/DEVIATIONS.md` #144. */
 
 /* The card photo's `sizes`, crossing where `CARD_GRID` does (D91b, WDG-06;
-   `HANDOFF.md` §8.7). Below 720 the grid is 1-up, so a card is the viewport
-   less the 16px gutters — `100vw` covers it; the card's old default claimed
-   `50vw` from 400, so a 412px phone at DPR 2.6 fetched a candidate half the
-   size it painted. 720–1099 is 2-up with 32px padding and a 16px gap, under
+   `HANDOFF.md` §8.7). Below 720 the grid is 2-up since D186, so a card is
+   under half the viewport and `50vw` covers it. 720–1099 is 2-up with 32px padding and a 16px gap, under
    `50vw`. From 1100 it is 3-up beside the 280px rail in the 1344px
    container, which never exceeds 328px (the 1440 artboard), so `348px`
    keeps the headroom the default already carried. */
-const CARD_SIZES = "(min-width: 1100px) 348px, (min-width: 720px) 50vw, 100vw";
+const CARD_SIZES = "(min-width: 1100px) 348px, 50vw";
 
 /* Heading type: Barlow Condensed 700 / 0.92 / -0.015em / uppercase at 32px M,
    40px D (`results.md` §2.5) — the `display` utility carries all four, the
@@ -211,6 +214,7 @@ function CardGrid({
             product={product}
             priority={index < priorityCount}
             sizes={CARD_SIZES}
+            compactMobile
             vehicle={vehicle}
             anchorId={`${anchorPrefix}-${index + 1}`}
           />
@@ -410,6 +414,10 @@ export function ResultsGrid({ view }: ResultsGridProps) {
           {!empty && view.boltChoice.length > 1 ? (
             <BoltChoiceNote patterns={view.boltChoice} />
           ) : null}
+          {/* D186: the diameters as chips on `/wheels` with a vehicle,
+              rendered even at zero results so a size that holds nothing can
+              be changed from here. */}
+          <DiameterStrip view={view} />
         </div>
         {/* The first row preloads: `/tires` has no hero, so a best-matches
             card is the LCP element. Lighthouse mobile, 2026-09-21, measured

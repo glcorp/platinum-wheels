@@ -7,6 +7,8 @@ owns the table that tells the rest of the build how they differ. `ProductCard` i
 storefront's most reused component" (`product-card.tsx:10`) — one shell with three homes, the home
 `featured-tires` row, the `/tires` grid and the PDP `similar-products` row, all three of which measure
 byte-identically, so there is one component and no per-context variant (`product-card.tsx:12-18`).
+Since **D186** one switch, `compactMobile`, steps the card's insets and type down one size below 720 for
+the two-up results and search grids; from 720 and in the carousels the card is unchanged.
 Delete this folder and every route loses its product surface, and `/tires`, `/wheels` and
 `/accessories` lose the config that distinguishes them.
 

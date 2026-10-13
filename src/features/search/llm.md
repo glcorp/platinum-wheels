@@ -16,7 +16,8 @@ header's search box and icon have nothing behind them.
   (**D178**: no `Show more`, no `?more=`; words the category page cannot filter on are left off the link,
   `seeAll.exact` false). Never imported by a client file.
 - [`components/search-results.tsx`](components/search-results.tsx) — the page body: the field, the group
-  jump links, the three groups and the no-results state. Server Component.
+  jump links, the three groups and the no-results state. Server Component. Cards two up on a phone, all
+  four shown (D186, superseding D180's three stacked).
 - [`components/search-form.tsx`](components/search-form.tsx) — the plain GET `<form>` the page renders
   (works with JS off). `"use client"` since D184: the field is controlled and resynced to the URL's `q` during
   render (the D84 pattern), so Back and a header search update it.

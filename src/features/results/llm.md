@@ -163,7 +163,11 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   instantly to the first new card and focuses its `data-card-link`. Cards carry position ids
   `result-N` / `similar-N`; the `Load more` href ends in the first new card's id; `scroll={false}` stays (D68).
 - Only the **first** best-match card is eager with `fetchPriority="high"` (`priorityCount={1}`, D153, launch audit mobile LCP): three marked high at once on a one-column phone made two compete with the one that is the LCP. The home featured row passes no priority (below the fold; the hero owns it).
-- [`components/results-grid.tsx`](components/results-grid.tsx) — `ResultsGrid({ view })` and
+- [`components/diameter-strip.tsx`](components/diameter-strip.tsx) — `DiameterStrip({ view })`, Server: on
+  `/wheels` with a vehicle, a `Wheel diameter` row of chip links under the count (D186, `DEVIATIONS.md`
+  #145). Options are the size facet's diameter field; each link sets or clears `diameter` and keeps the car.
+- [`components/results-grid.tsx`](components/results-grid.tsx) — two cards a row below 720 since D186
+  (`compactMobile` cards, #144). `ResultsGrid({ view })` and
   `ResultsEmpty({ clearHref, as?, body? })`, Server. `body` defaults to the category copy so the
   `/styleguide` call site stays untouched (one sentence for all three today, D73). `Best matches` is the
   `<h1>` (D47(6)), `Similar matches` an `<h2>` (omitted when empty); `RESULTS_WINDOW` 6 + 3 by
