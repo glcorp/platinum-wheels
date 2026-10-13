@@ -177,6 +177,14 @@ export interface ProductCardProps {
    */
   morph?: boolean;
   /**
+   * The card sits in a two-up grid on a phone (the results and search grids
+   * below 720, owner 2026-10-14, D186): about 170px wide instead of the full
+   * width, so below `sm:` the insets, the model line, the size line and the
+   * CTA's side padding step down one size. From `sm:` the card is unchanged.
+   * Default `false`: the home and PDP carousels keep their 260px track.
+   */
+  compactMobile?: boolean;
+  /**
    * The photo's `sizes` for THIS caller's grid (D91b, WDG-06). One card, three
    * layouts: the results grid is 1-up / 2-up / 3-up at 720 and 1100, the home
    * featured row a fixed 260px track below 720, the PDP similar row the same
@@ -210,6 +218,7 @@ export function ProductCard({
   product,
   priority = false,
   morph = true,
+  compactMobile = false,
   sizes = IMAGE_SIZES,
   vehicle = null,
   anchorId,
@@ -316,7 +325,7 @@ export function ProductCard({
           line being stretched down the photo. The image anchor and the
           vignette stay `absolute inset-0` over the padding box, which the
           square's `border-box` sizing leaves the same size. */}
-      <div className="bg-bg relative flex aspect-square flex-wrap content-start items-start gap-1.5 overflow-hidden p-2.5 sm:p-4">
+      <div className={cx("bg-bg relative flex aspect-square flex-wrap content-start items-start gap-1.5 overflow-hidden sm:p-4", compactMobile ? "p-2" : "p-2.5")}>
         {/* `width:100%;height:100%;object-fit:contain;padding:6%;
             box-sizing:border-box;display:block` — results-desktop.html:158.
             `photo-inset-card` is that 6% (globals.css:284); the percentage
@@ -483,7 +492,7 @@ export function ProductCard({
       {/* `padding:24px;display:flex;flex-direction:column;gap:8px;flex:1` —
           results-desktop.html:169; `padding:14px` mobile —
           results-mobile.html:119. */}
-      <div className="flex flex-1 flex-col gap-2 p-3.5 sm:p-6">
+      <div className={cx("flex flex-1 flex-col gap-2 sm:p-6", compactMobile ? "p-3" : "p-3.5")}>
         {/* Name block wrapper `display:flex;flex-direction:column`, no gap —
             results-desktop.html:170. */}
         <div className="flex flex-col">
@@ -526,7 +535,7 @@ export function ProductCard({
             /* D133: the element `Load more` focuses on the first card it
                adds (`load-more-landing.tsx`). */
             data-card-link=""
-            className="display text-ink text-display-24 tap-extend break-words active:opacity-70 sm:text-display-28"
+            className={cx("display text-ink tap-extend break-words active:opacity-70 sm:text-display-28", compactMobile ? "text-display-20" : "text-display-24")}
           >
             {model}
             {/* WDG-2.4.4: the same model in two sizes must not read as two
@@ -548,7 +557,7 @@ export function ProductCard({
               item shrink to the row and `break-words` breaks a word longer
               than the card, so the line wraps inside the body at 375 and 1440
               instead of widening the card. A line that fits is unchanged. */}
-          <span className="numeral text-ink-muted min-w-0 text-14 leading-tight break-words sm:text-15">
+          <span className={cx("numeral text-ink-muted min-w-0 leading-tight break-words sm:text-15", compactMobile ? "text-13" : "text-14")}>
             {size}
           </span>
 
@@ -632,7 +641,7 @@ export function ProductCard({
             quantity={1}
             vehicle={vehicleLabel}
             size="card"
-            className="flex-1"
+            className={cx("flex-1", compactMobile && "max-sm:px-3")}
             srContext={`${fullName} ${size}`}
           />
         </div>

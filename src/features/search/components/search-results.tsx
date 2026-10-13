@@ -29,15 +29,14 @@ const HEAD_STACK = "flex flex-col gap-2.5 md:gap-3";
    part code has no spaces to break at (QA LAYOUT-1, D141, D151). */
 const SUPPORT = "text-ink-muted text-15 leading-body max-w-measure wrap-anywhere";
 const COUNT = "text-ink-muted text-14 leading-flat tabular-nums md:text-15";
-/* D180: a phone shows 3 cards a group, not 4 (owner, 2026-10-11: "in
-   mobile dont display more than 3 options for each search. user should not
-   scroll so much"); the fourth is in the page for the 2-up and 4-up grids
-   and hidden below 720, where cards stack one a row. */
-const CARD_GRID =
-  "grid grid-cols-1 gap-3 max-sm:*:nth-[n+4]:hidden sm:grid-cols-2 sm:gap-4 md:grid-cols-4";
-/* 1-up below 720 (the viewport less 16px gutters), 2-up to 1099 (under
-   50vw), 4-up in the 1344px frame from 1100 (at most 324px). */
-const CARD_SIZES = "(min-width: 1100px) 336px, (min-width: 720px) 50vw, 100vw";
+/* D186 (owner, 2026-10-14): two cards a row on a phone too, so a group's
+   four cards are two short rows. This replaces D180's "3 cards, one a row"
+   below 720, which was about scroll length: two rows of the compact card are
+   shorter than three stacked full-width cards. */
+const CARD_GRID = "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4";
+/* 2-up to 1099 (under 50vw), 4-up in the 1344px frame from 1100 (at most
+   324px). */
+const CARD_SIZES = "(min-width: 1100px) 336px, 50vw";
 
 const COUNT_FORMAT = new Intl.NumberFormat("en-CA");
 
@@ -145,6 +144,7 @@ function Group({
             product={product}
             priority={priority && index === 0}
             sizes={CARD_SIZES}
+            compactMobile
           />
         ))}
       </div>
