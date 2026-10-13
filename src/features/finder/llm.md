@@ -201,6 +201,7 @@ Built at `page home`, 2026-09-20.
 | D168 | 2026-10-11 | The Model list binds from an inline script and from the island (`bindFinder()`), never only from the `<noscript>` text. | Empty after every client navigation; a gap before hydration. | Client and owner (C3); D168 |
 | D184 | 2026-10-13 | QA fixes: a chosen Make is re-applied on mount, `load` and `pageshow`; the home radios do not restore a stale Size mode on Back; Bolt pattern full-width under 360px; an empty home submit sends no empty keys; `data-segment` on the switch's label. | QA streams report (MODEL-2, HOMEFIND-2, -4, -5, GATE-1). | Owner, 2026-10-13: fix every P2 and P3; D184 |
 | D185 | 2026-10-13 | The home finder's Season select offers only seasons that exist for the chosen size (amends D132 for this panel). | Owner ruling "Season list narrows by size". | Owner, 2026-10-13; D185 |
+| D187 | 2026-10-14 | On wheels and accessories the three home finder fields are equal thirds from 720 (Model no longer spans two tracks). | Owner: *"make it uniform size with others"*. | D187 |
 | D169 | 2026-10-11 | The home finder gains `Vehicle \| Size` and Season; sizes narrow to what exists; CTA above the fold at every D128/D158 size. | Client: size and season on the home page. | Owner: *"Vehicle / Size switch, season on tires"*; D169 |
 Governing: **D27, D28, D33, D39, D79**.
 
