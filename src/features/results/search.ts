@@ -154,7 +154,7 @@ function catalogFilters(
      the picked size, and `queries.ts` reads the two together: the picked
      parts are matched exactly, and the car keeps a tire to its stock height
      (within 3%) and a wheel to its bolt pattern, hub bore and a stretched
-     stock width and offset (`tireHeightBand`, `wheelPickedBest`). */
+     stock width and offset (`tireHeightBand`, `wheelVehicleBest`). */
   const tireVehicle = query.category === "tires" ? tireFit(fit) : null;
   const wheelVehicle = query.category === "wheels" ? wheelFit(fit) : null;
   return {

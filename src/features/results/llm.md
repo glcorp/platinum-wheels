@@ -67,7 +67,8 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   keep its bolt pattern, a bore at least the hub's and a stretched envelope (width stock minimum less 0.5"
   to maximum plus 1", offset ±5 mm), the picked diameter unbounded; tires keep an overall diameter within
   3% of stock; the wheel size selects list only what is drilled for the car (`catalogFilters` sends the
-  fit always; the rules are `queries.ts` `wheelPickedBest` / `tireHeightBand`)
+  fit always; the rules are `queries.ts` `wheelVehicleBest` / `tireHeightBand`; **since D188** one wheel rule
+  serves `All sizes` and a picked size, so `All sizes` is every diameter chip added together)
   (D67 asymmetry unchanged: a product is demoted only when it STATES a contradiction).
   **What D108b changed, because 9 products and 45,000 behave differently:** a size now *filters*
   (`best` is that size; `similar` is the sizes next to it, `sizeMatch: "near"`, not "everything else");
