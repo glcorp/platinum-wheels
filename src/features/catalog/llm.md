@@ -212,9 +212,10 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   20 sources. Wheel `getOtherSizes` keeps only wheels sharing a bolt pattern (D137); with a searched car
   (`OtherSizesFit`, D171) it keeps only what fits it, `tireVehicleBest` / `wheelVehicleBest`.
   **A size picked beside a car keeps the car (D170):** `exactSize` / `nearSize` apply
-  `wheelPickedBest` (bolt pattern, bore, width −0.5" / +1", offset ±5 mm, `PICKED_WHEEL`) and
+  `wheelVehicleBest` (bolt pattern, bore, width −0.5" / +1", offset ±5 mm, `WHEEL_SLACK`; since D188 the same
+  rule with or without a picked size, diameter at least the smallest stock wheel and no upper bound) and
   `tireHeightBand` (overall diameter within 3% of stock, `PICKED_TIRE_HEIGHT`); `narrowWheelLists`
-  keeps the wheel size options to the car's patterns. With no size picked the SQL is as before. A wheel's size
+  keeps the wheel size options to the car's patterns. `scripts/fitment-coverage.ts` mirrors the wheel rule. A wheel's size
   line carries offset and finish (`adapter.ts`, D136).
 - **Storefront pages read through `queries.ts` only, never `store.ts`.** `queries.ts` cannot return a
   `hidden` product or a vendor source; `store.ts` returns both (D105b).

@@ -285,7 +285,8 @@ const FIT_WIDTH = { best: 0.75, near: 1.25 } as const;
 const FIT_RIM = { down: 1, up: 2 } as const;
 const FIT_DIAMETER_SLACK = 0.5;
 const BORE_TOLERANCE = 0.5;
-const WHEEL_WIDTH_SLACK = 0.5;
+/* queries.ts WHEEL_SLACK (D188): width -0.5 / +1 inch, offset ±5 mm. */
+const WHEEL_SLACK = { widthBelow: 0.5, widthAbove: 1, offset: 5 } as const;
 
 const tireStamp = new Int32Array(tires.length);
 let tireStampId = 0;
@@ -455,16 +456,18 @@ function evalWheels(fit: WheelVehicleFit): WheelOutcome {
     }
   }
   const range = fit.range;
-  /* wheelVehicleBest(): a bound that is missing or 0 is unbounded on that
-     side; the width gets WHEEL_WIDTH_SLACK beyond each stated bound. */
+  /* wheelVehicleBest() (D188): a bound that is missing or 0 is unbounded on
+     that side; the diameter has no upper bound; width and offset stretch by
+     WHEEL_SLACK. */
   const dMin = measure(range?.diameterMin);
-  const dMax = measure(range?.diameterMax);
   const wMinRaw = measure(range?.widthMin);
   const wMaxRaw = measure(range?.widthMax);
-  const wMin = wMinRaw === undefined ? undefined : wMinRaw - WHEEL_WIDTH_SLACK;
-  const wMax = wMaxRaw === undefined ? undefined : wMaxRaw + WHEEL_WIDTH_SLACK;
-  const oMin = signedMeasure(range?.offsetMin);
-  const oMax = signedMeasure(range?.offsetMax);
+  const wMin = wMinRaw === undefined ? undefined : wMinRaw - WHEEL_SLACK.widthBelow;
+  const wMax = wMaxRaw === undefined ? undefined : wMaxRaw + WHEEL_SLACK.widthAbove;
+  const oMinRaw = signedMeasure(range?.offsetMin);
+  const oMaxRaw = signedMeasure(range?.offsetMax);
+  const oMin = oMinRaw === undefined ? undefined : oMinRaw - WHEEL_SLACK.offset;
+  const oMax = oMaxRaw === undefined ? undefined : oMaxRaw + WHEEL_SLACK.offset;
   const bore = measure(fit.hubBore);
   const bestIdx: number[] = [];
   const similarIdx: number[] = [];
@@ -473,7 +476,6 @@ function evalWheels(fit: WheelVehicleFit): WheelOutcome {
     let best = true;
     if (range !== null) {
       if (dMin !== undefined && !(w.diameter >= dMin)) best = false;
-      if (dMax !== undefined && !(w.diameter <= dMax)) best = false;
       if (wMin !== undefined && !(w.width >= wMin)) best = false;
       if (wMax !== undefined && !(w.width <= wMax)) best = false;
       if (oMin !== undefined && !Number.isNaN(w.offset) && !(w.offset >= oMin)) best = false;
