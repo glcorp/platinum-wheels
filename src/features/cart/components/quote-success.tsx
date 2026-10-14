@@ -62,12 +62,12 @@ export function QuoteSuccess({ role, tabIndex, ref, sentLabel, children }: Quote
       <h2 className="display text-ink text-display-28 sm:text-display-40">
         Quote request sent.
       </h2>
-      {/* New copy. Says what happens next and by when, and gives the phone as
+      {/* New copy, the owner's words (D189). Says what happens next and gives the phone as
           the faster path — the quote-first fallback the whole build leans on
           (`docs/decisions.md` §7). No em dash (`.claude/rules/ui.md` "Copy"
           bans it in copy we author; artboard copy keeps its own). */}
       <p className="text-ink-muted text-15 leading-body sm:text-16">
-        {`We'll check fitment and stock, then get back to you within 1-2 business days. Need it sooner? Call ${PRIMARY_CONTACT.display}.`}
+        {`We'll confirm fitment and stock and get back to you. Need it sooner? Call ${PRIMARY_CONTACT.display}.`}
       </p>
       {children ? <div className="w-full min-w-0 pt-2">{children}</div> : null}
     </div>

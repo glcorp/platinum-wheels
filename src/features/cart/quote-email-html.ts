@@ -282,7 +282,7 @@ ${hairline()}
 /* --- 2. Auto-reply -------------------------------------------------------- */
 
 const THANKS = "Thanks for your quote request.";
-const PROMISE = "We'll check fitment and stock, then get back to you within 1-2 business days.";
+const PROMISE = "We'll confirm fitment and stock and get back to you.";
 const CASL_WHY =
   "You are getting this email because a quote was requested on our website with this address.";
 const CASL_OUT = 'If that was not you, or you do not want emails from us, reply with "unsubscribe".';
