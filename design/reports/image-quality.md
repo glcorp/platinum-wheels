@@ -26,3 +26,9 @@ Run with `npm run catalog:photo-replace -- plan.csv --env <r2 env> --env <db env
 - **374 products with no photo:** not sourced (337 are Direct Auto Import accessories; robots.txt names AI crawlers, so only targeted fetches are allowed, and many caps differ only by colour or logo).
 - **59 rejected re-cuts, 12 blurry files:** need a better source photo; 24 files in all are listed in the scratch `review/` folder.
 - Before/after page: https://claude.ai/artifact/Mnid2MCjSbs4bMtuV2YpSx (private).
+
+## Second pass (2026-10-20): grey shadows, white holes and white borders on tires and wheels
+The owner showed examples the first pass missed (earlier-session upscales kept a white hole through the tire, a white border around tread close-ups and a grey ground shadow). Fix: `rembg` mask applied to the alpha channel only (pixels unchanged, so no softening), white connected to the frame edge removed for bordered close-ups, skipped when dark product content would be lost. Run over all 5,058 tire and wheel files (about 1,400 changed so far); the 300 serving most products were reviewed on `#0B0B0D`: 248 accepted (13,603 rows repointed in production, `rollback2.csv`), 52 rejected (silver or chrome wheels with chewed rims) and left alone. The remaining changed files are not yet reviewed or applied.
+
+## Sourcing photos for products with none
+Five agents searched brand sites, other vendors and retailers: 37 photos found (31 wheels, 5 tires, 1 cap), 390 not found. Direct Auto Import's own pages show its default no-image graphic for the 168 unbranded, 95 ART/DAI, 50 Ruffino and other accessories, and no brand site or retailer carries the exact parts. 36 sourced photos passed review; `catalog-photo-add.ts` inserts them (prepared; the write needs the owner's go-ahead for that script).

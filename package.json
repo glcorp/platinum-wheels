@@ -16,6 +16,7 @@
     "catalog:build-csv": "tsx scripts/catalog-csv-build.ts",
     "catalog:photos": "tsx scripts/catalog-photos.ts",
     "catalog:photo-replace": "tsx scripts/catalog-photo-replace.ts",
+    "catalog:photo-add": "tsx scripts/catalog-photo-add.ts",
     "test:e2e": "playwright test",
     "test:e2e:fixture": "node tests/fixture/run.mjs",
     "test:e2e:fixture:up": "node tests/fixture/run.mjs up",
