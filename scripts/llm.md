@@ -112,6 +112,15 @@ from `design/assets/`, and parity becomes eyeballing — which
   go to `photo-report/` (gitignored). Settings (the five R2 ones, `IMPORT_DATABASE_URL`) come only from
   the `--env` file. Rows whose file is a known vendor placeholder graphic are left out, not refused
   (next rule).
+- [`catalog-photo-replace.ts`](catalog-photo-replace.ts) — `npm run catalog:photo-replace -- <plan.csv> --env
+  <file> [--env <file>]` (D190). Swaps shared catalogue photos for clearer ones and takes wrong photos off
+  products. A plan row is `replace` (old 1000px URL → a new 1000×1000 WebP on disk) or `remove` (old URL +
+  one product slug). `--upload` stores each new file under a NEW content-hash key (`-1000` as given, `-480`
+  made by `makePhotoSize()`), never overwriting or deleting a key; `--write` repoints every row
+  `WHERE url = old` and deletes the remove rows in ONE transaction that rolls back unless every count equals
+  the dry run's, closes up each touched product's photo order, leaves `products.updated_at` alone, and
+  writes `rollback.csv`. Staff uploads under `products/<uuid>/` are refused. Settings only from the `--env`
+  files (later wins). Reports go to `photo-report/` (gitignored).
 - [`catalog-csv-build.ts`](catalog-csv-build.ts) — `npm run catalog:build-csv -- --share <dir> --final
   <dir> --out <dir>` (D125). Turns the co-founder's merged vendor workbooks (`share/`: one row per vendor
   listing; `final/`: one sheet per vendor, read only for `vendor_price`) into the one `catalogue.csv`
@@ -177,6 +186,10 @@ from `design/assets/`, and parity becomes eyeballing — which
   `la06-fix-plan.md` (not committed). Still open: Dovroad YS716 and Habilead H206 (the owner approved
   Wheel Works' photos; they need uploading with the R2 settings), and 359 products with no vendor photo
   (337 DAI accessories: ask DAI).
+- **A catalogue photo is never changed in place** (D190, D126b). Files are cached `immutable` for a year, so
+  new content goes to a new key and the rows are repointed; the old files stay in the bucket so
+  `rollback.csv` can restore them with a reverse UPDATE (and an INSERT for a removed row). The 2026-10-15
+  pass, its method and its rollback files: `design/reports/image-quality.md`.
 - **`catalog-import.ts` is a TypeScript script** (D114). It must run the app's own validator
   and store, so `tsx` runs it and `npm run check` type-checks it. It is `.ts`, not `.mts`: the repo has
   no `"type": "module"`, and an ES-module script cannot see what `src/db/schema.ts` re-exports.
