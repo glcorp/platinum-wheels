@@ -84,31 +84,33 @@ because alignment is relaxed. **No DNS change is needed for the storefront's quo
      `~/Downloads/.platinum-photos.env` and `~/.pw-prod-db.env`, or write the new string into a new file.
    - **Done when:** the old string is refused and the production storefront still lists products.
 
-## Owner — payments (Converge demo; design in `docs/payments.md`)
+## Owner — payments (Stripe; design and runbook in `docs/payments.md`, D191)
 
-**Done 2026-10-01/02 (D121):** Fixie via the Vercel integration (outbound IPs `52.87.82.133`,
-`52.5.155.132`); Elavon allowlisted them on the demo account; `pay.platinumwheels.ca` on Vercel with its
-certificate, plus the Cloudflare CNAME (DNS only); `CONVERGE_ENV=demo`, `CONVERGE_ACCOUNT_ID=0023020`,
-`CONVERGE_USER_ID=apiuser116349` and the rotated `CONVERGE_PIN` in Vercel. Converge portal → Hosted
-Payments (2026-10-02): Cancel Link, Approval and Decline button links (with transaction data) and the
-Response Page Redirect URL all point at `https://pay.platinumwheels.ca/pay/return`; billing address fields
-are optional; CAPTCHA was already on and is left on. **No demo extension** (owner
-ruling 2026-10-01): demo testing wraps up by 2026-10-04.
+The client dropped Converge for **Stripe** (2026-10-19). The Converge items (Fixie, the export script, the PIN,
+P8-P10, P7) are **history**: the code is gone, the demo expired 2026-10-18. What is owed now, in order:
 
-P8. **Export script (D119), self-serve in the portal.** Point it at `https://pay.platinumwheels.ca/pay/notify`
-   with a username and password, then put them in Vercel as `CONVERGE_NOTIFY_USER` (plain) and
-   `CONVERGE_NOTIFY_PASSWORD` (Sensitive), Production only, and redeploy. Until then the route is off.
-P9. **Rotate the PIN after demo testing.** The current one was pasted into a chat on 2026-10-02.
-P10. **Undo the 2026-10-03 diagnostics** now that the demo approves (D125b): delete `CONVERGE_SEND_INVOICE`
-   from Vercel (the code no longer reads it); in the Converge portal turn the hosted page's **CAPTCHA back
-   on**, narrow `apiuser116349`'s user rights back to what the hosted page and `txnquery` need, and void
-   the test sales (VT 10/02 14:53, Buy Button 15:34, our 16:05 approval 122262) before go-live.
+S1. **Start Stripe live activation today** (the client submits it; it is the long pole: KYC, bank verification,
+   first payout 7-14 days). Prep list in `docs/payments.md` §11 and the plan's §8.1.
+S2. **Sandbox first.** Create a general sandbox `PW dev` in the client's account; paste its `sk_test_` key into
+   Vercel as `STRIPE_SECRET_KEY` (Sensitive, Production) yourself, never in a chat. Run the sandbox checks in
+   `docs/payments.md` §9 (the fixture cannot prove Stripe's real API, nor Back from Stripe on a phone).
+S3. **After this PR is merged and deployed (migration `0007` runs in the build):** create the **production event
+   destination** (`https://pay.platinumwheels.ca/pay/webhook`, snapshot, the seven events in `docs/payments.md`
+   §4), paste its `whsec_` into Vercel as `STRIPE_WEBHOOK_SECRET`, redeploy, then the post-deploy gate:
+   `curl -X POST https://pay.platinumwheels.ca/pay/webhook -d x` answers **400**; a Dashboard "Resend" shows 200.
+S4. **Cutover cleanup:** remove `CONVERGE_ENV`, `CONVERGE_ACCOUNT_ID`, `CONVERGE_USER_ID`, `CONVERGE_PIN`,
+   `CONVERGE_SEND_INVOICE`, `CONVERGE_NOTIFY_*` and `FIXIE_URL` from Vercel, uninstall the Fixie integration
+   (Dashboard only), and record the pre-cutover row audit (`docs/payments.md` §10 step 1) in `HANDOFF.md`.
+S5. **Confirm two rulings** the build took as the plan's defaults: reverse D108 (Check payment + lazy settle, no
+   cron) and **cards only**.
 
-## Client — payments go-live
+## Client — payments go-live (gates, `docs/payments.md` §11)
 
-P7. **Production Converge credentials, vendor ID and the certification test script** from Elavon. Then
-   redo P2 (production IPs, by phone: 1-800-377-3962) and P3 on the production account, and set
-   `CONVERGE_ENV=production`.
+P7. **Go live only when every box in `docs/payments.md` §11 is ticked:** Stripe charges and payouts enabled;
+   **Vercel on Pro** (real payments on Hobby breach its terms, and the developer's commits cannot deploy until
+   they join the team); **privacy, terms and a refund/return policy published** (today they say no payment is
+   taken); a live **restricted** key verified with no 403s; a live event destination; `STRIPE_REQUIRE_LIVE=1`;
+   owner alert emails confirmed; one real C$0.50+ payment refunded end to end.
 
 ## Owner, at launch (when the storefront replaces the goodwill site)
 
@@ -142,7 +144,7 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
       - One test enquiry sent from `/cart` delivers both emails: the alert in `sales@`, the auto-reply in
         the tester's inbox, neither in spam (item 2, LA-07).
       - `https://admin.platinumwheels.ca/` answers 307 to `/login` (D115) and
-        `https://pay.platinumwheels.ca/pay/done` answers 200 (D105).
+        `https://pay.platinumwheels.ca/pay/webhook` answers 400 to an unsigned POST (D105, D191).
     - **The switch:**
       4. Vercel, platinum-wheels, Settings, Domains: add `platinumwheels.ca`, then add
          `www.platinumwheels.ca` set to **Redirect to `platinumwheels.ca`** (S2).

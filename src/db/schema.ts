@@ -35,6 +35,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
   char,
   check,
   index,
@@ -68,19 +69,19 @@ export const paymentLinkStatus = pgEnum("payment_link_status", [
 /**
  * Attempt lifecycle.
  *
- *   pending    Session token issued; the customer is (or was) on the hosted
- *              page. Outcome unknown until the return redirect is verified.
- *              Nothing else resolves it (D108): a customer who never comes
- *              back leaves the attempt here.
- *   approved   Verified approved by a server-side transaction query. At most
+ *   pending    Checkout Session issued; the customer is (or was) on Stripe's
+ *              page. Resolved by the webhook, the pay page, or staff's Check
+ *              payment.
+ *   approved   Verified paid by re-reading the session from Stripe. At most
  *              one per link (partial unique index below).
- *   declined   Verified declined. The customer may try again on the same link.
- *   failed     We never got a usable session (gateway error, timeout, proxy
- *              limit). No money moved.
- *   expired    Unused since D108 removed the reconcile that set it. Kept in
- *              the enum: dropping a value is a migration for no gain.
- *   duplicate  Verified approved, but the link was already paid by another
- *              attempt. Money moved twice: staff must refund this one.
+ *   declined   Converge only. Stripe retries a declined card on its own page,
+ *              so a Stripe attempt never ends here.
+ *   failed     We never got a usable session (Stripe error, timeout,
+ *              misconfiguration). No money moved.
+ *   expired    The Stripe session ended unpaid (timed out, or closed by us
+ *              because another attempt was paid or the link was cancelled).
+ *   duplicate  Verified paid, but the link was already paid or cancelled.
+ *              Money moved twice: staff must refund this one in the Dashboard.
  */
 export const paymentAttemptStatus = pgEnum("payment_attempt_status", [
   "pending",
@@ -91,12 +92,14 @@ export const paymentAttemptStatus = pgEnum("payment_attempt_status", [
   "duplicate",
 ]);
 
-/** Gateway identity. One value today; an enum so a second gateway is a
+/** Gateway identity. `converge` rows are history (the Elavon demo, switched
+ *  off 2026-10); new attempts are `stripe`. An enum so a gateway is a
  *  migration, not a free-text typo. */
-export const paymentProvider = pgEnum("payment_provider", ["converge"]);
+export const paymentProvider = pgEnum("payment_provider", ["converge", "stripe"]);
 
 /** Which gateway environment an attempt ran against. Recorded per attempt so
- *  demo transactions can never be mistaken for real money in a report. */
+ *  demo transactions can never be mistaken for real money in a report. For
+ *  Stripe, `demo` is a sandbox key (`sk_test_`) and `production` a live key. */
 export const paymentEnvironment = pgEnum("payment_environment", [
   "demo",
   "production",
@@ -250,7 +253,12 @@ export const paymentAttempts = pgTable(
 
     status: paymentAttemptStatus("status").notNull().default("pending"),
 
-    /** Converge `ssl_txn_id`. Null until the gateway reports a transaction. */
+    /** Stripe Checkout Session id (`cs_...`), stored as soon as the session is
+     *  created. How a webhook, the pay page and staff find the attempt. Null on
+     *  Converge rows and on an attempt whose session was never issued. */
+    providerSessionId: text("provider_session_id"),
+    /** Gateway transaction id: Converge `ssl_txn_id`, or the Stripe
+     *  PaymentIntent id (`pi_...`). Null until the gateway reports a payment. */
     providerTxnId: text("provider_txn_id"),
     /** Converge `ssl_approval_code`. Present on approvals only. */
     approvalCode: text("approval_code"),
@@ -271,6 +279,12 @@ export const paymentAttempts = pgTable(
     }).notNull(),
     /** When a gateway transaction query confirmed the final state. */
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    /** Last time the pay page, a render of the admin list or staff asked Stripe
+     *  about this session. Throttles the lazy settle. */
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+    /** Page-driven lookups so far (the webhook and staff are not counted),
+     *  capped so a token holder cannot make unbounded Stripe reads. */
+    settleChecks: integer("settle_checks").notNull().default(0),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow()
@@ -284,6 +298,10 @@ export const paymentAttempts = pgTable(
     uniqueIndex("payment_attempts_invoice_number_key").on(
       t.providerInvoiceNumber,
     ),
+    // A Stripe session belongs to exactly one attempt.
+    uniqueIndex("payment_attempts_provider_session_key")
+      .on(t.providerSessionId)
+      .where(sql`${t.providerSessionId} is not null`),
     // One gateway transaction maps to exactly one attempt — replaying the
     // same return redirect can never double-count a payment.
     uniqueIndex("payment_attempts_provider_txn_key")
@@ -353,6 +371,42 @@ export const paymentEvents = pgTable(
   ],
 );
 
+/* ===========================================================================
+   stripe_events
+   =========================================================================== */
+
+/**
+ * One row per Stripe webhook delivery we accepted (event id is the key, so a
+ * redelivery is recognised). Not the audit log: `payment_events` stays the
+ * append-only record of state changes. This table does three small jobs:
+ * dedupe the one-off emails (refund, dispute), feed the admin's "Last Stripe
+ * event" line, and carry the refund/dispute flag the admin list shows. It never
+ * changes a link's status. Never holds card or customer data.
+ */
+export const stripeEvents = pgTable(
+  "stripe_events",
+  {
+    /** Stripe's `evt_...` id. */
+    id: text("id").primaryKey(),
+    type: text("type").notNull(),
+    /** `data.object.id` (session, charge or dispute). */
+    objectId: text("object_id"),
+    livemode: boolean("livemode").notNull(),
+    linkId: uuid("link_id").references(() => paymentLinks.id, { onDelete: "restrict" }),
+    attemptId: uuid("attempt_id").references(() => paymentAttempts.id, { onDelete: "restrict" }),
+    /** What we did with it: `received`, `settled`, `unchanged`, `unmatched`, `noted`, `ignored`. */
+    outcome: text("outcome").notNull().default("received"),
+    /** Refund or dispute detail for the admin flag, e.g. `full`, `partial`, `won`, `lost`. */
+    detail: text("detail"),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("stripe_events_received_at_idx").on(t.receivedAt),
+    index("stripe_events_link_idx").on(t.linkId),
+  ],
+);
+
+export type StripeEvent = typeof stripeEvents.$inferSelect;
 export type PaymentLink = typeof paymentLinks.$inferSelect;
 export type NewPaymentLink = typeof paymentLinks.$inferInsert;
 export type PaymentAttempt = typeof paymentAttempts.$inferSelect;

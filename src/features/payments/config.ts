@@ -1,9 +1,9 @@
 /* ---------------------------------------------------------------------------
    Payments configuration — env vars and hostnames, read once, server only.
 
-   Every Converge setting comes from the environment (`docs/payments.md` §7).
-   Nothing here is imported by a client component: `CONVERGE_PIN` and
-   `FIXIE_URL` are secrets, and a client import would ship them to a browser.
+   Every Stripe setting comes from the environment (`docs/payments.md` §7).
+   Nothing here is imported by a client component: the secret key and the
+   webhook secret would ship to a browser.
    --------------------------------------------------------------------------- */
 
 /** The customer-facing payment host (D105). A DNS-only Cloudflare CNAME to
@@ -15,27 +15,8 @@ export const PAY_HOST = "pay.platinumwheels.ca";
 /** Path prefix of every customer payment page: `/pay/<token>`. */
 export const PAY_PATH_PREFIX = "/pay";
 
-/** Cookie naming the link this browser last pressed Pay on (30 minutes). It
- *  gates `/pay/return`: no gateway query and no redirect to a link page
- *  without it, and the redirect only ever goes to the link it names
- *  (LA-01/LA-02, D145 audit). */
-export const PAY_RETURN_COOKIE = "pw_pay";
-
-export type ConvergeEnvironment = "demo" | "production";
-
-export interface ConvergeConfig {
-  environment: ConvergeEnvironment;
-  accountId: string;
-  userId: string;
-  pin: string;
-  /** `http://fixie:<secret>@<host>:80`, or undefined to call Converge
-   *  directly (only works from an IP on the account's allowed list). */
-  proxyUrl: string | undefined;
-}
-
-/** Thrown when the gateway is not configured. Distinct from a gateway error:
- *  it is our misconfiguration, and the customer is told to call, never that
- *  their card failed. */
+/** Our own misconfiguration, never a card problem: the customer is told to
+ *  call, not that their payment failed. */
 export class PaymentsNotConfiguredError extends Error {
   constructor(missing: string[]) {
     super(`Payments are not configured: missing ${missing.join(", ")}`);
@@ -43,9 +24,8 @@ export class PaymentsNotConfiguredError extends Error {
   }
 }
 
-/** The value Vercel holds until the owner pastes the real PIN. It must never
- *  reach Converge: five wrong PINs put the calling IP — the shared Fixie IPs —
- *  on Elavon's fraud list (`llm.md` Rules). So it counts as missing. */
+/** The value a secret holds in Vercel until the owner pastes the real one. It
+ *  counts as unset. */
 const PLACEHOLDER = "REPLACE_ME";
 
 function isSet(value: string | undefined): boolean {
@@ -53,39 +33,86 @@ function isSet(value: string | undefined): boolean {
   return trimmed !== "" && trimmed !== PLACEHOLDER;
 }
 
-export function getConvergeConfig(): ConvergeConfig {
+/** `sandbox` keys (`sk_test_`) record attempts as `demo`; live keys as
+ *  `production` (the existing `payment_environment` values). */
+export type PaymentEnvironment = "demo" | "production";
+
+export interface StripeConfig {
+  secretKey: string;
+  /** `true` for a live key. Webhook events must carry the same value. */
+  livemode: boolean;
+  environment: PaymentEnvironment;
+}
+
+/** `sk_test_...`, `sk_live_...` or a restricted `rk_live_...`. Shape only. */
+const KEY_SHAPE = /^(sk|rk)_(test|live)_[A-Za-z0-9]{16,}$/;
+
+/**
+ * The Stripe secret key, with the environment guards (plan v3 §0 #4):
+ *
+ *   - a malformed key is refused (a pasted quote, newline or `REPLACE_ME`
+ *     never reaches Stripe);
+ *   - a **live key is refused outside Vercel production**, so a Preview or a
+ *     laptop can never take or refund real money;
+ *   - a test key is refused when `STRIPE_REQUIRE_LIVE=1` (set at go-live), so
+ *     the shop cannot silently run on the sandbox after launch.
+ */
+export function getStripeConfig(): StripeConfig {
   const env = process.env;
-  const missing = (
-    ["CONVERGE_ENV", "CONVERGE_ACCOUNT_ID", "CONVERGE_USER_ID", "CONVERGE_PIN"] as const
-  ).filter((name) => !isSet(env[name]));
-  if (missing.length > 0) throw new PaymentsNotConfiguredError(missing);
+  if (!isSet(env.STRIPE_SECRET_KEY)) throw new PaymentsNotConfiguredError(["STRIPE_SECRET_KEY"]);
+  const secretKey = env.STRIPE_SECRET_KEY!.trim();
+  const match = KEY_SHAPE.exec(secretKey);
+  if (!match) throw new PaymentsNotConfiguredError(["STRIPE_SECRET_KEY (not a Stripe secret key)"]);
 
-  const environment = env.CONVERGE_ENV!.trim();
-  if (environment !== "demo" && environment !== "production") {
-    throw new PaymentsNotConfiguredError([`CONVERGE_ENV (got "${environment}", want demo | production)`]);
+  const livemode = match[2] === "live";
+  if (livemode && env.VERCEL_ENV !== "production") {
+    throw new PaymentsNotConfiguredError(["STRIPE_SECRET_KEY (a live key is only allowed in production)"]);
   }
-
-  return {
-    environment,
-    accountId: env.CONVERGE_ACCOUNT_ID!.trim(),
-    userId: env.CONVERGE_USER_ID!.trim(),
-    pin: env.CONVERGE_PIN!.trim(),
-    proxyUrl: env.FIXIE_URL?.trim() || undefined,
-  };
+  if (!livemode && env.STRIPE_REQUIRE_LIVE === "1") {
+    throw new PaymentsNotConfiguredError(["STRIPE_SECRET_KEY (live mode is required)"]);
+  }
+  return { secretKey, livemode, environment: livemode ? "production" : "demo" };
 }
 
-/** The username and password Elavon's export script presents on
- *  `/pay/notify` (D119). Both unset, or either a placeholder: the route is off
- *  and answers 404, so nothing can post to it before Elavon has registered it. */
-export interface NotifyCredentials {
-  username: string;
-  password: string;
+/** `true` only with a usable live key. The admin says "test mode" otherwise. */
+export function paymentsLive(): boolean {
+  try {
+    return getStripeConfig().livemode;
+  } catch {
+    return false;
+  }
 }
 
-export function getNotifyCredentials(): NotifyCredentials | null {
-  const { CONVERGE_NOTIFY_USER: username, CONVERGE_NOTIFY_PASSWORD: password } = process.env;
-  if (!isSet(username) || !isSet(password)) return null;
-  return { username: username!.trim(), password: password!.trim() };
+/** The webhook signing secrets: the current one, then the previous one while a
+ *  rolled secret overlaps (Stripe keeps both valid for up to 24 hours). */
+export function getWebhookSecrets(): string[] {
+  const current = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!isSet(current)) throw new PaymentsNotConfiguredError(["STRIPE_WEBHOOK_SECRET"]);
+  const secrets = [current!.trim()];
+  const previous = process.env.STRIPE_WEBHOOK_SECRET_PREVIOUS;
+  if (isSet(previous)) secrets.push(previous!.trim());
+  return secrets;
+}
+
+/** Whether the secret key is usable, without throwing. The pay page uses it
+ *  to show "pay by phone" instead of a button that cannot work. */
+export function stripeConfigured(): boolean {
+  try {
+    getStripeConfig();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The kill switch. `PAYMENTS_ENABLED=0` (or `false`/`off`) turns taking
+ * payments off: the pay page shows "pay by phone", no session is created.
+ * The webhook keeps settling payments already in flight.
+ */
+export function paymentsEnabled(): boolean {
+  const value = process.env.PAYMENTS_ENABLED?.trim().toLowerCase();
+  return !(value === "0" || value === "false" || value === "off");
 }
 
 /**

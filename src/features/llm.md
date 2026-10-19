@@ -37,8 +37,8 @@ composition only, `docs/decisions.md:62`); this is where the actual page content
 - [`admin/`](admin/llm.md) — **built.** The staff tool (D89), prefix-less on `admin.platinumwheels.ca` since
   D115: shared sign-in (D95), payment-link builder, links list (D106), product screens and photos (D116,
   D117), home (D118).
-- [`payments/`](payments/llm.md) — **built** 2026-09-24. Converge adapter, link and attempt service, the Pay
-  island (D99–D107). The only code that names the gateway.
+- [`payments/`](payments/llm.md) — **built** 2026-09-24. Stripe adapter, link and attempt service, the Pay
+  button, the shop's payment emails (D99–D106, D120, D191). The only code that names the gateway.
 - [`search/`](search/llm.md) — **built** 2026-10-11 (D173). Free-text search: the query parser and the
   grouped reads behind `/search?q=`. Imports `catalog/` and nothing else.
 - [`seo/`](seo/llm.md) — **built** 2026-09-30 (D112). The indexing flag, `pageMetadata()`, the sitemap, the

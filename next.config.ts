@@ -20,7 +20,7 @@ const CSP = "frame-ancestors 'none'; base-uri 'self'; object-src 'none'";
 
 /** Powerful features nothing on the site uses, switched off for the page and
  *  anything it embeds. `payment=()` is the Payment Request API only: the card
- *  is entered on Converge's own hosted page (D99), which is a top-level
+ *  is entered on Stripe's own hosted page (D99), which is a top-level
  *  navigation, not an embed, and is not governed by this header. */
 const PERMISSIONS_POLICY = [
   "accelerometer=()",
@@ -65,16 +65,15 @@ const ADMIN_SECURITY_HEADERS = [
 ];
 
 /* Customer payment pages (D105). The URL carries the link's secret token, so
-   the referrer is cut to the origin: Converge's hosted page (and anything else)
+   the referrer is cut to the origin: Stripe's hosted page (and anything else)
    learns the site, never the token. Never indexed, never cached. Framing,
    sniffing and permissions come from the base layer.
 
-   Deliberately no `form-action`: the Pay island hands off with a top-level
-   POST to Converge (`api.convergepay.com` / `api.demo.convergepay.com`,
-   `src/features/payments/converge.ts`), and Chrome also applies `form-action`
-   to every redirect that POST follows inside Converge, to hosts this repo does
-   not know. Getting it wrong blocks every payment, and it cannot be tested
-   without a live Converge session. */
+   Deliberately no `form-action`: the Pay button is a form whose Server Action
+   answers with a redirect to `checkout.stripe.com` (a 303 the browser follows
+   with JavaScript off), and Chrome applies `form-action` to the redirects of a
+   form post. Listing Stripe's hosts could block a payment the day Stripe
+   moves one, and it cannot be tested without a live Stripe session. */
 const PAY_SECURITY_HEADERS = [
   { key: "Referrer-Policy", value: "strict-origin" },
   { key: "X-Robots-Tag", value: "noindex, nofollow" },

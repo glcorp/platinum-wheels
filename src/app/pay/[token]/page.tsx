@@ -4,9 +4,10 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
 import { PRIMARY_CONTACT, SITE } from "@/lib/site";
+import { paymentsEnabled, stripeConfigured } from "@/features/payments/config";
 import { PayButton } from "@/features/payments/components/pay-button";
 import { displayCents } from "@/features/payments/money";
-import { getPayPage } from "@/features/payments/service";
+import { getPayPage, settleLinkForPage } from "@/features/payments/service";
 import type { PaymentAttempt } from "@/features/payments/types";
 import { SHOP_DATE_TIME } from "@/lib/time";
 
@@ -16,10 +17,19 @@ import { SHOP_DATE_TIME } from "@/lib/time";
    NO ARTBOARD DRAWS THIS. Authored from existing tokens only, like the admin
    (D89): the logo box from `AdminTopBar`, the 420px measure from `/admin`.
 
-   It shows what is owed and one button. The card is entered on Converge's
+   It shows what is owed and one button. The card is entered on Stripe's
    hosted page, never here, which keeps the shop at PCI SAQ A (D99). Every
    state is read from the database at request time; nothing is cached, because
    a paid link must never render a Pay button again.
+
+   Before reading, the page settles the link's pending attempt (bounded, errors
+   swallowed): a customer back from Stripe (`?paid=1`) sees "Paid" even if the
+   webhook has not arrived yet, and one whose webhook never arrived is not left
+   on "Pay". The attempt comes from our own row, never from the URL.
+
+   When payments are switched off or Stripe is not configured, the button is
+   replaced by "pay by phone": the link stays valid, nobody meets a button that
+   cannot work.
 
    No site header or footer: this page is served on `pay.platinumwheels.ca`,
    where storefront links would not resolve (D105).
@@ -36,30 +46,42 @@ const DATE = SHOP_DATE_TIME;
 function attemptNotice(attempt: PaymentAttempt | null): string | null {
   if (!attempt) return null;
   switch (attempt.status) {
-    case "declined":
-      return "Your last payment was declined and nothing was charged. You can try again, with the same card or another one.";
     case "failed":
       return "Your last attempt didn't reach the payment service, so nothing was charged. You can try again.";
+    case "expired":
+      return "Your last payment page timed out and nothing was charged. Press Pay to start again.";
     case "pending":
       return attempt.sessionExpiresAt.getTime() > Date.now()
-        ? "A payment was started on this link in the last few minutes. If you finished it, wait a moment and refresh this page before paying again."
+        ? "A payment page is already open for this link. Press Pay to continue it. If you just finished paying, refresh this page in a moment."
         : "A payment was started on this link earlier and we couldn't confirm it. If your card was charged, please don't pay again: call or email us and we'll sort it out.";
     default:
       return null;
   }
 }
 
-export default async function PayPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function PayPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<{ paid?: string }>;
+}) {
   await connection();
   const { token } = await params;
   if (!/^[A-Za-z0-9_-]{22,64}$/.test(token)) notFound();
 
-  const view = await getPayPage(token);
-  if (!view) notFound();
+  const first = await getPayPage(token);
+  if (!first) notFound();
+  // Only a pending attempt is worth a look; a settled link reads straight through.
+  if (first.latestAttempt?.status === "pending" && first.state !== "paid") {
+    await settleLinkForPage(first.link.id, (await searchParams).paid === "1");
+  }
+  const view = (await getPayPage(token)) ?? first;
   const { link, state, latestAttempt } = view;
   const amount = displayCents(link.amountCents);
   const notice = state === "active" ? attemptNotice(latestAttempt) : null;
   const contact = PRIMARY_CONTACT;
+  const canPay = paymentsEnabled() && stripeConfigured();
 
   return (
     <main id="main" tabIndex={-1} className="w-full flex-1 px-4 pt-8 pb-20 sm:px-8 sm:pt-14">
@@ -119,11 +141,23 @@ export default async function PayPage({ params }: { params: Promise<{ token: str
                   {notice}
                 </p>
               ) : null}
-              <PayButton publicToken={link.publicToken} amountLabel={amount} />
-              <p className="text-ink-dim text-13 leading-body">
-                You&apos;ll enter your card on our payment processor&apos;s secure page (Elavon Converge). We never see
-                or store your card number.
-              </p>
+              {canPay ? (
+                <>
+                  <PayButton publicToken={link.publicToken} amountLabel={amount} />
+                  <p className="text-ink-dim text-13 leading-body">
+                    You&apos;ll enter your card on our payment processor&apos;s secure page (Stripe). We never see or
+                    store your card number.
+                  </p>
+                </>
+              ) : (
+                <p role="status" className="text-ink text-15 leading-body">
+                  Online payment isn&apos;t available just now. To pay, call us at{" "}
+                  <a className="underline" href={`tel:${contact.tel}`}>
+                    {contact.display}
+                  </a>{" "}
+                  and quote {link.reference}.
+                </p>
+              )}
             </>
           ) : null}
 

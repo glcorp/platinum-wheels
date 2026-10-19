@@ -1,0 +1,1919 @@
+{
+  "id": "35d91f59-8432-49e3-9c77-6100894ea4e3",
+  "prevId": "6965f6fe-ddb1-4884-93eb-f1c0bea67997",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.payment_attempts": {
+      "name": "payment_attempts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "link_id": {
+          "name": "link_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt_no": {
+          "name": "attempt_no",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "payment_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "environment": {
+          "name": "environment",
+          "type": "payment_environment",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_invoice_number": {
+          "name": "provider_invoice_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_cents": {
+          "name": "amount_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'CAD'"
+        },
+        "status": {
+          "name": "status",
+          "type": "payment_attempt_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "provider_session_id": {
+          "name": "provider_session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider_txn_id": {
+          "name": "provider_txn_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approval_code": {
+          "name": "approval_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "result_message": {
+          "name": "result_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "card_brand": {
+          "name": "card_brand",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "card_last4": {
+          "name": "card_last4",
+          "type": "char(4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "session_expires_at": {
+          "name": "session_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_checked_at": {
+          "name": "last_checked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "settle_checks": {
+          "name": "settle_checks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "payment_attempts_link_attempt_no_key": {
+          "name": "payment_attempts_link_attempt_no_key",
+          "columns": [
+            {
+              "expression": "link_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "attempt_no",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payment_attempts_invoice_number_key": {
+          "name": "payment_attempts_invoice_number_key",
+          "columns": [
+            {
+              "expression": "provider_invoice_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payment_attempts_provider_session_key": {
+          "name": "payment_attempts_provider_session_key",
+          "columns": [
+            {
+              "expression": "provider_session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"payment_attempts\".\"provider_session_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payment_attempts_provider_txn_key": {
+          "name": "payment_attempts_provider_txn_key",
+          "columns": [
+            {
+              "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "provider_txn_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"payment_attempts\".\"provider_txn_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payment_attempts_one_approved_per_link": {
+          "name": "payment_attempts_one_approved_per_link",
+          "columns": [
+            {
+              "expression": "link_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"payment_attempts\".\"status\" = 'approved'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payment_attempts_pending_idx": {
+          "name": "payment_attempts_pending_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"payment_attempts\".\"status\" = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payment_attempts_link_id_payment_links_id_fk": {
+          "name": "payment_attempts_link_id_payment_links_id_fk",
+          "tableFrom": "payment_attempts",
+          "tableTo": "payment_links",
+          "columnsFrom": [
+            "link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "payment_attempts_attempt_no_positive": {
+          "name": "payment_attempts_attempt_no_positive",
+          "value": "\"payment_attempts\".\"attempt_no\" >= 1"
+        },
+        "payment_attempts_amount_positive": {
+          "name": "payment_attempts_amount_positive",
+          "value": "\"payment_attempts\".\"amount_cents\" > 0"
+        },
+        "payment_attempts_currency_cad": {
+          "name": "payment_attempts_currency_cad",
+          "value": "\"payment_attempts\".\"currency\" = 'CAD'"
+        },
+        "payment_attempts_last4_digits": {
+          "name": "payment_attempts_last4_digits",
+          "value": "\"payment_attempts\".\"card_last4\" is null or \"payment_attempts\".\"card_last4\" ~ '^[0-9]{4}$'"
+        },
+        "payment_attempts_settled_has_txn": {
+          "name": "payment_attempts_settled_has_txn",
+          "value": "\"payment_attempts\".\"status\" not in ('approved', 'duplicate') or (\"payment_attempts\".\"provider_txn_id\" is not null and \"payment_attempts\".\"verified_at\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.payment_events": {
+      "name": "payment_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "payment_events_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "link_id": {
+          "name": "link_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt_id": {
+          "name": "attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "payment_event_actor",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "payment_events_link_created_at_idx": {
+          "name": "payment_events_link_created_at_idx",
+          "columns": [
+            {
+              "expression": "link_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "payment_events_link_id_payment_links_id_fk": {
+          "name": "payment_events_link_id_payment_links_id_fk",
+          "tableFrom": "payment_events",
+          "tableTo": "payment_links",
+          "columnsFrom": [
+            "link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "payment_events_attempt_id_payment_attempts_id_fk": {
+          "name": "payment_events_attempt_id_payment_attempts_id_fk",
+          "tableFrom": "payment_events",
+          "tableTo": "payment_attempts",
+          "columnsFrom": [
+            "attempt_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "payment_events_type_format": {
+          "name": "payment_events_type_format",
+          "value": "\"payment_events\".\"type\" ~ '^[a-z_]+(\\.[a-z_]+)+$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.payment_links": {
+      "name": "payment_links",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "reference": {
+          "name": "reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "('PW-' || nextval('payment_link_reference_seq'))"
+        },
+        "public_token": {
+          "name": "public_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_cents": {
+          "name": "amount_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "char(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'CAD'"
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "payment_link_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "paid_at": {
+          "name": "paid_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_at": {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_by": {
+          "name": "cancelled_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "payment_links_reference_key": {
+          "name": "payment_links_reference_key",
+          "columns": [
+            {
+              "expression": "reference",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payment_links_public_token_key": {
+          "name": "payment_links_public_token_key",
+          "columns": [
+            {
+              "expression": "public_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payment_links_idempotency_key_key": {
+          "name": "payment_links_idempotency_key_key",
+          "columns": [
+            {
+              "expression": "idempotency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payment_links_status_created_at_idx": {
+          "name": "payment_links_status_created_at_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "payment_links_amount_positive": {
+          "name": "payment_links_amount_positive",
+          "value": "\"payment_links\".\"amount_cents\" > 0"
+        },
+        "payment_links_currency_cad": {
+          "name": "payment_links_currency_cad",
+          "value": "\"payment_links\".\"currency\" = 'CAD'"
+        },
+        "payment_links_description_length": {
+          "name": "payment_links_description_length",
+          "value": "char_length(\"payment_links\".\"description\") between 1 and 200"
+        },
+        "payment_links_token_length": {
+          "name": "payment_links_token_length",
+          "value": "char_length(\"payment_links\".\"public_token\") >= 22"
+        },
+        "payment_links_expires_after_created": {
+          "name": "payment_links_expires_after_created",
+          "value": "\"payment_links\".\"expires_at\" > \"payment_links\".\"created_at\""
+        },
+        "payment_links_paid_state": {
+          "name": "payment_links_paid_state",
+          "value": "(\"payment_links\".\"status\" = 'paid') = (\"payment_links\".\"paid_at\" is not null)"
+        },
+        "payment_links_cancelled_state": {
+          "name": "payment_links_cancelled_state",
+          "value": "(\"payment_links\".\"status\" = 'cancelled') = (\"payment_links\".\"cancelled_at\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.stripe_events": {
+      "name": "stripe_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_id": {
+          "name": "object_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "livemode": {
+          "name": "livemode",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "link_id": {
+          "name": "link_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attempt_id": {
+          "name": "attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'received'"
+        },
+        "detail": {
+          "name": "detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "stripe_events_received_at_idx": {
+          "name": "stripe_events_received_at_idx",
+          "columns": [
+            {
+              "expression": "received_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "stripe_events_link_idx": {
+          "name": "stripe_events_link_idx",
+          "columns": [
+            {
+              "expression": "link_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "stripe_events_link_id_payment_links_id_fk": {
+          "name": "stripe_events_link_id_payment_links_id_fk",
+          "tableFrom": "stripe_events",
+          "tableTo": "payment_links",
+          "columnsFrom": [
+            "link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "stripe_events_attempt_id_payment_attempts_id_fk": {
+          "name": "stripe_events_attempt_id_payment_attempts_id_fk",
+          "tableFrom": "stripe_events",
+          "tableTo": "payment_attempts",
+          "columnsFrom": [
+            "attempt_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.accessory_specs": {
+      "name": "accessory_specs",
+      "schema": "",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "product_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'accessories'"
+        },
+        "accessory_type": {
+          "name": "accessory_type",
+          "type": "accessory_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "thread_size": {
+          "name": "thread_size",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seat_type": {
+          "name": "seat_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finish": {
+          "name": "finish",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pack_quantity": {
+          "name": "pack_quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "part_type": {
+          "name": "part_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weight_lb": {
+          "name": "weight_lb",
+          "type": "numeric(8, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outer_diameter_mm": {
+          "name": "outer_diameter_mm",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inner_diameter_mm": {
+          "name": "inner_diameter_mm",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "accessory_specs_type_idx": {
+          "name": "accessory_specs_type_idx",
+          "columns": [
+            {
+              "expression": "accessory_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "accessory_specs_product_fk": {
+          "name": "accessory_specs_product_fk",
+          "tableFrom": "accessory_specs",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id",
+            "category"
+          ],
+          "columnsTo": [
+            "id",
+            "category"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "accessory_specs_category_accessories": {
+          "name": "accessory_specs_category_accessories",
+          "value": "\"accessory_specs\".\"category\" = 'accessories'"
+        },
+        "accessory_specs_pack_quantity_positive": {
+          "name": "accessory_specs_pack_quantity_positive",
+          "value": "\"accessory_specs\".\"pack_quantity\" is null or \"accessory_specs\".\"pack_quantity\" > 0"
+        },
+        "accessory_specs_weight_positive": {
+          "name": "accessory_specs_weight_positive",
+          "value": "\"accessory_specs\".\"weight_lb\" is null or \"accessory_specs\".\"weight_lb\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.product_images": {
+      "name": "product_images",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alt": {
+          "name": "alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "product_images_product_order_idx": {
+          "name": "product_images_product_order_idx",
+          "columns": [
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sort_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "product_images_product_id_products_id_fk": {
+          "name": "product_images_product_id_products_id_fk",
+          "tableFrom": "product_images",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "product_images_url_not_empty": {
+          "name": "product_images_url_not_empty",
+          "value": "char_length(btrim(\"product_images\".\"url\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.product_sources": {
+      "name": "product_sources",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vendor": {
+          "name": "vendor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vendor_sku": {
+          "name": "vendor_sku",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vendor_url": {
+          "name": "vendor_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vendor_price": {
+          "name": "vendor_price",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "product_sources_vendor_sku_key": {
+          "name": "product_sources_vendor_sku_key",
+          "columns": [
+            {
+              "expression": "vendor",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vendor_sku",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "product_sources_product_idx": {
+          "name": "product_sources_product_idx",
+          "columns": [
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "product_sources_product_id_products_id_fk": {
+          "name": "product_sources_product_id_products_id_fk",
+          "tableFrom": "product_sources",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "product_sources_vendor_not_empty": {
+          "name": "product_sources_vendor_not_empty",
+          "value": "char_length(btrim(\"product_sources\".\"vendor\")) > 0"
+        },
+        "product_sources_vendor_price_not_negative": {
+          "name": "product_sources_vendor_price_not_negative",
+          "value": "\"product_sources\".\"vendor_price\" is null or \"product_sources\".\"vendor_price\" >= 0"
+        },
+        "product_sources_vendor_sku_not_empty": {
+          "name": "product_sources_vendor_sku_not_empty",
+          "value": "char_length(btrim(\"product_sources\".\"vendor_sku\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.products": {
+      "name": "products",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "category": {
+          "name": "category",
+          "type": "product_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brand": {
+          "name": "brand",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price": {
+          "name": "price",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "product_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'hidden'"
+        },
+        "gtin": {
+          "name": "gtin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "part_number": {
+          "name": "part_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "extra_specs": {
+          "name": "extra_specs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "products_slug_key": {
+          "name": "products_slug_key",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "products_category_status_brand_idx": {
+          "name": "products_category_status_brand_idx",
+          "columns": [
+            {
+              "expression": "category",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "brand",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "products_category_status_price_idx": {
+          "name": "products_category_status_price_idx",
+          "columns": [
+            {
+              "expression": "category",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "price",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "products_brand_model_idx": {
+          "name": "products_brand_model_idx",
+          "columns": [
+            {
+              "expression": "brand",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "model",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "products_updated_at_idx": {
+          "name": "products_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "products_search_trgm_idx": {
+          "name": "products_search_trgm_idx",
+          "columns": [
+            {
+              "expression": "(lower(coalesce(\"brand\", '') || ' ' || coalesce(\"model\", '') || ' ' || coalesce(\"name\", '') || ' ' || coalesce(\"part_number\", '') || ' ' || regexp_replace(coalesce(\"part_number\", ''), '[^A-Za-z0-9]+', '', 'g'))) gin_trgm_ops",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "products_id_category_key": {
+          "name": "products_id_category_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "category"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "products_slug_format": {
+          "name": "products_slug_format",
+          "value": "\"products\".\"slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(\"products\".\"slug\") <= 200"
+        },
+        "products_brand_length": {
+          "name": "products_brand_length",
+          "value": "\"products\".\"brand\" is null or char_length(btrim(\"products\".\"brand\")) between 1 and 80"
+        },
+        "products_brand_required": {
+          "name": "products_brand_required",
+          "value": "\"products\".\"brand\" is not null or \"products\".\"category\" = 'accessories'"
+        },
+        "products_extra_specs_array": {
+          "name": "products_extra_specs_array",
+          "value": "jsonb_typeof(\"products\".\"extra_specs\") = 'array'"
+        },
+        "products_part_number_length": {
+          "name": "products_part_number_length",
+          "value": "\"products\".\"part_number\" is null or char_length(btrim(\"products\".\"part_number\")) between 1 and 70"
+        },
+        "products_part_number_not_tire": {
+          "name": "products_part_number_not_tire",
+          "value": "\"products\".\"part_number\" is null or \"products\".\"category\" <> 'tires'"
+        },
+        "products_name_length": {
+          "name": "products_name_length",
+          "value": "char_length(btrim(\"products\".\"name\")) between 1 and 200"
+        },
+        "products_price_not_negative": {
+          "name": "products_price_not_negative",
+          "value": "\"products\".\"price\" is null or \"products\".\"price\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.tire_specs": {
+      "name": "tire_specs",
+      "schema": "",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "product_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'tires'"
+        },
+        "size_format": {
+          "name": "size_format",
+          "type": "tire_size_format",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aspect_ratio": {
+          "name": "aspect_ratio",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rim_diameter": {
+          "name": "rim_diameter",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "overall_diameter": {
+          "name": "overall_diameter",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "section_width": {
+          "name": "section_width",
+          "type": "numeric(4, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "service_type": {
+          "name": "service_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "load_index": {
+          "name": "load_index",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "speed_rating": {
+          "name": "speed_rating",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "load_range": {
+          "name": "load_range",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ply_rating": {
+          "name": "ply_rating",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_xl": {
+          "name": "is_xl",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "season": {
+          "name": "season",
+          "type": "tire_season",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "winter_approved": {
+          "name": "winter_approved",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "mud_snow": {
+          "name": "mud_snow",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "studdable": {
+          "name": "studdable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "run_flat": {
+          "name": "run_flat",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "utqg": {
+          "name": "utqg",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "tire_specs_size_idx": {
+          "name": "tire_specs_size_idx",
+          "columns": [
+            {
+              "expression": "width",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "aspect_ratio",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "rim_diameter",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tire_specs_rim_idx": {
+          "name": "tire_specs_rim_idx",
+          "columns": [
+            {
+              "expression": "rim_diameter",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tire_specs_season_idx": {
+          "name": "tire_specs_season_idx",
+          "columns": [
+            {
+              "expression": "season",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "tire_specs_product_fk": {
+          "name": "tire_specs_product_fk",
+          "tableFrom": "tire_specs",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id",
+            "category"
+          ],
+          "columnsTo": [
+            "id",
+            "category"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "tire_specs_category_tires": {
+          "name": "tire_specs_category_tires",
+          "value": "\"tire_specs\".\"category\" = 'tires'"
+        },
+        "tire_specs_metric_has_width": {
+          "name": "tire_specs_metric_has_width",
+          "value": "\"tire_specs\".\"size_format\" <> 'metric' or \"tire_specs\".\"width\" is not null"
+        },
+        "tire_specs_flotation_has_dimensions": {
+          "name": "tire_specs_flotation_has_dimensions",
+          "value": "\"tire_specs\".\"size_format\" <> 'flotation' or (\"tire_specs\".\"overall_diameter\" is not null and \"tire_specs\".\"section_width\" is not null)"
+        },
+        "tire_specs_dimensions_positive": {
+          "name": "tire_specs_dimensions_positive",
+          "value": "\"tire_specs\".\"rim_diameter\" > 0\n        and (\"tire_specs\".\"width\" is null or \"tire_specs\".\"width\" > 0)\n        and (\"tire_specs\".\"aspect_ratio\" is null or \"tire_specs\".\"aspect_ratio\" > 0)\n        and (\"tire_specs\".\"overall_diameter\" is null or \"tire_specs\".\"overall_diameter\" > 0)\n        and (\"tire_specs\".\"section_width\" is null or \"tire_specs\".\"section_width\" > 0)"
+        },
+        "tire_specs_size_length": {
+          "name": "tire_specs_size_length",
+          "value": "char_length(btrim(\"tire_specs\".\"size\")) between 1 and 40"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.wheel_specs": {
+      "name": "wheel_specs",
+      "schema": "",
+      "columns": {
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "product_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'wheels'"
+        },
+        "diameter": {
+          "name": "diameter",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bolt_patterns": {
+          "name": "bolt_patterns",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "offset_mm": {
+          "name": "offset_mm",
+          "type": "numeric(5, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "center_bore_mm": {
+          "name": "center_bore_mm",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "backspacing": {
+          "name": "backspacing",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finish": {
+          "name": "finish",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finish_family": {
+          "name": "finish_family",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lug_count": {
+          "name": "lug_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "material": {
+          "name": "material",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seat_type": {
+          "name": "seat_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "load_rating_lbs": {
+          "name": "load_rating_lbs",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tpms_compatible": {
+          "name": "tpms_compatible",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "winter_compatible": {
+          "name": "winter_compatible",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "wheel_specs_size_idx": {
+          "name": "wheel_specs_size_idx",
+          "columns": [
+            {
+              "expression": "diameter",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "width",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "wheel_specs_bolt_patterns_idx": {
+          "name": "wheel_specs_bolt_patterns_idx",
+          "columns": [
+            {
+              "expression": "bolt_patterns",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "wheel_specs_product_fk": {
+          "name": "wheel_specs_product_fk",
+          "tableFrom": "wheel_specs",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id",
+            "category"
+          ],
+          "columnsTo": [
+            "id",
+            "category"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "wheel_specs_category_wheels": {
+          "name": "wheel_specs_category_wheels",
+          "value": "\"wheel_specs\".\"category\" = 'wheels'"
+        },
+        "wheel_specs_dimensions_positive": {
+          "name": "wheel_specs_dimensions_positive",
+          "value": "\"wheel_specs\".\"diameter\" > 0 and \"wheel_specs\".\"width\" > 0\n        and (\"wheel_specs\".\"center_bore_mm\" is null or \"wheel_specs\".\"center_bore_mm\" > 0)\n        and (\"wheel_specs\".\"load_rating_lbs\" is null or \"wheel_specs\".\"load_rating_lbs\" > 0)\n        and (\"wheel_specs\".\"lug_count\" is null or \"wheel_specs\".\"lug_count\" between 3 and 12)"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.payment_attempt_status": {
+      "name": "payment_attempt_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "approved",
+        "declined",
+        "failed",
+        "expired",
+        "duplicate"
+      ]
+    },
+    "public.payment_environment": {
+      "name": "payment_environment",
+      "schema": "public",
+      "values": [
+        "demo",
+        "production"
+      ]
+    },
+    "public.payment_event_actor": {
+      "name": "payment_event_actor",
+      "schema": "public",
+      "values": [
+        "staff",
+        "customer",
+        "system",
+        "provider"
+      ]
+    },
+    "public.payment_link_status": {
+      "name": "payment_link_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "paid",
+        "cancelled"
+      ]
+    },
+    "public.payment_provider": {
+      "name": "payment_provider",
+      "schema": "public",
+      "values": [
+        "converge",
+        "stripe"
+      ]
+    },
+    "public.accessory_type": {
+      "name": "accessory_type",
+      "schema": "public",
+      "values": [
+        "center_caps",
+        "lug_nuts",
+        "cap_logos_inserts_hardware",
+        "hub_rings",
+        "lug_bolts",
+        "wheel_weights",
+        "wheel_covers_trim",
+        "wheel_spacers",
+        "wheel_locks",
+        "tpms_sensors_tools",
+        "tools_gauges_organizers",
+        "tire_studs",
+        "valves_caps",
+        "antennas",
+        "tire_bags_storage"
+      ]
+    },
+    "public.product_category": {
+      "name": "product_category",
+      "schema": "public",
+      "values": [
+        "tires",
+        "wheels",
+        "accessories"
+      ]
+    },
+    "public.product_status": {
+      "name": "product_status",
+      "schema": "public",
+      "values": [
+        "hidden",
+        "published",
+        "discontinued"
+      ]
+    },
+    "public.tire_season": {
+      "name": "tire_season",
+      "schema": "public",
+      "values": [
+        "summer",
+        "all_season",
+        "all_weather",
+        "winter"
+      ]
+    },
+    "public.tire_size_format": {
+      "name": "tire_size_format",
+      "schema": "public",
+      "values": [
+        "metric",
+        "flotation"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {
+    "public.payment_link_reference_seq": {
+      "name": "payment_link_reference_seq",
+      "schema": "public",
+      "increment": "1",
+      "startWith": "10001",
+      "minValue": "1",
+      "maxValue": "9223372036854775807",
+      "cache": "1",
+      "cycle": false
+    }
+  },
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

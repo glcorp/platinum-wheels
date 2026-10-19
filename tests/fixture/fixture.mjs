@@ -6,7 +6,7 @@
    Library only; `run.mjs` is the entry point. Nothing here touches a real
    database or service: the database is a real Postgres binary started in
    `db-server.mjs` on a local port with a throwaway data directory, the photos
-   are drawn by `photos.mjs`, and the payment gateway is a closed port.
+   are drawn by `photos.mjs`, and Stripe is a stand-in (`stripe-fake.mjs`).
 
    Why `embedded-postgres` and not a Postgres install: the suite must run on a
    laptop and in CI with `npm ci` and nothing else. The binary lives in
@@ -191,6 +191,12 @@ async function seedExtras() {
     await link("paid", "Set of four wheels (fixture)", 99_900, { status: "paid", paid: true });
     await link("cancelled", "Withdrawn quote (fixture)", 5_000, { status: "cancelled", cancelled: true });
     await link("expired", "Old request (fixture)", 25_000, { createdAgo: "3 days", expiresIn: "-1 day" });
+    // Links the Stripe flow specs pay, expire and cancel (`pay-stripe.spec.ts`):
+    // they change state, so no other spec may read them.
+    await link("flowNoJs", "Flow: no JavaScript (fixture)", 60_000, {});
+    await link("flowWebhook", "Flow: webhook settles (fixture)", 245_075, {});
+    await link("flowReturn", "Flow: return settles (fixture)", 31_000, {});
+    await link("flowCancel", "Flow: cancel closes the page (fixture)", 18_000, {});
   } finally {
     await client.end();
   }

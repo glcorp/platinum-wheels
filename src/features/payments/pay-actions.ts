@@ -5,51 +5,62 @@
 
    The only input is the link's public token, bound on the server by the page.
    Amount and description are read from the database inside `startAttempt`;
-   nothing the browser could edit reaches the gateway.
+   nothing the browser could edit reaches Stripe.
 
-   Returns the hosted-page URL and one-time token rather than redirecting:
-   Elavon's documented hand-off is a browser **POST** of `ssl_txn_auth_token`,
-   which a Server Action redirect (always GET) cannot make. The island posts it.
+   On success this **redirects** to the Stripe-hosted page (a 303 for a Server
+   Action), so it only returns for an error. The redirect happens outside any
+   try/catch (Next's redirect is an exception) and, with JavaScript off, the
+   form post is answered with a 303 to Stripe that the browser follows with a
+   GET and no form body (the Converge-era `$ACTION_*` leak, D125b, cannot recur).
    --------------------------------------------------------------------------- */
 
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { PAY_RETURN_COOKIE, PaymentsNotConfiguredError } from "./config";
-import { convergeGateway } from "./converge";
+import { PAY_PATH_PREFIX, PaymentsNotConfiguredError, paymentsEnabled, publicPayOrigin } from "./config";
 import { startAttempt } from "./service";
+import { stripeGateway } from "./stripe";
 
-export type PayState =
-  | { status: "idle" }
-  | { status: "redirect"; hostedPageUrl: string; token: string }
-  | { status: "error"; message: string };
+export type PayState = { status: "idle" } | { status: "error"; message: string };
+
+const CALL_US = "Online payment is not available right now. Please call us to pay.";
+
+/** The origin the customer is on. Production always uses the pay host. */
+async function requestOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return publicPayOrigin(`${proto}://${host}`);
+}
 
 export async function startPayment(publicToken: string): Promise<PayState> {
+  if (!paymentsEnabled()) return { status: "error", message: CALL_US };
+
   let gateway;
   try {
-    gateway = convergeGateway();
+    gateway = stripeGateway();
   } catch (error) {
     if (error instanceof PaymentsNotConfiguredError) {
       console.error(JSON.stringify({ at: "payments.startPayment", detail: error.message }));
-      return { status: "error", message: "Online payment is not available right now. Please call us to pay." };
+      return { status: "error", message: CALL_US };
     }
     throw error;
   }
 
-  const result = await startAttempt(publicToken, gateway);
+  const returnUrl = `${await requestOrigin()}${PAY_PATH_PREFIX}/${publicToken}`;
+  const result = await startAttempt(publicToken, gateway, returnUrl);
   switch (result.kind) {
     case "redirect":
-      // Remember which link this browser is paying, for 30 minutes: the
-      // return is honoured only for this link (`handleReturn`, LA-01/LA-02),
-      // including Converge's empty return. SameSite=None
-      // because the return is a cross-site POST from Converge's page.
-      (await cookies()).set(PAY_RETURN_COOKIE, publicToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        path: "/pay",
-        maxAge: 30 * 60,
-      });
-      return { status: "redirect", hostedPageUrl: result.hostedPageUrl, token: result.token };
+      // Next splits the `x-action-redirect` header on `;`: a URL carrying one
+      // would be cut short. Stripe's never does; refuse rather than misroute.
+      if (result.url.includes(";")) {
+        console.error(JSON.stringify({ at: "payments.startPayment", detail: "session url contains ;" }));
+        return { status: "error", message: CALL_US };
+      }
+      redirect(result.url);
+    // falls through only for the type checker: `redirect` never returns
+    case "in_progress":
+      return { status: "error", message: "Your payment page is being opened. Wait a few seconds, then press Pay again." };
     case "unavailable":
       return {
         status: "error",

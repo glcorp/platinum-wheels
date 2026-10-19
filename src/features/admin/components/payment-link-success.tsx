@@ -26,8 +26,8 @@ import { PAYMENT_LINK_CURRENCY } from "@/features/admin/types";
 
    D94 is retired by D99-D105: `url` is a real link to our own payment page.
    What replaces its "sample link" notice is a **test mode** notice, shown
-   while the gateway is Converge's demo account (`testMode`): such a link takes
-   Elavon test cards only and no money moves, and nobody may mistake it for a
+   while the gateway is Stripe's sandbox (`testMode`): such a link takes
+   Stripe test cards only and no money moves, and nobody may mistake it for a
    live one.
    --------------------------------------------------------------------------- */
 
@@ -79,8 +79,8 @@ export function PaymentLinkSuccess({
         <div className="border-accent bg-accent-subtle flex flex-col gap-1 border p-3.5 sm:gap-1.5 sm:p-4">
           <span className="label text-ink text-10 tracking-14 sm:text-11">Test mode</span>
           <p className="text-ink text-13 leading-body sm:text-14">
-            Payments are connected to the gateway&apos;s demo account. This link takes test cards only, and no real
-            money moves.
+            Payments are connected to Stripe&apos;s sandbox. This link takes test cards only, and no real money
+            moves.
           </p>
         </div>
       ) : null}
