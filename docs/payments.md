@@ -164,8 +164,13 @@ The account owner is the client (Platinum Wheels and Tire Solutions Inc.); the d
    failures. Radar: default rules on (confirm; no paid add-on is assumed).
 9. Interac Debit online is wallet-based and enabled by emailing Stripe; ask whether it can appear on hosted Checkout.
 
-Test cards (any future expiry, any CVC): success `4242 4242 4242 4242`; decline `4000 0000 0000 0002`; 3-D Secure
-`4000 0025 0000 3155`; dispute `4000 0000 0000 0259`.
+Test cards (any future expiry, any CVC; verified against docs.stripe.com/testing, 2026-10-21): success
+`4242 4242 4242 4242`; Canadian Visa `4000 0012 4000 0000`; decline `4000 0000 0000 0002`; insufficient funds
+`4000 0000 0000 9995`; 3-D Secure always authenticates `4000 0027 6000 3184`; 3-D Secure then declined
+`4000 0084 0000 1629`; dispute (the payment succeeds, a fraudulent dispute follows shortly, like real life)
+`4061 2199 4639 3810`. `4000 0000 0000 0259` also disputes, but inside the payment request itself, so use it only
+to test that ordering. Use a different card per independent scenario: card state carries over between tests. Test
+cards work only with a `sk_test_` key.
 
 ## 8. Operations runbook
 
@@ -201,7 +206,9 @@ Test cards (any future expiry, any CVC): success `4242 4242 4242 4242`; decline 
 Run under `stripe listen --forward-to localhost:3000/pay/webhook` (local) or against the production sandbox
 destination:
 
-1. **What the fixture cannot prove:** `billing_address_collection: "required"`, `phone_number_collection`,
+1. **What the fixture cannot prove** (the parameter names and values below were checked against the Checkout
+   Sessions API reference on 2026-10-21, and `session.url` appears on a retrieved open session in its example; the
+   `request_three_d_secure` values were read from a truncated page, so the sandbox run is still the proof): `billing_address_collection: "required"`, `phone_number_collection`,
    `payment_method_options.card.request_three_d_secure: "any"` and `allowed_payment_method_types: ["card"]` are
    accepted by `2026-09-30.endive`; `session.url` is returned when an open session is **retrieved** (if not, the
    code expires it and creates a new one).
@@ -215,7 +222,7 @@ destination:
 6. Replay an event (idempotent); a tampered signature (400); a live key in a Preview-scope env (refused); the wrong
    webhook secret (400, logged, Check payment still settles).
 7. A slow Resend (the webhook still answers in under 10 s); an amount under C$0.50 is refused in the builder.
-8. A Dashboard refund and a dispute (`4000 0000 0000 0259`): the shop email and the admin flag, link status
+8. A Dashboard refund and a dispute (`4061 2199 4639 3810`): the shop email and the admin flag, link status
    unchanged; the shop email names the payer.
 9. `PAYMENTS_ENABLED=0` shows "call to pay" and creates no session.
 10. The restricted key: no 403s in Workbench's request log for the calls above.
