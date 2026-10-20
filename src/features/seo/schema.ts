@@ -5,7 +5,7 @@
    `src/lib/site.ts`, `src/lib/routes.ts` or the caller. Nothing is typed twice.
 
    Owner rulings, 2026-09-30, and what each one removes:
-   - **No physical shop.** The business is a Brampton-based online store, so
+   - **No physical shop.** The business is an online store based in Brampton, so
      the type is `OnlineStore`, never `LocalBusiness`, `Store` or
      `AutoPartsStore`. There is **no street address**, no postal code, no
      `geo`, no `hasMap`, and **no `openingHours` or
@@ -14,8 +14,8 @@
      "City-only address"): where the business is based, not a place to visit.
    - **9 am to 8 pm is when the owners answer the phone.** It appears once, as
      `hoursAvailable` on each `ContactPoint`: contact hours, not opening hours.
-   - **The GTA.** `areaServed` is the Greater Toronto Area (D163, client
-     2026-10-11: "serving the GTA and surrounding areas"), replacing D112(3)'s
+   - **Canada.** `areaServed` is the country (D190, client 2026-10-21:
+     "across Canada"), replacing D163's Greater Toronto Area and D112(3)'s
      Brampton only. The address stays the city.
    - **One phone number, no names** (D161): one `ContactPoint`, the shop's
      number. No person is named anywhere in the markup.
@@ -92,9 +92,8 @@ export function organizationSchema(): JsonLdNode {
       addressCountry: "CA",
     },
     areaServed: {
-      "@type": "AdministrativeArea",
-      name: "Greater Toronto Area",
-      sameAs: "https://en.wikipedia.org/wiki/Greater_Toronto_Area",
+      "@type": "Country",
+      name: "Canada",
     },
     /* One number and no name (D161): a search engine needs the line, not a
        person. Still a list, as schema.org writes it. */

@@ -272,7 +272,7 @@ P7. **Production Converge credentials, vendor ID and the certification test scri
 
 C1. **Prices stay off for launch; turning them on is one variable and a redeploy.**
    - **State:** `NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED` is not set anywhere, which is "off": no price
-     on any card or product page, no price filter or sort, footer reads `Brampton, Ontario`. Client
+     on any card or product page, no price filter or sort, footer reads `Across Canada`. Client
      ruling 2026-10-01: no prices at launch, because the vendor sheets mix retail, dealer and
      with-shipping figures.
    - **How, later:** set it to exactly `true` in Vercel (Production, and Preview if wanted) and

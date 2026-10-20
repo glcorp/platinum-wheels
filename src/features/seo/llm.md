@@ -73,8 +73,8 @@ and the `metadata` of `layout.tsx` and of each indexable page.
 - **No street address, no postal code, no `geo`, no map and no opening hours, anywhere.** There is no
   shop (owner, 2026-09-30). The business is an `OnlineStore` based in Brampton. Its `address` is **city,
   province and country only** (owner, 2026-09-30, choosing *"City-only address"*). 9 am to 8 pm appears
-  only as `hoursAvailable` on the one contact point. **`areaServed` is the Greater Toronto Area**
-  (`AdministrativeArea`, D163, client 2026-10-11: *"serving the GTA and surrounding areas"*), replacing
+  only as `hoursAvailable` on the one contact point. **`areaServed` is Canada**
+  (`Country`, D190, client 2026-10-21: *"across Canada"*), replacing D163's Greater Toronto Area and
   D112(3)'s Brampton only. **One contact point, the shop's number, and no person's name (D161).**
 - **No price, offer, currency or availability in structured data** (owner, 2026-09-30), and no rating or
   review ever (`docs/decisions.md` §8). A `Product` carries name, brand, size, category, image and URL.
