@@ -170,7 +170,7 @@ export interface Product {
   /**
    * ISO code for `price`. `CAD` throughout. **Data, not presentation:** since
    * D77 (2026-09-22) no price renders the code — the footer's
-   * `Brampton, Ontario · Prices in CAD, before tax` declares it once, site-wide
+   * `Across Canada · Prices in CAD, before tax` declares it once, site-wide
    * (`src/lib/site.ts` `priceNote`).
    */
   currency: string;
