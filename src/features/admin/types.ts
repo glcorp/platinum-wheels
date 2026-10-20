@@ -9,8 +9,9 @@
    or an owner ruling in D89-D94, and every authored state lands on
    `/admin/styleguide` (D93).
 
-   Nothing in this file may reference a payment provider. The PSP is Converge
-   (D99), but only gateway code under `src/features/payments/` may name it; the
+   Nothing in this file may reference a payment provider. The PSP is Stripe
+   (D99, switched from Converge 2026-10), but only gateway code under
+   `src/features/payments/` may name it; the
    admin collects an amount, a description and an expiry (D92 amended by D103)
    and nothing else.
    --------------------------------------------------------------------------- */
@@ -175,6 +176,13 @@ export const PAYMENT_LINK_CURRENCY = "CAD";
 export const AMOUNT_MAX = 50_000;
 
 /**
+ * Smallest amount a link may carry: C$0.50, the card processor's minimum
+ * charge. Below it the processor refuses the payment, so the link would be
+ * unpayable.
+ */
+export const AMOUNT_MIN = 0.5;
+
+/**
  * Description ceiling. Same reasoning as `MESSAGE_MAX_LENGTH` in
  * `src/features/product/actions.ts`: a generous guard, not a drawn limit.
  * Every gateway truncates a statement descriptor far below this.
@@ -222,7 +230,7 @@ export type PaymentLinkState =
       description: string;
       /** Already formatted for display in the shop's time zone. */
       expiresLabel: string;
-      /** `true` while the gateway is Converge's demo: test cards only. */
+      /** `true` while the gateway is in its sandbox: test cards only. */
       testMode: boolean;
     };
 

@@ -92,8 +92,7 @@ export function createRateLimiter(options: {
  *
  * `src/features/admin/session.ts` has its own `clientIp()` for audit logs,
  * reading `x-forwarded-for` first. It is not shared because `src/lib/` may not
- * import a feature (D37); this one reads `x-real-ip` first, as
- * `src/app/pay/notify/route.ts` does for its IP gate.
+ * import a feature (D37); this one reads `x-real-ip` first.
  */
 export function clientIpFrom(requestHeaders: { get(name: string): string | null }): string {
   const real = requestHeaders.get("x-real-ip")?.trim();

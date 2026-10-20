@@ -22,8 +22,8 @@
        Previews have no admin host, so previews have no admin (owner ruling,
        2026-10-01).
      - **`PAY_HOST` (D105), production only:** `/pay` and everything under it
-       passes — the customer's `/pay/<token>` page and Converge's
-       `/pay/return` — and any other path is a 404. Elsewhere `/pay` is a 404.
+       passes — the customer's `/pay/<token>` page and Stripe's
+       `/pay/webhook` — and any other path is a 404. Elsewhere `/pay` is a 404.
        Unchanged by D115. That 404 is the pay host's own (D145 audit; D151):
        a stray path is served from `PAY_NOT_FOUND_PATH`, which only ever
        renders `src/app/pay/not-found.tsx`, the page with the shop's phone and

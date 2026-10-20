@@ -24,8 +24,8 @@ question; the design alone cannot, because it never speaks to implementation.
 - [`catalogue-csv.md`](catalogue-csv.md) — the suggested layout of the catalogue file the import
   reads: one row per product, the columns per category, and what the import does with a bad row
   (D113). A suggestion for whoever prepares the data, not authority level 1.
-- [`payments.md`](payments.md) — the payments design: Converge via Costco/Elavon, our own link + hosted
-  payment page, data model and state machines, static-IP proxy limits, env vars, proposed decision rows.
+- [`payments.md`](payments.md) — the payments design and runbook: Stripe Checkout (D191), our own link + hosted
+  payment page, data model and state machines, the webhook, env vars, sandbox checks, cutover and the go-live gate.
 
 ## Rules
 - **Amend by editing `decisions.md`, not by exception in code** — its own Status line

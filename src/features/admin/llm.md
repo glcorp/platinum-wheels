@@ -120,13 +120,13 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   storefront).
 - **No hover-only affordances.** Hover is scoped to `@media (hover: hover)` repo-wide (D17), so anything
   revealed only on hover is permanently unreachable on his devices. Every control is persistently visible.
-- **No gateway in this folder.** The PSP is Converge (D99), but that code lives in
+- **No gateway in this folder.** The PSP is Stripe (D191), but that code lives in
   `src/features/payments/`. This folder may import that feature's `service`, `config` and `money` modules
-  (D106), and never `converge.ts`; nothing here may name or be shaped around a gateway (D92, as amended
+  (D106), and never `stripe.ts`; nothing here may name or be shaped around a gateway (D92, as amended
   by D99).
 - **Three fields.** The builder takes an amount, a description and an expiry (D103). No line items, no
   quantities, no fees, no HST, no totals — the owner ruled it a wrapper, not a calculator (D92).
-- **Nothing here moves money out.** No refund or void button; those are done in the Converge portal.
+- **Nothing here moves money out.** No refund or void button; those are done in the Stripe Dashboard. **Check payment** (D191) only asks Stripe and can only mark a link paid.
 - Every protected page calls `requireAdminSession()` first, and **every Server Action here calls
   `requireAdminAction(formData)` first** (`signIn`, which has no session yet, calls
   `assertSameOriginRequest()`). An action is a public POST endpoint whether or not its page is gated, and
@@ -233,7 +233,7 @@ Global rows live in the root [`llm.md`](../../../llm.md) §5b and are referenced
 1. **What D95 declined:** per-user accounts, a second factor, per-session revocation (changing the
    password or `ADMIN_SESSION_SECRET` signs everyone out at once). Revisit if staff beyond the owner
    need their own logins. Owner.
-2. ~~**PSP selection.**~~ **Closed by D99 and D107:** the PSP is Converge and the builder creates real
+2. ~~**PSP selection.**~~ **Closed by D99, D107 and D191:** the PSP is Stripe (Converge before 2026-10) and the builder creates real
    links. What is left is proving it against the gateway, which waits on the owner actions in `todo.md`
    "Owner — payments".
 3. ~~**Product CRUD screens.**~~ **Built by D116 and D117.** The storefront gallery that shows photos 2–8 is

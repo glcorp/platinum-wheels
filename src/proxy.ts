@@ -10,7 +10,7 @@ import {
   normalizeHost,
 } from "@/features/admin/host-routing";
 import { productPageExists } from "@/features/catalog/queries";
-import { payLinkExists } from "@/features/payments/service";
+import { payLinkExists } from "@/features/payments/link-exists";
 
 /* ---------------------------------------------------------------------------
    Request proxy — host routing for the admin (D97, D115) and payments (D105)
@@ -84,7 +84,7 @@ const PRODUCT_PAGE = /^\/products\/([^/]+)\/?$/;
 const PAY_NOT_FOUND_PAGE = "/pay/link-not-found";
 
 /** `/pay/<segment>` routes that exist, so they are never a 404. */
-const PAY_ROUTES = new Set(["done", "return", "notify", "link-not-found"]);
+const PAY_ROUTES = new Set(["webhook", "link-not-found"]);
 
 /** A payment link token (the shape `[token]/page.tsx` accepts). */
 const PAY_TOKEN = /^[A-Za-z0-9_-]{22,64}$/;

@@ -11,6 +11,10 @@
     "paid": "fixturePaidLinkToken00001",
     "cancelled": "fixtureCancelledLinkToken1",
     "expired": "fixtureExpiredLinkToken01",
-    "unknown": "fixtureUnknownLinkToken01"
+    "unknown": "fixtureUnknownLinkToken01",
+    "flowNoJs": "fixtureFlowNoJsLinkToken01",
+    "flowWebhook": "fixtureFlowWebhookLinkTok01",
+    "flowReturn": "fixtureFlowReturnLinkToken1",
+    "flowCancel": "fixtureFlowCancelLinkToken1"
   }
 }

@@ -197,6 +197,23 @@ in `extra_specs`, the vendors' 15 accessory types. Outputs are in `~/Platinum Wh
   tires whose "All Season" may be all-weather); `src/features/catalog/llm.md` is 283 lines, over the ~120
   budget.
 
+**Last updated 2026-10-20 (payments move from Converge to Stripe, D191, branch `stripe-payments`).** The client
+dropped Converge (the Elavon demo expired 2026-10-18). The branch replaces the gateway with **Stripe hosted
+Checkout**: `src/features/payments/stripe.ts`, `POST /pay/webhook`, an open session reused on a second press,
+Check payment on the admin list, a refund/dispute email and flag (notify only), key guards and a
+`PAYMENTS_ENABLED` kill switch (`docs/payments.md`). It deletes `converge.ts`, `/pay/return`, `/pay/notify`,
+`/pay/done`, Fixie and `undici`. Migration `0007_stripe_checkout`. **D108 is reversed** (no cron, but the page,
+the admin list and staff look a pending payment up).
+- **Checked:** `npm run check`; the fixture e2e (`pay-states`, `pay-stripe`, `seo`) against a Stripe stand-in
+  (`tests/fixture/stripe-fake.mjs`): JS-off Pay, a reused session, a signed webhook, a refund flag, a return with
+  no webhook, cancel closing the page.
+- **Not checked:** anything against Stripe's real API (`docs/payments.md` §9), Back from Stripe on a phone, the
+  `pay.` host rules and the production webhook gate. **No sandbox key has been used.**
+- **Owed next, in order:** `todo.md` S1 (start Stripe activation now), S2 (sandbox key into Vercel by the owner and
+  the §9 checks), merge by `glcorp`, S3 (event destination and the curl gate), S4 (remove the Converge/Fixie
+  vars), then the go-live gates (`todo.md` P7). The pre-cutover production row audit is not yet recorded here.
+- **Decision ID:** D191 (`image-clarity` holds D190).
+
 **Last updated 2026-10-03 (the Converge SYSTEM error found and fixed, D125b, branch `payments-handoff-form`).**
 Every payment through our site failed on Converge's hosted page with `errorType SYSTEM` while a portal Buy
 Button approved. The cause was ours: the Pay island reused the Server Action form's DOM element for the

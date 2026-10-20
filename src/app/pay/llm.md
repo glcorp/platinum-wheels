@@ -8,17 +8,14 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
 ## Owns
 
 - [`[token]/page.tsx`](%5Btoken%5D/page.tsx) — `/pay/<token>`: amount, description, reference, expiry and
-  the Pay island, or the paid, expired or cancelled state. Dynamic, read at request time. The staff-typed
+  the Pay button, or the paid, expired or cancelled state, or "pay by phone" when payments are off or Stripe is not
+  configured (D191). Dynamic, read at request time. Before reading, it settles the link's pending attempt (bounded,
+  errors swallowed): `?paid=1` is Stripe's `success_url`, and only says "look now". The staff-typed
   description wraps anywhere (`wrap-anywhere`), so one long word cannot widen the page (D145 audit).
-- [`return/route.ts`](return/route.ts) — `/pay/return`, the one URL Converge sends every customer back to
-  (GET or POST). Gated on the `pw_pay` cookie (LA-01/LA-02, D145 audit; D146): only a browser whose
-  cookie names a link with an open attempt makes Converge be asked, a bounded number of times per
-  attempt, and only that browser is 303'd to its link's page; every other return goes to `/pay/done`.
-  It skips the query when `/pay/notify` has already settled that transaction (D119). Logic in
-  `handleReturn` (`src/features/payments/service.ts`).
-- [`notify/route.ts`](notify/route.ts) — `/pay/notify`, Converge's export script (D119). POST only; 404
-  unless `CONVERGE_NOTIFY_USER` and `CONVERGE_NOTIFY_PASSWORD` are set; 403 outside Elavon's ranges; 401
-  without the agreed Basic credentials. Never answers with payment data.
+- [`webhook/route.ts`](webhook/route.ts) — `POST /pay/webhook`, Stripe's event destination (D191). Reads the raw
+  body once, verifies the signature (400 on failure), ignores the other `livemode`, then hands the event to
+  `processStripeEvent` (`src/features/payments/service.ts`). 500 only for our own failure so Stripe retries. Never
+  answers with payment data. GET is a 405.
 - [`not-found.tsx`](not-found.tsx) — the pay host's 404 (D145 audit, COPY / SEC-EDGE; D151): the
   pay page's logo row and panel, *Payment link not found*, and the shop's phone and email from
   `PRIMARY_CONTACT` (no name, "Call us at", D161) and `SITE.email`. No storefront link. Answers an unknown token, every path below.
@@ -32,9 +29,6 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
   (QA COPY-1, D184). The `notFound()`s stay for client navigations.
 - [`link-not-found/page.tsx`](link-not-found/page.tsx) — the page the proxy fetches (above). Visited directly it
   is a 200 with `noindex`; no token can collide with it (tokens are 22 to 64 characters).
-- [`done/page.tsx`](done/page.tsx) — `/pay/done`, the neutral landing page for every return not bound to
-  the browser's own link (no cookie, an expired one, or not a customer). It says the payment could not
-  be confirmed, not to pay twice, and to call or email the shop (from `PRIMARY_CONTACT` (no name, "Call us at", D161) and `SITE.email`).
 
 ## Rules
 
@@ -43,28 +37,28 @@ segment rather than a route group, for the same reason as `src/app/admin/`: it n
 - **No site chrome.** Storefront links would not resolve on the pay host (D105).
 - Response headers for `/pay/**` (no framing, noindex, `no-store`, `Referrer-Policy: strict-origin`) are
   set in `next.config.ts` (D105).
-- **Converge portal settings point here** (`todo.md`): Redirect URL, Decline button link and Cancel link are
-  all `https://pay.platinumwheels.ca/pay/return`.
+- **The Stripe event destination points here** (`docs/payments.md` §7): `https://pay.platinumwheels.ca/pay/webhook`,
+  no trailing slash (a redirect is a failed delivery).
 
 ## Decisions
 
 | ID | Date | Decision | Why | Authority |
 |---|---|---|---|---|
-| — | — | None folder-scoped. | See D100, D105, D107, D108, D119 in root `llm.md` §5b. | — |
+| — | — | None folder-scoped. | See D100, D105, D191 in root `llm.md` §5b. | — |
 
 ## Connects to
 
 - **Depends on:** `src/features/payments/`, `src/lib/site.ts` (contacts).
-- **Depended on by:** Converge's hosted page (the return URL), Converge's export script (`/pay/notify`) and
+- **Depended on by:** Stripe (the webhook, and the `success_url` / `cancel_url` it sends the customer back to) and
   the links staff email out.
 
 ## Don't
 
 - Don't turn the pay 404 back into a bare `notFound()` for document requests: it is blank without
   JavaScript (D184). Keep the proxy answer.
-- Don't render anything from the return request's fields. They are untrusted.
-- Don't build a `/pay/<token>` redirect from the return's fields (LA-02): invoice numbers are sequential
-  and the token is the link's capability. Only the `pw_pay` cookie picks the link page.
+- Don't render anything from the request's query. `?paid=1` is a hint; the page reads its own stored attempt.
+- Don't read a webhook body for anything but `type` and the object id. Re-read the session from Stripe.
+- Don't register the webhook URL with a trailing slash, or put `pay.` behind the Cloudflare proxy.
 
 ## Open
 

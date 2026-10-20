@@ -38,6 +38,7 @@ import { requireAdminAction } from "@/features/admin/session";
 import {
   ADMIN_ROUTES,
   AMOUNT_MAX,
+  AMOUNT_MIN,
   DESCRIPTION_MAX_LENGTH,
   PAYMENT_LINK_EXPIRY,
   PAYMENT_LINK_FIELD,
@@ -46,9 +47,9 @@ import {
   type PaymentLinkFieldKey,
   type PaymentLinkState,
 } from "@/features/admin/types";
-import { payLinkUrl, publicPayOrigin } from "@/features/payments/config";
+import { payLinkUrl, paymentsLive, publicPayOrigin } from "@/features/payments/config";
 import { formatCents, parseAmountToCents } from "@/features/payments/money";
-import { cancelLink, createLink } from "@/features/payments/service";
+import { cancelLink, checkLinkPayment, createLink } from "@/features/payments/service";
 import { SHOP_DATE_TIME } from "@/lib/time";
 
 import { adminFolderPath, storefrontHost } from "./host-routing";
@@ -151,6 +152,8 @@ export async function createPaymentLink(
         const numeric = Number(cleaned);
         if (numeric <= 0) {
           errors.amount = "Enter an amount greater than zero.";
+        } else if (numeric < AMOUNT_MIN) {
+          errors.amount = `Enter at least $${AMOUNT_MIN.toFixed(2)}. The card processor can't take less.`;
         } else if (numeric > AMOUNT_MAX) {
           errors.amount = `Enter an amount of $${AMOUNT_MAX.toLocaleString("en-CA")} or less.`;
         } else {
@@ -232,7 +235,7 @@ export async function createPaymentLink(
     amount: formatCents(link.amountCents),
     description: link.description,
     expiresLabel: EXPIRY_FORMAT.format(link.expiresAt),
-    testMode: process.env.CONVERGE_ENV !== "production",
+    testMode: !paymentsLive(),
   };
 }
 
@@ -246,7 +249,7 @@ function readLinkId(formData: FormData): string | null {
 }
 
 /** Withdraw an unpaid link. Money already taken is never touched here:
- *  refunds happen in the gateway's own portal (`docs/payments.md` §5.7). */
+ *  refunds happen in the Stripe Dashboard (`docs/payments.md` §5.7). */
 export async function cancelPaymentLink(_prev: LinkActionState, formData: FormData): Promise<LinkActionState> {
   await requireAdminAction(formData);
   const id = readLinkId(formData);
@@ -259,4 +262,29 @@ export async function cancelPaymentLink(_prev: LinkActionState, formData: FormDa
     status: "error",
     message: result.state === "paid" ? "This link is already paid, so it can't be cancelled." : "This link is already closed.",
   };
+}
+
+/** Check payment: ask Stripe about the link's pending attempts now. For the
+ *  customer who says "I paid" while the row still says started, not confirmed.
+ *  Read-only on Stripe's side; it can only move a link to paid (or note that
+ *  the page timed out), through the same checks as the webhook. */
+export async function checkPaymentLink(_prev: LinkActionState, formData: FormData): Promise<LinkActionState> {
+  await requireAdminAction(formData);
+  const id = readLinkId(formData);
+  if (!id) return { status: "error", message: "That link could not be found." };
+
+  const result = await checkLinkPayment(id);
+  revalidatePath(BUILDER_FOLDER_PATH);
+  switch (result.kind) {
+    case "paid":
+      return { status: "done", message: "Payment confirmed. The link is now marked paid." };
+    case "still_open":
+      return { status: "done", message: "Stripe says the customer has not finished paying. The payment page is still open." };
+    case "timed_out":
+      return { status: "done", message: "The customer never finished paying and the payment page timed out. Nothing was charged." };
+    case "nothing":
+      return { status: "done", message: "Nothing is waiting on this link." };
+    case "error":
+      return { status: "error", message: "Could not reach Stripe. Try again in a minute, or look in the Stripe Dashboard." };
+  }
 }
