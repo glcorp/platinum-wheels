@@ -34,3 +34,16 @@ The owner showed examples the first pass missed (earlier-session upscales kept a
 Five agents searched brand sites, other vendors and retailers: 37 photos found (31 wheels, 5 tires, 1 cap), 390 not found. Direct Auto Import's own pages show its default no-image graphic for the 168 unbranded, 95 ART/DAI, 50 Ruffino and other accessories, and no brand site or retailer carries the exact parts. 36 sourced photos passed review and were inserted with `catalog-photo-add.ts` (36 rows, `rollback3.csv`).
 
 Still open: about 1,100 more files changed by the clean-up run are unreviewed (each serves 15 or fewer products); the run itself was still going over the tire and wheel set. The Nitto Trail Grappler M/T photo found was rejected (cropped tread). 390 products stay on the no-photo tile.
+
+## Second pass, as applied by 2026-10-20 (all in production, each batch one checked transaction with a rollback file)
+| Batch | Photos | Product rows | Rollback |
+|---|---|---|---|
+| Top 300 by products served | 248 | 13,603 | rollback2 |
+| Next 600 | 495 | 3,723 | rollback4 |
+| The rest of the first run | 1,393 | 2,327 | rollback5 |
+| Flagged wheels and accessories (redo with the faster cut-out model plus an edge cleanup for dark products) | 327 | 2,232 | rollback6 |
+| Wheel locks, lug bolts, lug nuts, TPMS sensors, and the earlier rejects redone with a gentler method | 171 | 571 | rollback7 |
+| First photos added for products with none | 36 products | 36 | rollback3 |
+
+Leftover defects the owner pointed out with screenshots (ComfortMax H202, Minnell SW08, Opals Silversnow F9, Rydanz R23, Azara AZA-536, GT lug nuts, Bosch TPMS tool, Schrader EZ-Sensor) were missed by the first review passes: reviewers read contact sheets at thumbnail size and accepted ragged edges and small shadows. Remaining fixes are made by re-running the cut on every tire (859) and accessory (528) and reviewing the changes; the tire results (`fix11`) are built and not yet applied.
+The before/after pages cover the batches through the third row.
