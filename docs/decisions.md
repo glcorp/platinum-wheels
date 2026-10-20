@@ -131,7 +131,7 @@ Alias `@/*` → `./src/*`. Named exports only; no barrel `index.ts`.
   `from $129` above `per tire · before tax` (U+00B7, spaced). Both carry the same meaning; the PDP adds
   the tax qualifier the footer repeats. `Price` takes a number and formats it itself, so a
   pre-formatted string can never reintroduce superscript cents or a shrunken `$`.
-  Footer states "Brampton, Ontario · Prices in CAD, before tax" — since the amounts no longer name a
+  Footer states "Across Canada · Prices in CAD, before tax" (D190; was "Brampton, Ontario · Prices in CAD, before tax") — since the amounts no longer name a
   currency, **that line is the only place the site states one, and is load-bearing**: it may not be
   removed, shortened past the currency, or hidden at any width without a new ruling.
   *(Amended 2026-09-22, D77. Until then this line specified the drawn strings `from $129 CAD / tire` and

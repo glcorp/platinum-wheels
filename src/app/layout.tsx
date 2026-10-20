@@ -41,11 +41,11 @@ const MOTION_BOOT = `(function(){var d=document;d.documentElement.setAttribute("
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Tires, Wheels and Accessories in Brampton · Platinum Wheels",
+    default: "Tires, Wheels and Accessories Across Canada · Platinum Wheels",
     template: "%s · Platinum Wheels",
   },
   description:
-    "Brampton-based online store for tires, wheels and accessories. Search by your vehicle. We confirm the fitment and send you a quote.",
+    "Online store for tires, wheels and accessories across Canada. Search by your vehicle. We confirm the fitment and send you a quote.",
   robots: siteRobots(),
   ...SITE_PREVIEW,
 };

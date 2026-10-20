@@ -11,7 +11,7 @@
  *
  * The currency code is NOT rendered (D77, 2026-09-22). The artboards draw
  * `$129 CAD`; the owner ruled the bare `$` everywhere because the footer's
- * `Brampton, Ontario · Prices in CAD, before tax` already declares the currency
+ * `Across Canada · Prices in CAD, before tax` already declares the currency
  * once, site-wide. That footer line is therefore load-bearing — see
  * `src/lib/site.ts` `priceNote`. `docs/decisions.md` §7 is amended to match;
  * `design/DEVIATIONS.md` #64 carries the drawn-vs-shipped row. The currency

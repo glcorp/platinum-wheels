@@ -24,9 +24,9 @@ import { ROUTES } from "@/lib/routes";
 /* The canonical is the bare path whatever the URL carries, so every search,
    filter and sort of this page points at one address (D112). */
 export const metadata: Metadata = pageMetadata({
-  title: "Wheels in Brampton, ON",
+  title: "Wheels Across Canada",
   description:
-    "Wheels by diameter, width and bolt pattern from a Brampton-based online store. Search by vehicle, then request a quote.",
+    "Wheels by diameter, width and bolt pattern from an online store serving customers across Canada. Search by vehicle, then request a quote.",
   path: ROUTES.wheels,
 });
 

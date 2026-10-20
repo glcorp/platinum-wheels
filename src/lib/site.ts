@@ -18,13 +18,14 @@ export const SITE_URL = "https://platinumwheels.ca";
 export const SITE = {
   name: "Platinum Wheels",
   legalName: "Platinum Wheels and Tire Solutions Inc.",
-  tagline: "Wheels, tires & accessories in Brampton, ON",
+  tagline: "Wheels, tires & accessories across Canada",
   city: "Brampton",
   province: "ON",
-  /** Where the shop sells to (D163). Client, 2026-10-11: "Platinum…. Deal in
-   *  tires…… serving the GTA and surrounding areas". Read in running text after
-   *  "serving". The address stays the city (`city`, `province`). */
-  serviceArea: "the GTA and surrounding areas",
+  /** Who the shop sells to. D163 (2026-10-11) had "the GTA and surrounding
+   *  areas"; the client then said "across Canada" (2026-10-21, D190), which
+   *  replaces it. Read in running text after "serving". The address stays the
+   *  city (`city`, `province`). */
+  serviceArea: "customers across Canada",
   email: "sales@platinumwheels.ca",
   hours: "Every day, 9 am to 8 pm",
   hoursLabel: "Phone & inquiry hours",
@@ -35,10 +36,10 @@ export const SITE = {
    * Do not remove it, shorten it past `CAD`, or hide it at any width
    * (`docs/decisions.md` §7).
    */
-  priceNote: "Brampton, Ontario · Prices in CAD, before tax",
+  priceNote: "Across Canada · Prices in CAD, before tax",
   /** The footer line while prices are switched off (D122): with no price on
    *  the site there is no currency to declare. */
-  placeNote: "Brampton, Ontario",
+  placeNote: "Across Canada",
 } as const;
 
 /**

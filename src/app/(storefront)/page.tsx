@@ -52,10 +52,10 @@ import { ROUTES } from "@/lib/routes";
 export const metadata: Metadata = pageMetadata({
   /* The root template appends "· Platinum Wheels"; the home title already
      carries the name once, so it opts out of the template. */
-  title: "Tires, Wheels and Accessories in Brampton · Platinum Wheels",
+  title: "Tires, Wheels and Accessories Across Canada · Platinum Wheels",
   absoluteTitle: true,
   description:
-    "Brampton-based online store for tires, wheels and accessories. Search by your vehicle. We confirm the fitment and send you a quote.",
+    "Online store for tires, wheels and accessories across Canada. Search by your vehicle. We confirm the fitment and send you a quote.",
   path: ROUTES.home,
 });
 

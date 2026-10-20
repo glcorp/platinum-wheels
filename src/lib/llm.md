@@ -18,7 +18,7 @@ the next session guesses which of the two phone numbers is real.
 - [`site.ts`](site.ts) — seven named exports. Four are sourced from `design/DESIGN.md` "Contact block
   (canonical)" (`site.ts:1-8`); two were added by D112, one by D122 and one by D134:
   - `PRICES_VISIBLE` — `NEXT_PUBLIC_STOREFRONT_PRICES_ENABLED === "true"` (D122). Off for launch: no price
-    anywhere, no price filter or sort, and the footer shows `SITE.placeNote` (`Brampton, Ontario`)
+    anywhere, no price filter or sort, and the footer shows `SITE.placeNote` (`Across Canada`, D190)
     instead of `priceNote`, since with no price there is no currency to declare. `NEXT_PUBLIC_` because
     `ProductCard` also renders in a client island; inlined at build, so a change needs a redeploy.
   - `SITE_URL` — `https://platinumwheels.ca`, the one canonical origin (apex, no `www`, no trailing
@@ -33,9 +33,9 @@ the next session guesses which of the two phone numbers is real.
     (record source)"*; the owner confirmed both prices are true; D153). The source is the owner's word.
   - `CONTACT_HOURS` — `SITE.hours` as data (days, `09:00`, `20:00`) for structured data only. **Phone
     hours, not opening hours**: there is no shop (owner, 2026-09-30).
-  - `SITE` — `name`, `legalName`, `serviceArea` (`the GTA and surrounding areas`, D163, read after
+  - `SITE` — `name`, `legalName`, `serviceArea` (`customers across Canada`, D190, which replaced D163's GTA phrase; read after
     "serving"; the address stays the city) (`Platinum Wheels and Tire Solutions Inc.`, with the `Inc.`; owner, 2026-10-05; print it as is and append nothing), `tagline`, `city`, `province`, `email`, `hours`, `hoursLabel`, and
-    `priceNote` (`Brampton, Ontario · Prices in CAD, before tax`, the footer line required by
+    `priceNote` (`Across Canada · Prices in CAD, before tax`, the footer line required by
     `docs/decisions.md` §7). **Load-bearing (D77):** prices render a bare `$` with no currency code,
     so this string is the only place the site states its currency — it may not be removed, shortened
     past `CAD`, or hidden at any width. `as const`.

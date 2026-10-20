@@ -22,9 +22,9 @@ import { ROUTES } from "@/lib/routes";
 /* The canonical is the bare path whatever the URL carries, so every search,
    filter and sort of this page points at one address (D112). */
 export const metadata: Metadata = pageMetadata({
-  title: "Wheel Accessories in Brampton, ON",
+  title: "Wheel Accessories Across Canada",
   description:
-    "Lug nuts, wheel locks, TPMS sensors, centre caps and more from a Brampton-based online store. Request a quote on any item.",
+    "Lug nuts, wheel locks, TPMS sensors, centre caps and more from an online store serving customers across Canada. Request a quote on any item.",
   path: ROUTES.accessories,
 });
 

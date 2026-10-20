@@ -319,8 +319,8 @@ test("the home page describes an online store: no street address, no opening hou
     url: SITE_URL,
     email: "sales@platinumwheels.ca",
     telephone: "+14378825000",
-    // D163 (client, 2026-10-11): "serving the GTA and surrounding areas".
-    areaServed: { "@type": "AdministrativeArea", name: "Greater Toronto Area" },
+    // D190 (client, 2026-10-21): "across Canada" (was the GTA, D163).
+    areaServed: { "@type": "Country", name: "Canada" },
   });
   // Where the business is based, and nothing a customer could travel to.
   expect(org!.address).toEqual({
