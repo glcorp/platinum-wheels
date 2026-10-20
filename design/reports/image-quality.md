@@ -47,3 +47,5 @@ Still open: about 1,100 more files changed by the clean-up run are unreviewed (e
 
 Leftover defects the owner pointed out with screenshots (ComfortMax H202, Minnell SW08, Opals Silversnow F9, Rydanz R23, Azara AZA-536, GT lug nuts, Bosch TPMS tool, Schrader EZ-Sensor) were missed by the first review passes: reviewers read contact sheets at thumbnail size and accepted ragged edges and small shadows. Remaining fixes are made by re-running the cut on every tire (859) and accessory (528) and reviewing the changes; the tire results (`fix11`) are built and not yet applied.
 The before/after pages cover the batches through the third row.
+
+Handoff for the next session (state, paths, recipe, what is left): `design/reports/image-quality-handoff.md`.
