@@ -44,6 +44,15 @@ Still open: about 1,100 more files changed by the clean-up run are unreviewed (e
 | Flagged wheels and accessories (redo with the faster cut-out model plus an edge cleanup for dark products) | 327 | 2,232 | rollback6 |
 | Wheel locks, lug bolts, lug nuts, TPMS sensors, and the earlier rejects redone with a gentler method | 171 | 571 | rollback7 |
 | First photos added for products with none | 36 products | 36 | rollback3 |
+| Chewed wheel locks and shadowed hardware, re-cut from the vendor original (flood-fill bounded by an AI region) | 13 | 55 | rollback9 |
+| Five wheel-weight pictogram photos taken off (neutral tile shows) | 5 photos | 38 removed | rollback10 |
+| Azara AZA-536 gloss black and nano gold: sourced 1000px retailer photos, cut clean (`tools/ff3.py ... big`) | 2 | 9 | rollback11 |
+| Opals F9, Minnell SW08 (owner photos), Azara 536 machined and chrome, AZA-540 machined and gloss black | 6 | 31 | rollback12 |
+| Sailun Inspire ragged edge smoothed | 1 | 7 | rollback13 |
+| FAST wheel ground shadow; three tread close-ups rebuilt whole | 4 | 269 | rollback14 |
+| Six review agents' defect lists: tire re-cuts and wheel shadow trims | 23 | 92 | rollback15 |
+| Two screw close-ups removed (neutral tile) | 2 | 8 | rollback16 |
+| Wheels re-cut from the vendor original with the strong cut (ground shadows and chunks) | 36 | 136 | rollback18 |
 
 Leftover defects the owner pointed out with screenshots (ComfortMax H202, Minnell SW08, Opals Silversnow F9, Rydanz R23, Azara AZA-536, GT lug nuts, Bosch TPMS tool, Schrader EZ-Sensor) were missed by the first review passes: reviewers read contact sheets at thumbnail size and accepted ragged edges and small shadows. Remaining fixes are made by re-running the cut on every tire (859) and accessory (528) and reviewing the changes; the tire results (`fix11`) are built and not yet applied.
 The before/after pages cover the batches through the third row.
