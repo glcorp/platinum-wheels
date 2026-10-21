@@ -1,6 +1,6 @@
 # Product photo quality pass: handoff (2026-10-20)
 
-Read `design/reports/image-quality.md` (what was done and why) and root `llm.md` D190 first. This file is
+Read `design/reports/image-quality.md` (what was done and why) and root `llm.md` D190b first. This file is
 for the next session: where everything is, how to resume, and what is left. Owner words are quoted.
 
 ## 1. What the owner wants
@@ -88,7 +88,7 @@ every write, at 300 px on `#0B0B0D`.
    Remove any plan row whose URL "no row holds" and re-run until `Problems: 0`.
 4. `--upload --yes`, then `--write --yes` (one transaction, rolls back unless counts equal the dry run).
    Copy `rollback.csv` aside.
-5. Record the batch in `design/reports/image-quality.md` and the D190 row in root `llm.md`.
+5. Record the batch in `design/reports/image-quality.md` and the D190b row in root `llm.md`.
 
 ## 8. Lessons
 - `mkdir`/`rm` with an unquoted `$Q` breaks on the spaces in "Platinum Wheels Vendor Data": always quote.

@@ -8,8 +8,15 @@ import { PaymentLinkForm } from "@/features/admin/components/payment-link-form";
 import { PaymentLinkList } from "@/features/admin/components/payment-link-list";
 import { storefrontHost } from "@/features/admin/host-routing";
 import { requireAdminSession } from "@/features/admin/session";
-import { publicPayOrigin } from "@/features/payments/config";
-import { listLinks, type LinkSummary } from "@/features/payments/service";
+import { paymentsEnabled, publicPayOrigin, stripeConfigured } from "@/features/payments/config";
+import {
+  listLinks,
+  settlePendingForAdmin,
+  webhookHealth,
+  type LinkSummary,
+  type WebhookHealth,
+} from "@/features/payments/service";
+import { SHOP_DATE_TIME } from "@/lib/time";
 
 /* ---------------------------------------------------------------------------
    /payment-links — the payment-link builder and the recent links (D92, D106)
@@ -42,11 +49,34 @@ export const metadata: Metadata = {
  *  is unreachable, the page still renders and says so. */
 async function loadLinks(): Promise<LinkSummary[] | null> {
   try {
+    // Bounded, errors swallowed: a few old pending attempts get a fresh look
+    // at Stripe before the list is read (D108 reversed).
+    await settlePendingForAdmin();
     return await listLinks();
   } catch (error) {
     console.error(JSON.stringify({ at: "admin.listLinks", detail: error instanceof Error ? error.message : "unknown" }));
     return null;
   }
+}
+
+async function loadHealth(): Promise<WebhookHealth | null> {
+  try {
+    return await webhookHealth();
+  } catch {
+    return null;
+  }
+}
+
+/** The "Last Stripe event" line. A payment newer than the newest event means
+ *  it settled without its webhook arriving: the endpoint or its secret is off. */
+function healthLine(health: WebhookHealth | null): { text: string; warn: boolean } | null {
+  if (!health) return null;
+  if (!health.lastEventAt) return { text: "Last Stripe event: none received yet.", warn: false };
+  const text = `Last Stripe event: ${SHOP_DATE_TIME.format(health.lastEventAt)} (${health.lastEventType}).`;
+  const stale = health.lastPaidAt !== null && health.lastPaidAt.getTime() > health.lastEventAt.getTime() + 60_000;
+  return stale
+    ? { text: `${text} A payment was confirmed after that, so Stripe's webhook may not be reaching us. Check the Stripe Dashboard, Webhooks.`, warn: true }
+    : { text, warn: false };
 }
 
 export default async function PaymentLinksPage() {
@@ -57,6 +87,8 @@ export default async function PaymentLinksPage() {
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const origin = publicPayOrigin(`${proto}://${host}`);
   const links = await loadLinks();
+  const health = healthLine(await loadHealth());
+  const takingPayments = paymentsEnabled() && stripeConfigured();
 
   return (
     <>
@@ -111,6 +143,19 @@ export default async function PaymentLinksPage() {
             <h2 id="links-heading" className="display text-ink text-display-28 sm:text-display-40">
               Recent links
             </h2>
+            {!takingPayments ? (
+              <p role="status" className="border-accent bg-accent-subtle text-ink text-14 leading-body mt-4 border p-3.5">
+                Online payment is off. Customers who open a link are asked to call to pay.
+              </p>
+            ) : null}
+            {health ? (
+              <p
+                role={health.warn ? "alert" : undefined}
+                className={`mt-4 text-13 leading-body ${health.warn ? "text-ink" : "text-ink-dim"}`}
+              >
+                {health.text}
+              </p>
+            ) : null}
             <div className="mt-6">
               {links ? (
                 <PaymentLinkList links={links} origin={origin} csrfToken={csrfToken} />

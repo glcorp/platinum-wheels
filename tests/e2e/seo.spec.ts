@@ -21,7 +21,7 @@
  * is a failure, not a skip.
  */
 import { test, expect, type APIRequestContext } from "@playwright/test";
-import { SLUG } from "../helpers";
+import { PAY_TOKEN, SLUG } from "../helpers";
 
 const INDEXING = process.env.SEARCH_INDEXING_ENABLED === "true";
 const SITE_URL = "https://platinumwheels.ca";
@@ -264,10 +264,17 @@ test("the admin sign-in is noindex in the page and in the response header", asyn
   expect(meta(await res.text(), "robots").join(" ")).toContain("noindex");
 });
 
-test("/pay/done is noindex in the page and in the response header", async ({ request }) => {
-  const res = await get(request, "/pay/done");
+test("a payment link page is noindex in the page and in the response header", async ({ request }) => {
+  const res = await get(request, `/pay/${PAY_TOKEN.open}`);
   expect(res.headers()["x-robots-tag"]).toContain("noindex");
   expect(meta(await res.text(), "robots").join(" ")).toContain("noindex");
+});
+
+test("the Stripe webhook refuses an unsigned POST with 400 and answers no GET", async ({ request }) => {
+  const post = await request.post("/pay/webhook", { data: "x", maxRedirects: 0 });
+  expect(post.status()).toBe(400);
+  const read = await request.get("/pay/webhook", { maxRedirects: 0 });
+  expect(read.status()).toBe(405);
 });
 
 test("a 404 is noindex and carries no canonical", async ({ request }) => {
@@ -312,8 +319,8 @@ test("the home page describes an online store: no street address, no opening hou
     url: SITE_URL,
     email: "sales@platinumwheels.ca",
     telephone: "+14378825000",
-    // D163 (client, 2026-10-11): "serving the GTA and surrounding areas".
-    areaServed: { "@type": "AdministrativeArea", name: "Greater Toronto Area" },
+    // D190 (client, 2026-10-21): "across Canada" (was the GTA, D163).
+    areaServed: { "@type": "Country", name: "Canada" },
   });
   // Where the business is based, and nothing a customer could travel to.
   expect(org!.address).toEqual({

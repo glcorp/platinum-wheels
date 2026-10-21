@@ -48,6 +48,7 @@ import {
 } from "./fixture.mjs";
 
 const APP_PORT = Number(process.env.FIXTURE_APP_PORT ?? 3500);
+const STRIPE_PORT = Number(process.env.FIXTURE_STRIPE_PORT ?? 3591);
 const mode = process.argv[2] === "up" || process.argv[2] === "down" ? process.argv[2] : "run";
 const passthrough = mode === "run" ? process.argv.slice(2) : [];
 
@@ -56,8 +57,8 @@ const nextBin = join(repo, "node_modules", "next", "dist", "bin", "next");
 const stateFile = join(runDir, "state.json");
 
 /** The shell's own settings for anything real are removed first: a fixture run
- *  must never reach Neon, Resend, Converge, R2 or a Vercel project. */
-const SCRUB = /^(DATABASE_URL|DATABASE_URL_UNPOOLED|IMPORT_DATABASE_URL|POSTGRES_|PG[A-Z]*$|NEON_|RESEND_|LEAD_CAPTURE_|AUTO_EMAIL_|R2_|PHOTOS_|BLOB_|CONVERGE_|FIXIE_|ADMIN_|STOREFRONT_URL|SEARCH_INDEXING_|NEXT_PUBLIC_STOREFRONT_|QA_|VERCEL|CRON_SECRET)/;
+ *  must never reach Neon, Resend, Stripe, R2 or a Vercel project. */
+const SCRUB = /^(DATABASE_URL|DATABASE_URL_UNPOOLED|IMPORT_DATABASE_URL|POSTGRES_|PG[A-Z]*$|NEON_|RESEND_|LEAD_CAPTURE_|AUTO_EMAIL_|R2_|PHOTOS_|BLOB_|STRIPE_|CONVERGE_|FIXIE_|ADMIN_|STOREFRONT_URL|SEARCH_INDEXING_|NEXT_PUBLIC_STOREFRONT_|QA_|VERCEL|CRON_SECRET)/;
 
 function cleanEnv() {
   const env = {};
@@ -82,12 +83,13 @@ function appEnv(creds, indexing) {
     AUTO_EMAIL_LEAD_CAPTURE_ENABLED: "false",
     QA_ERROR_ROUTE: "1",
     STOREFRONT_URL: `http://localhost:${APP_PORT}`,
-    // A gateway that cannot be reached: Pay answers "couldn't reach the payment service".
-    CONVERGE_ENV: "demo",
-    CONVERGE_ACCOUNT_ID: "fixture",
-    CONVERGE_USER_ID: "fixture",
-    CONVERGE_PIN: "fixture-not-a-pin",
-    FIXIE_URL: "http://u:p@127.0.0.1:9",
+    // Stripe is a local stand-in (`stripe-fake.mjs`): a sandbox-shaped key the
+    // fake accepts, and a webhook secret the specs sign with (`STRIPE_WEBHOOK_SECRET`
+    // in `helpers.ts`). `stripe.ts` honours the host override only for a test key.
+    STRIPE_SECRET_KEY: "sk_test_fixture0000000000000000",
+    STRIPE_WEBHOOK_SECRET: "whsec_fixture_not_a_real_secret",
+    STRIPE_API_HOST: "127.0.0.1",
+    STRIPE_API_PORT: String(STRIPE_PORT),
     SEARCH_INDEXING_ENABLED: indexing ? "true" : "false",
     NEXT_TELEMETRY_DISABLED: "1",
   };
@@ -170,9 +172,33 @@ function stopPhotos(pid = photoChild?.pid) {
   photoChild = null;
 }
 
+/** The Stripe stand-in, a separate process for the same reason as the photos. */
+let stripeChild = null;
+function startStripe() {
+  stripeChild = spawn(process.execPath, [join(here, "stripe-fake.mjs")], {
+    cwd: repo,
+    env: { ...cleanEnv(), FIXTURE_STRIPE_PORT: String(STRIPE_PORT) },
+    detached: true,
+    stdio: "ignore",
+  });
+  stripeChild.unref();
+  return stripeChild.pid;
+}
+
+function stopStripe(pid = stripeChild?.pid) {
+  if (!pid) return;
+  try {
+    process.kill(-pid, "SIGTERM");
+  } catch {
+    /* gone */
+  }
+  stripeChild = null;
+}
+
 function cleanup() {
   stopApp();
   stopPhotos();
+  stopStripe();
   stopDb();
   rmSync(stateFile, { force: true });
 }
@@ -182,6 +208,7 @@ if (mode === "down") {
     const state = JSON.parse(readFileSync(stateFile, "utf8"));
     stopApp(state.appPid);
     stopPhotos(state.photoPid);
+    stopStripe(state.stripePid);
   }
   stopDb();
   rmSync(stateFile, { force: true });
@@ -206,6 +233,9 @@ try {
   if (!(await portIsFree(PHOTO_PORT))) throw new Error(`:${PHOTO_PORT} is in use. Stop it or set FIXTURE_PHOTO_PORT.`);
   const photoPid = startPhotos();
   console.log(`fixture: photos on ${PHOTO_ORIGIN}`);
+  if (!(await portIsFree(STRIPE_PORT))) throw new Error(`:${STRIPE_PORT} is in use. Stop it or set FIXTURE_STRIPE_PORT.`);
+  const stripePid = startStripe();
+  console.log(`fixture: Stripe stand-in on http://127.0.0.1:${STRIPE_PORT}`);
 
   const creds = credentials();
 
@@ -225,6 +255,7 @@ try {
       PW_PORT: String(APP_PORT),
       PW_EXTERNAL_SERVER: "1",
       PW_FIXTURE: "1",
+      FIXTURE_STRIPE_PORT: String(STRIPE_PORT),
       FIXTURE_ADMIN_USERNAME: creds.username,
       FIXTURE_ADMIN_PASSWORD: creds.password,
       SEARCH_INDEXING_ENABLED: indexing ? "true" : "false",
@@ -247,7 +278,7 @@ try {
     mkdirSync(runDir, { recursive: true });
     writeFileSync(
       stateFile,
-      JSON.stringify({ appPid, photoPid, credentials: creds }, null, 2),
+      JSON.stringify({ appPid, photoPid, stripePid, credentials: creds }, null, 2),
     );
     console.log(`fixture: up. app http://localhost:${APP_PORT}  admin http://admin.localhost:${APP_PORT}  (user ${creds.username}, password in tests/fixture/.run/state.json)`);
     process.exit(0);
@@ -260,6 +291,7 @@ try {
     "error-boundary",
     "cart-send",
     "pay-states",
+    "pay-stripe",
     "search",
     "admin-save",
     "listings",

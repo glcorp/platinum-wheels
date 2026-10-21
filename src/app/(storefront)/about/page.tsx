@@ -91,7 +91,8 @@ export default function AboutPage() {
       <ProseSection title="Who we are">
         <p>
           {/* Client wording, 2026-10-11 (D163): "Platinum…. Deal in tires……
-              serving the GTA and surrounding areas". */}
+              serving the GTA and surrounding areas"; "across Canada" on
+              2026-10-21 (D190). */}
           {SITE.legalName} deals in tires, wheels and accessories, serving{" "}
           {SITE.serviceArea}. We&apos;re based in {SITE.city}, {SITE.province}.
           When you call or email, you talk to one of us.

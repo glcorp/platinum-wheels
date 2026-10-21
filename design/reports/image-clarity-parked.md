@@ -1,4 +1,4 @@
-# Image clarity: parked for the owner (D190)
+# Image clarity: parked for the owner (D190b)
 
 Items from the 2026-10-15 photo pass that need the owner's eye. Each has the path the session took
 without waiting; change it and the fix is a row in a plan file for `npm run catalog:photo-replace`.
@@ -10,7 +10,7 @@ without waiting; change it and the fix is a row in a plan file for `npm run cata
 | 3 | **XF Off-Road centre-cap trim rings** (`d2ef7d0fcd3da26e`, `0e4979ffa9630193`) were flagged as outlines. They are renders of the 8-point trim ring itself. | Kept. | Keep. |
 | 4 | **Wheel Nut Caddy, photo 5** (`7c705184843865a2`) shows the caddy behind a 720 Form wheel. | Kept: it shows the product in use. | Keep. |
 
-## Added 2026-10-19 (D190)
+## Added 2026-10-19 (D190b)
 
 | # | Item | What the session did | Recommendation |
 |---|---|---|---|

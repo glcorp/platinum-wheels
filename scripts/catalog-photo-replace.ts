@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------------
    catalog-photo-replace — swap shared catalogue photos for clearer ones, and
-   take wrong photos off products (D190).
+   take wrong photos off products (D190b).
 
      npm run catalog:photo-replace -- <plan.csv> --env <file> [--env <file>]          dry run
      npm run catalog:photo-replace -- <plan.csv> --env <file> [--env <file>] --upload  store the new files

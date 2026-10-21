@@ -63,8 +63,10 @@ rules in this file apply to all of them.
 - `e2e/cart-send.spec.ts`, `e2e/pay-states.spec.ts`, `e2e/admin-save.spec.ts` (new, 2026-10-05) — one
   project each (`chromium-1440`). Cart: add a tire, open `/cart`, the quote dialog, an empty send refused, a valid
   send, the success panel, the cart empties (email flag OFF: the app's own success path; nothing is sent). Pay:
-  the four link states with axe, 404s, the capability headers, `/pay/return` never leaving the cookie's own link
-  (LA-01/LA-02), `/pay/done`, and Pay with an unreachable gateway. Admin: the gate, `/admin` a 404 (D115), a wrong
+  the four link states with axe, 404s and the capability headers. `e2e/pay-stripe.spec.ts` (D191) is the Stripe
+  round trip against `fixture/stripe-fake.mjs`: wrong-secret and other-mode webhooks, Pay with JavaScript off (a 303
+  to Stripe, no form body), Pay twice reusing one session, a signed webhook settling once with a replay unchanged, a
+  refund notice flagging the admin row, a return with no webhook, and cancel expiring the open page. Admin: the gate, `/admin` a 404 (D115), a wrong
   password, sign in, edit a product, save, a fresh session reads it back, the storefront shows it.
 - `e2e/listings.spec.ts` (**D164–D167**, 2026-10-11) — `chromium-1440`, serial: `May also fit` closed with best
   matches, open with none, `Load more` inside it landing on `#similar-4` with focus, a grown list arriving open with
@@ -84,7 +86,7 @@ rules in this file apply to all of them.
   after `--` to run something else against the same fixture (`npm run test:e2e:fixture -- smoke --project=webkit-1280`);
   `FIXTURE_ONE_PASS=1` skips the indexing pass, `FIXTURE_SKIP_BUILD=1` reuses `.next`. `...:up` / `...:down` leave
   the stack running for a manual session. It scrubs the shell's own settings first: it can never reach Neon,
-  Resend, Converge, R2 or a Vercel project, and quote email is off, the gateway a closed port.
+  Resend, Stripe, R2 or a Vercel project, and quote email is off, Stripe a local stand-in (`fixture/stripe-fake.mjs`, port `FIXTURE_STRIPE_PORT`, default 3591; it rejects the removed `payment_method_types`).
 - `npm run test:e2e` (the plain config) still builds against whatever `DATABASE_URL` the shell has and runs
   every project; against an empty database most of the parked specs fail. Use the fixture command.
 - Fixture seeds assert on **fixture** slugs from `helpers.ts`, never on a count the vendors own (D48).
@@ -133,7 +135,7 @@ rules in this file apply to all of them.
 - Don't assert on a seed count without citing where it comes from — seeds are placeholder data (D48) and
   will change when real data lands (D89b).
 - Don't point the fixture at a real database. `run.mjs` strips `DATABASE_URL*`, `IMPORT_DATABASE_URL`, `RESEND_*`,
-  `R2_*`, `CONVERGE_*`, `FIXIE_*` and `VERCEL*` from the shell before it builds, and the importer only ever
+  `R2_*`, `STRIPE_*`, `CONVERGE_*`, `FIXIE_*` and `VERCEL*` from the shell before it builds, and the importer only ever
   gets the fixture database URL; keep it that way.
 - Don't commit anything from `fixture/.run/` or `fixture/node_modules/` (gitignored there): the run log, the
   per-run admin password and the Postgres data directory.
@@ -178,7 +180,7 @@ rules in this file apply to all of them.
   rate limited per IP and the pay states are server-rendered). The other 14 projects run `seo`, `routes`,
   `smoke` and `error-boundary` only when named: `npm run test:e2e:fixture -- smoke routes --project=webkit-1280`.
 - **Not provable here:** `/pay` on `pay.platinumwheels.ca` and the admin on `admin.platinumwheels.ca` (the host
-  rules are production only, D105, D115); a real Converge round trip; a real Resend send; R2 photo upload.
+  rules are production only, D105, D115); a real Stripe round trip (the stand-in is written from the docs: `docs/payments.md` §9 is the sandbox check); a real Resend send; R2 photo upload.
 - **Load sensitivity.** At 5–6 workers on this 8-core machine a handful of timing tests (the INP proxy,
   pre-hydration clicks) can fail and pass alone; the gate run uses `--workers=5`. A CI box with more cores
   should use the config's `workers`. Coordinator.

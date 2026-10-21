@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   catalog-photo-add — give a first photo to products that have none (D190).
+   catalog-photo-add — give a first photo to products that have none (D190b).
 
      npm run catalog:photo-add -- <plan.csv> --env <file> [--env <file>]           dry run
      npm run catalog:photo-add -- <plan.csv> --env <file> [--env <file>] --upload   store the files

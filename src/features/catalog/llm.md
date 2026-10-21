@@ -191,7 +191,7 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     (with the one-year immutable cache header), `getObject` (pinned with `ifMatch`, capped with
     `maxBytes`), `deleteObject`, `publicPhotoUrl`, `keyFromPublicUrl`,
     `photosBaseUrl`. Reads the secret key; server and laptop only.
-  - **The shared vendor photos are no longer all D90b Lanczos enlargements** (D190, 2026-10-15). Where a
+  - **The shared vendor photos are no longer all D90b Lanczos enlargements** (D190b, 2026-10-15). Where a
     vendor photo had been enlarged 1.4× or more, it was re-sourced from the brand's own site, rebuilt from
     the vendor original, or AI-upscaled (Real-ESRGAN) and checked by eye; the rows point at new
     content-hash files under `catalog/`, and the old files stay in the bucket. Method, counts and rollback:

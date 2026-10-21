@@ -100,7 +100,7 @@ export async function generateMetadata({
   const path = productRoute(seo.slug);
   return pageMetadata({
     title: seo.title,
-    description: `${seo.title}. ${seo.kind}. Request a quote from Platinum Wheels, a Brampton-based online store for tires, wheels and accessories.`,
+    description: `${seo.title}. ${seo.kind}. Request a quote from Platinum Wheels, an online store for tires, wheels and accessories across Canada.`,
     path,
     image:
       seo.image === null
