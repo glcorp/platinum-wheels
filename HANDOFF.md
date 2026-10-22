@@ -1,5 +1,14 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-22 (shop SKU on every product, D192, branch `claude/plan-un5o7b`).** The client
+noticed products had no SKU. Every product now has the shop's own code, `PW-` + `T`/`W`/`A` + six random
+digits (`PW-T482913`), written by the database (migration `0008`: backfill, insert trigger, never changed).
+It shows on cards, the product page, the cart, the sent-request record and both quote emails, and the admin
+search and `/search` find it. Detail: root `llm.md` D192, `DEVIATIONS.md` #146, #147.
+- **Checked:** `tsc`, `eslint`, `db:check`; `0008` on a copy of 0007 holding 40,446 products (5.7 s, every
+  code unique, `updated_at` untouched); the fixture gate with the new `sku` spec; screenshots at 390 and 1440.
+- **Not checked:** `0008` on Neon (runs in the next Vercel build; writes to `products` wait a few seconds).
+
 **Last updated 2026-10-07 (pinned header, results vehicle sheet, iPhone model list, badges, D159, uncommitted on
 `final-check-fixes`).** The header stays on screen everywhere; below 1100 the results pages pin the category tabs
 and a vehicle button beside `Filters`; from 1100 the vehicle button tops the sticky filter rail; both open one

@@ -33,6 +33,9 @@ header's search box and icon have nothing behind them.
   `src/features/catalog/listing-status.ts` (D164), the one rule every storefront list shares.
 - **No vendor data**: never select or match `product_sources` (vendor, SKU, vendor price). Owner,
   2026-10-11, chose *"No, part numbers only (Recommended)"*: a vendor SKU finds nothing.
+- **The shop's own SKU is searchable (D192).** A whole code in any spelling (`skuFromQuery`,
+  `catalog/sku.ts`) makes `/search` redirect to its product before any group is read; six digits alone
+  also match `products.sku` in `wordConditions`.
 - **No price leaves the server while `PRICES_VISIBLE` is off** (D124): `queries.ts` nulls it as
   `catalog/queries.ts` does.
 - The text match filters on `productSearchText()` from `src/db/catalog-schema.ts`, the exact expression

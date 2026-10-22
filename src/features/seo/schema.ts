@@ -158,6 +158,9 @@ export function categoryBreadcrumb(category: ProductCategory): JsonLdNode {
 
 export interface ProductSeo {
   slug: string;
+  /** The shop's own code (D192), the merchant's `sku`. `null` only on a
+   *  hand-built sample. */
+  sku: string | null;
   category: ProductCategory;
   /** `null` on an unbranded accessory (D125): the markup then carries no
    *  `brand` at all, never an empty or invented one. */
@@ -266,6 +269,7 @@ export function toProductSeo(
 
   return {
     slug: product.slug,
+    sku: product.sku ?? null,
     category,
     brand: product.brand || null,
     name,
@@ -287,13 +291,14 @@ export function productBreadcrumb(product: ProductSeo): JsonLdNode {
   ]);
 }
 
-/** Name, brand, size, category and image. No offer, by ruling: see the header.
+/** Name, the shop's SKU (D192), brand, size, category and image. No offer, by ruling: see the header.
  *  No `brand` on an unbranded accessory (D125). */
 export function productSchema(product: ProductSeo): JsonLdNode {
   return {
     "@context": CONTEXT,
     "@type": "Product",
     name: product.title,
+    ...(product.sku === null ? {} : { sku: product.sku }),
     ...(product.brand === null
       ? {}
       : { brand: { "@type": "Brand", name: product.brand } }),

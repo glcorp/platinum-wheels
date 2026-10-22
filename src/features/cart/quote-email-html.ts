@@ -189,6 +189,7 @@ export function ownerAlertEmail(q: QuoteInquiry): BuiltEmail {
 
   const textItems = q.lines.flatMap((line, index) => [
     `${index + 1}. ${lineName(line)}`,
+    ...(line.sku ? [`   SKU: ${line.sku}`] : []),
     `   Quantity: ${line.quantity}`,
     ...(line.available ? [] : [`   ${UNAVAILABLE_NOTE}`]),
     `   Vehicle searched: ${line.vehicle || "None"}`,
@@ -231,6 +232,7 @@ export function ownerAlertEmail(q: QuoteInquiry): BuiltEmail {
       const border = index === 0 ? "" : `border-top:1px solid ${C.rule};`;
       return `<tr><td style="padding:${top} 0 14px 0;${border}">
   <div style="font:600 15px/1.5 ${FONT};color:${C.white};padding-bottom:4px;word-break:break-word;">${index + 1}. ${name}</div>
+  ${line.sku ? detail("SKU", esc(line.sku)) : ""}
   ${detail("Quantity", esc(line.quantity))}
   ${detail("Vehicle searched", line.vehicle ? esc(line.vehicle) : "None")}
   ${unavailable}
@@ -302,7 +304,9 @@ export function autoReplyEmail(lines: QuoteLine[], shopAddress: string): BuiltEm
     PROMISE,
     "",
     "You asked about:",
-    ...lines.map((line) => `- ${itemName(line)} (${line.quantity})`),
+    ...lines.map(
+      (line) => `- ${itemName(line)}${line.sku ? `, SKU ${line.sku}` : ""} (${line.quantity})`,
+    ),
     "",
     "----------------------------",
     "",
@@ -321,7 +325,7 @@ export function autoReplyEmail(lines: QuoteLine[], shopAddress: string): BuiltEm
   const itemRows = lines
     .map(
       (line) =>
-        `<tr><td style="padding:0 0 10px 0;font:400 15px/1.5 ${FONT};color:${C.white};word-break:break-word;">${esc(itemName(line))}<div style="font:400 13px/1.6 ${FONT};color:${C.muted};">Quantity: <span style="color:${C.body};">${esc(line.quantity)}</span></div></td></tr>`,
+        `<tr><td style="padding:0 0 10px 0;font:400 15px/1.5 ${FONT};color:${C.white};word-break:break-word;">${esc(itemName(line))}<div style="font:400 13px/1.6 ${FONT};color:${C.muted};">${line.sku ? `SKU: <span style="color:${C.body};">${esc(line.sku)}</span><br>` : ""}Quantity: <span style="color:${C.body};">${esc(line.quantity)}</span></div></td></tr>`,
     )
     .join("\n    ");
 

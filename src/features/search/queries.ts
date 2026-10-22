@@ -100,9 +100,16 @@ function wordConditions(words: readonly string[]): SQL[] {
   return words.map((word) => {
     const stripped = word.replace(/[^\p{L}\p{N}]+/gu, "");
     const like = (value: string) => sql`${SEARCH_TEXT} like ${`%${escapeLike(value)}%`}`;
-    return stripped !== word && stripped.length > 0 ? (or(like(word), like(stripped)) as SQL) : like(word);
+    const text = stripped !== word && stripped.length > 0 ? (or(like(word), like(stripped)) as SQL) : like(word);
+    /* D192: the six digits of a shop code without its letter (`482913`) also
+       find the code, in whichever category holds it (at most one each). A
+       whole code never reaches here: `/search` opens its product first. */
+    return SKU_DIGITS.test(word) ? (or(text, sql`${products.sku} like ${`PW-_${word}`}`) as SQL) : text;
   });
 }
+
+/** The digits of a shop code (D192): six, the first never 0. */
+const SKU_DIGITS = /^[1-9]\d{5}$/;
 
 /** The measuring rim of a tire, in inches, in SQL (`fit.ts`). */
 const TIRE_MEASURING_RIM = sql`(case

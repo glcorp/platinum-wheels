@@ -71,6 +71,9 @@ Server Actions and the emails.
   alert is the only record (D104). The browser's record of sent requests (D162) holds the time and the
   products only, never the visitor's name, email, phone, message or vehicle (owner, 2026-10-11:
   *"Products and time only"*). The privacy page says so (`privacy/page.tsx`, "Cookies and tracking").
+- **Every line carries the shop's SKU (D192)**: the cart line, the sent-request record and both emails.
+  The emails take it from the catalogue at send time, never from the browser; a cart saved before codes
+  existed shows none until `/cart` refreshes it.
 - **One request = one owner alert + one auto-reply**, listing every line with its quantity, the searched
   vehicle (unverified, labelled so) and, for a discontinued product, "check restock".
 - **The auto-reply never repeats what the visitor typed** (D104): product names come from the catalogue

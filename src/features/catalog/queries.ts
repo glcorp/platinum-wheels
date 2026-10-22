@@ -1763,6 +1763,21 @@ export async function productPageExists(slug: string): Promise<boolean> {
   return row !== undefined;
 }
 
+/**
+ * The slug of the listed product with this shop code (D192), or `null`.
+ * `/search` sends a typed code straight to its product page. One read of the
+ * unique `products_sku_key`; a hidden product is not found, as everywhere on
+ * the storefront.
+ */
+export async function getListedSlugBySku(sku: string): Promise<string | null> {
+  const [row] = await getDb()
+    .select({ slug: products.slug })
+    .from(products)
+    .where(and(eq(products.sku, sku), listedStatus()))
+    .limit(1);
+  return row?.slug ?? null;
+}
+
 /** A searched car's fit, as `getOtherSizes` reads it (`finder/tire-fit.ts`
  *  builds both halves; `null` = no data for that category). */
 export interface OtherSizesFit {

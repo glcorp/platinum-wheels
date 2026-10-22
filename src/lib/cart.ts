@@ -40,6 +40,9 @@ export interface CartItem {
   model: string;
   /** The card's size line, `215/55R16 · 97T XL`. */
   size: string;
+  /** The shop's code, `PW-T482913` (D192). `null` on a line saved before
+   *  codes existed, until `/cart` refreshes it from the catalogue. */
+  sku: string | null;
   /** Photo URL, or `null` for the placeholder tile. */
   image: string | null;
   category: CartCategory;
@@ -105,6 +108,7 @@ function parseLine(raw: unknown): CartLine | null {
     !(item.brand === null || isText(item.brand, 200)) ||
     !isText(item.model, 300) ||
     !isText(item.size, 300) ||
+    !(item.sku === undefined || item.sku === null || isText(item.sku, 20)) ||
     !(item.image === null || isText(item.image, 2000)) ||
     !isText(item.category, 20) ||
     !CATEGORIES.has(item.category) ||
@@ -123,6 +127,7 @@ function parseLine(raw: unknown): CartLine | null {
       brand: item.brand,
       model: item.model,
       size: item.size,
+      sku: typeof item.sku === "string" ? item.sku : null,
       image: item.image,
       category: item.category as CartCategory,
       available: item.available,
@@ -362,6 +367,8 @@ export interface SentLine {
   brand: string | null;
   model: string;
   size: string;
+  /** D192. `null` on a record saved before codes existed. */
+  sku: string | null;
   unit: { one: string; many: string };
 }
 
@@ -397,6 +404,7 @@ function parseSentLine(raw: unknown): SentLine | null {
     !(line.brand === null || isText(line.brand, 200)) ||
     !isText(line.model, 300) ||
     !isText(line.size, 300) ||
+    !(line.sku === undefined || line.sku === null || isText(line.sku, 20)) ||
     !unit ||
     !isText(unit.one, 40) ||
     !isText(unit.many, 40)
@@ -409,6 +417,7 @@ function parseSentLine(raw: unknown): SentLine | null {
     brand: line.brand,
     model: line.model,
     size: line.size,
+    sku: typeof line.sku === "string" ? line.sku : null,
     unit: { one: unit.one, many: unit.many },
   };
 }
@@ -503,6 +512,7 @@ export function recordSentRequest(lines: readonly CartLine[], now: Date = new Da
     brand: item.brand,
     model: item.model,
     size: item.size,
+    sku: item.sku,
     unit: { one: item.unit.one, many: item.unit.many },
   }));
   if (sentLines.length === 0) return null;

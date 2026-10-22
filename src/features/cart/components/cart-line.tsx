@@ -107,6 +107,13 @@ export function CartLineRow({ line, onQuantity, onRemove }: CartLineRowProps) {
           <span className="numeral text-ink-muted text-14 leading-tight sm:text-15">
             {item.size}
           </span>
+          {/* D192: the card's code line; a line saved before codes existed
+              shows none until the cart refreshes it. */}
+          {item.sku ? (
+            <span className="text-ink-muted font-sans text-12 leading-flat font-medium tracking-8 tabular-nums">
+              SKU <span translate="no">{item.sku}</span>
+            </span>
+          ) : null}
           {vehicle ? (
             <span className="text-ink-muted text-13 leading-snug">{`For ${vehicle}`}</span>
           ) : null}

@@ -72,7 +72,11 @@ export function AdminProductCard({
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <span className="label text-ink-dim text-11 tracking-12">{CATEGORY_LABEL[product.category]}</span>
+            <span className="label text-ink-dim text-11 tracking-12">
+              {CATEGORY_LABEL[product.category]}
+              {/* D192: the code a customer reads out, beside the category. */}
+              <span className="numeral text-ink-muted normal-case">{` · ${product.sku}`}</span>
+            </span>
             <span className={`label text-11 tracking-12 ${STATUS_TONE[product.status]}`}>
               {PRODUCT_STATUS_LABEL[product.status]}
             </span>

@@ -296,6 +296,7 @@ try {
     "admin-save",
     "listings",
     "finder-fit",
+    "sku",
     "--project=chromium-1440",
     // One retry, reported as "flaky" and never hidden: a 130-test run on a loaded
     // laptop has produced a single unreproduced miss (`tests/llm.md` Open).

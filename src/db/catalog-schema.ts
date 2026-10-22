@@ -160,6 +160,22 @@ export const products = pgTable(
      */
     slug: text("slug").notNull(),
 
+    /**
+     * The shop's own product code, `PW-T482913` (D192): `PW-`, the category
+     * letter (`T`, `W`, `A`), then six digits drawn at random, so codes say
+     * nothing about order or count. Shown on the card, the product page, the
+     * cart and both quote emails, and searchable in the storefront and the
+     * admin. The database writes it: a BEFORE INSERT trigger
+     * (`products_fill_sku`, migration `0008`) draws a free code when an insert
+     * leaves it out, and another refuses any change to it, so like the slug it
+     * is never rewritten. `$defaultFn` sends the SQL keyword `DEFAULT` (there
+     * is no column default, so that is NULL and the trigger fills it), which
+     * keeps every insert in this repo free of the column.
+     */
+    sku: text("sku")
+      .notNull()
+      .$defaultFn(() => sql`default`),
+
     /** Plain text, spelled the way the storefront should show it. The Brand
      *  filter lists the distinct values of this column. Empty only on an
      *  accessory the vendor sells unbranded (D125); a tire or wheel always
@@ -203,6 +219,7 @@ export const products = pgTable(
   },
   (t) => [
     uniqueIndex("products_slug_key").on(t.slug),
+    uniqueIndex("products_sku_key").on(t.sku),
     // Target of the spec tables' composite foreign keys. A table CONSTRAINT,
     // not a unique index: drizzle-kit emits indexes after foreign keys, and a
     // foreign key cannot be added before the uniqueness it points at exists.
@@ -238,6 +255,11 @@ export const products = pgTable(
     check(
       "products_slug_format",
       sql`${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(${t.slug}) <= 200`,
+    ),
+    // `PW-` + the category's letter + six digits, the first never 0 (D192).
+    check(
+      "products_sku_format",
+      sql`${t.sku} ~ '^PW-[TWA][1-9][0-9]{5}$' and substr(${t.sku}, 4, 1) = case ${t.category} when 'tires' then 'T' when 'wheels' then 'W' else 'A' end`,
     ),
     check(
       "products_brand_length",

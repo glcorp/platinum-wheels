@@ -57,6 +57,13 @@
       "when": 1792443209509,
       "tag": "0007_stripe_checkout",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792699928633,
+      "tag": "0008_product_sku",
+      "breakpoints": true
     }
   ]
 }

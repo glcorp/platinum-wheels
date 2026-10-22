@@ -70,6 +70,9 @@ export interface QuoteLine {
   /** Catalogue name, `Zeta Antarctica Sport, 215/55R17 · 94H`. `null` when
    *  the catalogue no longer has the slug or could not be read. */
   productName: string | null;
+  /** The shop's code, `PW-T482913` (D192), from the catalogue. `null` when
+   *  the catalogue could not name the product. */
+  sku: string | null;
   /** `4 tires`, `1 item`. */
   quantity: string;
   /** `false` = discontinued: the shop checks restock. */

@@ -353,6 +353,7 @@ export async function submitCartQuote(
       productName: product
         ? `${productName(product.brand, product.model)}, ${product.size}`
         : null,
+      sku: product?.sku ?? null,
       quantity:
         line.quantity === 1 ? unit.one : `${line.quantity} ${unit.many}`.trim(),
       available: product ? product.available : true,

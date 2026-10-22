@@ -180,6 +180,8 @@ function buildSpecs(
   loadSpeed: string,
 ): readonly ProductSpecRow[] {
   const lead: SpecRows = [
+    /* D192: the shop's own code leads every table, as it heads the panel. */
+    ["SKU", detail.sku],
     ["Brand", detail.brand],
     /* The brand has its own row above: a model that starts with it drops that
        copy (D135). */

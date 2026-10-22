@@ -169,6 +169,14 @@ export function BuyPanel({ view, breadcrumb, searchParams }: BuyPanelProps) {
         <span className="numeral text-ink-muted text-18 leading-flat sm:text-22">
           {view.sizeLine}
         </span>
+
+        {/* D192: the shop's code under the size, the card's line at the
+            panel's label size. Undrawn; `DEVIATIONS.md` #147. */}
+        {product.sku ? (
+          <span className="text-ink-muted font-sans text-13 leading-flat font-medium tracking-8 tabular-nums sm:text-14">
+            SKU <span translate="no">{product.sku}</span>
+          </span>
+        ) : null}
       </div>
 
       {/* Price — built for this exact element already; do not restyle it

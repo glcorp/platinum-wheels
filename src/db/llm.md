@@ -45,6 +45,10 @@ Since D105b it also holds the catalogue: products, their specs, images and vendo
 - **A uniqueness that a foreign key points at is a table `unique()`, not a `uniqueIndex()`.** drizzle-kit
   emits indexes after foreign keys, so the index form generates a migration that fails
   (`products_id_category_key`, found by applying `0002` to a real Postgres).
+- **`products.sku` is written by the database (D192, migration `0008`).** `products_fill_sku` (BEFORE
+  INSERT) draws `PW-` + category letter + six random digits when an insert leaves it out, and
+  `products_keep_sku` refuses any change. The schema's `$defaultFn` sends `DEFAULT`, so no insert names
+  the column. `0008` is hand-written past drizzle-kit's output (function, backfill, triggers).
 - **Invariants live in the database.** If a rule can be a CHECK, unique index or trigger, it is one.
   Application code may check it too, for a friendly error — the database is what makes it true.
 - **Migrations are append-only.** Never edit a migration that has run anywhere; add a new one.

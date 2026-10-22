@@ -60,6 +60,12 @@ export function SentLines({ lines }: { lines: readonly SentLine[] }) {
             <span className="numeral text-ink-muted text-13 leading-tight wrap-anywhere sm:text-14">
               {line.size}
             </span>
+            {/* D192: the code a caller reads out, when the record has one. */}
+            {line.sku ? (
+              <span className="text-ink-muted font-sans text-12 leading-snug font-medium tracking-8 tabular-nums">
+                SKU <span translate="no">{line.sku}</span>
+              </span>
+            ) : null}
           </span>
           <span className="text-ink-muted text-14 leading-tight whitespace-nowrap">
             {amount(line)}

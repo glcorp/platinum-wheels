@@ -55,7 +55,7 @@ export function ProductFilters({
           type="search"
           density="compact"
           defaultValue={query.search ?? ""}
-          placeholder="Name, brand, model or vendor SKU"
+          placeholder="Our SKU, name, brand, model or vendor SKU"
           autoComplete="off"
           spellCheck={false}
         />

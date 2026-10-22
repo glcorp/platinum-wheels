@@ -15,6 +15,7 @@ export function cartItem(product: Product): CartItem {
     brand: product.brand || null,
     model: product.model,
     size: product.size,
+    sku: product.sku ?? null,
     image: productImageSrc(product),
     category: productCategory(product),
     available: product.available,

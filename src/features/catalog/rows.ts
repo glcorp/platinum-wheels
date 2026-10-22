@@ -89,6 +89,7 @@ export function toCatalogProduct(
   return {
     id: product.id,
     slug: product.slug,
+    sku: product.sku,
     brand: product.brand,
     model: product.model,
     name: product.name,
