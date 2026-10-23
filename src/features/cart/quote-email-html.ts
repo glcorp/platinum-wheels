@@ -1,5 +1,6 @@
 /* ---------------------------------------------------------------------------
-   The two quote emails as data (D104, D122; restyled to HTML by D162).
+   The quote emails as data (D104, D122; restyled to HTML by D162): the owner
+   alert, the staff-only sourcing email (D193) and the auto-reply.
 
    Pure functions: no env reads, no network, no "use server". Each builder
    returns `{ subject, text, html }`, so `quote-email.ts` only sends them and a
@@ -20,6 +21,7 @@
    --------------------------------------------------------------------------- */
 
 import type { QuoteInquiry, QuoteLine } from "@/features/cart/quote-email";
+import type { VendorLink } from "@/features/catalog/vendor-links";
 import { SITE, PRIMARY_CONTACT } from "@/lib/site";
 import { SHOP_DATE_TIME } from "@/lib/time";
 
@@ -279,6 +281,104 @@ ${hairline()}
 
   const preheader = `${q.name} asked for a quote on ${count === 1 ? "1 product" : `${count} products`}.`;
   return { subject, text, html: shell(inner, oneLine(preheader)) };
+}
+
+/* --- 1b. Sourcing (staff only, D193) --------------------------------------- */
+
+const SOURCING_WARNING =
+  "Staff only. Never forward this email to a customer or paste from it into a reply.";
+const NO_SOURCE = "No vendor on file: check the product in the admin.";
+const SOURCES_UNREAD = "Vendors could not be read: check the product in the admin.";
+
+/** What a vendor link points at, in words. */
+function linkKind(link: VendorLink): string {
+  return link.kind === "product" ? "vendor product page" : "vendor website, no product link on file";
+}
+
+/** Each line's shop SKU, then every vendor it can be ordered from: name,
+ *  vendor SKU, link. Its own email, never part of the alert: the alert's
+ *  Reply-To is the customer, and a reply quotes what it answers. The only
+ *  thing the visitor typed here is their name, so staff can match it to the
+ *  alert; it is escaped like everywhere else. */
+export function sourcingEmail(q: QuoteInquiry): BuiltEmail {
+  const local = SHOP_DATE_TIME.format(q.submittedAt);
+  const subject = oneLine(`Sourcing: ${subjectItems(q.lines)} (${q.name})`);
+  const sourcesOf = (line: QuoteLine) => q.sources?.get(line.slug) ?? [];
+  const missing = q.sources === null ? SOURCES_UNREAD : NO_SOURCE;
+
+  const textItems = q.lines.flatMap((line, index) => {
+    const sources = sourcesOf(line);
+    return [
+      `${index + 1}. ${lineName(line)}`,
+      `   SKU: ${line.sku ?? "Not in the catalogue"}`,
+      `   Quantity: ${line.quantity}`,
+      ...(line.available ? [] : [`   ${UNAVAILABLE_NOTE}`]),
+      ...(sources.length === 0
+        ? [`   ${missing}`]
+        : sources.flatMap((source) => [
+            `   - ${source.vendor}, vendor SKU ${source.vendorSku}`,
+            ...(source.link ? [`     ${source.link.href} (${linkKind(source.link)})`] : []),
+          ])),
+    ];
+  });
+  const text = [
+    SOURCING_WARNING,
+    "",
+    `Where to order the products in ${q.name}'s quote request.`,
+    `Received: ${local} (Brampton time)`,
+    "",
+    `Products (${q.lines.length}):`,
+    ...textItems,
+  ].join("\n");
+
+  const productBlocks = q.lines
+    .map((line, index) => {
+      const sources = sourcesOf(line);
+      const vendorRows =
+        sources.length === 0
+          ? `<div style="font:400 14px/1.6 ${FONT};color:${C.ice};padding-top:6px;">${esc(missing)}</div>`
+          : sources
+              .map(
+                (source) => `<div style="font:400 14px/1.6 ${FONT};color:${C.body};padding-top:8px;word-break:break-word;"><strong style="color:${C.white};">${esc(source.vendor)}</strong>, vendor SKU <span style="color:${C.white};">${esc(source.vendorSku)}</span>${
+                  source.link
+                    ? `<div style="font:400 13px/1.6 ${FONT};color:${C.muted};">${urlLink(source.link.href, source.link.kind === "product" ? "Open the vendor's product page" : "Open the vendor's website")} <span style="color:${C.label};">(${esc(linkKind(source.link))})</span></div>`
+                    : ""
+                }</div>`,
+              )
+              .join("\n  ");
+      const unavailable = line.available
+        ? ""
+        : `<div style="font:600 14px/1.6 ${FONT};color:${C.ice};padding-top:4px;">${esc(UNAVAILABLE_NOTE)}</div>`;
+      const top = index === 0 ? "0" : "14px";
+      const border = index === 0 ? "" : `border-top:1px solid ${C.rule};`;
+      return `<tr><td style="padding:${top} 0 14px 0;${border}">
+  <div style="font:600 15px/1.5 ${FONT};color:${C.white};padding-bottom:4px;word-break:break-word;">${index + 1}. ${esc(lineName(line))}</div>
+  ${detail("SKU", line.sku ? esc(line.sku) : notProvided("Not in the catalogue"))}
+  ${detail("Quantity", esc(line.quantity))}
+  ${unavailable}
+  ${vendorRows}
+</td></tr>`;
+    })
+    .join("\n");
+
+  const inner = `
+<tr><td bgcolor="${C.band}" style="background-color:${C.band};padding:14px 30px;">
+  <div style="font:600 14px/1.5 ${FONT};color:${C.ice};">${esc(SOURCING_WARNING)}</div>
+</td></tr>
+${hairline()}
+<tr><td style="padding:22px 30px 4px 30px;">
+  ${label("Sourcing")}
+  <div style="font:700 24px/1.3 ${FONT};letter-spacing:-0.5px;color:${C.white};word-break:break-word;">${esc(q.name)}&rsquo;s quote request</div>
+  <div style="font:400 13px/1.6 ${FONT};color:${C.label};padding-top:6px;">${esc(local)} (Brampton time)</div>
+</td></tr>
+<tr><td style="padding:18px 30px 30px 30px;">
+  ${label(`Products (${q.lines.length})`)}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px;">
+${productBlocks}
+  </table>
+</td></tr>`;
+
+  return { subject, text, html: shell(inner, oneLine(`Where to order ${subjectItems(q.lines)}.`)) };
 }
 
 /* --- 2. Auto-reply -------------------------------------------------------- */

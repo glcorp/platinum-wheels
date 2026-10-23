@@ -6,7 +6,7 @@
  *
  * What it proves: every common spelling of a tire size finds the same tires,
  * a tire size brings the 17-inch wheels that suit it and leaves out the ones
- * too wide, a part number is found with or without its punctuation, a hidden
+ * too wide, a part number (the vendor's SKU, D193) finds nothing, a hidden
  * product never shows, no price reaches the page while prices are off, the
  * page is `noindex`, works with JS off, the header's box searches from 720
  * and its icon opens a field below that (D177), and every group shows one row
@@ -64,10 +64,10 @@ test("a tire size brings the wheels that suit it, not every wheel of its rim", a
   );
 });
 
-test("a part number is found with or without its punctuation", async ({ page }) => {
+test("a part number finds nothing, with or without its punctuation (D193)", async ({ page }) => {
   for (const q of ["GT14156LB", "gt-14156-lb"]) {
     await search(page, q);
-    expect(await productLinks(page)).toContain(SLUG.accessory);
+    expect(await productLinks(page)).not.toContain(SLUG.accessory);
   }
 });
 
@@ -118,7 +118,7 @@ test("works with JavaScript off", async ({ browser, baseURL }, info) => {
     await icon.click();
     await expect(page).toHaveURL(/\/search$/);
     // Scoped to `main`: the header's own (hidden) field carries the same label (GATE-4).
-    const field = page.getByRole("main").getByLabel("Tire size, wheel size, part number or brand");
+    const field = page.getByRole("main").getByLabel("Tire size, wheel size, SKU or brand");
     await field.fill("225/60R17");
     await field.press("Enter");
   } else {
@@ -202,7 +202,7 @@ test("a thread search's See all lands on the group's set, not the whole category
    search made from the header. */
 test("the page field follows the URL after Back and a header search", async ({ page }) => {
   await search(page, "zeta");
-  const field = page.getByRole("main").getByLabel("Tire size, wheel size, part number or brand");
+  const field = page.getByRole("main").getByLabel("Tire size, wheel size, SKU or brand");
   await field.fill("fuel");
   await field.press("Enter");
   await expect(page).toHaveURL(/q=fuel/);

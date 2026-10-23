@@ -58,7 +58,7 @@ export function SearchForm({
       aria-label="Search the catalogue"
       data-nav-progress=""
     >
-      <FieldLabel htmlFor="search-page-q">Tire size, wheel size, part number or brand</FieldLabel>
+      <FieldLabel htmlFor="search-page-q">Tire size, wheel size, SKU or brand</FieldLabel>
       <div className="flex gap-2">
         <Input
           id="search-page-q"

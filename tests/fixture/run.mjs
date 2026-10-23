@@ -296,7 +296,10 @@ try {
     "admin-save",
     "listings",
     "finder-fit",
-    "sku",
+    // Filters match the whole file path, so a bare `sku` also matched every
+    // spec in a checkout whose folder name holds it (`platinum-wheels-sku`).
+    "e2e/sku",
+    "vendor-codes",
     "--project=chromium-1440",
     // One retry, reported as "flaky" and never hidden: a 130-test run on a loaded
     // laptop has produced a single unreproduced miss (`tests/llm.md` Open).

@@ -1,5 +1,15 @@
 # Platinum Wheels — session handoff
 
+**Last updated 2026-10-24 (vendor details in a staff-only sourcing email; part number hidden, D193, branch
+`claude/plan-un5o7b`, PR #69).** Each quote request now also sends staff a sourcing email: per product the shop
+SKU, then each vendor's name, SKU and link (product page, else the vendor's website). Its Reply-To is the shop,
+because the alert's is the customer and a reply would quote vendor data to them. The part number (it is the
+vendor's SKU) left the product page, the cards and `/search` (migration `0009` rebuilds the search index).
+Follow-ups V1 to V3 in `todo.md`. Detail: root `llm.md` D193.
+- **Checked:** `tsc`, `eslint`, `db:check`; the sourcing email rendered from sample data; the fixture gate with
+  `vendor-codes.spec.ts`.
+- **Not checked:** a real Resend send; `0009` on Neon; production's vendor-URL coverage.
+
 **Last updated 2026-10-22 (shop SKU on every product, D192, branch `claude/plan-un5o7b`).** The client
 noticed products had no SKU. Every product now has the shop's own code, `PW-` + `T`/`W`/`A` + six random
 digits (`PW-T482913`), written by the database (migration `0008`: backfill, insert trigger, never changed).

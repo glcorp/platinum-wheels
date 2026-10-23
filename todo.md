@@ -337,6 +337,29 @@ S6. **Add prices to the product structured data** once the owner settles the pri
    prices are shown publicly. Until then a product's markup has no offer, by ruling, and so does not
    qualify for Google's product rich result. `src/features/seo/schema.ts`.
 
+## Later — vendor codes on the storefront (D193)
+
+V1. **Fix the hidden Part number row, then show it again.** D193 hid it because the column holds the
+   vendor's SKU, not the maker's part number. Who: the co-founder, from the vendor sheets (outside the
+   repo), then a code session. Why: a real maker part number helps a buyer check a wheel or accessory.
+   Production, 2026-10-24: all 1,723 accessory part numbers equal a vendor SKU; the 20 wheel part numbers
+   equal none and are probably makers' codes, so they could come back first.
+   Do: for each wheel and accessory, fill a maker part number where the vendor sheet or the maker gives
+   one that differs from every vendor SKU, and leave it empty otherwise; then restore the row in
+   `src/features/product/view.ts` and, if wanted, the search match (`productSearchText()` + a migration).
+   Done when: no product's shown part number equals any of its vendor SKUs (one SQL join on
+   `product_sources`).
+
+V2. **Accessory URLs end in the part number** (`/products/gt-off-road-…-gt14156lb`), so the vendor's code
+   is in the address bar. Slugs are never rewritten (D107b), so fixing it means new slugs plus a permanent
+   redirect from each old one, for the 1,723 accessories whose slug carries it (production, 2026-10-24). Who: a code session, on the owner's ruling.
+   Note `src/features/catalog/slug.ts` still builds new accessory slugs this way. Done when: no accessory
+   slug contains its part number and every old URL redirects.
+
+V3. **The brand `DAI Wheels` names Direct Auto Import**, so its cards hint at the vendor whatever we do
+   with SKUs (production, 2026-10-24: 146 wheels, 380 accessories and 1 tire). Who: the owner. Decide whether to keep it, or show those products under another brand or
+   none. Done when: the owner has ruled.
+
 ## Client, via the owner
 
 8. **Street address.** The email footer ships with `Brampton, ON` for now (owner ruling 2026-09-23).

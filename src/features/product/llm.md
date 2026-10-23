@@ -25,8 +25,8 @@ Action, its emails and its two authored states moved there.
   Ply rating / Run-flat / UTQG when given; a **wheel** Brand / Model / Size / Bolt pattern / Offset /
   Finish, then Finish family / Colour / Lug count (D125), Centre bore, Backspacing, Material, Seat type,
   Load rating, TPMS, Winter use; an **accessory** Brand / Model / Type, then Part type (D125), Thread
-  size, Seat type, Finish, Pack quantity, diameters and Weight (`2.5 lb`, D125). A wheel or accessory
-  then shows `Part number` (its column since D142), ahead of the vendor facts. **Every category then
+  size, Seat type, Finish, Pack quantity, diameters and Weight (`2.5 lb`, D125). **No `Part number` row
+  since D193**: the column (D142) holds the vendor's SKU, so it stays staff only (admin, sourcing email). **Every category then
   appends the product's `extraSpecs`** (D125), the vendor facts with no column, in vendor order, label
   and value as stored. **A row with no value is dropped** (D53(1), D109(6)), which is also how an
   unbranded accessory loses its `Brand` row. `fullName` is `productName()` (`src/lib/product-name.ts`),

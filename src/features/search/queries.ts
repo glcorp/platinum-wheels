@@ -12,6 +12,8 @@
  *
  * Never selects `product_sources`: vendor names, SKUs and vendor prices are
  * staff data (owner, 2026-10-11: "No, part numbers only (Recommended)").
+ * Since D193 the part number is staff data too: it is the vendor's SKU, so
+ * search no longer reads it (owner, 2026-10-24: "Hide everywhere public").
  */
 
 import { and, eq, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
@@ -93,9 +95,9 @@ export function scopeOf(parsed: ParsedSearch): ProductCategory[] {
 const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`);
 const SEARCH_TEXT = productSearchText(products);
 
-/** Every word must appear in brand, model, name or part number. A word with
- *  punctuation also matches with it stripped, so `dai-123-45` finds the part
- *  number however its dashes fall. */
+/** Every word must appear in brand, model or name (never the part number,
+ *  D193). A word with punctuation also matches with it stripped, so
+ *  `off-road` finds a name that writes `offroad`. */
 function wordConditions(words: readonly string[]): SQL[] {
   return words.map((word) => {
     const stripped = word.replace(/[^\p{L}\p{N}]+/gu, "");
@@ -203,14 +205,6 @@ interface OrderKey {
 
 function orderKeys(category: ProductCategory, parsed: ParsedSearch): OrderKey[] {
   const keys: OrderKey[] = [];
-  /* A part number typed whole comes first. */
-  const typed = parsed.words.join("").replace(/[^\p{L}\p{N}]+/gu, "");
-  if (category !== "tires" && typed.length >= 3) {
-    keys.push({
-      expr: sql`(regexp_replace(lower(coalesce(${products.partNumber}, '')), '[^a-z0-9]+', '', 'g') = ${typed})`,
-      dir: "desc",
-    });
-  }
   if (category === "tires" && parsed.tire?.format === "metric" && parsed.tire.serviceType === "LT") {
     keys.push({ expr: sql`(coalesce(${tireSpecs.serviceType}, '') = 'LT')`, dir: "desc" });
   }

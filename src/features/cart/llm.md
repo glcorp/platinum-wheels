@@ -25,13 +25,17 @@ Server Actions and the emails.
   field validation, then `deliverQuote()` (D104). The posted lines are trusted for
   shape only; every product is read again; the consent wording is picked from the products, never from the
   post. Ceilings 200 lines × 9,999 stop tampering, never a person.
-- [`quote-email.ts`](quote-email.ts) — `deliverQuote()` (D104), moved from `product/`: one owner alert and
-  one auto-reply per request, each listing every line ("One email, all items", owner ruling). Transport
+- [`quote-email.ts`](quote-email.ts) — `deliverQuote()` (D104), moved from `product/`: one owner alert,
+  one staff-only sourcing email (D193) and one auto-reply per request, each listing every line ("One email,
+  all items", owner ruling). **Vendor names, vendor SKUs and vendor links go only in the sourcing email**,
+  whose Reply-To is the shop: the alert's Reply-To is the customer, and a reply quotes the alert back to
+  them. `QuoteInquiry.sources` carries them; the alert and the auto-reply never read it. Transport
   only: Resend REST with an `html` body and a `text` alternative (D162), **sends only when
   `AUTO_EMAIL_LEAD_CAPTURE_ENABLED` is exactly `true`**, never logs personal data (log lines carry a line
   count). Owns the `QuoteLine` / `QuoteInquiry` shapes.
-- [`quote-email-html.ts`](quote-email-html.ts) — the two emails as pure builders (D162):
-  `ownerAlertEmail(inquiry)` and `autoReplyEmail(lines, shopAddress)`, each `{ subject, text, html }`. No
+- [`quote-email-html.ts`](quote-email-html.ts) — the three emails as pure builders (D162):
+  `ownerAlertEmail(inquiry)`, `sourcingEmail(inquiry)` (D193: per line the shop SKU, then each vendor's name,
+  SKU and link, under a "Staff only" band) and `autoReplyEmail(lines, shopAddress)`, each `{ subject, text, html }`. No
   env reads, so a preview can call them. One dark 600px table, inline styles, `bgcolor` beside every
   background, no gradients or images (the goodwill site's inquiry emails). **Every visitor or catalogue
   value goes through `esc()`, attributes included**; a URL is a link only when it starts with `http`.

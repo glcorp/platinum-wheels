@@ -4,7 +4,7 @@
  *
  * Sizes are pulled out of the text first, longest pattern first, then the
  * category, season and accessory words; whatever is left is matched as text
- * against brand, model, name and part number. So `245/35R19 michelin` is a
+ * against brand, model and name (not the part number, D193). So `245/35R19 michelin` is a
  * tire size plus the word `michelin`, and `winter tires` is a season and a
  * category with no text at all.
  *

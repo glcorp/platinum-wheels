@@ -2,7 +2,7 @@
 
 ## Purpose
 Free-text storefront search (D173): the header's search field and `/search?q=`. A shopper types a tire
-size in any common spelling, a wheel size, a bolt pattern, a part number, or brand and model words, and
+size in any common spelling, a wheel size, a bolt pattern, a shop SKU (D192), or brand and model words, and
 gets the matching tires, wheels and accessories grouped on one page. Delete it and `/search` and the
 header's search box and icon have nothing behind them.
 
@@ -32,14 +32,16 @@ header's search box and icon have nothing behind them.
   or discontinued product"*). `queries.ts` uses B's `listedStatus()` from
   `src/features/catalog/listing-status.ts` (D164), the one rule every storefront list shares.
 - **No vendor data**: never select or match `product_sources` (vendor, SKU, vendor price). Owner,
-  2026-10-11, chose *"No, part numbers only (Recommended)"*: a vendor SKU finds nothing.
+  2026-10-11, chose *"No, part numbers only (Recommended)"*: a vendor SKU finds nothing. **Since D193 the
+  part number finds nothing either**: it is the vendor's SKU (31 of 31 fixture rows), and the owner chose
+  *"Hide everywhere public"* (2026-10-24). `productSearchText()` is brand, model and name only.
 - **The shop's own SKU is searchable (D192).** A whole code in any spelling (`skuFromQuery`,
   `catalog/sku.ts`) makes `/search` redirect to its product before any group is read; six digits alone
   also match `products.sku` in `wordConditions`.
 - **No price leaves the server while `PRICES_VISIBLE` is off** (D124): `queries.ts` nulls it as
   `catalog/queries.ts` does.
 - The text match filters on `productSearchText()` from `src/db/catalog-schema.ts`, the exact expression
-  `products_search_trgm_idx` indexes (migration `0006`). Write it any other way and the index is unused.
+  `products_search_trgm_idx` indexes (migration `0006`, rebuilt without the part number by `0009`). Write it any other way and the index is unused.
 - `/search` is `noindex` and never in a sitemap (D112).
 
 ## Decisions

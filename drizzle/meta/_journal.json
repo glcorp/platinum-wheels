@@ -64,6 +64,13 @@
       "when": 1792699928633,
       "tag": "0008_product_sku",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792781846677,
+      "tag": "0009_search_without_part_number",
+      "breakpoints": true
     }
   ]
 }

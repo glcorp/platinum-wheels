@@ -244,9 +244,7 @@ function buildSpecs(
       ["Load rating", loadRating(specs?.loadRatingLbs ?? null)],
       ["TPMS compatible", yesNo(specs?.tpmsCompatible ?? null)],
       ["Winter use", yesNo(specs?.winterCompatible ?? null)],
-      /* Its own column since D142, first of the vendor's facts, where it
-         read as an extra spec before. */
-      ["Part number", detail.partNumber],
+      /* No `Part number` row since D193: it is the vendor's SKU. */
       ...extraRows(detail),
     ]);
   }
@@ -270,7 +268,6 @@ function buildSpecs(
     ["Outer diameter", measure(specs?.outerDiameterMm ?? null, "mm")],
     ["Inner diameter", measure(specs?.innerDiameterMm ?? null, "mm")],
     ["Weight", measure(specs?.weightLb ?? null, "lb")],
-    ["Part number", detail.partNumber],
     ...extraRows(detail),
   ]);
 }
@@ -424,7 +421,7 @@ export function productView(
   const config = configFor(product);
   const { sizeCode, loadSpeed } = splitSize(detail, product);
   /* What sets this product apart from the ones that share its name and size
-     (`Left side`, `Centre bore 72.6 mm`, `Part number …`, `Load range E`),
+     (`Left side`, `Centre bore 72.6 mm`, `Load range E`),
      only when such products exist (launch audit D145; D151). Appended
      here, so the buy panel's size line and the page title (`toProductSeo`
      reads `sizeLine`) say the same thing. The card's own size line is

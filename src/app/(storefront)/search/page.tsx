@@ -17,7 +17,7 @@ import { productHref } from "@/lib/routes";
    `/search?q=` — composition only (`docs/decisions.md` §3). D173.
 
    Free-text search: a shop code (D192), a tire or wheel size, a bolt
-   pattern, a part number, or brand and model words (`src/features/search/llm.md`). A plain GET page, so
+   pattern, a shop SKU, or brand and model words (`src/features/search/llm.md`). A plain GET page, so
    it works with JS off. Never indexed and never in a sitemap (D112): a search
    result is a page of other pages; the `robots` here wins over the site-wide
    one in both flag states, as `/cart`'s does. No nav item is current.
@@ -25,7 +25,7 @@ import { productHref } from "@/lib/routes";
 
 export const metadata: Metadata = {
   title: "Search",
-  description: "Search tires, wheels and accessories by SKU, size, part number or brand.",
+  description: "Search tires, wheels and accessories by SKU, size or brand.",
   robots: { index: false, follow: false },
 };
 

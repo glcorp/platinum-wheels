@@ -175,8 +175,12 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `store.ts`.
   - [`lookups.ts`](lookups.ts) — small staff reads beside `store.ts` (D116): `listVendors`, `brandExists`,
     `vendorExists` (the pick-from-existing dropdowns and their server-side check; `brandExists` takes the
-    category since D127b), `countProductsByStatus`, and `listRimSizes` (D127b, the list's Rim size filter).
-    Not gated.
+    category since D127b), `countProductsByStatus`, `listRimSizes` (D127b, the list's Rim size filter), and `getSourcesBySlugs`
+    (D193: vendor, vendor SKU and vendor URL by slug, no vendor price, for the cart's staff-only sourcing
+    email). Not gated.
+  - [`vendor-links.ts`](vendor-links.ts) — `vendorLink(source)` (D193), pure: the vendor's product page when
+    the source has one, else the vendor's website from `VENDOR_SITES` (keyed by the name in lower case,
+    letters and digits only), else `null`. Staff data: the storefront never imports it.
   - [`photos.ts`](photos.ts) — `product_images` reads and writes for the admin (D117): list, add (locks the
     product row; at most `MAX_PHOTOS_PER_PRODUCT`, 8), remove, move. Keeps each product's photos numbered
     0..n-1 and bumps `products.updated_at`. Talks to Postgres only; the files are the photo modules' job.

@@ -126,11 +126,11 @@ export interface ExtraSpec {
 }
 
 /**
- * The text storefront search matches (D173): brand, model, name and part
- * number, lower case, plus the part number with every non-alphanumeric
- * stripped, so `DAI12345` finds `DAI-123-45`. Every function in it is
- * IMMUTABLE (`||` rather than `concat_ws`, which is only STABLE), which an
- * index expression requires. `products_search_trgm_idx` indexes exactly this
+ * The text storefront search matches (D173): brand, model and name, lower
+ * case. Since D193 not the part number: it is the vendor's SKU (31 of 31 in
+ * the fixture sample), and a shopper must never be able to find a product by
+ * a vendor's code. Every function in it is IMMUTABLE (`||` rather than
+ * `concat_ws`, which is only STABLE), which an index expression requires. `products_search_trgm_idx` indexes exactly this
  * expression and `src/features/search/queries.ts` filters on exactly this
  * expression; Postgres uses the index only when the two match.
  */
@@ -138,9 +138,8 @@ export function productSearchText(t: {
   brand: AnyPgColumn;
   model: AnyPgColumn;
   name: AnyPgColumn;
-  partNumber: AnyPgColumn;
 }) {
-  return sql`(lower(coalesce(${t.brand}, '') || ' ' || coalesce(${t.model}, '') || ' ' || coalesce(${t.name}, '') || ' ' || coalesce(${t.partNumber}, '') || ' ' || regexp_replace(coalesce(${t.partNumber}, ''), '[^A-Za-z0-9]+', '', 'g')))`;
+  return sql`(lower(coalesce(${t.brand}, '') || ' ' || coalesce(${t.model}, '') || ' ' || coalesce(${t.name}, '')))`;
 }
 
 /* ===========================================================================
