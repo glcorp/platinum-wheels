@@ -35,10 +35,12 @@ import { headers } from "next/headers";
 
 import { toProduct } from "@/features/catalog/adapter";
 import { cartItem } from "@/features/catalog/cart-item";
+import { getSourcesBySlugs } from "@/features/catalog/lookups";
 import { getProductsBySlugs } from "@/features/catalog/queries";
 import type { Product } from "@/features/catalog/types";
+import { vendorLink } from "@/features/catalog/vendor-links";
 import { quoteCopyByCategory } from "@/features/cart/copy";
-import { deliverQuote, type QuoteLine } from "@/features/cart/quote-email";
+import { deliverQuote, type QuoteLine, type QuoteSource } from "@/features/cart/quote-email";
 import {
   QUOTE_FIELD,
   QUOTE_MIN_FILL_MS,
@@ -234,6 +236,36 @@ async function quotedProducts(slugs: string[]): Promise<Map<string, Product>> {
   }
 }
 
+/** Where each product can be ordered, by slug, for the staff-only sourcing
+ *  email (D193). `null`, never a throw, when the catalogue cannot be read:
+ *  the email then says so, and the lead is never lost over it. */
+async function quotedSources(
+  slugs: string[],
+): Promise<Map<string, QuoteSource[]> | null> {
+  try {
+    const found = await getSourcesBySlugs(slugs);
+    return new Map(
+      [...found].map(([slug, sources]) => [
+        slug,
+        sources.map((source) => ({
+          vendor: source.vendor,
+          vendorSku: source.vendorSku,
+          link: vendorLink(source),
+        })),
+      ]),
+    );
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "quote.source_lookup_failed",
+        count: slugs.length,
+        message: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    return null;
+  }
+}
+
 /** The site's own origin as the request reached it, so a preview deployment
  *  links its own product pages in the owner alert. */
 async function siteOrigin(): Promise<string> {
@@ -331,7 +363,11 @@ export async function submitCartQuote(
   // locally; a failed send still counts, since a retry would send again.
   QUOTE_LIMITER.hit(ip);
 
-  const products = await quotedProducts(lines.map((line) => line.slug));
+  const slugs = lines.map((line) => line.slug);
+  const [products, sources] = await Promise.all([
+    quotedProducts(slugs),
+    quotedSources(slugs),
+  ]);
   // The consent record names the wording the visitor saw, picked the way the
   // form picked it: from each product's own category as the catalogue holds
   // it. Only a line the catalogue cannot name (deleted, or the database is
@@ -353,6 +389,7 @@ export async function submitCartQuote(
       productName: product
         ? `${productName(product.brand, product.model)}, ${product.size}`
         : null,
+      sku: product?.sku ?? null,
       quantity:
         line.quantity === 1 ? unit.one : `${line.quantity} ${unit.many}`.trim(),
       available: product ? product.available : true,
@@ -363,6 +400,7 @@ export async function submitCartQuote(
 
   const outcome = await deliverQuote({
     lines: quoteLines,
+    sources,
     cartUrl: `${origin}/cart`,
     name,
     email,

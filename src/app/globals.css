@@ -852,7 +852,9 @@
    `Add to cart`), so the square pushed `Add to cart` past the first screen;
    the cap leaves that stack plus 12px on screen. 2026-10-07: the buy panel's
    top padding went 32 → 16px below 720 (DEVIATIONS #123), so the stack is
-   16px shorter and the photo takes those 16px (482 → 466). `svh`, not `dvh`, so it holds
+   16px shorter and the photo takes those 16px (482 → 466). 2026-10-22: the
+   `SKU` line under the size (D192, 13px + the 6px gap) makes the stack 19px
+   taller, so the photo gives those back (466 → 485). `svh`, not `dvh`, so it holds
    with the browser toolbars showing and never resizes during a scroll.
    1100+ never matches; the square there is `md:aspect-square` on the box.
    The height is set outright, never as `aspect-square` + `max-height`: a
@@ -864,7 +866,7 @@
    The photo stays whole (`object-contain`). */
 @utility pdp-gallery-band {
   @media (max-width: 719.98px) {
-    height: min(100vw, max(240px, calc(100svh - 466px)));
+    height: min(100vw, max(240px, calc(100svh - 485px)));
   }
   @media (min-width: 720px) and (max-width: 1099.98px) {
     height: min(100vw, 60dvh);

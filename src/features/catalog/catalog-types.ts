@@ -90,6 +90,8 @@ export type CatalogSpecs =
 export type CatalogProduct = {
   id: string;
   slug: string;
+  /** The shop's own code, `PW-T482913` (D192). Drawn by the database. */
+  sku: string;
   /** `null` only on an unbranded accessory (D125). */
   brand: string | null;
   model: string | null;
@@ -369,7 +371,7 @@ export type AdminProduct = CatalogProductDetail & {
 };
 
 export interface AdminProductFilter {
-  /** Matches name, brand, model, slug or a vendor SKU. */
+  /** Matches the shop code (D192), name, brand, model, slug or a vendor SKU. */
   search?: string;
   category?: ProductCategory;
   status?: ProductStatus;

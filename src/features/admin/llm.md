@@ -82,7 +82,7 @@ rather than replaced by an auth system. Since D105b the folder also holds the pr
   matching; builds the "all matching" post itself so ticked ids never ride along. It posts **every** list
   filter (D127b): one left out would widen the change past what the list shows.
 - [`components/product-filters.tsx`](components/product-filters.tsx) — the list's GET form (`next/form`):
-  search, category, status, brand, and since D127b vendor, accessory type, rim size and a no-photo tick box.
+  search (since D192 also the shop SKU, typed any way), category, status, brand, and since D127b vendor, accessory type, rim size and a no-photo tick box.
 - [`components/category-type-filter.tsx`](components/category-type-filter.tsx) — client island inside the
   filters (D127b): the Category select, and the Accessory type select shown while Accessories is chosen.
 - [`components/page-jump.tsx`](components/page-jump.tsx) — the list's Go to page GET form (D127b), carrying

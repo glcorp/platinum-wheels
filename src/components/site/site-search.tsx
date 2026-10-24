@@ -146,7 +146,7 @@ function SearchBox({ vehicle }: { vehicle: VehicleParams | null }) {
       className="relative hidden sm:block"
     >
       <label htmlFor={id} className="sr-only">
-        Search by tire size, wheel size, part number or brand
+        Search by tire size, wheel size, SKU or brand
       </label>
       {BOX_ICON}
       <input
@@ -260,7 +260,7 @@ export function SiteSearch({ vehicle = null }: { vehicle?: VehicleParams | null 
             className="flex items-center gap-2 lg:mx-auto lg:max-w-content"
           >
             <label htmlFor={inputId} className="sr-only">
-              Search by tire size, wheel size, part number or brand
+              Search by tire size, wheel size, SKU or brand
             </label>
             <Input
               ref={inputRef}

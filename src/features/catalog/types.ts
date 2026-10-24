@@ -121,6 +121,13 @@ export interface Product {
    *  (D107b), so it is safe to link, share and index. */
   slug: string;
   /**
+   * The shop's own code, `PW-T482913` (D192): printed under the size line on
+   * the card, on the product page, the cart line and both quote emails.
+   * Every product read from the database carries it; absent only on the
+   * hand-built `/styleguide` samples, which then print no code line.
+   */
+  sku?: string;
+  /**
    * The product's first photo: a full URL, or a path from the site root.
    * **Absent means there is no photo**, and the card and gallery draw the
    * placeholder tile instead (`ProductPhotoPlaceholder`). Never guess a path

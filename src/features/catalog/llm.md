@@ -13,6 +13,8 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
 `/accessories` lose the config that distinguishes them.
 
 ## Owns
+- [`sku.ts`](sku.ts) — the shop code's pattern and `skuFromQuery()`, which reads a typed code in any
+  spelling (D192). Pure.
 - [`types.ts`](types.ts) — `Product` and `ProductBadge`. The field list is **measured, not designed**:
   `design/inventory/results.md:363` (§3.10 "Variation between card instances") is the exhaustive list of
   what differs across the 14 card instances — image + alt, badge slot, brand, model, size, 3PMSF
@@ -173,8 +175,12 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `store.ts`.
   - [`lookups.ts`](lookups.ts) — small staff reads beside `store.ts` (D116): `listVendors`, `brandExists`,
     `vendorExists` (the pick-from-existing dropdowns and their server-side check; `brandExists` takes the
-    category since D127b), `countProductsByStatus`, and `listRimSizes` (D127b, the list's Rim size filter).
-    Not gated.
+    category since D127b), `countProductsByStatus`, `listRimSizes` (D127b, the list's Rim size filter), and `getSourcesBySlugs`
+    (D193: vendor, vendor SKU and vendor URL by slug, no vendor price, for the cart's staff-only sourcing
+    email). Not gated.
+  - [`vendor-links.ts`](vendor-links.ts) — `vendorLink(source)` (D193), pure: the vendor's product page when
+    the source has one, else the vendor's website from `VENDOR_SITES` (keyed by the name in lower case,
+    letters and digits only), else `null`. Staff data: the storefront never imports it.
   - [`photos.ts`](photos.ts) — `product_images` reads and writes for the admin (D117): list, add (locks the
     product row; at most `MAX_PHOTOS_PER_PRODUCT`, 8), remove, move. Keeps each product's photos numbered
     0..n-1 and bumps `products.updated_at`. Talks to Postgres only; the files are the photo modules' job.
@@ -210,6 +216,10 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
   saves `2021 Honda Civic`. The results grid and the PDP rows pass it; the home row passes none.
 
 ## Rules
+- **`sku` is the shop's own code (D192)**, `PW-T482913`, drawn by the database (`src/db/llm.md`).
+  `sku.ts` holds `SKU_PATTERN` and `skuFromQuery()`, the one reader of a typed code, shared by the
+  admin search (`store.ts`) and `/search`. `getListedSlugBySku()` (`queries.ts`) finds a listed
+  product by it. Never derive a code in code, never rewrite one.
 - **One product per real item for the shopper, every vendor listing a source for the admin (D135).**
   The builder merges; nothing here de-duplicates. An accessory slug is brand + name + part number (the
   `part_number` column since D142), the

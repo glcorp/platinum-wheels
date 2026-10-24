@@ -64,6 +64,7 @@ import {
   type Executor,
 } from "./rows";
 import { buildProductSlug, nextFreeSlug } from "./slug";
+import { skuFromQuery } from "./sku";
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -166,7 +167,12 @@ function filterConditions(filter: AdminProductFilter): SQL[] {
   const search = filter.search?.trim();
   if (search) {
     const pattern = likePattern(search);
+    // D192: the shop's code typed any way (`pwt482913`, `T-482913`) is one
+    // exact match; part of one (`482913`) matches as text below.
+    const sku = skuFromQuery(search);
     const matches = or(
+      ...(sku ? [eq(products.sku, sku)] : []),
+      ilike(products.sku, pattern),
       ilike(products.name, pattern),
       ilike(products.brand, pattern),
       ilike(products.model, pattern),

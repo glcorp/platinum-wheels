@@ -10,6 +10,15 @@
       plus the CASL consent record: yes/no, the exact checkbox wording, the
       time and the page URL. Owner ruling 2026-09-23: the alert IS the consent
       record, there is no database row.
+   1b. **Sourcing** (D193) to `LEAD_CAPTURE_EMAIL`, staff only: per product
+      the shop SKU, then every vendor it can be ordered from with the vendor's
+      SKU and a link (its product page, else its website). A separate email
+      on purpose: the alert's Reply-To is the customer, so a reply quotes the
+      alert back to them, and vendor names and codes must never reach a
+      customer (owner, 2026-10-24: *"customer should not be able to see the
+      vendor SKU number, get a hint of where these people ... are sourcing
+      their inventory from"*). Its Reply-To is the shop. A failed sourcing
+      email is logged and otherwise ignored, like the auto-reply.
    2. **Auto-reply** to the visitor. A fixed body that never repeats what the
       visitor typed, so the form cannot be used to relay spam to a third
       party's inbox. The only variables are the product names, looked up from
@@ -38,7 +47,8 @@
    an outcome only, in the admin's one-JSON-line style (`admin/session.ts`).
    --------------------------------------------------------------------------- */
 
-import { autoReplyEmail, ownerAlertEmail } from "@/features/cart/quote-email-html";
+import { autoReplyEmail, ownerAlertEmail, sourcingEmail } from "@/features/cart/quote-email-html";
+import type { VendorLink } from "@/features/catalog/vendor-links";
 import { SITE } from "@/lib/site";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
@@ -70,6 +80,9 @@ export interface QuoteLine {
   /** Catalogue name, `Zeta Antarctica Sport, 215/55R17 · 94H`. `null` when
    *  the catalogue no longer has the slug or could not be read. */
   productName: string | null;
+  /** The shop's code, `PW-T482913` (D192), from the catalogue. `null` when
+   *  the catalogue could not name the product. */
+  sku: string | null;
   /** `4 tires`, `1 item`. */
   quantity: string;
   /** `false` = discontinued: the shop checks restock. */
@@ -79,10 +92,22 @@ export interface QuoteLine {
   pageUrl: string;
 }
 
-/** Everything the owner alert needs. Built by `submitCartQuote` after
- *  validation. */
+/** One vendor a product can be ordered from, as the sourcing email prints it
+ *  (D193). Staff only. */
+export interface QuoteSource {
+  vendor: string;
+  vendorSku: string;
+  link: VendorLink | null;
+}
+
+/** Everything the owner alert and the sourcing email need. Built by
+ *  `submitCartQuote` after validation. */
 export interface QuoteInquiry {
   lines: QuoteLine[];
+  /** Staff only (D193): each line's vendors, by slug. Read by the sourcing
+   *  email alone, never by the alert or the auto-reply. `null` when the
+   *  catalogue could not be read. */
+  sources: ReadonlyMap<string, readonly QuoteSource[]> | null;
   /** The page the request was sent from, for the consent record. */
   cartUrl: string;
   name: string;
@@ -100,10 +125,11 @@ export type QuoteEmailOutcome =
   | { status: "sent" }
   | { status: "failed"; reason: string };
 
-/** Sends the owner alert, then the auto-reply. The alert is the one that
- *  matters: if it fails the lead is lost, so the caller shows the visitor an
- *  error and keeps what they typed. A failed auto-reply is logged and
- *  otherwise ignored, because the shop already has the lead. */
+/** Sends the owner alert, the sourcing email (D193), then the auto-reply.
+ *  The alert is the one that matters: if it fails the lead is lost, so the
+ *  caller shows the visitor an error and keeps what they typed. A failed
+ *  sourcing email or auto-reply is logged and otherwise ignored, because the
+ *  shop already has the lead. */
 export async function deliverQuote(inquiry: QuoteInquiry): Promise<QuoteEmailOutcome> {
   if (!autoEmailEnabled()) {
     log("info", "quote.email.disabled", inquiry.lines.length);
@@ -131,6 +157,18 @@ export async function deliverQuote(inquiry: QuoteInquiry): Promise<QuoteEmailOut
   if (!alert.ok) {
     log("error", "quote.email.alert_failed", inquiry.lines.length, alert.reason);
     return { status: "failed", reason: alert.reason };
+  }
+
+  // Reply-To the shop, never the customer: replying must not quote vendor
+  // names and codes to them (D193).
+  const sourcing = await send(apiKey, {
+    from,
+    to: [shopAddress],
+    reply_to: shopAddress,
+    ...sourcingEmail(inquiry),
+  });
+  if (!sourcing.ok) {
+    log("warn", "quote.email.sourcing_failed", inquiry.lines.length, sourcing.reason);
   }
 
   const reply = await send(apiKey, {

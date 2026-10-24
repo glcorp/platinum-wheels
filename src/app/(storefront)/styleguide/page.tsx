@@ -67,6 +67,7 @@ const GROUND = [
 const DEMO: Product[] = [
   {
     slug: "zeta-antarctica-sport",
+    sku: "PW-T482913",
     image: "/images/products/zeta-antarctica-sport.webp",
     brand: "Zeta",
     model: "Antarctica Sport",
@@ -81,6 +82,7 @@ const DEMO: Product[] = [
     /* A real seed slug, so the specimen's links resolve (it was
        `touren-tr76`, a 404 — found by the D93b control crawl). */
     slug: "touren-tr76-18x8",
+    sku: "PW-W730264",
     image: "/images/products/touren-tr76.webp",
     brand: "Touren",
     model: "TR76",
@@ -93,6 +95,7 @@ const DEMO: Product[] = [
   },
   {
     slug: "zmax-winterhawk",
+    sku: "PW-T915038",
     image: "/images/products/zmax-winterhawk.webp",
     brand: "ZMAX",
     model: "Winterhawk",
@@ -105,6 +108,7 @@ const DEMO: Product[] = [
   },
   {
     slug: "mazzini-snowleopard",
+    sku: "PW-T276451",
     image: "/images/products/mazzini-snowleopard.webp",
     brand: "Mazzini",
     model: "Snowleopard",
@@ -261,6 +265,7 @@ const CART_SAMPLES: CartLine[] = [
       brand: "Zeta",
       model: "Antarctica Sport",
       size: "215/55R16 · 97T XL",
+      sku: "PW-T482913",
       image: null,
       category: "tires",
       available: true,
@@ -275,6 +280,7 @@ const CART_SAMPLES: CartLine[] = [
       brand: "Spec-1",
       model: "SP-51",
       size: "18×8.5 · 5×114.3",
+      sku: "PW-W730264",
       image: null,
       category: "wheels",
       available: false,
@@ -295,6 +301,7 @@ const SENT_SAMPLES: SentRequest[] = [
       brand: item.brand,
       model: item.model,
       size: item.size,
+      sku: item.sku,
       unit: item.unit,
     })),
   },
@@ -308,6 +315,7 @@ const SENT_SAMPLES: SentRequest[] = [
         brand: "Zeta",
         model: "Antarctica Sport",
         size: "215/55R16 · 97T XL",
+        sku: "PW-T482913",
         unit: { one: "1 tire", many: "tires" },
       },
     ],

@@ -176,7 +176,7 @@ const EXAMPLES = ["245/35R19", "20x9", "5x114.3", "Michelin"] as const;
 export function SearchPrompt() {
   return (
     <div className="flex flex-col gap-3">
-      <p className={SUPPORT}>Type a tire size, a wheel size, a part number or a brand.</p>
+      <p className={SUPPORT}>Type a tire size, a wheel size, a SKU or a brand.</p>
       <p className="text-ink-muted text-15 leading-body flex flex-wrap items-center gap-x-4 gap-y-1">
         <span>Try</span>
         {EXAMPLES.map((example) => (

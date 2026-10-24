@@ -57,6 +57,7 @@ const SAMPLE_DESCRIPTION = "4x Zeta Antarctica Sport 215/55R16 with install";
 const SAMPLE_TIRE: CatalogProduct = {
   id: "00000000-0000-4000-8000-000000000001",
   slug: "sample-zeta-antarctica-sport-215-55r16",
+  sku: "PW-T482913",
   brand: "Zeta",
   model: "Antarctica Sport",
   name: "Antarctica Sport 215/55R16 97H XL",
@@ -97,6 +98,7 @@ const SAMPLE_TIRE: CatalogProduct = {
 const SAMPLE_UNBRANDED: CatalogProduct = {
   id: "00000000-0000-4000-8000-000000000002",
   slug: "sample-chrome-valve-stem-caps",
+  sku: "PW-A305177",
   brand: null,
   model: null,
   name: "Chrome Valve Stem Caps",

@@ -225,6 +225,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const {
     slug,
+    sku,
     brand,
     model,
     size,
@@ -594,6 +595,18 @@ export function ProductCard({
             </span>
           ) : null}
         </div>
+
+        {/* D192 (client, 2026-10-22: "no SKU # on items"): the shop's own
+            code under the size line, so a caller can read it out and staff
+            find the product in the admin. Undrawn: the body label role
+            (12px 500, 0.08em, `--text-muted`), in the column's 8px gap.
+            `translate="no"` keeps a page translator off the code.
+            `DEVIATIONS.md` #146. */}
+        {sku ? (
+          <span className="text-ink-muted font-sans text-12 leading-flat font-medium tracking-8 tabular-nums">
+            SKU <span translate="no">{sku}</span>
+          </span>
+        ) : null}
 
         {/* `display:flex;align-items:baseline;gap:6px;margin-top:4px;
             flex-wrap:wrap` — results-desktop.html:180. The wrapper's colour is

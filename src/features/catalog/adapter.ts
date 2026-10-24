@@ -184,6 +184,7 @@ export function toProduct(
   const base = {
     category: product.category,
     slug: product.slug,
+    sku: product.sku,
     image: product.image?.url,
     /* D167: the product page's read carries every photo (`images`); a
        listing's carries the first alone, and the card needs no more. */

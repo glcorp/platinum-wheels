@@ -83,7 +83,11 @@ export default async function EditProductPage({
         >
           Products
         </Link>
-        <p className="text-ink-muted mt-4 text-15 leading-body">{`${CATEGORY_LABEL[product.category]} · ${product.brand ?? "No brand"}`}</p>
+        <p className="text-ink-muted mt-4 text-15 leading-body">
+          {`${CATEGORY_LABEL[product.category]} · ${product.brand ?? "No brand"} · `}
+          {/* D192: the shop's code, as the storefront shows it. */}
+          <span className="numeral text-ink">{`SKU ${product.sku}`}</span>
+        </p>
         <h1 className="display text-ink mt-1 text-display-40 sm:text-display-56">{product.name}</h1>
         {spec ? <p className="text-ink-muted mt-2 text-15 leading-body sm:text-16">{spec}</p> : null}
 

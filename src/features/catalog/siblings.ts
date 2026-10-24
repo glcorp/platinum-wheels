@@ -81,16 +81,10 @@ const WHEEL_FACTS: readonly Fact[] = [
       : null,
 ];
 
-/* Accessories: the part number (a wheel's or accessory's own column since
-   D142), unless the name already prints it, as some vendor names do. */
-const ACCESSORY_FACTS: readonly Fact[] = [
-  (product) => {
-    const part = product.partNumber?.trim();
-    if (!part) return null;
-    const name = `${product.model ?? ""} ${product.name}`.toLowerCase();
-    return name.includes(part.toLowerCase()) ? null : `Part number ${part}`;
-  },
-];
+/* Accessories: none. The part number told two of one name apart until D193
+   hid it from shoppers (it is the vendor's SKU); the shop's own SKU (D192),
+   printed on every card and page, tells them apart now. */
+const ACCESSORY_FACTS: readonly Fact[] = [];
 
 /* Tires: the load range, then the sidewall marks. A mark is a fact only when
    it is there: `mud_snow` and `winter_approved` are false both for "no" and

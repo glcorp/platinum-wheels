@@ -2,7 +2,8 @@
  * Small staff-side reads the product admin needs beside `store.ts` (D116):
  * the vendor list for the sources dropdown, the "is this one we already have"
  * checks behind the brand and vendor dropdowns, a count by status for the
- * admin home, and the rim sizes for the list's filter (D127b).
+ * admin home, the rim sizes for the list's filter (D127b), and where each
+ * product in a quote request can be ordered, for the sourcing email (D193).
  *
  * Brands and vendors are pick-from-existing on the admin (owner, 2026-10-01):
  * there is no brands or vendors table, so "existing" means "already on a
@@ -12,12 +13,40 @@
  * NOT GATED, like `store.ts`; `src/features/admin/` is the gate. Server only.
  */
 
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq, inArray } from "drizzle-orm";
 
 import { getDb } from "@/db/client";
 import { products, productSources, tireSpecs, wheelSpecs } from "@/db/schema";
 
-import type { ProductCategory, ProductStatus } from "./catalog-types";
+import type { ProductCategory, ProductSource, ProductStatus } from "./catalog-types";
+
+/** Where each product can be ordered, by slug, vendors A to Z (D193). For
+ *  the staff-only sourcing email: never the storefront, never a customer.
+ *  No vendor price: the email does not print one. A slug with no source is
+ *  left out of the map. */
+export async function getSourcesBySlugs(
+  slugs: readonly string[],
+): Promise<Map<string, Omit<ProductSource, "vendorPrice">[]>> {
+  const bySlug = new Map<string, Omit<ProductSource, "vendorPrice">[]>();
+  if (slugs.length === 0) return bySlug;
+  const rows = await getDb()
+    .select({
+      slug: products.slug,
+      vendor: productSources.vendor,
+      vendorSku: productSources.vendorSku,
+      vendorUrl: productSources.vendorUrl,
+    })
+    .from(productSources)
+    .innerJoin(products, eq(products.id, productSources.productId))
+    .where(inArray(products.slug, [...slugs]))
+    .orderBy(asc(productSources.vendor), asc(productSources.vendorSku));
+  for (const { slug, ...source } of rows) {
+    const list = bySlug.get(slug);
+    if (list) list.push(source);
+    else bySlug.set(slug, [source]);
+  }
+  return bySlug;
+}
 
 /** Every vendor name on a product source, A to Z. */
 export async function listVendors(): Promise<string[]> {
