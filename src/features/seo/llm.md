@@ -65,8 +65,10 @@ and the `metadata` of `layout.tsx` and of each indexable page.
 - **Open, `robots.txt` disallows any query string on `/tires`, `/wheels` and `/accessories`**, and
   nothing else (owner, 2026-09-30: *"you take the decision as what is industry standard"*; *derived*).
   The filter space is unbounded and every answer is a database read; Google's faceted-navigation
-  guidance is to block such URLs in `robots.txt` rather than lean on the canonical. A product's `?qty=`
-  stays crawlable and canonicalises.
+  guidance is to block such URLs in `robots.txt` rather than lean on the canonical. **Since D194** it
+  also disallows `/search` and any query string on a product page (`/products/*?`): every product page
+  links its `?qty=` cells, and those copies rendered per request while canonicalising to the bare URL,
+  which is now a kept page. The bare product URL stays crawlable.
 - **Never indexed, never in a sitemap:** `/styleguide`, `/qa-error`, `/cart` (D122), every admin page
   (on its own host since D115), `/pay/**`. Each sets
   its own `robots`, which wins in both flag states. The sitemap lists are allow-lists.
@@ -156,8 +158,9 @@ and the `metadata` of `layout.tsx` and of each indexable page.
 7. **Never measured:** Lighthouse after this change (the home page grew about 0.6 KB gzipped and gained no
    client code), Google's Rich Results Test and any real link-unfurler, all of which need a public URL.
    Coordinator, at launch.
-8. **The product preview card is cached for a day.** `og.jpg` answers `public, max-age=3600,
-   s-maxage=86400`, and since D116 and D117 staff can hide a product or change and remove its photos;
-   `updateTag` does not purge that CDN entry, so a link preview can show the old photo, or a hidden
-   product's card, for up to 24 hours. Found at the canonical merge (D124); minor while the site is
-   `noindex`. A shorter `s-maxage` is the cheap fix.
+8. **The product preview card is cached for a week (D194; a day before).** `og.jpg` answers `public,
+   max-age=3600, s-maxage=604800`, and since D116 and D117 staff can hide a product or change and remove
+   its photos; `updateTag` does not purge that CDN entry, so a link preview can show the old photo, or a
+   hidden product's card, for up to seven days. Found at the canonical merge (D124) at a day; lengthened
+   by D194 because every crawler asked for the card again and each answer is a photo download and a
+   `sharp` render. A shorter `s-maxage` is still the cheap fix if the owner wants it.

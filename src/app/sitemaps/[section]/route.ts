@@ -10,8 +10,8 @@ import {
 /* `/sitemaps/pages.xml`, `/sitemaps/tires.xml`, `/sitemaps/wheels.xml` and
    `/sitemaps/accessories.xml` (D112). Same gate as the index: a 404 unless the
    flag is on and the host is the canonical one. An unknown file name is a 404
-   too. The product files read the catalogue on each request; a crawler asks
-   for them a few times a day. */
+   too. The product files read the catalogue when asked, and the response is
+   kept at the CDN for a day (`xmlResponse`, D194). */
 
 export async function GET(
   request: Request,

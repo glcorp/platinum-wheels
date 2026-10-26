@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 
 import { mayIndexHost } from "@/features/seo/indexing";
-import { ROUTES } from "@/lib/routes";
+import { PRODUCT_PATH, ROUTES } from "@/lib/routes";
 import { SITE_URL } from "@/lib/site";
 
 /* ---------------------------------------------------------------------------
@@ -22,8 +22,14 @@ import { SITE_URL } from "@/lib/site";
    (owner, 2026-09-30: "industry standard"; Google's faceted-navigation
    guidance says to block such URLs in robots.txt rather than rely on the
    canonical alone). `/tires?` is a prefix match: it covers `/tires?brand=x`
-   and not `/tires` itself, product pages or `/_next/image?…`. A product's
-   `?qty=` stays crawlable and canonicalises.
+   and not `/tires` itself, product pages or `/_next/image?…`.
+
+   Since D194 it also disallows `/search` (Google's advice for a site's own
+   search results; the page is `noindex` too) and any query string on a
+   product page, `/products/*?`. Every product page links its `?qty=` cells
+   (D50), and a crawler following them rendered three more copies of each of
+   the 40,000 pages per request, all canonicalising to the bare URL, which
+   is now the kept page (`src/proxy.ts`). The bare URL stays crawlable.
 
    The pages that must stay out of search (`/styleguide`, `/qa-error`,
    `/cart`, `/pay/**`) are **not** disallowed: they carry `noindex`
@@ -49,7 +55,11 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: FILTERABLE_PATHS.map((path) => `${path}?`),
+      disallow: [
+        ...FILTERABLE_PATHS.map((path) => `${path}?`),
+        ROUTES.search,
+        `${PRODUCT_PATH}/*?`,
+      ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

@@ -31,7 +31,13 @@ Action, its emails and its two authored states moved there.
   and value as stored. **A row with no value is dropped** (D53(1), D109(6)), which is also how an
   unbranded accessory loses its `Brand` row. `fullName` is `productName()` (`src/lib/product-name.ts`),
   so it is the bare name when there is no brand. The vehicle is accepted only via `isFinderVehicle` (D91b).
-- `load.ts` — server only (D108b). `loadProduct(slug)` in React `cache()`, and `loadProductRows(detail,
+- `components/product-page.tsx` (**D194**) — the page itself: `productMetadata(slug)` and `ProductPage({
+  slug, query })`, moved out of the route so two routes draw it, `/products/[slug]` (a URL with a query
+  string, per request) and `/product-cache/[slug]` (the bare URL, kept; `src/proxy.ts` rewrites to it).
+- `load.ts` — server only (D108b). **Since D194** every read is kept between requests per slug under
+  `CATALOGUE_TAG` (`unstable_cache`, `catalogueCacheKey`), so a repeat visit costs no database read; the
+  two rows are keyed on the slug and the car's fit; `updatedAt` is revived to a `Date` after the cache's
+  JSON. `loadProduct(slug)` in React `cache()`, and `loadProductRows(detail,
   vehicle)`: since **D171** the page's checked vehicle (`view.ts` `parseVehicle`, now exported) is read
   through the finder's `findFitment` + `tireFit` / `wheelFit`, and `Other sizes` lists only the sizes
   that fit it (the results pages' best list); no car, or no data for it, is the nearest sizes as before.

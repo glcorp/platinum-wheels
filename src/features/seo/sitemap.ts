@@ -116,10 +116,18 @@ export function sitemapIndexXml(): string {
   return `${XML_HEADER}\n<sitemapindex xmlns="${SITEMAP_NS}">\n${sitemaps.join("\n")}\n</sitemapindex>\n`;
 }
 
-/** The response both handlers send for a sitemap. */
+/** The response both handlers send for a sitemap. Kept at Vercel's CDN for a
+ *  day (D194): `/sitemaps/wheels.xml` is about 4.7 MB read from some 30,000
+ *  rows, and without this every fetch read them all again. Too large for
+ *  Next's data cache (2 MB an entry on Vercel), so the response is what is
+ *  kept. A product added or hidden reaches the file within a day; stale for a
+ *  further day while the next copy is read. */
 export function xmlResponse(body: string): Response {
   return new Response(body, {
-    headers: { "Content-Type": "application/xml; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Cache-Control": "public, max-age=0, s-maxage=86400, stale-while-revalidate=86400",
+    },
   });
 }
 

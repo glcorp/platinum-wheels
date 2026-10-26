@@ -287,7 +287,10 @@ C2. **Have the privacy page's cart sentence reviewed** with the rest of the poli
 
 ## Owner, at launch — search (D112)
 
-S1. **Turn search indexing on in the same deploy that goes onto the apex.**
+S1. **Done 2026-10-20:** `SEARCH_INDEXING_ENABLED=true` was set for Production in the same deploy that took
+   the apex (Vercel's audit log, via the Claude.ai connector). Still owed from the list below: the Search
+   Console recrawl of `robots.txt` (D194 changed it) and the daily checks.
+   **Turn search indexing on in the same deploy that goes onto the apex.**
    - **Why:** the storefront ships with search engines blocked (`SEARCH_INDEXING_ENABLED` unset or
      `false`). The page-level `noindex` is fixed when the site is built, so a build made with the flag
      off stays `noindex` wherever it is served. **`platinumwheels.ca` ranks today with the goodwill

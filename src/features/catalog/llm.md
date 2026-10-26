@@ -111,7 +111,11 @@ Delete this folder and every route loses its product surface, and `/tires`, `/wh
     `getOtherSizes`, `getSimilarProducts`, `getProductsBySlugs` (`includeDiscontinued` for the cart,
     D122), `getTitleSiblings`, `getPriceBounds`, `getBrands` (every
     brand a category carries, whatever is filtered; D111), `listProductUrls`, and `productPageExists`
-    (one indexed read for `src/proxy.ts`'s product 404, D157).
+    (one indexed read for `src/proxy.ts`'s product 404, D157; not kept, since proxy has no data cache, D194).
+    **Since D194** `cache-tag.ts` also holds `CACHE_DATABASE` (the database host and name, moved here from
+    `queries.ts`), `CATALOGUE_CACHE` (the tag, no timer) and `catalogueCacheKey(name)`, which every
+    catalogue read kept between requests uses: `getCategoryBase` here,
+    `features/product/load.ts` and `features/results/search.ts`.
     **Since D157:** `getBrands`, `getPriceBounds` and `getExtraValues` are internal; pages read them through
     `getCategoryBase(category)`, an `unstable_cache` under `CATALOGUE_TAG` with no timer, keyed by
     `CACHE_DEPLOYMENT` (`cache-tag.ts`) and the database host, holding only what ignores the URL filters

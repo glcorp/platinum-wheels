@@ -89,9 +89,16 @@ test("robots.txt answers on the canonical host and matches the flag", async ({ r
   if (INDEXING) {
     expect(body).toMatch(/^Allow: \/$/m);
     // Open, except the filter URLs of the three category pages: a query string
-    // there is a search, and the clean path is the only address (D112).
+    // there is a search, and the clean path is the only address (D112). Since
+    // D194 also the site search and any query string on a product page.
     const disallowed = [...body.matchAll(/^Disallow: (.*)$/gm)].map((m) => m[1]);
-    expect(disallowed).toEqual(["/tires?", "/wheels?", "/accessories?"]);
+    expect(disallowed).toEqual([
+      "/tires?",
+      "/wheels?",
+      "/accessories?",
+      "/search",
+      "/products/*?",
+    ]);
     expect(body).toContain(`Sitemap: ${SITE_URL}/sitemap.xml`);
   } else {
     expect(body).toMatch(/^Disallow: \/$/m);

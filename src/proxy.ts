@@ -52,7 +52,15 @@ import { payLinkExists } from "@/features/payments/link-exists";
    reads the catalogue once (`productPageExists`) and answers an unknown or
    hidden slug with the branded 404, because a `notFound()` thrown from the
    page gives a 404 whose body only JavaScript paints. That is the one
-   database read proxy makes; see the `pass` case below.
+   database read proxy makes (not kept: proxy has no data cache, D194); see
+   the `pass` case below.
+
+   **Kept product pages (D194).** A bare `/products/<slug>` document request
+   that passes that check is rewritten to `/product-cache/<slug>`, the same
+   page rendered once and then served from the cache, so a crawler's repeat
+   visit runs no render and no database read beyond the check above. A URL with a query string keeps
+   the per-request route, and `/product-cache/**` asked for by name is the
+   storefront 404.
 
    **Pay 404 (D184, QA COPY-1).** The same empty-shell behaviour hit
    `/pay/<unknown token>`, bare `/pay` and every deeper pay path, and a plain
@@ -78,6 +86,13 @@ const NOT_FOUND_PATH = "/_admin-not-served-on-this-host";
 /** `/products/<slug>` and nothing deeper (`/products/<slug>/og.jpg` is a route
  *  handler that already answers a real 404 by itself). */
 const PRODUCT_PAGE = /^\/products\/([^/]+)\/?$/;
+
+/** The kept product page's folder, `src/app/(storefront)/product-cache` (D194).
+ *  Only proxy's rewrite reaches it. */
+const PRODUCT_CACHE_PATH = "/product-cache";
+
+/** `/product-cache` and anything under it, asked for by name. */
+const PRODUCT_CACHE = /^\/product-cache(\/|$)/;
 
 /** The pay host's 404 as a real page (`src/app/pay/link-not-found`). Fetched
  *  by `payNotFound` below; never linked. */
@@ -221,6 +236,12 @@ export async function proxy(request: NextRequest) {
          error lets the request through: an outage must never turn a real
          product into a 404. */
       if (await isPayNotFound(request)) return payNotFound(request);
+      /* The kept product page is reached only through the rewrite below
+         (D194): asked for by name, it is the storefront 404, so it is never
+         a second address for a product. */
+      if (PRODUCT_CACHE.test(request.nextUrl.pathname)) {
+        return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url));
+      }
       const slug = productSlugToCheck(request);
       if (slug !== null) {
         let exists = true;
@@ -231,6 +252,15 @@ export async function proxy(request: NextRequest) {
         }
         if (!exists) {
           return NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url));
+        }
+        /* A bare product URL is served from the kept page (D194): the same
+           page with an empty query, rendered once and then answered from the
+           cache until a catalogue write expires it. A URL with any query
+           string (`?qty=`, a carried vehicle) keeps the per-request route. */
+        if (request.nextUrl.search === "") {
+          return NextResponse.rewrite(
+            new URL(`${PRODUCT_CACHE_PATH}/${encodeURIComponent(slug)}`, request.url),
+          );
         }
       }
       return NextResponse.next();
@@ -269,6 +299,9 @@ export const config = {
     // decodable one straight through.
     "/products/:path*",
     "/sitemaps/:path*",
+    // The kept product page (D194), so it can 404 when asked for by name.
+    "/product-cache",
+    "/product-cache/:path*",
     "/:path(.*%.*)",
     {
       source: "/((?!_next/|.*\\..*).*)",

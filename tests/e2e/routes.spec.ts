@@ -117,6 +117,10 @@ const NOT_FOUND = [
   // Status `hidden` in the fixture: not on sale, so a real 404 (D111, D107b).
   `/products/${SLUG.hidden}`,
   `/products/${SLUG.tire}/extra`,
+  // The kept product page, asked for by name: only proxy's rewrite reaches it
+  // (D194).
+  "/product-cache",
+  `/product-cache/${SLUG.tire}`,
   "/Tires",
   "/tires/x",
   // The tire category lived here until D112; it moved with no redirect.
@@ -187,6 +191,24 @@ test.describe("a product 404 is a whole document with JavaScript off", () => {
       expect(html.match(/<meta name="robots"/g) ?? [], "one robots meta").toHaveLength(1);
     });
   }
+});
+
+/* A bare product URL is the kept page (D194): `src/proxy.ts` rewrites it to
+   `/product-cache/<slug>`, rendered once and then answered from the cache
+   (`next start` says so in `x-nextjs-cache`). A URL with a query string is
+   the per-request route. Both draw the same product. */
+test("a bare product URL is a kept page; with a query string it renders per request", async ({ request }) => {
+  const path = `/products/${SLUG.wheel}`;
+  await request.get(path);
+  const kept = await request.get(path);
+  expect(kept.status()).toBe(200);
+  expect(kept.headers()["x-nextjs-cache"]).toBe("HIT");
+  expect(kept.headers()["cache-control"]).toContain("s-maxage");
+  const live = await request.get(`${path}?qty=2`);
+  expect(live.status()).toBe(200);
+  expect(live.headers()["cache-control"]).toContain("no-store");
+  const title = (html: string) => /<title>([^<]*)<\/title>/.exec(html)?.[1];
+  expect(title(await live.text())).toBe(title(await kept.text()));
 });
 
 for (const path of NOT_FOUND) {

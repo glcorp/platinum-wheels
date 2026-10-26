@@ -104,6 +104,12 @@ test("sign in, change a product's description and display price, save, and it pe
   const problems: string[] = [];
   page.on("pageerror", (e) => problems.push(e.message));
 
+  // The storefront page is kept first (D194), so the check at the end proves
+  // the save expired it rather than finding it never cached.
+  await page.request.get(`/products/${SLUG.wheel}`);
+  const kept = await page.request.get(`/products/${SLUG.wheel}`);
+  expect(kept.headers()["x-nextjs-cache"], "the product page is kept before the save").toBe("HIT");
+
   await signIn(page);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 

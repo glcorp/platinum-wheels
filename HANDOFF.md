@@ -513,7 +513,7 @@ session 5 and invalidated several readings before it was spotted (§8.17).
 | `/login` | Flush-left 420px sign-in column, username + password (D91). Redirects home if already signed in. |
 | `/styleguide` (admin) | The admin's authored states (D93), gated. Renders the real components inert. |
 | `src/features/admin/` | `types.ts` (contract), `session.ts` (one shared sign-in, hardened by D95: scrypt hash, signed `__Host-` cookie, CSRF + origin checks), two `"use server"` actions that call `requireAdminAction()` first, 6 components; islands `login-form`, `payment-link-form`, `copy-link-button`. `scripts/hash-admin-password.mjs` makes `ADMIN_PASSWORD_HASH`. |
-| SEO | `src/features/seo/` (D112): indexing flag `SEARCH_INDEXING_ENABLED` (off in Vercel until launch), `/robots.txt`, `/sitemap.xml` + `/sitemaps/*.xml`, `pageMetadata()` on every indexable page, JSON-LD (`OnlineStore`, `WebSite`, `Product` with no offer, `BreadcrumbList`), `/opengraph-image` and `/products/<slug>/og.jpg`. Verified by `tests/e2e/seo.spec.ts` in both flag states. |
+| SEO | `src/features/seo/` (D112): indexing flag `SEARCH_INDEXING_ENABLED` (on in Vercel Production since 2026-10-20, set with the apex cutover), `/robots.txt`, `/sitemap.xml` + `/sitemaps/*.xml`, `pageMetadata()` on every indexable page, JSON-LD (`OnlineStore`, `WebSite`, `Product` with no offer, `BreadcrumbList`), `/opengraph-image` and `/products/<slug>/og.jpg`. Verified by `tests/e2e/seo.spec.ts` in both flag states. |
 | Stubs left | `/about`, `/privacy`, `/terms`, 404. Undesigned (D26/D39). `/wheels` and `/accessories` left this list on 2026-09-21 (D58). |
 
 ---

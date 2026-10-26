@@ -78,7 +78,7 @@ import {
   type Executor,
   type ProductJoinRow,
 } from "./rows";
-import { CACHE_DEPLOYMENT, CATALOGUE_TAG } from "./cache-tag";
+import { CATALOGUE_CACHE, catalogueCacheKey } from "./cache-tag";
 import { listedStatus } from "./listing-status";
 import { listingFacts } from "./siblings";
 import { normalizeBoltPattern, normalizeThreadSize } from "./size";
@@ -1356,24 +1356,10 @@ async function readCategoryBase(
   return { brands, extraValues, price, tire, wheel };
 }
 
-/** Which database this process reads, host and name only (never a
- *  credential), for the cache key: the on-disk entries of a local build
- *  survive `next build`, so without it a base cached from one database would
- *  be served for another (the e2e fixture's, say). */
-function databaseKey(): string {
-  try {
-    const url = new URL(process.env.DATABASE_URL ?? "");
-    return `${url.host}${url.pathname}`;
-  } catch {
-    return "no-database";
-  }
-}
-
-/* A failed read is thrown out of the cached function, so it is never stored. */
 const readCategoryBaseCached = unstable_cache(
   readCategoryBase,
-  ["catalogue-category-base", CACHE_DEPLOYMENT, databaseKey()],
-  { tags: [CATALOGUE_TAG], revalidate: false },
+  catalogueCacheKey("catalogue-category-base"),
+  CATALOGUE_CACHE,
 );
 
 /** The category's URL-independent facts (see above). Cached. */
@@ -1747,6 +1733,11 @@ export async function getProductBySlug(
  * 404 document rather than with `notFound()` thrown from the page (which Next
  * answers with an empty shell that only a browser running JavaScript fills in).
  * A slug the catalogue could never hold is `false` without a query.
+ *
+ * Not kept between requests (D194): proxy runs outside a page render, where
+ * Next has no data cache (on the e2e fixture the read still ran on every
+ * request with `unstable_cache` around it). It stays the one read a kept
+ * product page still costs: an index lookup returning one id.
  */
 export async function productPageExists(slug: string): Promise<boolean> {
   if (slug.length > SLUG_MAX_LENGTH || !SLUG.test(slug)) return false;
