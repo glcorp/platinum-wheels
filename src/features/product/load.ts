@@ -1,9 +1,10 @@
 /**
  * The product page's reads. Server only: it calls the database.
  *
- * Each read is kept between requests, per slug, under `CATALOGUE_TAG` (D194):
+ * The reads are kept between requests, per slug, under `CATALOGUE_TAG` (D194):
  * the catalogue changes only when staff save, and every save expires the tag,
  * so a crawler or a shopper asking for a product again costs no database read.
+ * The one exception is the `Other sizes` row for a carried car (`loadRows`).
  * The `react` `cache()` wrappers stay as the per-request memo: one request asks
  * for the same product twice, once for `generateMetadata` and once for the
  * page, and the title siblings twice too, for the title and the size line
@@ -59,21 +60,35 @@ export const loadProduct = cache(
   },
 );
 
-const readTitleSiblings = unstable_cache(
-  async (slug: string): Promise<CatalogProduct[]> => {
-    const detail = await loadProduct(slug);
-    return detail === null ? [] : getTitleSiblings(detail);
-  },
-  catalogueCacheKey("product-title-siblings"),
-  CATALOGUE_CACHE,
-);
+/**
+ * A read that needs the product, kept under the slug. The product is closed
+ * over, never read inside: an `unstable_cache` nested in another skips its
+ * own cache (`unstable-cache.js`, `isNestedUnstableCache`), so reading it in
+ * here would query the product again on every miss.
+ */
+function keptForProduct<T>(
+  name: string,
+  detail: CatalogProductDetail,
+  extra: string,
+  read: () => Promise<T>,
+): Promise<T> {
+  return unstable_cache(
+    read,
+    [...catalogueCacheKey(name), detail.slug, extra],
+    CATALOGUE_CACHE,
+  )();
+}
 
 /** The products that would share this page's title, so the title and the
  *  size line can name what differs (`catalog/siblings.ts`). Keyed on the
  *  product object, which `loadProduct`'s memo hands both callers. */
 export const loadTitleSiblings = cache(
   async (detail: CatalogProductDetail): Promise<CatalogProduct[]> =>
-    (await readTitleSiblings(detail.slug)).map(revived),
+    (
+      await keptForProduct("product-title-siblings", detail, "", () =>
+        getTitleSiblings(detail),
+      )
+    ).map(revived),
 );
 
 /**
@@ -89,24 +104,29 @@ function vehicleFit(vehicle: Vehicle | null): OtherSizesFit | null {
   return { tire: tireFit(fit), wheel: wheelFit(fit) };
 }
 
-/** The two rows under the page, keyed on the slug and the car's fit (not the
- *  car), so every car with the same fit shares one entry. */
-const readRows = unstable_cache(
-  async (
-    slug: string,
-    fit: OtherSizesFit | null,
-  ): Promise<{ similar: CatalogProduct[]; otherSizes: CatalogProduct[] }> => {
-    const detail = await loadProduct(slug);
-    if (detail === null) return { similar: [], otherSizes: [] };
-    const [similar, otherSizes] = await Promise.all([
-      getSimilarProducts(detail, ROW),
-      getOtherSizes(detail, ROW, fit),
-    ]);
-    return { similar, otherSizes };
-  },
-  catalogueCacheKey("product-rows"),
-  CATALOGUE_CACHE,
-);
+async function readRows(
+  detail: CatalogProductDetail,
+  fit: OtherSizesFit | null,
+): Promise<{ similar: CatalogProduct[]; otherSizes: CatalogProduct[] }> {
+  const [similar, otherSizes] = await Promise.all([
+    getSimilarProducts(detail, ROW),
+    getOtherSizes(detail, ROW, fit),
+  ]);
+  return { similar, otherSizes };
+}
+
+/** The two rows under the page. Kept only without a car, the page every
+ *  crawler and most shoppers see: a carried car is a per-request URL that
+ *  `robots.txt` keeps crawlers off (`/products/*?`), and keeping one entry per
+ *  slug and car fit would store entries nobody asks for twice. */
+function loadRows(
+  detail: CatalogProductDetail,
+  fit: OtherSizesFit | null,
+): Promise<{ similar: CatalogProduct[]; otherSizes: CatalogProduct[] }> {
+  return fit === null
+    ? keptForProduct("product-rows", detail, "", () => readRows(detail, null))
+    : readRows(detail, fit);
+}
 
 /** The two rows under the page and the title siblings, read together.
  *  `vehicle` is the page's checked vehicle (`view.ts` `parseVehicle`, D91b),
@@ -120,7 +140,7 @@ export async function loadProductRows(
   siblings: readonly CatalogProduct[];
 }> {
   const [rows, siblings] = await Promise.all([
-    readRows(detail.slug, vehicleFit(vehicle)),
+    loadRows(detail, vehicleFit(vehicle)),
     loadTitleSiblings(detail),
   ]);
   return {

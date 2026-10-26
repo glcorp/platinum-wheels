@@ -786,7 +786,7 @@ export async function searchResults(
     base.extraValues,
   );
   const query = withKnownExtras(withKnownSizes(settled, whole), whole);
-  return readCatalogueCached(query);
+  return readCatalogueCached(query, base);
 }
 
 /**
@@ -794,13 +794,19 @@ export async function searchResults(
  * is the SETTLED query, so URLs that settle alike (a value the category does
  * not hold, a price handle parked on its end, a brand in another case) share
  * one entry, and a repeat of any filter set costs no database read until the
- * next catalogue write. The base is read again inside, from its own cache, so it
- * is not part of the key. The view is plain data and survives the cache's
- * JSON unchanged.
+ * next catalogue write. The base the caller already holds is closed over, not
+ * read inside: an `unstable_cache` nested in another skips its own cache
+ * (`unstable-cache.js`, `isNestedUnstableCache`), so a read inside would run
+ * the base's queries on every miss. The view is plain data and survives the
+ * cache's JSON unchanged.
  */
-const readCatalogueCached = unstable_cache(
-  async (query: ResultsQuery): Promise<ResultsView> =>
-    readCatalogue(query, await getCategoryBase(query.category)),
-  catalogueCacheKey("results-view"),
-  CATALOGUE_CACHE,
-);
+function readCatalogueCached(
+  query: ResultsQuery,
+  base: CategoryBase,
+): Promise<ResultsView> {
+  return unstable_cache(
+    () => readCatalogue(query, base),
+    [...catalogueCacheKey("results-view"), JSON.stringify(query)],
+    CATALOGUE_CACHE,
+  )();
+}

@@ -36,8 +36,9 @@ Action, its emails and its two authored states moved there.
   string, per request) and `/product-cache/[slug]` (the bare URL, kept; `src/proxy.ts` rewrites to it).
 - `load.ts` — server only (D108b). **Since D194** every read is kept between requests per slug under
   `CATALOGUE_TAG` (`unstable_cache`, `catalogueCacheKey`), so a repeat visit costs no database read; the
-  two rows are keyed on the slug and the car's fit; `updatedAt` is revived to a `Date` after the cache's
-  JSON. `loadProduct(slug)` in React `cache()`, and `loadProductRows(detail,
+  two rows are kept only without a car (a carried car is a per-request URL crawlers are kept off); the
+  product is closed over rather than read inside a kept read, because a nested `unstable_cache` skips its
+  own cache; `updatedAt` is revived to a `Date` after the cache's JSON. `loadProduct(slug)` in React `cache()`, and `loadProductRows(detail,
   vehicle)`: since **D171** the page's checked vehicle (`view.ts` `parseVehicle`, now exported) is read
   through the finder's `findFitment` + `tireFit` / `wheelFit`, and `Other sizes` lists only the sizes
   that fit it (the results pages' best list); no car, or no data for it, is the nearest sizes as before.
