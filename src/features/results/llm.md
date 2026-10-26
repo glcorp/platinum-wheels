@@ -31,7 +31,10 @@ Built at `page results`, 2026-09-21. Measured sources: `design/inventory/results
   with the known fields kept and a prompt for the rest.
 - [`search.ts`](search.ts) — server only and **async** since D108b: `searchResults()` asks the catalogue
   (`catalog/queries.ts`) for one page of best matches, the similar row and the facets, and maps them into
-  a `ResultsView`. Reads the database; never imported by a client file. **Since D157** one cached
+  a `ResultsView`. Reads the database; never imported by a client file. **Since D194** the whole view is kept between requests
+  under `CATALOGUE_TAG`, keyed on the settled query (`readCatalogueCached`), so a repeated filter set reads no
+  database until the next catalogue write. The base is closed over, not read inside (a nested
+  `unstable_cache` skips its own cache). **Since D157** one cached
   category base read (`getCategoryBase`), then one round: best, similar and facets together (since **D175** always: the similar row has its own
   window, `query.similarShow`, so it no longer waits on best's total). A URL value the category does not hold (size,
   brand, finish, thread, load, bore, offset) is settled against the base before the read, so a hand-typed

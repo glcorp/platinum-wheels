@@ -28,7 +28,11 @@ export async function GET(
       return new Response(new Uint8Array(card), {
         headers: {
           "Content-Type": "image/jpeg",
-          "Cache-Control": "public, max-age=3600, s-maxage=86400",
+          /* A week at the CDN (D194; was a day): each card is a photo
+             download and a `sharp` render, asked for again by every
+             crawler. A hidden product or a changed photo can show the old
+             card in a link preview for up to that week. */
+          "Cache-Control": "public, max-age=3600, s-maxage=604800",
         },
       });
     } catch {

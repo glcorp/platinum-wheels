@@ -43,7 +43,15 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   reaches this page: `src/proxy.ts` rewrites it to the branded 404, because Next 16.4 canary answers a
   `notFound()` thrown here with a 404 whose body is an empty `__next_error__` shell that only JavaScript
   fills (measured; a segment `not-found.tsx` does not change it). The page's `notFound()` stays for client
-  navigations and a product hidden between the check and the render.
+  navigations and a product hidden between the check and the render. **Since D194** the route is a thin
+  shell over `ProductPage` (`src/features/product/components/product-page.tsx`) and answers only URLs with
+  a query string; a bare request (document, client navigation or prefetch) is rewritten by proxy to
+  `product-cache/[slug]`.
+- [`product-cache/[slug]/page.tsx`](product-cache/[slug]/page.tsx) — **D194.** The bare
+  `/products/<slug>` page, kept: the same `ProductPage` with an empty query, no `searchParams`, and
+  `generateStaticParams` returning nothing, so each slug renders on its first visit and is then served from
+  the cache until a catalogue write expires `CATALOGUE_TAG`. Reached only through `src/proxy.ts`'s rewrite;
+  asked for by name it is the storefront 404.
 - ~~`loading.tsx`~~ — **removed 2026-09-29 (D91b, owner ruling).** Its group-level Suspense boundary
   streamed every page into `<div hidden id="S:0">` behind the skeleton, so with JavaScript off every
   route showed only the skeleton (every no-JS promise in D44/D45/D50/D83 was void while the served HTML

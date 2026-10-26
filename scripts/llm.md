@@ -156,6 +156,12 @@ from `design/assets/`, and parity becomes eyeballing — which
   checks fail the run: a dash in a description, a load index above 150, a Lug Nuts row whose Model is BOLT.
 
 ## Rules
+- **A script that writes the catalogue leaves the storefront's kept pages stale (D194).** `catalog-import`,
+  `catalog-photos`, `catalog-photo-add` and `catalog-photo-replace` write the database directly and never
+  expire `CATALOGUE_TAG`, so kept product pages, listings and the category bases go on showing the old
+  data. After a run against production, **redeploy** (every cache is keyed by the deployment) or save any
+  product in the admin (which expires the tag). `og.jpg` and the sitemaps follow within their CDN times
+  (a week, a day).
 - **`client-assets/` is where client material supplied AFTER the design export goes** (D63).
   `design/assets/**` is the frozen export and is never added to (D55), so later photography lands in
   `client-assets/<kind>/` and `prepare-assets.mjs` → `clientProducts()` normalises it into the same

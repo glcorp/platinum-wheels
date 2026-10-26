@@ -22,6 +22,12 @@
  *     database, not a slice taken from an in-memory list.
  */
 
+import { unstable_cache } from "next/cache";
+
+import {
+  CATALOGUE_CACHE,
+  catalogueCacheKey,
+} from "@/features/catalog/cache-tag";
 import {
   accessoryFromParam,
   accessoryParam,
@@ -780,5 +786,27 @@ export async function searchResults(
     base.extraValues,
   );
   const query = withKnownExtras(withKnownSizes(settled, whole), whole);
-  return readCatalogue(query, base);
+  return readCatalogueCached(query, base);
+}
+
+/**
+ * `readCatalogue`, kept between requests under `CATALOGUE_TAG` (D194). The key
+ * is the SETTLED query, so URLs that settle alike (a value the category does
+ * not hold, a price handle parked on its end, a brand in another case) share
+ * one entry, and a repeat of any filter set costs no database read until the
+ * next catalogue write. The base the caller already holds is closed over, not
+ * read inside: an `unstable_cache` nested in another skips its own cache
+ * (`unstable-cache.js`, `isNestedUnstableCache`), so a read inside would run
+ * the base's queries on every miss. The view is plain data and survives the
+ * cache's JSON unchanged.
+ */
+function readCatalogueCached(
+  query: ResultsQuery,
+  base: CategoryBase,
+): Promise<ResultsView> {
+  return unstable_cache(
+    () => readCatalogue(query, base),
+    [...catalogueCacheKey("results-view"), JSON.stringify(query)],
+    CATALOGUE_CACHE,
+  )();
 }

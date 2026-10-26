@@ -1,15 +1,26 @@
 /**
  * The product page's reads. Server only: it calls the database.
  *
- * `loadProduct` is wrapped in React's `cache()` because one request asks for
- * the same product twice, once for `generateMetadata` and once for the page;
- * the wrapper makes that one query. It is a per-request memo, not a cache
- * across requests. `loadTitleSiblings` is memoised for the same reason: the
- * title and the size line both read it (launch audit D145; D151).
+ * The reads are kept between requests, per slug, under `CATALOGUE_TAG` (D194):
+ * the catalogue changes only when staff save, and every save expires the tag,
+ * so a crawler or a shopper asking for a product again costs no database read.
+ * The one exception is the `Other sizes` row for a carried car (`loadRows`).
+ * The `react` `cache()` wrappers stay as the per-request memo: one request asks
+ * for the same product twice, once for `generateMetadata` and once for the
+ * page, and the title siblings twice too, for the title and the size line
+ * (launch audit D145; D151).
+ *
+ * A kept value comes back through JSON, so the one `Date` a product carries,
+ * `updatedAt`, is revived here before anything reads it.
  */
 
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
+import {
+  CATALOGUE_CACHE,
+  catalogueCacheKey,
+} from "@/features/catalog/cache-tag";
 import type {
   CatalogProduct,
   CatalogProductDetail,
@@ -29,19 +40,55 @@ import type { Vehicle } from "./types";
 /** One row of four cards, the width the artboard draws (`product.md` §2.7). */
 const ROW = 4;
 
+/** `updatedAt` back to a `Date` after the trip through the cache's JSON. */
+function revived<T extends CatalogProduct>(product: T): T {
+  return { ...product, updatedAt: new Date(product.updatedAt) };
+}
+
+const readProduct = unstable_cache(
+  (slug: string) => getProductBySlug(slug),
+  catalogueCacheKey("product-detail"),
+  CATALOGUE_CACHE,
+);
+
 /** `null` = render a 404: no such slug, or the product is hidden. A
  *  discontinued product loads, and the page shows it as unavailable. */
 export const loadProduct = cache(
-  (slug: string): Promise<CatalogProductDetail | null> =>
-    getProductBySlug(slug),
+  async (slug: string): Promise<CatalogProductDetail | null> => {
+    const detail = await readProduct(slug);
+    return detail === null ? null : revived(detail);
+  },
 );
+
+/**
+ * A read that needs the product, kept under the slug. The product is closed
+ * over, never read inside: an `unstable_cache` nested in another skips its
+ * own cache (`unstable-cache.js`, `isNestedUnstableCache`), so reading it in
+ * here would query the product again on every miss.
+ */
+function keptForProduct<T>(
+  name: string,
+  detail: CatalogProductDetail,
+  extra: string,
+  read: () => Promise<T>,
+): Promise<T> {
+  return unstable_cache(
+    read,
+    [...catalogueCacheKey(name), detail.slug, extra],
+    CATALOGUE_CACHE,
+  )();
+}
 
 /** The products that would share this page's title, so the title and the
  *  size line can name what differs (`catalog/siblings.ts`). Keyed on the
  *  product object, which `loadProduct`'s memo hands both callers. */
 export const loadTitleSiblings = cache(
-  (detail: CatalogProductDetail): Promise<CatalogProduct[]> =>
-    getTitleSiblings(detail),
+  async (detail: CatalogProductDetail): Promise<CatalogProduct[]> =>
+    (
+      await keptForProduct("product-title-siblings", detail, "", () =>
+        getTitleSiblings(detail),
+      )
+    ).map(revived),
 );
 
 /**
@@ -57,6 +104,30 @@ function vehicleFit(vehicle: Vehicle | null): OtherSizesFit | null {
   return { tire: tireFit(fit), wheel: wheelFit(fit) };
 }
 
+async function readRows(
+  detail: CatalogProductDetail,
+  fit: OtherSizesFit | null,
+): Promise<{ similar: CatalogProduct[]; otherSizes: CatalogProduct[] }> {
+  const [similar, otherSizes] = await Promise.all([
+    getSimilarProducts(detail, ROW),
+    getOtherSizes(detail, ROW, fit),
+  ]);
+  return { similar, otherSizes };
+}
+
+/** The two rows under the page. Kept only without a car, the page every
+ *  crawler and most shoppers see: a carried car is a per-request URL that
+ *  `robots.txt` keeps crawlers off (`/products/*?`), and keeping one entry per
+ *  slug and car fit would store entries nobody asks for twice. */
+function loadRows(
+  detail: CatalogProductDetail,
+  fit: OtherSizesFit | null,
+): Promise<{ similar: CatalogProduct[]; otherSizes: CatalogProduct[] }> {
+  return fit === null
+    ? keptForProduct("product-rows", detail, "", () => readRows(detail, null))
+    : readRows(detail, fit);
+}
+
 /** The two rows under the page and the title siblings, read together.
  *  `vehicle` is the page's checked vehicle (`view.ts` `parseVehicle`, D91b),
  *  or `null`: with one, `Other sizes` lists only the sizes that fit it. */
@@ -68,10 +139,13 @@ export async function loadProductRows(
   otherSizes: readonly CatalogProduct[];
   siblings: readonly CatalogProduct[];
 }> {
-  const [similar, otherSizes, siblings] = await Promise.all([
-    getSimilarProducts(detail, ROW),
-    getOtherSizes(detail, ROW, vehicleFit(vehicle)),
+  const [rows, siblings] = await Promise.all([
+    loadRows(detail, vehicleFit(vehicle)),
     loadTitleSiblings(detail),
   ]);
-  return { similar, otherSizes, siblings };
+  return {
+    similar: rows.similar.map(revived),
+    otherSizes: rows.otherSizes.map(revived),
+    siblings,
+  };
 }

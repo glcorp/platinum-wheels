@@ -22,3 +22,31 @@ export const CACHE_DEPLOYMENT =
   process.env.VERCEL_DEPLOYMENT_ID ??
   process.env.VERCEL_GIT_COMMIT_SHA ??
   "local";
+
+/**
+ * Which database this process reads, host and name only (never a
+ * credential), for the same keys: the on-disk entries of a local build
+ * survive `next build`, so without it a read cached from one database would
+ * be served for another (the e2e fixture's, say).
+ */
+export const CACHE_DATABASE = ((): string => {
+  try {
+    const url = new URL(process.env.DATABASE_URL ?? "");
+    return `${url.host}${url.pathname}`;
+  } catch {
+    return "no-database";
+  }
+})();
+
+/** The options of every catalogue read kept between requests: kept until a
+ *  catalogue write expires the tag (D194). A failed read is thrown out of the
+ *  cached function, so it is never stored. */
+export const CATALOGUE_CACHE: { tags: string[]; revalidate: false } = {
+  tags: [CATALOGUE_TAG],
+  revalidate: false,
+};
+
+/** The key parts of the catalogue read called `name`. */
+export function catalogueCacheKey(name: string): string[] {
+  return [name, CACHE_DEPLOYMENT, CACHE_DATABASE];
+}
