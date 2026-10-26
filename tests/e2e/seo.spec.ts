@@ -87,18 +87,40 @@ test("robots.txt answers on the canonical host and matches the flag", async ({ r
   expect(res.status()).toBe(200);
   const body = await res.text();
   if (INDEXING) {
-    expect(body).toMatch(/^Allow: \/$/m);
-    // Open, except the filter URLs of the three category pages: a query string
-    // there is a search, and the clean path is the only address (D112). Since
-    // D194 also the site search and any query string on a product page.
-    const disallowed = [...body.matchAll(/^Disallow: (.*)$/gm)].map((m) => m[1]);
-    expect(disallowed).toEqual([
+    // One group per blank-line block: its user agents and its rules.
+    const groups = body
+      .split(/\n\s*\n/)
+      .map((block) => ({
+        agents: [...block.matchAll(/^User-Agent: (.*)$/gm)].map((m) => m[1]),
+        allow: [...block.matchAll(/^Allow: (.*)$/gm)].map((m) => m[1]),
+        disallow: [...block.matchAll(/^Disallow: (.*)$/gm)].map((m) => m[1]),
+      }))
+      .filter((group) => group.agents.length > 0);
+
+    // Everyone else: open, except the filter URLs of the three category pages
+    // (a query string there is a search, and the clean path is the only
+    // address, D112), and since D194 the site search and any query string on
+    // a product page.
+    const everyone = groups.find((group) => group.agents.includes("*"));
+    expect(everyone?.allow).toEqual(["/"]);
+    expect(everyone?.disallow).toEqual([
       "/tires?",
       "/wheels?",
       "/accessories?",
       "/search",
       "/products/*?",
     ]);
+
+    // AI-training and SEO-tool crawlers are kept off the whole site (D194);
+    // the search engines are never named, so they keep the rules above.
+    const blocked = groups.find((group) => group.agents.includes("GPTBot"));
+    expect(blocked?.disallow).toEqual(["/"]);
+    expect(blocked?.allow).toEqual([]);
+    expect(blocked?.agents).toEqual(expect.arrayContaining(["ClaudeBot", "CCBot", "AhrefsBot", "SemrushBot"]));
+    const named = groups.flatMap((group) => group.agents);
+    for (const engine of ["Googlebot", "Bingbot", "Applebot", "OAI-SearchBot", "PerplexityBot"]) {
+      expect(named, engine).not.toContain(engine);
+    }
     expect(body).toContain(`Sitemap: ${SITE_URL}/sitemap.xml`);
   } else {
     expect(body).toMatch(/^Disallow: \/$/m);

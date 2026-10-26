@@ -44,6 +44,57 @@ import { SITE_URL } from "@/lib/site";
 /** The pages whose query string is a filter. */
 const FILTERABLE_PATHS = [ROUTES.tires, ROUTES.wheels, ROUTES.accessories];
 
+/**
+ * Crawlers kept off the whole site when it is open (D194). Owner, 2026-10-26:
+ * *"Add robots.txt blocks for AI and SEO-tool crawlers to PR #70 (keep Google
+ * and Bing)"*. Each one fetched the 40,000 product pages on the free plan's
+ * allowance and sends no shopper: model-training crawlers (and the opt-out
+ * tokens Google and Apple read for training only, which leave Search and
+ * Siri untouched) and SEO-tool crawlers that sell our pages' data to others.
+ * Googlebot, Bingbot, Applebot and every crawler not named keep the `*` rules.
+ * Kept off this list (*derived*): the AI answer engines' own fetchers
+ * (`OAI-SearchBot`, `ChatGPT-User`, `Claude-SearchBot`, `Claude-User`,
+ * `PerplexityBot`, `Perplexity-User`), which cite and link the page they
+ * read. A crawler that ignores `robots.txt` is the Firewall's job.
+ */
+const BLOCKED_CRAWLERS = [
+  // Model training.
+  "GPTBot",
+  "ClaudeBot",
+  "anthropic-ai",
+  "CCBot",
+  "Google-Extended",
+  "Applebot-Extended",
+  "Bytespider",
+  "meta-externalagent",
+  "FacebookBot",
+  "Amazonbot",
+  "cohere-ai",
+  "cohere-training-data-crawler",
+  "Diffbot",
+  "AI2Bot",
+  "Ai2Bot-Dolma",
+  "img2dataset",
+  "ImagesiftBot",
+  "omgili",
+  "omgilibot",
+  "PanguBot",
+  "Timpibot",
+  "YouBot",
+  "Webzio-Extended",
+  // SEO tools.
+  "AhrefsBot",
+  "SemrushBot",
+  "MJ12bot",
+  "DotBot",
+  "BLEXBot",
+  "DataForSeoBot",
+  "serpstatbot",
+  "Barkrowler",
+  "rogerbot",
+  "PetalBot",
+];
+
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const host = (await headers()).get("host");
 
@@ -52,15 +103,18 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
   }
 
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: [
-        ...FILTERABLE_PATHS.map((path) => `${path}?`),
-        ROUTES.search,
-        `${PRODUCT_PATH}/*?`,
-      ],
-    },
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: [
+          ...FILTERABLE_PATHS.map((path) => `${path}?`),
+          ROUTES.search,
+          `${PRODUCT_PATH}/*?`,
+        ],
+      },
+      { userAgent: BLOCKED_CRAWLERS, disallow: "/" },
+    ],
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

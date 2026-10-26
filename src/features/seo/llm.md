@@ -68,7 +68,12 @@ and the `metadata` of `layout.tsx` and of each indexable page.
   guidance is to block such URLs in `robots.txt` rather than lean on the canonical. **Since D194** it
   also disallows `/search` and any query string on a product page (`/products/*?`): every product page
   links its `?qty=` cells, and those copies rendered per request while canonicalising to the bare URL,
-  which is now a kept page. The bare product URL stays crawlable.
+  which is now a kept page. The bare product URL stays crawlable. **Also since D194** a second group keeps
+  AI-training and SEO-tool crawlers (`BLOCKED_CRAWLERS` in `src/app/robots.ts`: GPTBot, ClaudeBot, CCBot,
+  Google-Extended, Bytespider, AhrefsBot, SemrushBot and others) off the whole site (owner, 2026-10-26:
+  *"Add robots.txt blocks for AI and SEO-tool crawlers to PR #70 (keep Google and Bing)"*). Search engines
+  and the AI answer engines' own fetchers (OAI-SearchBot, PerplexityBot, Claude-SearchBot; *derived*) are not
+  named, so they keep the `*` rules. A crawler that ignores `robots.txt` is left to the Vercel Firewall.
 - **Never indexed, never in a sitemap:** `/styleguide`, `/qa-error`, `/cart` (D122), every admin page
   (on its own host since D115), `/pay/**`. Each sets
   its own `robots`, which wins in both flag states. The sitemap lists are allow-lists.
