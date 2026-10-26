@@ -45,7 +45,7 @@ logic, the parity baseline and the feature boundary both stop meaning anything.
   fills (measured; a segment `not-found.tsx` does not change it). The page's `notFound()` stays for client
   navigations and a product hidden between the check and the render. **Since D194** the route is a thin
   shell over `ProductPage` (`src/features/product/components/product-page.tsx`) and answers only URLs with
-  a query string and client navigations; a bare document request is rewritten by proxy to
+  a query string; a bare request (document, client navigation or prefetch) is rewritten by proxy to
   `product-cache/[slug]`.
 - [`product-cache/[slug]/page.tsx`](product-cache/[slug]/page.tsx) — **D194.** The bare
   `/products/<slug>` page, kept: the same `ProductPage` with an empty query, no `searchParams`, and

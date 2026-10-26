@@ -13,9 +13,9 @@ import { productRoute } from "@/lib/routes";
 
    This route answers a product URL WITH a query string (`?qty=`, D50; a
    carried vehicle, D158), rendered per request. A bare `/products/<slug>`
-   document request never reaches it: `src/proxy.ts` rewrites that to
-   `/product-cache/[slug]`, the same page kept until the next catalogue write
-   (D194). Client navigations (they carry an `RSC` header) still come here.
+   never reaches it, as a document, a client navigation or a prefetch:
+   `src/proxy.ts` rewrites it to `/product-cache/[slug]`, the same page kept
+   until the next catalogue write (D194).
 
    No `generateStaticParams` here, deliberately. Reading `searchParams` for
    `?qty=` (D50) makes this route dynamic — `next build` reports it as `ƒ`, not

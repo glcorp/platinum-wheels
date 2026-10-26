@@ -8,8 +8,9 @@ import {
 /* ---------------------------------------------------------------------------
    `/product-cache/[slug]` — the bare `/products/<slug>` page, kept (D194).
 
-   Never addressed by name: `src/proxy.ts` rewrites a bare product document
-   request (no query string, no `RSC` header) here after its existence check,
+   Never addressed by name: `src/proxy.ts` rewrites a bare product request
+   (no query string; documents, client navigations and prefetches alike, since
+   proxy cannot tell them apart) here after its existence check,
    and answers a request for `/product-cache/**` itself with the storefront
    404. The address bar, the canonical and every link keep `/products/<slug>`.
 

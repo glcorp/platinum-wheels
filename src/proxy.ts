@@ -55,7 +55,8 @@ import { payLinkExists } from "@/features/payments/link-exists";
    database read proxy makes (not kept: proxy has no data cache, D194); see
    the `pass` case below.
 
-   **Kept product pages (D194).** A bare `/products/<slug>` document request
+   **Kept product pages (D194).** A bare `/products/<slug>` request (a
+   document, a client navigation or a prefetch alike; see `productSlugToCheck`)
    that passes that check is rewritten to `/product-cache/<slug>`, the same
    page rendered once and then served from the cache, so a crawler's repeat
    visit runs no render and no database read beyond the check above. A URL with a query string keeps
@@ -117,13 +118,15 @@ function isUndecodable(pathname: string): boolean {
 }
 
 /** The slug of a storefront product page request that should be checked
- *  against the catalogue, else `null`: only a document request (a browser
- *  navigation, a crawler, a link unfurler). Client navigations and prefetches
- *  carry an `RSC` header and are left alone: the page's own `notFound()`
- *  covers them. */
+ *  against the catalogue, else `null`. Every GET or HEAD is: a client
+ *  navigation or prefetch looks like a document request here, because Next
+ *  strips the Flight headers (`rsc`, `next-router-prefetch`) before proxy
+ *  sees the request (`proxy.md`, "RSC requests and rewrites"), so the
+ *  `rsc` test this function once made never fired. `NextResponse.rewrite`
+ *  carries those headers on, so a client navigation to a bare product URL
+ *  gets the kept page's payload (D194). */
 function productSlugToCheck(request: NextRequest): string | null {
   if (request.method !== "GET" && request.method !== "HEAD") return null;
-  if (request.headers.has("rsc")) return null;
   const match = PRODUCT_PAGE.exec(request.nextUrl.pathname);
   // The path was already shown to be decodable above.
   return match ? decodeURIComponent(match[1]) : null;

@@ -19,7 +19,7 @@ business logic) and *constants*, so that a change lands in exactly one place.
   answers a `/products/<slug>` document request (no `RSC` header) for an unknown or hidden slug with the
   branded 404, after one indexed read (`productPageExists`, `features/catalog/queries.ts`): a `notFound()`
   thrown from the page gives a 404 whose body only JavaScript paints. A database error lets the request through.
-  **Since D194** a bare `/products/<slug>` document
+  **Since D194** a bare `/products/<slug>`
   request that passes it is rewritten to `/product-cache/<slug>`, the same page kept until the next
   catalogue write; a URL with a query string keeps the per-request route, and `/product-cache/**` asked for
   by name is the storefront 404 (the matcher covers it).
